@@ -109,7 +109,20 @@ export async function getUserMeditations() {
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
-  return (data ?? []) as Meditation[];
+
+  const meditations = (data ?? []) as MeditationWithMeta[];
+
+  const { data: favs } = await supabase
+    .from("favorites")
+    .select("meditation_id")
+    .eq("user_id", user.id);
+
+  const favSet = new Set((favs ?? []).map((f) => f.meditation_id));
+  meditations.forEach((m) => {
+    m.is_favorited = favSet.has(m.id);
+  });
+
+  return meditations;
 }
 
 export async function getPublicMeditations(search?: string) {

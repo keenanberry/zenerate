@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   const { prompt } = await req.json();
 
   const result = streamText({
-    model: anthropic("claude-sonnet-4-20250514"),
+    model: anthropic("claude-sonnet-4-6"),
     system: MEDITATION_SYSTEM_PROMPT,
     prompt,
   });

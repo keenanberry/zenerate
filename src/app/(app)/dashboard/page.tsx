@@ -10,7 +10,6 @@ import {
   getUserCollections,
 } from "@/lib/meditation/actions";
 import { Plus } from "lucide-react";
-import type { MeditationWithMeta } from "@/lib/meditation/types";
 
 export const metadata = {
   title: "Library | Zenerate",
@@ -35,7 +34,7 @@ async function MyMeditations() {
 
   return (
     <MeditationListView
-      meditations={meditations as MeditationWithMeta[]}
+      meditations={meditations}
       showVisibility
     />
   );

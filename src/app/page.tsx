@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Sparkles, Library, Compass, Volume2 } from "lucide-react";
 
 const features = [
@@ -7,7 +8,7 @@ const features = [
     icon: Sparkles,
     title: "AI-Generated Scripts",
     description:
-      "Describe the meditation you want and let Claude craft a professional meditation script with pauses, sounds, and silences.",
+      "Describe the meditation you want and let AI craft a professional meditation script with pauses, sounds, and silences.",
   },
   {
     icon: Volume2,
@@ -36,6 +37,7 @@ export default function LandingPage() {
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <span className="text-lg font-bold tracking-tight">zenerate</span>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Link href="/login">
               <Button variant="ghost" size="sm">
                 Sign in

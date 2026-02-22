@@ -18,7 +18,7 @@ export function RemoveFromCollectionButton({
     <Button
       variant="ghost"
       size="icon"
-      className="mt-3 h-8 w-8 shrink-0"
+      className="h-8 w-8 shrink-0"
       disabled={isPending}
       onClick={() => {
         startTransition(async () => {
