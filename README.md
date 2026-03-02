@@ -1,36 +1,156 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Zenerate
+
+AI-powered meditation script and audio generation platform built with Next.js, Supabase, and Vercel.
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 22+
+- Docker (for Supabase local development)
+- [Supabase CLI](https://supabase.com/docs/guides/cli)
+
+### Setup
 
 ```bash
+# Install dependencies
+npm install
+
+# Copy environment variables
+cp .env.example .env.local
+# Fill in API keys (see Environment Variables below)
+
+# Start Supabase (requires Docker)
+supabase start
+
+# Reset DB with seed data
+supabase db reset
+
+# Start the dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Sign in with a test account: `alice@example.com` / `password123`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Description |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase API URL (from `supabase start`) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key (from `supabase start`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (from `supabase start`) |
+| `ANTHROPIC_API_KEY` | Anthropic API key for meditation script generation |
+| `ELEVENLABS_API_KEY` | ElevenLabs API key for text-to-speech |
+| `AUDIO_SANDBOX_SNAPSHOT_ID` | Vercel Sandbox snapshot ID (from snapshot builder) |
+| `VERCEL_TOKEN` | Vercel access token for Sandbox auth |
+| `VERCEL_TEAM_ID` | Vercel team ID |
+| `VERCEL_PROJECT_ID` | Vercel project ID |
 
-## Learn More
+## Architecture
 
-To learn more about Next.js, take a look at the following resources:
+### Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Next.js 16** — App Router, TypeScript, Tailwind CSS v4, shadcn/ui
+- **Supabase** — PostgreSQL, Auth, Storage
+- **AI SDK 6** — `@ai-sdk/anthropic` for meditation script generation
+- **Vercel Workflow** — durable multi-step orchestration for audio pipeline
+- **Vercel Sandbox** — ephemeral microVMs for FFmpeg audio processing
+- **ElevenLabs** — text-to-speech API
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Audio Generation Pipeline
 
-## Deploy on Vercel
+The audio pipeline converts meditation scripts (with markup like `*[PAUSE: 5 seconds]*` and `*[SILENCE: 1 minute]*`) into MP3 files:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+POST /api/audio/generate
+  → Vercel Workflow (durable orchestration)
+    → Step 1: Fetch meditation script from DB, parse segments
+    → Step 2: Spin up Vercel Sandbox from snapshot
+      → generate-audio.js runs inside the VM:
+        - ElevenLabs TTS for speech segments
+        - FFmpeg silence generation for pause/silence segments
+        - FFmpeg concatenation of all segments into final MP3
+      → Download output.mp3 + result.json from sandbox
+      → Upload MP3 to Supabase Storage
+    → Step 3: Update meditation status to "completed" with audio URL and generation metadata
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Key files:
+
+| File | Purpose |
+|---|---|
+| `src/app/api/audio/generate/route.ts` | API endpoint — validates auth/ownership, triggers workflow |
+| `src/lib/audio/workflow.ts` | Vercel Workflow — orchestrates the full pipeline |
+| `src/lib/audio/generate-audio.ts` | Standalone script that runs inside the sandbox |
+| `src/lib/audio/storage.ts` | Supabase Storage upload + DB status updates |
+| `src/lib/meditation/parser.ts` | Parses script markup into typed segments |
+| `src/lib/meditation/types.ts` | TypeScript types for meditations, segments, generation metadata |
+
+### Cost Tracking
+
+Each audio generation records metadata in the `generation_meta` JSONB column:
+
+- `tts_characters` — total characters sent to ElevenLabs (maps to billing)
+- `tts_requests` — number of TTS API calls
+- `processing_time_ms` — total sandbox processing time
+- `generated_at` — ISO timestamp
+
+## Scripts
+
+### Build Sandbox Snapshot
+
+Creates a Vercel Sandbox snapshot pre-loaded with FFmpeg, Node dependencies, and the compiled `generate-audio.js` script. The snapshot is permanent (`expiration: 0`) so it won't expire.
+
+```bash
+npx tsx scripts/create-sandbox-snapshot.ts
+```
+
+After running, copy the printed snapshot ID into `.env.local`:
+
+```
+AUDIO_SANDBOX_SNAPSHOT_ID=<snapshot_id>
+```
+
+**When to rebuild:** any time `src/lib/audio/generate-audio.ts` changes, since it's baked into the snapshot.
+
+### Test Audio Generation
+
+Runs an integration test that spins up a sandbox, generates audio from a minimal meditation script (~50 characters), and validates the output.
+
+```bash
+npx tsx scripts/test-audio-generation.ts
+```
+
+Output is saved to `test-output/test-meditation.mp3` for manual listening.
+
+### Manage Snapshots
+
+List all snapshots for your project:
+
+```bash
+npx sandbox snapshots list
+```
+
+Delete old snapshots you no longer need:
+
+```bash
+# Single snapshot
+npx sandbox snapshots delete <snapshot_id>
+
+# Multiple at once
+npx sandbox snapshots delete <snapshot_id_1> <snapshot_id_2>
+```
+
+## Development
+
+### Database Migrations
+
+Migrations live in `supabase/migrations/`. Apply them with:
+
+```bash
+supabase db reset    # resets and re-applies all migrations + seed data
+```
+
+### Project Status
+
+See `docs/project-status.md` for a detailed breakdown of what's built and what's next.

@@ -5,15 +5,24 @@ export type MeditationStatus =
   | "completed"
   | "failed";
 
+export interface GenerationMeta {
+  tts_characters?: number;
+  tts_requests?: number;
+  processing_time_ms?: number;
+  generated_at?: string;
+}
+
 export interface Meditation {
   id: string;
   user_id: string;
   title: string;
   prompt: string;
   script: string | null;
+  audio_url: string | null;
   status: MeditationStatus;
   is_public: boolean;
   settings: MeditationSettings;
+  generation_meta: GenerationMeta | null;
   created_at: string;
   updated_at: string;
 }
