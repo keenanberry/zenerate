@@ -104,17 +104,17 @@ export default async function DashboardPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight">Library</h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Your meditations, favorites, and collections.
           </p>
         </div>
-        <Link href="/create">
+        <Link href="/create" className="shrink-0">
           <Button className="gap-2">
             <Plus className="h-4 w-4" />
-            New Meditation
+            <span className="hidden sm:inline">New Meditation</span>
           </Button>
         </Link>
       </div>

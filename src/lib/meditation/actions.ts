@@ -135,7 +135,7 @@ export async function getPublicMeditations(search?: string) {
     .from("meditations")
     .select("*")
     .eq("is_public", true)
-    .eq("status", "script_ready")
+    .eq("status", "completed")
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -161,6 +161,47 @@ export async function getPublicMeditations(search?: string) {
   }
 
   return meditations;
+}
+
+export async function resetMeditationStatus(id: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: meditation, error: fetchError } = await supabase
+    .from("meditations")
+    .select("user_id, status")
+    .eq("id", id)
+    .single();
+
+  if (fetchError || !meditation) throw new Error("Meditation not found");
+  if (meditation.user_id !== user.id) throw new Error("Forbidden");
+  if (meditation.status !== "failed") {
+    throw new Error("Can only reset meditations with failed status");
+  }
+
+  const { error } = await supabase
+    .from("meditations")
+    .update({ status: "script_ready", updated_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/meditation/${id}`);
+  revalidatePath("/dashboard");
+}
+
+export async function getMeditationStatus(id: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("meditations")
+    .select("status, audio_url")
+    .eq("id", id)
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as { status: string; audio_url: string | null };
 }
 
 // ── Favorites ──
@@ -327,6 +368,16 @@ export async function getCollectionWithItems(id: string) {
     .filter(Boolean);
 
   return { collection: collection as Collection, meditations };
+}
+
+export async function getMeditationCollectionIds(meditationId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("collection_items")
+    .select("collection_id")
+    .eq("meditation_id", meditationId);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((d) => d.collection_id);
 }
 
 export async function addToCollection(

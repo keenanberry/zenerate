@@ -1,19 +1,173 @@
-import { Volume2 } from "lucide-react";
+"use client";
 
-export function AudioPlayer() {
+import { useCallback, useEffect, useRef, useState } from "react";
+import WaveSurfer from "wavesurfer.js";
+import Hover from "wavesurfer.js/dist/plugins/hover.esm.js";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Pause, Play, Volume2, VolumeOff } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface AudioPlayerProps {
+  audioUrl: string;
+}
+
+function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function resolveCssColor(cssVar: string, fallback: string): string {
+  const val = getComputedStyle(document.documentElement)
+    .getPropertyValue(cssVar)
+    .trim();
+  return val || fallback;
+}
+
+export function AudioPlayer({ audioUrl }: AudioPlayerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const wavesurferRef = useRef<WaveSurfer | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(0.8);
+  const [muted, setMuted] = useState(false);
+  const [ready, setReady] = useState(false);
+
+  const initWaveSurfer = useCallback(() => {
+    if (!containerRef.current) return;
+
+    wavesurferRef.current?.destroy();
+
+    const progressColor = resolveCssColor("--primary", "#7c3aed");
+    const waveColor = resolveCssColor("--border", "#d4d4d8");
+    const cursorColor = resolveCssColor("--primary", "#7c3aed");
+
+    const ws = WaveSurfer.create({
+      container: containerRef.current,
+      height: 80,
+      barWidth: 3,
+      barGap: 2,
+      barRadius: 3,
+      cursorWidth: 2,
+      cursorColor,
+      waveColor,
+      progressColor,
+      url: audioUrl,
+      normalize: true,
+      plugins: [
+        Hover.create({
+          lineColor: cursorColor,
+          lineWidth: 1,
+          labelBackground: "rgba(0, 0, 0, 0.75)",
+          labelColor: "#fff",
+          labelSize: "11px",
+        }),
+      ],
+    });
+
+    ws.on("ready", () => {
+      setDuration(ws.getDuration());
+      setReady(true);
+      ws.setVolume(volume);
+    });
+
+    ws.on("timeupdate", (time) => setCurrentTime(time));
+    ws.on("play", () => setIsPlaying(true));
+    ws.on("pause", () => setIsPlaying(false));
+    ws.on("finish", () => setIsPlaying(false));
+
+    wavesurferRef.current = ws;
+  }, [audioUrl, volume]);
+
+  useEffect(() => {
+    initWaveSurfer();
+    return () => {
+      wavesurferRef.current?.destroy();
+    };
+  }, [initWaveSurfer]);
+
+  function togglePlay() {
+    wavesurferRef.current?.playPause();
+  }
+
+  function handleVolumeChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = parseFloat(e.target.value);
+    setVolume(val);
+    setMuted(val === 0);
+    wavesurferRef.current?.setVolume(val);
+  }
+
+  function toggleMute() {
+    if (muted) {
+      const restored = volume > 0 ? volume : 0.8;
+      setMuted(false);
+      wavesurferRef.current?.setVolume(restored);
+    } else {
+      setMuted(true);
+      wavesurferRef.current?.setVolume(0);
+    }
+  }
+
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-dashed bg-muted/50 p-6">
-      <Volume2 className="h-8 w-8 text-muted-foreground" />
-      <div>
-        <p className="text-sm font-medium text-muted-foreground">
-          Audio generation coming soon
-        </p>
-        <p className="text-xs text-muted-foreground/70">
-          The audio pipeline is under development. Once ready, your meditation
-          script will be converted to a full audio experience with TTS, sound
-          effects, and background music.
-        </p>
-      </div>
-    </div>
+    <Card>
+      <CardContent className="space-y-3 pt-6">
+        <div
+          ref={containerRef}
+          className={cn(
+            "w-full cursor-pointer rounded-md",
+            !ready && "animate-pulse bg-muted",
+          )}
+          style={{ minHeight: 80 }}
+        />
+
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 shrink-0 rounded-full"
+            onClick={togglePlay}
+            disabled={!ready}
+          >
+            {isPlaying ? (
+              <Pause className="h-5 w-5" />
+            ) : (
+              <Play className="h-5 w-5 translate-x-0.5" />
+            )}
+          </Button>
+
+          <span className="min-w-[80px] text-xs tabular-nums text-muted-foreground">
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </span>
+
+          <div className="flex flex-1" />
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0"
+              onClick={toggleMute}
+            >
+              {muted || volume === 0 ? (
+                <VolumeOff className="h-4 w-4" />
+              ) : (
+                <Volume2 className="h-4 w-4" />
+              )}
+            </Button>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={muted ? 0 : volume}
+              onChange={handleVolumeChange}
+              className="h-1 w-20 cursor-pointer appearance-none rounded-full bg-muted accent-primary"
+            />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

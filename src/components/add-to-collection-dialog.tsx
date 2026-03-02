@@ -2,21 +2,21 @@
 
 import { useEffect, useState, useTransition } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import {
   getUserCollections,
+  getMeditationCollectionIds,
   addToCollection,
+  removeFromCollection,
   createCollection,
 } from "@/lib/meditation/actions";
 import { Input } from "@/components/ui/input";
-import { FolderPlus, Plus, Check } from "lucide-react";
+import { FolderPlus, Plus, Check, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { CollectionWithCount } from "@/lib/meditation/types";
 
 interface AddToCollectionDialogProps {
@@ -30,103 +30,157 @@ export function AddToCollectionDialog({
 }: AddToCollectionDialogProps) {
   const [open, setOpen] = useState(false);
   const [collections, setCollections] = useState<CollectionWithCount[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(false);
   const [newName, setNewName] = useState("");
   const [showNew, setShowNew] = useState(false);
-  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (open) {
-      getUserCollections().then(setCollections).catch(console.error);
-    }
-  }, [open]);
+    if (!open) return;
+    let cancelled = false;
+    Promise.all([
+      getUserCollections(),
+      getMeditationCollectionIds(meditationId),
+    ])
+      .then(([cols, ids]) => {
+        if (cancelled) return;
+        setCollections(cols);
+        setSelectedIds(new Set(ids));
+      })
+      .catch(console.error)
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [open, meditationId]);
 
-  function handleAdd(collectionId: string) {
-    setAddedIds((prev) => new Set([...prev, collectionId]));
+  function handleToggle(collectionId: string) {
+    const isSelected = selectedIds.has(collectionId);
+    const delta = isSelected ? -1 : 1;
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (isSelected) next.delete(collectionId);
+      else next.add(collectionId);
+      return next;
+    });
+    setCollections((prev) =>
+      prev.map((c) =>
+        c.id === collectionId ? { ...c, item_count: c.item_count + delta } : c,
+      ),
+    );
     startTransition(async () => {
-      await addToCollection(collectionId, meditationId);
+      if (isSelected) {
+        await removeFromCollection(collectionId, meditationId);
+      } else {
+        await addToCollection(collectionId, meditationId);
+      }
     });
   }
 
-  function handleCreateAndAdd() {
+  function handleCreate() {
     if (!newName.trim()) return;
     startTransition(async () => {
       const col = await createCollection({ name: newName.trim() });
       await addToCollection(col.id, meditationId);
-      setAddedIds((prev) => new Set([...prev, col.id]));
-      setCollections((prev) => [
-        { ...col, item_count: 1 },
-        ...prev,
-      ]);
+      setSelectedIds((prev) => new Set([...prev, col.id]));
+      setCollections((prev) => [{ ...col, item_count: 1 }, ...prev]);
       setNewName("");
       setShowNew(false);
     });
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) setLoading(true);
+      }}
+    >
+      <PopoverTrigger asChild>
         {trigger ?? (
           <Button variant="ghost" size="sm" className="gap-2">
             <FolderPlus className="h-4 w-4" />
             Add to collection
           </Button>
         )}
-      </DialogTrigger>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Add to collection</DialogTitle>
-          <DialogDescription>
-            Choose a collection or create a new one.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-2">
-          {collections.map((col) => (
-            <button
-              key={col.id}
-              onClick={() => handleAdd(col.id)}
-              disabled={isPending || addedIds.has(col.id)}
-              className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-sm transition-colors hover:bg-muted disabled:opacity-50"
-            >
-              <span>{col.name}</span>
-              {addedIds.has(col.id) ? (
-                <Check className="h-4 w-4 text-green-500" />
-              ) : (
-                <Plus className="h-4 w-4 text-muted-foreground" />
-              )}
-            </button>
-          ))}
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 p-0">
+        <div className="border-b px-3 py-2">
+          <p className="text-sm font-medium">Collections</p>
+        </div>
 
+        <div className="max-h-56 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
+          ) : collections.length === 0 && !showNew ? (
+            <p className="px-3 py-4 text-center text-sm text-muted-foreground">
+              No collections yet
+            </p>
+          ) : (
+            collections.map((col) => {
+              const checked = selectedIds.has(col.id);
+              return (
+                <button
+                  key={col.id}
+                  onClick={() => handleToggle(col.id)}
+                  disabled={isPending}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted disabled:opacity-50"
+                >
+                  <span
+                    className={cn(
+                      "flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border",
+                      checked
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-muted-foreground/30",
+                    )}
+                  >
+                    {checked && <Check className="h-3 w-3" />}
+                  </span>
+                  <span className="truncate">{col.name}</span>
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    {col.item_count}
+                  </span>
+                </button>
+              );
+            })
+          )}
+        </div>
+
+        <div className="border-t p-2">
           {showNew ? (
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               <Input
                 placeholder="Collection name"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleCreateAndAdd()}
+                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+                className="h-8 text-sm"
                 autoFocus
               />
               <Button
                 size="sm"
-                onClick={handleCreateAndAdd}
+                className="h-8 shrink-0"
+                onClick={handleCreate}
                 disabled={!newName.trim() || isPending}
               >
                 Add
               </Button>
             </div>
           ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full gap-2"
+            <button
               onClick={() => setShowNew(true)}
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <Plus className="h-4 w-4" />
               New collection
-            </Button>
+            </button>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </PopoverContent>
+    </Popover>
   );
 }

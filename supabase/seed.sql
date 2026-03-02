@@ -107,7 +107,7 @@ Carry this sense of gratitude with you as you return to your day. When you are r
 
 *[SOUND: bell-tibetan.mp3]*',
   'script_ready',
-  true,
+  false,
   '{"type": "guided", "duration": 10, "focus": "gratitude"}',
   now() - interval '3 days'
 ),
@@ -169,7 +169,7 @@ You have given your body a gift of attention. Carry this awareness with you.
 
 *[SOUND: bell-crystal.mp3]*',
   'script_ready',
-  true,
+  false,
   '{"type": "body-scan", "duration": 15, "focus": "stress relief"}',
   now() - interval '2 days'
 ),
@@ -269,7 +269,7 @@ Sleep well. You have done enough. You are enough.
 
 *[PAUSE: 10 seconds]*',
   'script_ready',
-  true,
+  false,
   '{"type": "sleep", "duration": 20, "focus": "letting go"}',
   now() - interval '12 hours'
 );
@@ -333,7 +333,7 @@ Open your eyes whenever you are ready.
 
 *[SOUND: bell-crystal.mp3]*',
   'script_ready',
-  true,
+  false,
   '{"type": "loving-kindness", "duration": 10, "focus": "self compassion"}',
   now() - interval '4 days'
 ),
@@ -383,7 +383,7 @@ Open your eyes. You are ready.
 
 *[SOUND: bell-tibetan.mp3]*',
   'script_ready',
-  true,
+  false,
   '{"type": "mindfulness", "duration": 10, "focus": "focus and concentration"}',
   now() - interval '1 day'
 ),
@@ -441,7 +441,7 @@ When you are ready, open your eyes. Welcome back.
 
 *[SOUND: bell-crystal.mp3]*',
   'script_ready',
-  true,
+  false,
   '{"type": "visualization", "duration": 15, "focus": "inner peace"}',
   now() - interval '5 days'
 );

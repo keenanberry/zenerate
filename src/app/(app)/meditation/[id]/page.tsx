@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMeditation } from "@/lib/meditation/actions";
 import { ScriptViewer } from "@/components/script-viewer";
-import { AudioPlayer } from "@/components/audio-player";
+import { AudioSection } from "@/components/audio-section";
 import { FavoriteButton } from "@/components/favorite-button";
 import { VisibilityToggle } from "@/components/visibility-toggle";
 import { AddToCollectionDialog } from "@/components/add-to-collection-dialog";
@@ -70,7 +70,7 @@ export default async function MeditationDetailPage({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {isOwner && (
+          {isOwner && meditation.status === "completed" && (
             <VisibilityToggle
               meditationId={meditation.id}
               isPublic={meditation.is_public}
@@ -87,7 +87,7 @@ export default async function MeditationDetailPage({
 
       <Separator />
 
-      <AudioPlayer />
+      <AudioSection meditation={meditation} isOwner={isOwner} />
 
       {meditation.script && (
         <Card>

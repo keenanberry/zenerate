@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FavoriteButton } from "@/components/favorite-button";
+import { InlinePlayButton } from "@/components/inline-play-button";
 import type { MeditationWithMeta } from "@/lib/meditation/types";
 import { Globe, Clock } from "lucide-react";
 
@@ -47,6 +48,11 @@ export function MeditationCard({
             {meditation.title}
           </CardTitle>
           <div className="relative z-10 flex items-center gap-1">
+            <InlinePlayButton
+              audioUrl={meditation.audio_url}
+              status={meditation.status}
+              size="sm"
+            />
             {showFavorite && (
               <FavoriteButton
                 meditationId={meditation.id}

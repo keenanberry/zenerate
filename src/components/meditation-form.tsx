@@ -14,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScriptViewer } from "@/components/script-viewer";
@@ -92,7 +91,6 @@ export function MeditationForm() {
   const [focus, setFocus] = useState("");
   const [preferences, setPreferences] = useState("");
   const [title, setTitle] = useState("");
-  const [isPublic, setIsPublic] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editedScript, setEditedScript] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -158,7 +156,7 @@ export function MeditationForm() {
         }),
         script: currentScript,
         status: "script_ready",
-        is_public: isPublic,
+        is_public: false,
         settings: {
           type,
           duration: parseInt(duration),
@@ -450,16 +448,9 @@ export function MeditationForm() {
                 />
               </div>
 
-              <div className="flex items-center gap-3">
-                <Switch
-                  id="public"
-                  checked={isPublic}
-                  onCheckedChange={setIsPublic}
-                />
-                <Label htmlFor="public" className="text-sm">
-                  Make this meditation public on Discover
-                </Label>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                You can share this meditation publicly after generating audio.
+              </p>
             </CardContent>
           </Card>
 
@@ -475,9 +466,6 @@ export function MeditationForm() {
                 </Badge>
                 <Badge variant="secondary">{duration} min</Badge>
                 {focus && <Badge variant="outline">{focus}</Badge>}
-                <Badge variant={isPublic ? "default" : "outline"}>
-                  {isPublic ? "Public" : "Private"}
-                </Badge>
               </div>
             </CardContent>
           </Card>

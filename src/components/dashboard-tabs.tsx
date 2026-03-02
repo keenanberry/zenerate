@@ -50,19 +50,19 @@ function TabsInner({
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-2">
         <TabsList>
-          <TabsTrigger value="meditations" className="gap-2">
+          <TabsTrigger value="meditations" className="gap-1.5">
             <Library className="h-4 w-4" />
-            My Meditations
+            <span className="hidden sm:inline">My Meditations</span>
           </TabsTrigger>
-          <TabsTrigger value="favorites" className="gap-2">
+          <TabsTrigger value="favorites" className="gap-1.5">
             <Heart className="h-4 w-4" />
-            Favorites
+            <span className="hidden sm:inline">Favorites</span>
           </TabsTrigger>
-          <TabsTrigger value="collections" className="gap-2">
+          <TabsTrigger value="collections" className="gap-1.5">
             <FolderOpen className="h-4 w-4" />
-            Collections
+            <span className="hidden sm:inline">Collections</span>
           </TabsTrigger>
         </TabsList>
 

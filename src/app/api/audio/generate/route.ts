@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { meditationId } = await req.json();
+  const { meditationId, voiceId } = await req.json();
 
   if (!meditationId || typeof meditationId !== "string") {
     return NextResponse.json(
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const run = await start(processAudioWorkflow, [meditationId]);
+  const run = await start(processAudioWorkflow, [meditationId, voiceId ?? null]);
 
   return NextResponse.json(
     { meditationId, runId: run.runId, status: "processing_audio" },

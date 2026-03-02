@@ -163,11 +163,17 @@ async function markFailed(meditationId: string, reason: string): Promise<void> {
 // Workflow: Orchestrate the full audio generation pipeline
 // ---------------------------------------------------------------------------
 
-export async function processAudioWorkflow(meditationId: string) {
+export async function processAudioWorkflow(
+  meditationId: string,
+  voiceIdOverride: string | null = null,
+) {
   "use workflow";
 
   try {
     const data = await fetchAndParse(meditationId);
+    if (voiceIdOverride) {
+      data.voiceId = voiceIdOverride;
+    }
     const { audioUrl, meta } = await generateAndUpload(meditationId, data);
     await finalize(meditationId, audioUrl, meta);
   } catch (err) {
