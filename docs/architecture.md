@@ -1,8 +1,10 @@
-# Audio Pipeline Architecture — Vercel Sandbox Approach
+# Architecture
 
-## Overview
+Zenerate is a Next.js 16 + Supabase app with an AI script generation pipeline and a sandbox-based audio generation pipeline.
 
-Instead of deploying a persistent audio processing service (e.g., on Fly.io or Railway), we use **Vercel Sandbox** as ephemeral compute for audio generation. Each meditation gets its own isolated microVM that spins up, processes audio, uploads the result, and is destroyed.
+## Audio Pipeline — Vercel Sandbox Approach
+
+Audio generation runs in **Vercel Sandbox**: each meditation gets its own isolated Firecracker microVM that spins up from a pre-built snapshot, processes audio, uploads the result, and is destroyed. No persistent service to run.
 
 Reference: https://vercel.com/docs/vercel-sandbox
 
@@ -229,10 +231,23 @@ Per meditation (assuming ~2 min of speech, 10 min total with silence):
 | Supabase Storage (10MB MP3) | negligible |
 | **Total per meditation** | **~$0.35** |
 
-## Open Questions
+## Key Files
 
-1. **Sandbox session limits** — Need to verify max runtime for audio processing (some meditations could take 60+ seconds to process)
-2. **File size limits** — Long meditations (30 min) could produce large intermediate files
-3. **Network access** — Sandbox needs outbound access to ElevenLabs API and Supabase Storage
-4. **Snapshot persistence** — How long do snapshots persist? Do they need periodic refresh?
-5. **Concurrent sandboxes** — How many can run in parallel under the free/pro plan?
+| File | Purpose |
+|---|---|
+| `src/app/api/audio/generate/route.ts` | Entry point — auth + ownership check, triggers workflow |
+| `src/lib/audio/workflow.ts` | Vercel Workflow — durable orchestration |
+| `src/lib/audio/generate-audio.ts` | Runs inside the sandbox (baked into snapshot) |
+| `src/lib/audio/storage.ts` | Supabase Storage upload + status updates |
+| `src/lib/meditation/parser.ts` | Parses script markup into typed segments |
+| `src/lib/meditation/types.ts` | Meditation / segment / status types |
+| `scripts/create-sandbox-snapshot.ts` | Builds the sandbox snapshot (run when `generate-audio.ts` changes) |
+
+## Status State Machine
+
+```
+generating_script → script_ready → processing_audio → completed
+                                                    ↘ failed
+```
+
+`src/components/audio-section.tsx` switches on `status` to render the generate panel, processing status, audio player, or retry state.
