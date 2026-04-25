@@ -4,6 +4,7 @@ Work that's out of scope for initial ship but tracked for the next cycle. No ord
 
 | Task | Summary |
 |---|---|
+| [User profiles](./user-profiles.md) | Public author surface for `/discover`; private settings/quota home |
 | [Paid tier](./paid-tier.md) | Stripe integration, tiered quotas, custom voice upload |
 | [Google / Apple auth](./google-apple-auth.md) | OAuth providers via Supabase |
 | [Admin dashboard](./admin-dashboard.md) | User + usage + cost visibility for the operator |
