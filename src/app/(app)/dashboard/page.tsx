@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { MeditationListView } from "@/components/meditation-list-view";
 import { DashboardTabs } from "@/components/dashboard-tabs";
 import { CollectionCard } from "@/components/collection-card";
-import { QuotaIndicator } from "@/components/quota-indicator";
 import {
   getUserMeditations,
   getFavoriteMeditations,
@@ -119,8 +118,6 @@ export default async function DashboardPage({
           </Button>
         </Link>
       </div>
-
-      <QuotaIndicator />
 
       <DashboardTabs
         defaultTab={tab}
