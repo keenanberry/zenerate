@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Clock } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { getQuotaUsage, isFreeRetryAvailable } from "@/lib/audio/quota";
 
 export async function generateMetadata({
   params,
@@ -45,6 +46,16 @@ export default async function MeditationDetailPage({
     data: { user },
   } = await supabase.auth.getUser();
   const isOwner = user?.id === meditation.user_id;
+
+  const quota =
+    user && isOwner
+      ? await getQuotaUsage(user.id, supabase)
+      : { used: 0, limit: 0, remaining: 0, resetsAt: new Date().toISOString() };
+
+  const freeRetry =
+    user && isOwner && meditation.status === "failed"
+      ? await isFreeRetryAvailable(meditation.id, user.id, supabase)
+      : { available: false, eventId: null };
 
   return (
     <div className="space-y-6">
@@ -87,7 +98,12 @@ export default async function MeditationDetailPage({
 
       <Separator />
 
-      <AudioSection meditation={meditation} isOwner={isOwner} />
+      <AudioSection
+        meditation={meditation}
+        isOwner={isOwner}
+        quota={quota}
+        freeRetryEventId={freeRetry.eventId}
+      />
 
       {meditation.script && (
         <Card>
