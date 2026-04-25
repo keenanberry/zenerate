@@ -135,5 +135,5 @@ begin
 end;
 $$;
 
-revoke all on function public.reserve_audio_generation(uuid, uuid, integer, integer, uuid) from public;
+revoke all on function public.reserve_audio_generation(uuid, uuid, integer, integer, uuid) from public, anon, authenticated;
 grant execute on function public.reserve_audio_generation(uuid, uuid, integer, integer, uuid) to service_role;
