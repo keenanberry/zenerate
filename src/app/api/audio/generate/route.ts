@@ -104,7 +104,7 @@ export async function POST(req: Request) {
 
   const run = await start(processAudioWorkflow, [
     meditationId,
-    voiceId ?? null,
+    typeof voiceId === "string" ? voiceId : null,
     reserve.eventId,
   ]);
 

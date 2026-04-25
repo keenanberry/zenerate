@@ -6,10 +6,6 @@ import { parseMeditationText } from "@/lib/meditation/parser";
 import { uploadAudio, updateMeditationStatus } from "./storage";
 import type { MeditationSegment, GenerationMeta } from "@/lib/meditation/types";
 
-// ---------------------------------------------------------------------------
-// Types for serializable data between steps
-// ---------------------------------------------------------------------------
-
 interface MeditationData {
   segments: MeditationSegment[];
   voiceId: string;
@@ -22,18 +18,17 @@ interface GenerationResult {
   meta: GenerationMeta;
 }
 
-// ---------------------------------------------------------------------------
-// Step 1: Fetch meditation from DB and parse into segments
-// ---------------------------------------------------------------------------
+function serviceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+}
 
 async function fetchAndParse(meditationId: string): Promise<MeditationData> {
   "use step";
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-
+  const supabase = serviceClient();
   const { data: meditation, error } = await supabase
     .from("meditations")
     .select("script, settings")
@@ -43,33 +38,23 @@ async function fetchAndParse(meditationId: string): Promise<MeditationData> {
   if (error || !meditation) {
     throw new FatalError(`Meditation not found: ${error?.message ?? "no data"}`);
   }
-
   if (!meditation.script) {
     throw new FatalError("Meditation has no script to process");
   }
 
   const segments = parseMeditationText(meditation.script);
-
   if (segments.length === 0) {
     throw new FatalError("No valid segments found in meditation script");
   }
 
   const settings = meditation.settings ?? {};
-
   return {
     segments,
-    voiceId: settings.voice ?? "EXAVITQu4vr4xnSDxMaL", // default: Sarah (calm, soothing)
+    voiceId: settings.voice ?? "EXAVITQu4vr4xnSDxMaL",
     backgroundMusic: settings.music ?? null,
     musicVolume: settings.volume ?? 0.15,
   };
 }
-
-// ---------------------------------------------------------------------------
-// Step 2: Run audio generation in Vercel Sandbox, then upload result
-//
-// Combined into a single step to avoid serializing large audio buffers
-// between steps. If this step fails, it retries from scratch (new sandbox).
-// ---------------------------------------------------------------------------
 
 async function generateAndUpload(
   meditationId: string,
@@ -85,7 +70,7 @@ async function generateAndUpload(
   const sandbox = await Sandbox.create({
     runtime: "node22",
     source: { type: "snapshot", snapshotId },
-    timeout: 5 * 60 * 1000, // 5 minutes
+    timeout: 5 * 60 * 1000,
   });
 
   try {
@@ -102,7 +87,6 @@ async function generateAndUpload(
     ]);
 
     const cmdResult = await sandbox.runCommand("node", ["generate-audio.js"]);
-
     if (cmdResult.exitCode !== 0) {
       const stderr = await cmdResult.stderr();
       throw new Error(`Audio generation failed (exit ${cmdResult.exitCode}): ${stderr}`);
@@ -134,38 +118,46 @@ async function generateAndUpload(
 
 generateAndUpload.maxRetries = 2;
 
-// ---------------------------------------------------------------------------
-// Step 3: Mark meditation as completed with the audio URL
-// ---------------------------------------------------------------------------
-
 async function finalize(
   meditationId: string,
   audioUrl: string,
   meta: GenerationMeta,
+  eventId: string | null,
 ): Promise<void> {
   "use step";
 
   await updateMeditationStatus(meditationId, "completed", audioUrl, meta);
+  if (eventId) {
+    const supabase = serviceClient();
+    await supabase
+      .from("audio_generation_events")
+      .update({ status: "completed", completed_at: new Date().toISOString() })
+      .eq("id", eventId);
+  }
 }
 
-// ---------------------------------------------------------------------------
-// Step: Mark meditation as failed
-// ---------------------------------------------------------------------------
-
-async function markFailed(meditationId: string, reason: string): Promise<void> {
+async function markFailed(
+  meditationId: string,
+  reason: string,
+  eventId: string | null,
+): Promise<void> {
   "use step";
 
   console.error(`Audio generation failed for ${meditationId}: ${reason}`);
   await updateMeditationStatus(meditationId, "failed");
+  if (eventId) {
+    const supabase = serviceClient();
+    await supabase
+      .from("audio_generation_events")
+      .update({ status: "failed", completed_at: new Date().toISOString() })
+      .eq("id", eventId);
+  }
 }
-
-// ---------------------------------------------------------------------------
-// Workflow: Orchestrate the full audio generation pipeline
-// ---------------------------------------------------------------------------
 
 export async function processAudioWorkflow(
   meditationId: string,
   voiceIdOverride: string | null = null,
+  eventId: string | null = null,
 ) {
   "use workflow";
 
@@ -175,10 +167,10 @@ export async function processAudioWorkflow(
       data.voiceId = voiceIdOverride;
     }
     const { audioUrl, meta } = await generateAndUpload(meditationId, data);
-    await finalize(meditationId, audioUrl, meta);
+    await finalize(meditationId, audioUrl, meta, eventId);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    await markFailed(meditationId, message);
+    await markFailed(meditationId, message, eventId);
     throw err;
   }
 }
