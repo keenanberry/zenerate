@@ -68,16 +68,22 @@ declare
   v_existing_retry uuid;
   v_year_month text := to_char(now(), 'YYYY-MM');
 begin
-  -- Serialize concurrent calls per user.
+  -- Two locks: a global one so the global-cap check is race-safe across
+  -- different users, plus a per-user lock for tighter serialization on the
+  -- per-user count. Both are released at transaction end.
+  perform pg_advisory_xact_lock(hashtext('audio_generation_global'));
   perform pg_advisory_xact_lock(hashtext(p_user_id::text));
 
   if p_retry_of is not null then
     -- Free-retry path: validate parent and ensure no existing retry yet.
-    select user_id, status into v_parent
+    select user_id, meditation_id, status into v_parent
       from public.audio_generation_events
       where id = p_retry_of;
 
-    if not found or v_parent.user_id <> p_user_id or v_parent.status <> 'failed' then
+    if not found
+       or v_parent.user_id <> p_user_id
+       or v_parent.meditation_id <> p_meditation_id
+       or v_parent.status <> 'failed' then
       raise exception 'invalid_retry'
         using errcode = 'P0001';
     end if;
@@ -126,9 +132,9 @@ begin
   end if;
 
   insert into public.audio_generation_events
-    (user_id, meditation_id, status)
+    (user_id, meditation_id, status, is_free_retry)
   values
-    (p_user_id, p_meditation_id, 'pending')
+    (p_user_id, p_meditation_id, 'pending', false)
   returning id into v_event_id;
 
   return v_event_id;
