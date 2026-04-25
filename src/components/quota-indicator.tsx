@@ -14,6 +14,7 @@ export async function QuotaIndicator() {
   const resetDate = new Date(usage.resetsAt).toLocaleDateString(undefined, {
     month: "long",
     day: "numeric",
+    timeZone: "UTC",
   });
 
   return (

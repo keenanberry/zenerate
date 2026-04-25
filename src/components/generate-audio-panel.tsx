@@ -36,6 +36,7 @@ export function GenerateAudioPanel({
   const resetDate = new Date(quota.resetsAt).toLocaleDateString(undefined, {
     month: "long",
     day: "numeric",
+    timeZone: "UTC",
   });
 
   async function submit() {
