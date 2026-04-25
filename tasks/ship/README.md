@@ -6,7 +6,7 @@ Work required before deploying Zenerate to real users. Tasks are ordered — low
 |---|---|---|---|
 | 01 | [Production Supabase project](./01-production-supabase.md) | Not started | Prereq for Vercel deploy |
 | 02 | [Vercel deploy setup](./02-vercel-deploy.md) | Not started | Requires public repo |
-| 03 | [Generation quota (3/month)](./03-generation-quota.md) | Not started | ElevenLabs cost protection |
+| 03 | [Generation quota (3/month)](./03-generation-quota.md) | Done | ElevenLabs cost protection |
 | 04 | [LLM duration constraints](./04-llm-duration-constraints.md) | Not started | Quality for long meditations |
 | 05 | [Sound effects library](./05-sound-effects-library.md) | Not started | Requires snapshot rebuild |
 | 06 | [Download button](./06-download-button.md) | Not started | Small lift |
