@@ -2,13 +2,10 @@
 
 import { useCallback, useState } from "react";
 import type { MeditationWithMeta, MeditationStatus } from "@/lib/meditation/types";
-import { GenerateAudioPanel } from "@/components/generate-audio-panel";
+import { GenerateAudioPanel, type QuotaProp } from "@/components/generate-audio-panel";
 import { AudioProcessingStatus } from "@/components/audio-processing-status";
 import { AudioPlayer } from "@/components/audio-player";
-import {
-  getMeditationStatus,
-  resetMeditationStatus,
-} from "@/lib/meditation/actions";
+import { getMeditationStatus } from "@/lib/meditation/actions";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, RotateCcw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,13 +13,20 @@ import { Card, CardContent } from "@/components/ui/card";
 interface AudioSectionProps {
   meditation: MeditationWithMeta;
   isOwner: boolean;
+  quota: QuotaProp;
+  freeRetryEventId: string | null;
 }
 
-export function AudioSection({ meditation, isOwner }: AudioSectionProps) {
+export function AudioSection({
+  meditation,
+  isOwner,
+  quota,
+  freeRetryEventId,
+}: AudioSectionProps) {
   const [status, setStatus] = useState<MeditationStatus>(meditation.status);
-  const [resetting, setResetting] = useState(false);
-
   const [audioUrl, setAudioUrl] = useState(meditation.audio_url);
+  const [retrying, setRetrying] = useState(false);
+  const [retryError, setRetryError] = useState<string | null>(null);
 
   const handleGenerationStarted = useCallback(() => {
     setStatus("processing_audio");
@@ -38,15 +42,28 @@ export function AudioSection({ meditation, isOwner }: AudioSectionProps) {
     setStatus("failed");
   }, []);
 
-  async function handleRetry() {
-    setResetting(true);
+  async function handleFreeRetry() {
+    if (!freeRetryEventId) return;
+    setRetrying(true);
+    setRetryError(null);
     try {
-      await resetMeditationStatus(meditation.id);
-      setStatus("script_ready");
-    } catch {
-      // stay in failed state
+      const res = await fetch("/api/audio/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          meditationId: meditation.id,
+          retryOfEventId: freeRetryEventId,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Failed to start retry");
+      }
+      setStatus("processing_audio");
+    } catch (err) {
+      setRetryError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
-      setResetting(false);
+      setRetrying(false);
     }
   }
 
@@ -74,19 +91,26 @@ export function AudioSection({ meditation, isOwner }: AudioSectionProps) {
           <div className="text-center">
             <p className="font-medium">Audio generation failed</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Something went wrong during processing. You can try again with the
-              same or a different voice.
+              Something went wrong during processing.
+              {freeRetryEventId
+                ? " You can retry once for free — it won't count against your monthly quota."
+                : " A free retry isn't available for this meditation."}
             </p>
           </div>
-          <Button
-            variant="outline"
-            className="gap-2"
-            onClick={handleRetry}
-            disabled={resetting}
-          >
-            <RotateCcw className="h-4 w-4" />
-            {resetting ? "Resetting..." : "Try Again"}
-          </Button>
+          {retryError && (
+            <p className="text-sm text-destructive">{retryError}</p>
+          )}
+          {freeRetryEventId && (
+            <Button
+              variant="default"
+              className="gap-2"
+              onClick={handleFreeRetry}
+              disabled={retrying}
+            >
+              <RotateCcw className="h-4 w-4" />
+              {retrying ? "Retrying..." : "Retry — free"}
+            </Button>
+          )}
         </CardContent>
       </Card>
     );
@@ -96,11 +120,11 @@ export function AudioSection({ meditation, isOwner }: AudioSectionProps) {
     return (
       <GenerateAudioPanel
         meditationId={meditation.id}
+        quota={quota}
         onStarted={handleGenerationStarted}
       />
     );
   }
 
-  // Non-owner viewing a script_ready meditation, or other states
   return null;
 }

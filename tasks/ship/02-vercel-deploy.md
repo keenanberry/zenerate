@@ -16,7 +16,7 @@ The app must be deployed to Vercel so users can access it. Vercel Workflow and S
 - [ ] Repo made public on GitHub
 - [ ] `vercel link` run locally to bind this repo to the Vercel project
 - [ ] Vercel project created and connected to the GitHub repo
-- [ ] All env vars set in Vercel (Production + Preview): Supabase keys, `ANTHROPIC_API_KEY`, `ELEVENLABS_API_KEY`, `AUDIO_SANDBOX_SNAPSHOT_ID`, `VERCEL_TOKEN`, `VERCEL_TEAM_ID`, `VERCEL_PROJECT_ID`
+- [ ] All env vars set in Vercel (Production + Preview): Supabase keys, `ANTHROPIC_API_KEY`, `ELEVENLABS_API_KEY`, `AUDIO_SANDBOX_SNAPSHOT_ID`, `VERCEL_TOKEN`, `VERCEL_TEAM_ID`, `VERCEL_PROJECT_ID`, `PER_USER_MONTHLY_AUDIO_LIMIT`, `MAX_GLOBAL_AUDIO_GENERATIONS_PER_MONTH`
 - [ ] Sandbox snapshot rebuilt against prod context if needed (should be same snapshot as dev)
 - [ ] First deploy succeeds and landing page loads
 - [ ] Sign up + sign in work in production

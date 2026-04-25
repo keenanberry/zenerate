@@ -1,7 +1,8 @@
 # Generation Quota (Audio)
 
-**Status:** Not started
+**Status:** Done
 **Priority:** Ship-blocker
+**Implementation:** Spec at `docs/superpowers/specs/2026-04-25-generation-quota-design.md`; plan at `docs/superpowers/plans/2026-04-25-generation-quota.md`. Branch `feat/generation-quota`.
 
 ## Why this blocks ship
 ElevenLabs TTS is the dominant per-meditation cost (~$0.30 for a typical meditation, more for long ones). Without a per-user monthly cap, a single curious or malicious user can run up hundreds of dollars in charges in minutes. Script generation (Anthropic) is cheap enough to not worry about yet.
