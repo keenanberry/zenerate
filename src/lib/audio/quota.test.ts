@@ -83,3 +83,56 @@ describe("getQuotaUsage", () => {
     ).rejects.toThrow(/db down/);
   });
 });
+
+import { isFreeRetryAvailable } from "./quota";
+
+function makeRetrySupabase(responses: Array<{ data: unknown; error: { message: string } | null }>) {
+  let call = 0;
+  return {
+    from: vi.fn().mockImplementation(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockImplementation(() => {
+        const next = responses[call] ?? { data: null, error: null };
+        call += 1;
+        return Promise.resolve(next);
+      }),
+    })),
+  };
+}
+
+describe("isFreeRetryAvailable", () => {
+  it("returns false when no events exist", async () => {
+    const supabase = makeRetrySupabase([{ data: null, error: null }]);
+    const result = await isFreeRetryAvailable("med-1", "user-1", supabase as never);
+    expect(result).toEqual({ available: false, eventId: null });
+  });
+
+  it("returns true with eventId when latest event is failed and has no retry", async () => {
+    const supabase = makeRetrySupabase([
+      { data: { id: "evt-1", status: "failed" }, error: null },
+      { data: null, error: null },
+    ]);
+    const result = await isFreeRetryAvailable("med-1", "user-1", supabase as never);
+    expect(result).toEqual({ available: true, eventId: "evt-1" });
+  });
+
+  it("returns false when latest event is not failed", async () => {
+    const supabase = makeRetrySupabase([
+      { data: { id: "evt-1", status: "completed" }, error: null },
+    ]);
+    const result = await isFreeRetryAvailable("med-1", "user-1", supabase as never);
+    expect(result).toEqual({ available: false, eventId: null });
+  });
+
+  it("returns false when failed event already has a retry", async () => {
+    const supabase = makeRetrySupabase([
+      { data: { id: "evt-1", status: "failed" }, error: null },
+      { data: { id: "evt-2" }, error: null },
+    ]);
+    const result = await isFreeRetryAvailable("med-1", "user-1", supabase as never);
+    expect(result).toEqual({ available: false, eventId: null });
+  });
+});

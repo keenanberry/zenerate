@@ -65,3 +65,45 @@ export async function getQuotaUsage(
     resetsAt: nextMonthFirstUtcIso(),
   };
 }
+
+export type FreeRetryStatus = {
+  available: boolean;
+  eventId: string | null;
+};
+
+export async function isFreeRetryAvailable(
+  meditationId: string,
+  userId: string,
+  supabase: SupabaseClient,
+): Promise<FreeRetryStatus> {
+  const { data: latest, error: latestError } = await supabase
+    .from("audio_generation_events")
+    .select("id, status")
+    .eq("meditation_id", meditationId)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (latestError) {
+    throw new Error(`Failed to read latest event: ${latestError.message}`);
+  }
+  if (!latest || latest.status !== "failed") {
+    return { available: false, eventId: null };
+  }
+
+  const { data: existingRetry, error: retryError } = await supabase
+    .from("audio_generation_events")
+    .select("id")
+    .eq("retry_of", latest.id)
+    .limit(1)
+    .maybeSingle();
+
+  if (retryError) {
+    throw new Error(`Failed to read retry events: ${retryError.message}`);
+  }
+  if (existingRetry) {
+    return { available: false, eventId: null };
+  }
+  return { available: true, eventId: latest.id };
+}
