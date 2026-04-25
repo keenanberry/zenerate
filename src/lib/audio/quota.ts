@@ -107,3 +107,41 @@ export async function isFreeRetryAvailable(
   }
   return { available: true, eventId: latest.id };
 }
+
+export type ReserveInput = {
+  userId: string;
+  meditationId: string;
+  retryOfEventId: string | null;
+};
+
+export type ReserveOutcome =
+  | { ok: true; eventId: string }
+  | { ok: false; reason: "quota_exceeded" | "global_cap_reached" | "invalid_retry" };
+
+const MAPPED_REASONS = new Set(["quota_exceeded", "global_cap_reached", "invalid_retry"]);
+
+export async function reserveAudioGeneration(
+  input: ReserveInput,
+  supabase: SupabaseClient,
+  config: QuotaConfig = getQuotaConfig(),
+): Promise<ReserveOutcome> {
+  const { data, error } = await supabase.rpc("reserve_audio_generation", {
+    p_user_id: input.userId,
+    p_meditation_id: input.meditationId,
+    p_per_user_cap: config.perUserCap,
+    p_global_cap: config.globalCap,
+    p_retry_of: input.retryOfEventId,
+  });
+
+  if (error) {
+    const reason = error.message?.trim();
+    if (reason && MAPPED_REASONS.has(reason)) {
+      return { ok: false, reason: reason as ReserveOutcome["reason"] };
+    }
+    throw new Error(`reserve_audio_generation failed: ${error.message}`);
+  }
+  if (typeof data !== "string") {
+    throw new Error("reserve_audio_generation returned non-string");
+  }
+  return { ok: true, eventId: data };
+}

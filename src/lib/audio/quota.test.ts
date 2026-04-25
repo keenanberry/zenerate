@@ -136,3 +136,69 @@ describe("isFreeRetryAvailable", () => {
     expect(result).toEqual({ available: false, eventId: null });
   });
 });
+
+import { reserveAudioGeneration } from "./quota";
+
+function makeRpcSupabase(rpcResult: { data: unknown; error: { message: string } | null }) {
+  return { rpc: vi.fn().mockResolvedValue(rpcResult) };
+}
+
+describe("reserveAudioGeneration", () => {
+  it("returns the new event id on success", async () => {
+    const supabase = makeRpcSupabase({ data: "evt-new", error: null });
+    const result = await reserveAudioGeneration(
+      { userId: "u", meditationId: "m", retryOfEventId: null },
+      supabase as never,
+      { perUserCap: 3, globalCap: 500 },
+    );
+    expect(result).toEqual({ ok: true, eventId: "evt-new" });
+    expect(supabase.rpc).toHaveBeenCalledWith("reserve_audio_generation", {
+      p_user_id: "u",
+      p_meditation_id: "m",
+      p_per_user_cap: 3,
+      p_global_cap: 500,
+      p_retry_of: null,
+    });
+  });
+
+  it("maps quota_exceeded", async () => {
+    const supabase = makeRpcSupabase({ data: null, error: { message: "quota_exceeded" } });
+    const result = await reserveAudioGeneration(
+      { userId: "u", meditationId: "m", retryOfEventId: null },
+      supabase as never,
+      { perUserCap: 3, globalCap: 500 },
+    );
+    expect(result).toEqual({ ok: false, reason: "quota_exceeded" });
+  });
+
+  it("maps global_cap_reached", async () => {
+    const supabase = makeRpcSupabase({ data: null, error: { message: "global_cap_reached" } });
+    const result = await reserveAudioGeneration(
+      { userId: "u", meditationId: "m", retryOfEventId: null },
+      supabase as never,
+      { perUserCap: 3, globalCap: 500 },
+    );
+    expect(result).toEqual({ ok: false, reason: "global_cap_reached" });
+  });
+
+  it("maps invalid_retry", async () => {
+    const supabase = makeRpcSupabase({ data: null, error: { message: "invalid_retry" } });
+    const result = await reserveAudioGeneration(
+      { userId: "u", meditationId: "m", retryOfEventId: "evt-x" },
+      supabase as never,
+      { perUserCap: 3, globalCap: 500 },
+    );
+    expect(result).toEqual({ ok: false, reason: "invalid_retry" });
+  });
+
+  it("rethrows unknown errors", async () => {
+    const supabase = makeRpcSupabase({ data: null, error: { message: "connection refused" } });
+    await expect(
+      reserveAudioGeneration(
+        { userId: "u", meditationId: "m", retryOfEventId: null },
+        supabase as never,
+        { perUserCap: 3, globalCap: 500 },
+      ),
+    ).rejects.toThrow(/connection refused/);
+  });
+});
