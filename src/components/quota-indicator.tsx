@@ -33,7 +33,7 @@ export async function QuotaIndicator() {
       </div>
       {exhausted && (
         <div className="mt-1 text-xs">
-          You've used your audio generations this month. You can still generate scripts.
+          You&apos;ve used your audio generations this month. You can still generate scripts.
         </div>
       )}
     </div>

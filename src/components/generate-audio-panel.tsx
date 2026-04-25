@@ -104,7 +104,7 @@ export function GenerateAudioPanel({
 
         {exhausted ? (
           <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
-            You've used all {quota.limit} audio generations this month. Resets {resetDate}.
+            You&apos;ve used all {quota.limit} audio generations this month. Resets {resetDate}.
           </div>
         ) : (
           <p className="text-xs text-muted-foreground">
