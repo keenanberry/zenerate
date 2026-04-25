@@ -19,3 +19,49 @@ export function getQuotaConfig(): QuotaConfig {
     globalCap: readPositiveInt("MAX_GLOBAL_AUDIO_GENERATIONS_PER_MONTH", 500),
   };
 }
+
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+export type QuotaUsage = {
+  used: number;
+  limit: number;
+  remaining: number;
+  resetsAt: string;
+};
+
+function currentYearMonth(): string {
+  const now = new Date();
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function nextMonthFirstUtcIso(): string {
+  const now = new Date();
+  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  return next.toISOString();
+}
+
+export async function getQuotaUsage(
+  userId: string,
+  supabase: SupabaseClient,
+  config: QuotaConfig = getQuotaConfig(),
+): Promise<QuotaUsage> {
+  const { count, error } = await supabase
+    .from("audio_generation_events")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("year_month", currentYearMonth())
+    .eq("is_free_retry", false)
+    .in("status", ["pending", "completed"]);
+
+  if (error) {
+    throw new Error(`Failed to read quota usage: ${error.message}`);
+  }
+
+  const used = count ?? 0;
+  return {
+    used,
+    limit: config.perUserCap,
+    remaining: Math.max(config.perUserCap - used, 0),
+    resetsAt: nextMonthFirstUtcIso(),
+  };
+}
