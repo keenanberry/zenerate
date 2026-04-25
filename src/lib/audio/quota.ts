@@ -136,7 +136,7 @@ export async function reserveAudioGeneration(
   if (error) {
     const reason = error.message?.trim();
     if (reason && MAPPED_REASONS.has(reason)) {
-      return { ok: false, reason: reason as ReserveOutcome["reason"] };
+      return { ok: false, reason: reason as Extract<ReserveOutcome, { ok: false }>["reason"] };
     }
     throw new Error(`reserve_audio_generation failed: ${error.message}`);
   }
