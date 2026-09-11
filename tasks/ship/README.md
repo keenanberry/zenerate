@@ -17,11 +17,11 @@ the repo goes public in task 09.
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 01 | [Secure the script generation endpoint](./01-secure-script-endpoint.md) | Not started | **Highest severity.** `/api/generate` has no auth and no quota |
-| 02 | [Audio URL lifetime & privacy](./02-audio-url-lifetime.md) | Not started | 1-year signed URLs that expire and leak private audio |
-| 03 | [Recalibrate generation quota](./03-recalibrate-quota.md) | Not started | Quota system is done; the cap is 17× too high. Needs 06 |
-| 04 | [Seed data prod guard](./04-seed-data-prod-guard.md) | Not started | Prevent test users reaching prod |
-| 05 | [CI pipeline](./05-ci-pipeline.md) | Not started | No `.github/` at all today |
+| 01 | [Secure the script generation endpoint](./01-secure-script-endpoint.md) | Done | **Highest severity.** `/api/generate` now requires auth and enforces its own quota |
+| 02 | [Audio URL lifetime & privacy](./02-audio-url-lifetime.md) | Done | Signed URLs are short-lived and minted at read time via an authorized hydrator, not stored |
+| 03 | [Recalibrate generation quota](./03-recalibrate-quota.md) | Done | Quota system is done; cap recalibrated to match the ElevenLabs Starter plan |
+| 04 | [Seed data prod guard](./04-seed-data-prod-guard.md) | Done | Seed data is local-only by convention and documented; test users kept out of prod |
+| 05 | [CI pipeline](./05-ci-pipeline.md) | Done | `.github/workflows/ci.yml` runs lint, typecheck, test, build on push/PR |
 
 ## Phase 1 — Accounts & deploy
 

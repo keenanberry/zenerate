@@ -6,8 +6,11 @@ alter table public.meditations add column audio_path text;
 
 -- Backfill from existing signed URLs. They look like:
 --   {base}/storage/v1/object/sign/meditation-audio/{path}?token=...
+-- nullif(...,'') turns a URL ending right at "/meditation-audio/" (empty
+-- path) into NULL rather than '', so it falls through to the conventional-path
+-- fallback below instead of being left with an unsignable empty string.
 update public.meditations
-set audio_path = split_part(split_part(audio_url, '/meditation-audio/', 2), '?', 1)
+set audio_path = nullif(split_part(split_part(audio_url, '/meditation-audio/', 2), '?', 1), '')
 where audio_url is not null
   and audio_url like '%/meditation-audio/%';
 

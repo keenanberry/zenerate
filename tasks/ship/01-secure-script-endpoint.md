@@ -1,6 +1,6 @@
 # Secure the Script Generation Endpoint
 
-**Status:** Not started
+**Status:** Done
 **Priority:** Ship-blocker — highest severity item on this list
 **Blocks:** 09 (do not make the repo public until this is done)
 

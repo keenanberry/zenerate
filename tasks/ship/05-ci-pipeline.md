@@ -1,6 +1,6 @@
 # CI Pipeline
 
-**Status:** Not started
+**Status:** Done
 **Priority:** Ship-blocker
 **Blocks:** 09 (should be green before the repo goes public)
 

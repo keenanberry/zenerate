@@ -1,6 +1,6 @@
 # Recalibrate Generation Quota
 
-**Status:** Not started
+**Status:** Done
 **Priority:** Ship-blocker
 **Depends on:** 06 (need the purchased ElevenLabs plan to derive from)
 **History:** The quota system itself is **done** — spec at `docs/superpowers/specs/2026-04-25-generation-quota-design.md`, plan at `docs/superpowers/plans/2026-04-25-generation-quota.md`, shipped in `0e7b15f`. This task only adjusts its calibration.

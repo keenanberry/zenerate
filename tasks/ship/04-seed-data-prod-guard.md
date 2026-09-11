@@ -1,6 +1,6 @@
 # Seed Data Prod Guard
 
-**Status:** Not started
+**Status:** Done
 **Priority:** Ship-blocker
 
 ## Why this blocks ship

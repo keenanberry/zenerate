@@ -37,6 +37,7 @@ This was discovered while verifying Phase 0 Task 3 (audio URL privacy). It is pr
 - [ ] Owner-only affordances stay hidden when signed out on a public page: visibility toggle, generate-audio panel, quota display, favourite, add-to-collection
 - [ ] The nav renders sensibly with no session — "Sign in" rather than "Sign out", no Library/Create links
 - [ ] `curl` the public meditation URL with no cookies and confirm a 200 with the meditation title in the HTML, so a crawler genuinely sees content
+- [ ] The anonymous audio path itself is verified end-to-end: `curl -sI` the signed audio URL returned for a public meditation with no session and confirm a 200. Phase 0 Task 3 (audio URL privacy) could not test its signed-out cases because anonymous visitors could not reach a meditation page at all before this task — that verification is inherited here, not assumed complete
 
 ## Implementation notes
 

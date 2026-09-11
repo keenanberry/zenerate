@@ -15,8 +15,19 @@ Users expect to save their generated meditations to listen offline on a phone (d
 - [ ] Download respects signed URL expiry (if storage is private) — server action refreshes URL if needed
 
 ## Implementation notes
-- If the `meditation-audio` bucket is public, a plain `<a href={audioUrl} download={filename}>` works.
-- If the bucket is private with signed URLs, the download link must be freshly signed; consider a route handler (`/api/meditation/[id]/download`) that generates a signed URL on demand and 302s to it.
+- The `meditation-audio` bucket stays **private** — see 02 and 07. Do not make it public to
+  simplify this; there are no `storage.objects` policies, and public access would undo the
+  privacy fix in task 02.
+- A download route must go through an **authorized fetch**, never by signing a path built
+  from a route param. `@/lib/audio/signed-url`'s `hydrateAudioUrl`/`hydrateAudioUrls` sign
+  with a service-role client and perform no authorization of their own — an ESLint rule
+  (`no-restricted-imports` in `eslint.config.mjs`) now restricts importing that module to
+  `src/lib/meditation/actions.ts` specifically because a naive `/api/audio/[id]/download`
+  that imported it directly and signed `${id}.mp3` from the URL would hand any caller any
+  user's private audio. Route the download through the same fetchers the six existing
+  callers use (e.g. call `getMeditation(id)` from `actions.ts`, which already returns a
+  freshly-signed `audio_url` after an RLS-bound row fetch) and redirect/stream from that,
+  rather than reaching into signed-url.ts from a new call site.
 - Slugify the meditation title to avoid weird characters in filenames. Lightweight slugify library or hand-rolled regex.
 - iOS Safari ignores `<a download>` for cross-origin URLs — route-handler + `Content-Disposition: attachment` header is the reliable approach.
 

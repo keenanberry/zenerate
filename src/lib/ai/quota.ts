@@ -22,9 +22,19 @@ function readPositiveInt(name: string, fallback: number): number {
 }
 
 /**
- * Script generation is ~$0.02 per call, so these caps are deliberately
- * generous. They exist to stop an open endpoint being used as a free Claude
- * proxy, not to ration the product.
+ * These caps are an abuse ceiling, not an expected-spend estimate -- derive
+ * them from the capped cost, not the average call.
+ *
+ *   maxOutputTokens: 8000 (src/app/api/generate/route.ts)
+ *   Sonnet output pricing -> ~$0.12 worst case per call
+ *   globalCap: 300 * $0.12 = ~$36/month worst-case exposure
+ *
+ * That is well above the project spec's "<$1/month Anthropic" line, which
+ * describes typical usage, not this ceiling. The gap is intentional: this
+ * cap exists to stop an open endpoint being used as a free Claude proxy,
+ * not to bound normal spend. Actual spend tracks real prompt/response
+ * lengths, which are far below the cap in ordinary use. Revisit the caps
+ * (not this comment) if worst-case exposure needs to come down.
  */
 export function getScriptQuotaConfig(): ScriptQuotaConfig {
   return {

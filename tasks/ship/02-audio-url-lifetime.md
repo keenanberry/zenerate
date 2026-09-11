@@ -1,6 +1,6 @@
 # Audio URL Lifetime & Privacy
 
-**Status:** Not started
+**Status:** Done
 **Priority:** Ship-blocker
 **Blocks:** 13 (download button needs to know whether URLs are signed on demand)
 

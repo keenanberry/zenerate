@@ -16,6 +16,14 @@
 - [ ] `sitemap.xml` via `src/app/sitemap.ts` listing the landing + any public discover content — static list is fine for v1
 
 ## Implementation notes
+- **`/meditation/[id]` must stay dynamically rendered and cookie-bound — do not make it
+  static or ISR.** The page embeds a signed audio URL with a 4-hour TTL
+  (`AUDIO_URL_TTL_SECONDS` in `src/lib/audio/signed-url.ts`) minted per-request from the
+  viewer's own RLS-bound fetch. Static or ISR rendering would bake one visitor's signed URL
+  into a cache shared across all viewers of that page — serving one user's private,
+  time-limited URL to everyone else, and then, once the 4-hour window passes, serving a
+  dead link to everyone until the next regeneration. `generateMetadata` for this route must
+  not change that render mode.
 - Next.js 16 metadata docs: https://nextjs.org/docs/app/api-reference/file-conventions/metadata — useful to verify latest API.
 - `metadataBase` should be set so relative OG image URLs resolve correctly in prod.
 - For public meditation pages, generate metadata via `generateMetadata({ params })` — fetch the meditation server-side and set `title`/`description` from its content. Guard for private meditations (return a generic "Private meditation" title or return `notFound()` pre-render).

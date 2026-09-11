@@ -11,7 +11,9 @@ Everything currently runs against local Supabase (`127.0.0.1:54321`). Production
 - [ ] Production Supabase project created
 - [ ] All migrations in `supabase/migrations/` applied (via `supabase db push` or linked project)
 - [ ] `meditation-audio` storage bucket exists with correct RLS/public-access config matching local
+- [ ] `meditation-audio` bucket is created **private**, with **no** `storage.objects` policies — matching local. Audio is served exclusively through short-lived signed URLs minted server-side (`hydrateAudioUrl`/`hydrateAudioUrls` in `src/lib/audio/signed-url.ts`) after an RLS-bound row fetch; a public bucket or any object policy would bypass that check entirely and make private meditations' audio link-accessible to anyone
 - [ ] Email auth enabled. **SMTP is task 08** — Supabase's built-in sender is rate-limited to a handful of emails/hour and is not intended for production; do not rely on it
+- [ ] Email confirmation **enabled** in production auth settings. `supabase/config.toml` has `enable_confirmations = false` for local dev convenience; left off in production, a single visitor can register unlimited unconfirmed accounts and use each one's per-user script generation cap (`PER_USER_MONTHLY_SCRIPT_LIMIT`) to farm well past the intended quota
 - [ ] Production `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` set in Vercel env vars
 - [ ] Redirect URLs (`/auth/callback`, reset password return URL) configured in Supabase auth settings for the production domain
 - [ ] Smoke test: sign up, sign in, create a meditation against prod DB
