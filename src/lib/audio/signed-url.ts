@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient as createServiceClient } from "@/lib/supabase/service-role";
 
 const BUCKET = "meditation-audio";
 
@@ -15,17 +16,13 @@ export const AUDIO_URL_TTL_SECONDS = 4 * 60 * 60;
  * failure -- callers render a "no audio" state rather than a broken player,
  * and a missing object should not take down the page.
  *
- * SECURITY INVARIANT: this function performs NO authorization of its own.
- * `storage.objects` has no RLS policies for the meditation-audio bucket, so
- * in practice `supabase` must be a service-role client -- an RLS-bound
- * client will fail to sign anything, including the caller's own audio.
- * Because signing bypasses RLS entirely, the caller is responsible for
- * having already verified that whoever will receive this URL is entitled to
- * `path` (e.g. `path` came from a meditation row fetched through an
- * RLS-bound client). Sign a path obtained any other way and you will hand
- * out someone else's private audio.
+ * NOT EXPORTED. This performs no authorization of its own -- it signs
+ * whatever path it is handed with whatever client it is handed. The only
+ * callers are hydrateAudioUrl / hydrateAudioUrls below, which are the sole
+ * exports of this module and the only supported way to mint an audio URL.
+ * See their doc comments for the authorization invariant this relies on.
  */
-export async function signAudioUrl(
+async function signAudioUrl(
   path: string | null,
   supabase: SupabaseClient,
 ): Promise<string | null> {
@@ -47,13 +44,9 @@ export async function signAudioUrl(
  * List views render dozens of meditations; signing them individually would be
  * one network call each.
  *
- * SECURITY INVARIANT: same as signAudioUrl -- no authorization happens here.
- * `supabase` must be a service-role client (storage.objects has no RLS
- * policies for this bucket), and every path passed in must already have
- * been authorized by an RLS-bound row fetch. This function will sign
- * whatever path it is given.
+ * NOT EXPORTED -- see signAudioUrl above.
  */
-export async function signAudioUrls(
+async function signAudioUrls(
   paths: Array<string | null>,
   supabase: SupabaseClient,
 ): Promise<Array<string | null>> {
@@ -77,4 +70,41 @@ export async function signAudioUrls(
   }
 
   return paths.map((p) => (p ? byPath.get(p) ?? null : null));
+}
+
+/**
+ * Rows come back with audio_path; every consumer expects audio_url. Sign the
+ * path into a short-lived URL so client components need no changes.
+ *
+ * SECURITY INVARIANT: signs with an internally-constructed service-role
+ * client, which performs NO authorization of its own -- storage.objects has
+ * no RLS policies for the meditation-audio bucket, so a service-role
+ * signature is the only kind that succeeds. Because this function cannot
+ * check who is entitled to `row`, the authorization check must already have
+ * happened when `row` was fetched -- through an RLS-bound client (e.g.
+ * `createClient()` from "@/lib/supabase/server"). If that query returned the
+ * row, the caller is entitled to see it. Only ever call this on a row that
+ * came from such a fetch. Hydrating a row obtained any other way (a route
+ * param, a client component, a hand-built object) skips that check entirely
+ * and will hand out another user's private audio.
+ *
+ * This is why signAudioUrl/signAudioUrls above are not exported, and why
+ * `@/lib/audio/signed-url` is restricted (see eslint.config.mjs) to
+ * `src/lib/meditation/actions.ts`, the one module whose every call site
+ * fetches the row through an RLS-bound client first.
+ */
+export async function hydrateAudioUrl<T extends { audio_path?: string | null }>(
+  row: T,
+): Promise<T & { audio_url: string | null }> {
+  const supabase = createServiceClient();
+  return { ...row, audio_url: await signAudioUrl(row.audio_path ?? null, supabase) };
+}
+
+/** See hydrateAudioUrl -- same invariant: hydrate only rows already authorized by an RLS-bound fetch. */
+export async function hydrateAudioUrls<T extends { audio_path?: string | null }>(
+  rows: T[],
+): Promise<Array<T & { audio_url: string | null }>> {
+  const supabase = createServiceClient();
+  const urls = await signAudioUrls(rows.map((r) => r.audio_path ?? null), supabase);
+  return rows.map((row, i) => ({ ...row, audio_url: urls[i] }));
 }

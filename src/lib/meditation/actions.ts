@@ -1,46 +1,14 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { createClient as createServiceClient } from "@/lib/supabase/service-role";
 import { revalidatePath } from "next/cache";
-import { signAudioUrl, signAudioUrls } from "@/lib/audio/signed-url";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { hydrateAudioUrl, hydrateAudioUrls } from "@/lib/audio/signed-url";
 import type {
   Meditation,
   MeditationWithMeta,
   Collection,
   CollectionWithCount,
 } from "./types";
-
-/**
- * Rows come back with audio_path; every consumer expects audio_url. Sign the
- * path into a short-lived URL so client components need no changes.
- *
- * SECURITY INVARIANT: signs with the service-role client, which performs NO
- * authorization of its own -- storage.objects has no RLS policies for the
- * meditation-audio bucket, so a service-role signature is the only kind that
- * succeeds. The authorization check already happened when `row` was fetched
- * through the RLS-bound `createClient()` from "@/lib/supabase/server": if
- * that query returned the row, the caller is entitled to see it. Only ever
- * call this on a row that came from such a fetch. Signing a path obtained
- * any other way (a route handler, a client component, a hand-built object)
- * skips that check entirely and will hand out another user's private audio.
- */
-async function hydrateAudioUrl<T extends { audio_path?: string | null }>(
-  row: T,
-  supabase: SupabaseClient,
-): Promise<T & { audio_url: string | null }> {
-  return { ...row, audio_url: await signAudioUrl(row.audio_path ?? null, supabase) };
-}
-
-/** See hydrateAudioUrl -- same invariant: sign only rows already authorized by an RLS-bound fetch. */
-async function hydrateAudioUrls<T extends { audio_path?: string | null }>(
-  rows: T[],
-  supabase: SupabaseClient,
-): Promise<Array<T & { audio_url: string | null }>> {
-  const urls = await signAudioUrls(rows.map((r) => r.audio_path ?? null), supabase);
-  return rows.map((row, i) => ({ ...row, audio_url: urls[i] }));
-}
 
 // ── Meditations ──
 
@@ -125,7 +93,7 @@ export async function getMeditation(id: string) {
     meditation.is_favorited = !!fav;
   }
 
-  return hydrateAudioUrl(meditation, createServiceClient());
+  return hydrateAudioUrl(meditation);
 }
 
 export async function getUserMeditations() {
@@ -155,7 +123,7 @@ export async function getUserMeditations() {
     m.is_favorited = favSet.has(m.id);
   });
 
-  return hydrateAudioUrls(meditations, createServiceClient());
+  return hydrateAudioUrls(meditations);
 }
 
 export async function getPublicMeditations(search?: string) {
@@ -193,7 +161,7 @@ export async function getPublicMeditations(search?: string) {
     });
   }
 
-  return hydrateAudioUrls(meditations, createServiceClient());
+  return hydrateAudioUrls(meditations);
 }
 
 
@@ -206,9 +174,10 @@ export async function getMeditationStatus(id: string) {
     .single();
 
   if (error) throw new Error(error.message);
+  const { audio_url } = await hydrateAudioUrl(data);
   return {
     status: data.status as string,
-    audio_url: await signAudioUrl(data.audio_path, createServiceClient()),
+    audio_url,
   };
 }
 
@@ -272,7 +241,7 @@ export async function getFavoriteMeditations() {
   const idOrder = new Map(ids.map((id, i) => [id, i]));
   meditations.sort((a, b) => (idOrder.get(a.id) ?? 0) - (idOrder.get(b.id) ?? 0));
 
-  return hydrateAudioUrls(meditations, createServiceClient());
+  return hydrateAudioUrls(meditations);
 }
 
 // ── Collections ──
@@ -377,7 +346,7 @@ export async function getCollectionWithItems(id: string) {
 
   return {
     collection: collection as Collection,
-    meditations: await hydrateAudioUrls(meditations, createServiceClient()),
+    meditations: await hydrateAudioUrls(meditations),
   };
 }
 

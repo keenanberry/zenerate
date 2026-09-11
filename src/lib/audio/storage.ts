@@ -19,7 +19,8 @@ function createServiceClient() {
  *
  * Deliberately not a URL: a signed URL is a bearer token that bypasses
  * is_public and RLS, and one with a useful lifetime eventually expires.
- * Sign at read time with signAudioUrl / signAudioUrls instead.
+ * Sign at read time with hydrateAudioUrl / hydrateAudioUrls instead
+ * (see src/lib/audio/signed-url.ts).
  */
 export async function uploadAudio(
   meditationId: string,
