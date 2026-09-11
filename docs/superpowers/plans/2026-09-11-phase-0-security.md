@@ -1224,7 +1224,7 @@ supabase db reset              # applies migrations + seed data — LOCAL ONLY, 
 
 Add below the code block in both files:
 
-> **Never run `supabase db reset` against a linked production project.** It drops all data and applies `supabase/seed.sql`, which creates test accounts with a known password. Production migrations go out with `supabase db push`, which never runs seeds.
+> **Never run `supabase db reset` against a linked production project.** It drops all data and applies `supabase/seed.sql`, which creates test accounts with a known password. Production migrations go out with `supabase db push`, which applies migrations only by default — never pass `--include-seed` against a linked production project, or it will apply this same file.
 
 - [ ] **Step 5: Commit**
 
