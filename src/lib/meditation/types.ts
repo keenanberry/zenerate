@@ -18,7 +18,10 @@ export interface Meditation {
   title: string;
   prompt: string;
   script: string | null;
+  /** Short-lived signed URL, minted server-side at read time. Never persisted. */
   audio_url: string | null;
+  /** Storage path within the meditation-audio bucket. This is what the DB holds. */
+  audio_path?: string | null;
   status: MeditationStatus;
   is_public: boolean;
   settings: MeditationSettings;

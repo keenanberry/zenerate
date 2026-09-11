@@ -2,12 +2,33 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { signAudioUrl, signAudioUrls } from "@/lib/audio/signed-url";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   Meditation,
   MeditationWithMeta,
   Collection,
   CollectionWithCount,
 } from "./types";
+
+/**
+ * Rows come back with audio_path; every consumer expects audio_url. Sign the
+ * path into a short-lived URL so client components need no changes.
+ */
+async function hydrateAudioUrl<T extends { audio_path?: string | null }>(
+  row: T,
+  supabase: SupabaseClient,
+): Promise<T & { audio_url: string | null }> {
+  return { ...row, audio_url: await signAudioUrl(row.audio_path ?? null, supabase) };
+}
+
+async function hydrateAudioUrls<T extends { audio_path?: string | null }>(
+  rows: T[],
+  supabase: SupabaseClient,
+): Promise<Array<T & { audio_url: string | null }>> {
+  const urls = await signAudioUrls(rows.map((r) => r.audio_path ?? null), supabase);
+  return rows.map((row, i) => ({ ...row, audio_url: urls[i] }));
+}
 
 // ── Meditations ──
 
@@ -92,7 +113,7 @@ export async function getMeditation(id: string) {
     meditation.is_favorited = !!fav;
   }
 
-  return meditation;
+  return hydrateAudioUrl(meditation, supabase);
 }
 
 export async function getUserMeditations() {
@@ -122,7 +143,7 @@ export async function getUserMeditations() {
     m.is_favorited = favSet.has(m.id);
   });
 
-  return meditations;
+  return hydrateAudioUrls(meditations, supabase);
 }
 
 export async function getPublicMeditations(search?: string) {
@@ -160,7 +181,7 @@ export async function getPublicMeditations(search?: string) {
     });
   }
 
-  return meditations;
+  return hydrateAudioUrls(meditations, supabase);
 }
 
 
@@ -168,12 +189,15 @@ export async function getMeditationStatus(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("meditations")
-    .select("status, audio_url")
+    .select("status, audio_path")
     .eq("id", id)
     .single();
 
   if (error) throw new Error(error.message);
-  return data as { status: string; audio_url: string | null };
+  return {
+    status: data.status as string,
+    audio_url: await signAudioUrl(data.audio_path, supabase),
+  };
 }
 
 // ── Favorites ──
@@ -236,7 +260,7 @@ export async function getFavoriteMeditations() {
   const idOrder = new Map(ids.map((id, i) => [id, i]));
   meditations.sort((a, b) => (idOrder.get(a.id) ?? 0) - (idOrder.get(b.id) ?? 0));
 
-  return meditations;
+  return hydrateAudioUrls(meditations, supabase);
 }
 
 // ── Collections ──
@@ -339,7 +363,10 @@ export async function getCollectionWithItems(id: string) {
     .map((item) => (item as Record<string, unknown>).meditation as Meditation)
     .filter(Boolean);
 
-  return { collection: collection as Collection, meditations };
+  return {
+    collection: collection as Collection,
+    meditations: await hydrateAudioUrls(meditations, supabase),
+  };
 }
 
 export async function getMeditationCollectionIds(meditationId: string) {

@@ -15,7 +15,11 @@ function createServiceClient() {
 }
 
 /**
- * Upload an MP3 buffer to Supabase Storage and return a signed URL.
+ * Upload an MP3 buffer to Supabase Storage and return its storage PATH.
+ *
+ * Deliberately not a URL: a signed URL is a bearer token that bypasses
+ * is_public and RLS, and one with a useful lifetime eventually expires.
+ * Sign at read time with signAudioUrl / signAudioUrls instead.
  */
 export async function uploadAudio(
   meditationId: string,
@@ -35,24 +39,16 @@ export async function uploadAudio(
     throw new Error(`Storage upload failed: ${uploadError.message}`);
   }
 
-  const { data, error: urlError } = await supabase.storage
-    .from(BUCKET)
-    .createSignedUrl(filePath, 60 * 60 * 24 * 365); // 1 year
-
-  if (urlError || !data?.signedUrl) {
-    throw new Error(`Signed URL creation failed: ${urlError?.message}`);
-  }
-
-  return data.signedUrl;
+  return filePath;
 }
 
 /**
- * Update a meditation record's status and optional audio_url / generation_meta.
+ * Update a meditation record's status and optional audio_path / generation_meta.
  */
 export async function updateMeditationStatus(
   meditationId: string,
   status: string,
-  audioUrl?: string,
+  audioPath?: string,
   generationMeta?: GenerationMeta,
 ): Promise<void> {
   const supabase = createServiceClient();
@@ -61,8 +57,8 @@ export async function updateMeditationStatus(
     status,
     updated_at: new Date().toISOString(),
   };
-  if (audioUrl !== undefined) {
-    update.audio_url = audioUrl;
+  if (audioPath !== undefined) {
+    update.audio_path = audioPath;
   }
   if (generationMeta !== undefined) {
     update.generation_meta = generationMeta;
