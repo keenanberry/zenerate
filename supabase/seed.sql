@@ -1,3 +1,15 @@
+-- ############################################################
+-- #  LOCAL DEVELOPMENT ONLY -- NEVER APPLY TO PRODUCTION     #
+-- #                                                          #
+-- #  Creates test users with the password "password123".     #
+-- #  Applied by `supabase db reset`, which also DROPS all    #
+-- #  existing data. Production uses `supabase db push`,      #
+-- #  which applies migrations only and never runs this file. #
+-- #                                                          #
+-- #  If you are pointed at a linked production project,      #
+-- #  `db reset` will destroy real user data.                 #
+-- ############################################################
+
 -- Seed data for local development
 -- Creates 2 test users and a variety of meditations, collections, and favorites
 
