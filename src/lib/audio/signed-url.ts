@@ -14,6 +14,16 @@ export const AUDIO_URL_TTL_SECONDS = 4 * 60 * 60;
  * Sign a single storage path. Returns null on a null path or a signing
  * failure -- callers render a "no audio" state rather than a broken player,
  * and a missing object should not take down the page.
+ *
+ * SECURITY INVARIANT: this function performs NO authorization of its own.
+ * `storage.objects` has no RLS policies for the meditation-audio bucket, so
+ * in practice `supabase` must be a service-role client -- an RLS-bound
+ * client will fail to sign anything, including the caller's own audio.
+ * Because signing bypasses RLS entirely, the caller is responsible for
+ * having already verified that whoever will receive this URL is entitled to
+ * `path` (e.g. `path` came from a meditation row fetched through an
+ * RLS-bound client). Sign a path obtained any other way and you will hand
+ * out someone else's private audio.
  */
 export async function signAudioUrl(
   path: string | null,
@@ -36,6 +46,12 @@ export async function signAudioUrl(
  * Sign many paths in one round trip, preserving input order and null slots.
  * List views render dozens of meditations; signing them individually would be
  * one network call each.
+ *
+ * SECURITY INVARIANT: same as signAudioUrl -- no authorization happens here.
+ * `supabase` must be a service-role client (storage.objects has no RLS
+ * policies for this bucket), and every path passed in must already have
+ * been authorized by an RLS-bound row fetch. This function will sign
+ * whatever path it is given.
  */
 export async function signAudioUrls(
   paths: Array<string | null>,
