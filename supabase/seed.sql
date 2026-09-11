@@ -3,8 +3,12 @@
 -- #                                                          #
 -- #  Creates test users with the password "password123".     #
 -- #  Applied by `supabase db reset`, which also DROPS all    #
--- #  existing data. Production uses `supabase db push`,      #
--- #  which applies migrations only and never runs this file. #
+-- #  existing data.                                          #
+-- #                                                          #
+-- #  Production uses `supabase db push`, which applies       #
+-- #  migrations only by default. Never pass --include-seed   #
+-- #  against a linked production project -- it will apply    #
+-- #  this file too.                                          #
 -- #                                                          #
 -- #  If you are pointed at a linked production project,      #
 -- #  `db reset` will destroy real user data.                 #
