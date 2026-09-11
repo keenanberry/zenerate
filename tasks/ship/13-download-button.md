@@ -2,6 +2,7 @@
 
 **Status:** Not started
 **Priority:** Ship-blocker
+**Depends on:** 02 (audio URL strategy decides whether this needs a signing route)
 
 ## Why this blocks ship
 Users expect to save their generated meditations to listen offline on a phone (during a plane ride, a commute without signal, a walk). Without a download button, the product feels incomplete for its primary use case.

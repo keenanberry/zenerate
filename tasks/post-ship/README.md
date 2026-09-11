@@ -13,4 +13,7 @@ Work that's out of scope for initial ship but tracked for the next cycle. No ord
 | [Analytics](./analytics.md) | Usage + conversion funnel tracking |
 | [Error tracking](./error-tracking.md) | Sentry or similar for production visibility |
 
-See `docs/ui-roadmap.md` for additional UX-focused improvements.
+See `docs/ui-roadmap.md` for additional UX-focused improvements, and
+`docs/superpowers/specs/2026-09-11-go-live-design.md` for what was deliberately
+deferred here at launch — notably offline playback and web push, which both need a
+service worker and are unlocked by the PWA work in `tasks/ship/24`.

@@ -11,7 +11,7 @@
 - [ ] Verify `supabase db push` (migration-only) does NOT run seeds — it shouldn't, but confirm
 - [ ] Consider splitting: keep schema/data needed for prod in migrations, keep only demo fixtures in `seed.sql`
 - [ ] Ensure there's no code path where production DB could accidentally pick up seed data (GitHub Action, deploy hook, etc.) — audit and document
-- [ ] Test account credentials (`password123`) must not work in production — since seed never runs there, this is automatic, but verify after task 01 that these accounts don't exist in prod DB
+- [ ] Test account credentials (`password123`) must not work in production — since seed never runs there, this is automatic, but verify after task 07 that these accounts don't exist in prod DB
 - [ ] Add a warning comment at the top of `seed.sql`: "Local dev only — never apply to production"
 
 ## Implementation notes

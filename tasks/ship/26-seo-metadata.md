@@ -4,12 +4,12 @@
 **Priority:** Ship-blocker
 
 ## Why this blocks ship
-The root layout has no `metadata` export, so the landing page shows up as "Next.js App" or similar default in search results and social shares. First impressions on Twitter, Slack, iMessage previews all look broken.
+`src/app/layout.tsx:19` now exports a basic `metadata` with title and description, but there is no `metadataBase`, no `openGraph` block, no OG image, no `robots.txt` and no sitemap. Social shares on Twitter, Slack and iMessage render as bare links.
 
 ## Acceptance criteria
-- [ ] `src/app/layout.tsx` exports a `metadata: Metadata` with `title`, `description`, and a default `openGraph` object
-- [ ] A static Open Graph image at `public/og-image.png` (1200×630) — simple branded image, hand-designed or generated
-- [ ] Favicon verified (already exists — spot-check in a browser)
+- [ ] `src/app/layout.tsx` metadata extended with `metadataBase` (from `NEXT_PUBLIC_SITE_URL`) and a default `openGraph` object — title and description already exist
+- [ ] Open Graph image wired into metadata — the 1200×630 image itself is produced by task 23
+- [ ] Favicon verified — note `src/app/favicon.ico` is still the Next.js default; the real icon set comes from task 23
 - [ ] Twitter card type set to `summary_large_image`
 - [ ] Per-page overrides where it matters: landing (`/`), discover (`/discover`), public meditation pages (`/meditation/[id]` when `is_public`) — dynamic title = meditation title
 - [ ] `robots.txt` (static in `public/` or via `src/app/robots.ts`) allowing crawl of marketing + public pages, disallowing authed routes

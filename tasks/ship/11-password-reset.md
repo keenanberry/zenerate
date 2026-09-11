@@ -12,7 +12,7 @@ Any user who forgets their password is permanently locked out — there's no rec
 - [ ] "Forgot password?" link visible on the `/login` page
 - [ ] Email template configured in Supabase (production project) with the correct redirect URL
 - [ ] End-to-end test in dev: request reset → receive email (Supabase local inbucket on `http://127.0.0.1:54324`) → click link → land on reset page → set new password → sign in with new password
-- [ ] Same E2E test verified in production after task 01/02 complete
+- [ ] Same E2E test verified in production after tasks 07, 08 and 09 complete
 - [ ] Rate limiting on the reset request endpoint (Supabase default may be enough — verify)
 
 ## Implementation notes
