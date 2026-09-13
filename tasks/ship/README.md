@@ -45,6 +45,7 @@ the repo goes public in task 09.
 | 16 | [LLM duration constraints](./16-llm-duration-constraints.md) | Not started | Sequence after 18 |
 | 17 | [Sound effects library](./17-sound-effects-library.md) | Not started | Requires snapshot rebuild |
 | 18 | [Script model upgrade](./18-script-model-upgrade.md) | Not started | `claude-sonnet-5` is newer *and* cheaper than the pinned 4-6 |
+| 18c | [ESLint import restriction bypassed by relative paths](https://github.com/keenanberry/zenerate/issues/3) | Not started | Pre-ship. The rule guarding the audio-signing invariant matches literal specifier text; a relative import slips past |
 | 18b | [Public content unreachable signed out](./18b-public-content-signed-out.md) | Not started | Found during Phase 0. `(app)/layout.tsx` redirects every anon visitor, so /discover and public meditations are login-walled |
 
 > **If you need to launch sooner, this is the phase to cut.** 14 and 15 are genuinely
