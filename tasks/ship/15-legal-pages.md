@@ -27,10 +27,11 @@ placeholder, and it changes three things:
 - **Make the Terms assignable.** If this ever becomes an LLC, an assignment clause means
   the agreement transfers instead of every user needing to re-accept.
 
-**One decision still needed before writing:** a privacy policy legally requires a contact
-address for data requests, and it will be published. A personal or work address is
-probably not the right one — consider a dedicated address on `zeneratestudio.com` once
-task 09 lands. This is the only thing blocking this task.
+**One decision still needed before writing:** the privacy policy must publish a contact
+**email address** for data requests. Using a personal or work inbox puts a private address
+on a public page and ties the policy to one person's account — prefer a project address
+like `privacy@zeneratestudio.com`, which needs the domain from task 09. That is the only
+thing blocking this task.
 
 ## Implementation notes
 - For a v1 ship with low user count, a template-based policy (Termly, Iubenda free tier, or a hand-adapted open-source template) is fine. Avoid just copying another app's terms verbatim.
