@@ -57,7 +57,7 @@ practice it mostly doesn't:
 | 12 toasts | No |
 | 13 download button | No — its blocker (task 02) is done |
 | 14 error boundaries | No |
-| 15 legal pages | No. One question for you: are you an LLC or is this personal? That decides who "we" is in the terms |
+| 15 legal pages | No. **Resolved 2026-09-14: personal project, no entity.** One thing still blocks writing it — the privacy policy needs a published contact address for data requests, and a personal address is probably wrong. Wants a dedicated address on the domain (task 09) |
 | 16 duration constraints | No |
 | **17 sound effects** | **Yes.** `scripts/create-sandbox-snapshot.ts` calls `Sandbox.create()`, which needs Vercel auth — a linked Vercel project. Needs task 09 to at least have run `vercel link` |
 | 18 model upgrade | No — its blocker (task 01) is done |
