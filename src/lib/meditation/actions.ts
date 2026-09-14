@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { hydrateAudioUrl, hydrateAudioUrls } from "@/lib/audio/signed-url";
 import type {
   Meditation,
   MeditationWithMeta,
@@ -92,7 +93,7 @@ export async function getMeditation(id: string) {
     meditation.is_favorited = !!fav;
   }
 
-  return meditation;
+  return hydrateAudioUrl(meditation);
 }
 
 export async function getUserMeditations() {
@@ -122,7 +123,7 @@ export async function getUserMeditations() {
     m.is_favorited = favSet.has(m.id);
   });
 
-  return meditations;
+  return hydrateAudioUrls(meditations);
 }
 
 export async function getPublicMeditations(search?: string) {
@@ -160,7 +161,7 @@ export async function getPublicMeditations(search?: string) {
     });
   }
 
-  return meditations;
+  return hydrateAudioUrls(meditations);
 }
 
 
@@ -168,12 +169,16 @@ export async function getMeditationStatus(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("meditations")
-    .select("status, audio_url")
+    .select("status, audio_path")
     .eq("id", id)
     .single();
 
   if (error) throw new Error(error.message);
-  return data as { status: string; audio_url: string | null };
+  const { audio_url } = await hydrateAudioUrl(data);
+  return {
+    status: data.status as string,
+    audio_url,
+  };
 }
 
 // ── Favorites ──
@@ -236,7 +241,7 @@ export async function getFavoriteMeditations() {
   const idOrder = new Map(ids.map((id, i) => [id, i]));
   meditations.sort((a, b) => (idOrder.get(a.id) ?? 0) - (idOrder.get(b.id) ?? 0));
 
-  return meditations;
+  return hydrateAudioUrls(meditations);
 }
 
 // ── Collections ──
@@ -339,7 +344,10 @@ export async function getCollectionWithItems(id: string) {
     .map((item) => (item as Record<string, unknown>).meditation as Meditation)
     .filter(Boolean);
 
-  return { collection: collection as Collection, meditations };
+  return {
+    collection: collection as Collection,
+    meditations: await hydrateAudioUrls(meditations),
+  };
 }
 
 export async function getMeditationCollectionIds(meditationId: string) {

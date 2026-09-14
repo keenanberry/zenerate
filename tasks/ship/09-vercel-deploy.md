@@ -2,7 +2,7 @@
 
 **Status:** Not started
 **Priority:** Ship-blocker
-**Depends on:** 01 (prod Supabase for env vars)
+**Depends on:** 07 (prod Supabase for env vars), 08 (email)
 
 ## Why this blocks ship
 The app must be deployed to Vercel so users can access it. Vercel Workflow and Sandbox also only run in Vercel's environment — local dev can invoke them, but durable production orchestration needs a deployed app.
@@ -21,7 +21,9 @@ The app must be deployed to Vercel so users can access it. Vercel Workflow and S
 - [ ] First deploy succeeds and landing page loads
 - [ ] Sign up + sign in work in production
 - [ ] End-to-end: create meditation → generate script → generate audio → play audio all work in prod
-- [ ] Custom domain linked (if applicable)
+- [ ] `zeneratestudio.com` registered and linked as the custom domain
+- [ ] `NEXT_PUBLIC_SITE_URL=https://zeneratestudio.com` set in Vercel (Production) and in `.env.example`
+- [ ] Supabase auth redirect allowlist updated for the production domain (ties to task 07)
 
 ## Implementation notes
 - `.gitignore` already excludes `.env.local` — verify with `git log --all -- .env.local`.
@@ -29,5 +31,9 @@ The app must be deployed to Vercel so users can access it. Vercel Workflow and S
 - Vercel Workflow requires the `workflow` package config to match the deploy. Verify it ships cleanly.
 - Add `NEXT_PUBLIC_SITE_URL` or equivalent if any code constructs absolute URLs (check email reset URL generation once task 08 is in).
 
+## Resolved
+**Sandbox capacity on Hobby is not a constraint.** Hobby includes 5 Active-CPU-hours/month, 420 GB-hours provisioned memory, 5,000 creations, 10 concurrent sandboxes, and a 45-minute max session. Our sandbox runs 2 vCPU for ~5 minutes and is mostly I/O-wait on ElevenLabs, which is not billed as Active CPU. That works out to roughly 300 generations/month — about 10x the ElevenLabs Starter ceiling of ~32. ElevenLabs runs dry long before Vercel does. Exceeding Hobby quotas pauses sandbox creation rather than incurring charges.
+
 ## Open questions
-- Does the Vercel team plan support concurrent sandboxes at expected load?
+- **Vercel Workflow plan gating is unconfirmed.** The `workflow` package is at `^4.1.0-beta.60`; whether durable workflows run on Hobby was not verified. Check on first deploy — if it needs Pro, that changes the cost model.
+- Vercel Hobby prohibits commercial use. Fine while the app is free; the post-ship paid tier would require Vercel Pro.

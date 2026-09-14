@@ -23,12 +23,14 @@ cp .env.example .env.local
 # Start Supabase (requires Docker)
 supabase start
 
-# Reset DB with seed data
+# Reset DB with seed data — LOCAL ONLY, destroys all data
 supabase db reset
 
 # Start the dev server
 npm run dev
 ```
+
+> **Never run `supabase db reset` against a linked production project.** It drops all data and applies `supabase/seed.sql`, which creates test accounts with a known password. Production migrations go out with `supabase db push`, which applies migrations only by default — never pass `--include-seed` against a linked production project, or it will apply this same file.
 
 Sign in with a test account: `alice@example.com` / `password123`
 
@@ -148,7 +150,7 @@ npx sandbox snapshots delete <snapshot_id_1> <snapshot_id_2>
 Migrations live in `supabase/migrations/`. Apply them with:
 
 ```bash
-supabase db reset    # resets and re-applies all migrations + seed data
+supabase db reset    # resets and re-applies all migrations + seed data — LOCAL ONLY, destroys all data
 ```
 
 ### Project Status

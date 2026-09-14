@@ -13,10 +13,21 @@ function readPositiveInt(name: string, fallback: number): number {
   return parsed;
 }
 
+/**
+ * Caps are derived from the purchased ElevenLabs plan, not chosen freely.
+ *
+ *   Starter: 30,000 credits/month
+ *   Measured: ~930 speech characters per meditation
+ *   30,000 / 930 = ~32 generations, minus headroom for retries and
+ *   longer-than-average scripts = 25
+ *
+ * Revisit this whenever the ElevenLabs plan changes. On Creator (121k
+ * credits) the equivalent figure is ~100.
+ */
 export function getQuotaConfig(): QuotaConfig {
   return {
     perUserCap: readPositiveInt("PER_USER_MONTHLY_AUDIO_LIMIT", 3),
-    globalCap: readPositiveInt("MAX_GLOBAL_AUDIO_GENERATIONS_PER_MONTH", 500),
+    globalCap: readPositiveInt("MAX_GLOBAL_AUDIO_GENERATIONS_PER_MONTH", 25),
   };
 }
 

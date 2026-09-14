@@ -14,7 +14,7 @@ interface MeditationData {
 }
 
 interface GenerationResult {
-  audioUrl: string;
+  audioPath: string;
   meta: GenerationMeta;
 }
 
@@ -109,8 +109,8 @@ async function generateAndUpload(
       };
     }
 
-    const audioUrl = await uploadAudio(meditationId, audioBuffer);
-    return { audioUrl, meta };
+    const audioPath = await uploadAudio(meditationId, audioBuffer);
+    return { audioPath, meta };
   } finally {
     await sandbox.stop({ blocking: true }).catch(() => {});
   }
@@ -120,13 +120,13 @@ generateAndUpload.maxRetries = 2;
 
 async function finalize(
   meditationId: string,
-  audioUrl: string,
+  audioPath: string,
   meta: GenerationMeta,
   eventId: string | null,
 ): Promise<void> {
   "use step";
 
-  await updateMeditationStatus(meditationId, "completed", audioUrl, meta);
+  await updateMeditationStatus(meditationId, "completed", audioPath, meta);
   if (eventId) {
     const supabase = serviceClient();
     await supabase
@@ -166,8 +166,8 @@ export async function processAudioWorkflow(
     if (voiceIdOverride) {
       data.voiceId = voiceIdOverride;
     }
-    const { audioUrl, meta } = await generateAndUpload(meditationId, data);
-    await finalize(meditationId, audioUrl, meta, eventId);
+    const { audioPath, meta } = await generateAndUpload(meditationId, data);
+    await finalize(meditationId, audioPath, meta, eventId);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     await markFailed(meditationId, message, eventId);

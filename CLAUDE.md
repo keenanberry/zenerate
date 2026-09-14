@@ -19,9 +19,11 @@ See `docs/architecture.md` for how the audio pipeline works end-to-end.
 npm install
 cp .env.example .env.local    # fill in keys
 supabase start                # requires Docker
-supabase db reset             # applies migrations + seed data
+supabase db reset             # applies migrations + seed data — LOCAL ONLY, destroys all data
 npm run dev
 ```
+
+> **Never run `supabase db reset` against a linked production project.** It drops all data and applies `supabase/seed.sql`, which creates test accounts with a known password. Production migrations go out with `supabase db push`, which applies migrations only by default — never pass `--include-seed` against a linked production project, or it will apply this same file.
 
 Seeded test users: `alice@example.com` / `bob@example.com` — password `password123`.
 

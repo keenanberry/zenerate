@@ -16,7 +16,7 @@ describe("getQuotaConfig", () => {
   it("returns defaults when env vars unset", () => {
     const cfg = getQuotaConfig();
     expect(cfg.perUserCap).toBe(3);
-    expect(cfg.globalCap).toBe(500);
+    expect(cfg.globalCap).toBe(25);
   });
 
   it("reads positive integer env vars", () => {

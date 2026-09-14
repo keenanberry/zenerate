@@ -95,10 +95,17 @@ export function MeditationForm() {
   const [editedScript, setEditedScript] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [generateError, setGenerateError] = useState<string | null>(null);
 
   const { completion, isLoading, complete } = useCompletion({
     api: "/api/generate",
     streamProtocol: "text",
+    onError: (error) => {
+      setGenerateError(
+        error.message ||
+          "Something went wrong generating your script. Please try again.",
+      );
+    },
   });
 
   const currentScript = editedScript ?? completion;
@@ -117,6 +124,7 @@ export function MeditationForm() {
   }, [type, focus]);
 
   async function handleGenerate() {
+    setGenerateError(null);
     setEditedScript(null);
     setIsEditing(false);
     const prompt = buildMeditationPrompt({
@@ -130,6 +138,7 @@ export function MeditationForm() {
   }
 
   async function handleRegenerate() {
+    setGenerateError(null);
     setEditedScript(null);
     setIsEditing(false);
     const prompt = buildMeditationPrompt({
@@ -347,6 +356,14 @@ export function MeditationForm() {
       {/* Step 3: Generate & Preview */}
       {step === 2 && (
         <div className="space-y-4">
+          {generateError && (
+            <p
+              role="alert"
+              className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            >
+              {generateError}
+            </p>
+          )}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap gap-2">
               <Badge variant="secondary">
