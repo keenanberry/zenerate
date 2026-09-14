@@ -36,6 +36,13 @@ then quietly throttle.
 - DMARC can start at `p=none` for monitoring and tighten later. SPF and DKIM are the ones that actually affect inbox placement on day one.
 - Check the spam score with a tool like mail-tester before considering this done — a technically-working setup that lands in spam is not working.
 
+## Not covered by this task
+
+This task is **outbound only** — Resend sending on behalf of the app. It does not create a
+mailbox, so nothing here lets you *receive* mail at the domain. Task 15's privacy-policy
+contact address is a separate setup (MX records, a forwarder or mail host). Vercel does not
+host mailboxes even for domains registered through it.
+
 ## Open questions
 
 - Do we want a branded HTML template, or is plain text sufficient for v1? Plain text often has *better* deliverability and takes ten minutes. Default: plain text with correct links, revisit later.

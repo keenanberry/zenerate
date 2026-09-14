@@ -33,6 +33,15 @@ on a public page and ties the policy to one person's account — prefer a projec
 like `privacy@zeneratestudio.com`, which needs the domain from task 09. That is the only
 thing blocking this task.
 
+**Note this is inbound mail, and separate from task 08.** Task 08 sets up Resend to *send*
+signup confirmations and password resets (SPF + DKIM, both TXT records). Receiving mail at
+`privacy@` needs MX records pointing at a mail host — Vercel manages DNS but does not host
+mailboxes, including for domains registered through Vercel. Different record types, so they
+coexist fine, but Resend does not give you an inbox. For a contact that will receive
+approximately nothing, a free forwarder (ImprovMX, Forward Email) to a personal inbox is
+sufficient; a real mailbox (Zoho free tier, Fastmail, Google Workspace) is only worth it if
+you want to send *as* that address.
+
 ## Implementation notes
 - For a v1 ship with low user count, a template-based policy (Termly, Iubenda free tier, or a hand-adapted open-source template) is fine. Avoid just copying another app's terms verbatim.
 - Keep the pages as simple Next.js MDX or plain `.tsx` with rendered markdown — no need for a CMS.
