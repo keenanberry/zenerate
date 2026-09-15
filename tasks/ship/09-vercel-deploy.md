@@ -12,7 +12,8 @@ The app must be deployed to Vercel so users can access it. Vercel Workflow and S
 - Before flipping visibility, verify no secrets have been committed (`.env.local`, `.vercel/`, any keys in old commits).
 
 ## Acceptance criteria
-- [ ] Repo audited for committed secrets — nothing sensitive in history
+- [x] Repo audited for committed secrets — nothing sensitive in history. **Audited 2026-09-15 against `810564c`:** `.env.local`/`.env`/`.env.production`/`.vercel` never committed on any branch; every blob in all history scanned for `sk-ant-`, `sk_`, `ghp_`, `github_pat_`, `AKIA`, `xoxb-` and PEM private-key headers — zero hits; the only JWT in history decodes to `{"iss":"supabase-demo","role":"anon"}`, the published local-dev key. CI uses dummy env values, no real secrets. `seed.sql` carries the task-04 production guard and its `password123` users are local-only (task 07 creates a fresh prod project, so no such rows exist there)
+- [x] Task 01's endpoint fix re-verified still in place (the unbounded-risk item, since a public repo publishes the endpoint's exact shape): `src/app/api/generate/route.ts` gates auth at :21 → validates type/emptiness/`MAX_PROMPT_CHARS` at :28-39 → reserves quota at :41 with 429/503 → only then calls Anthropic at :60, capped at `maxOutputTokens: 8000`
 - [ ] Repo made public on GitHub
 - [ ] `vercel link` run locally to bind this repo to the Vercel project
 - [ ] Vercel project created and connected to the GitHub repo
@@ -28,6 +29,7 @@ The app must be deployed to Vercel so users can access it. Vercel Workflow and S
 ## Implementation notes
 - `.gitignore` already excludes `.env.local` — verify with `git log --all -- .env.local`.
 - Make sure `AUDIO_SANDBOX_SNAPSHOT_ID` in Vercel matches a snapshot that's still valid (`expiration: 0` means permanent).
+- `NEXT_PUBLIC_SITE_URL` is **not referenced anywhere in `src/` yet** — the auth callback derives its redirect from the request's own `origin`, so it self-adapts to whatever domain serves it. The variable becomes load-bearing at task 08, when email templates need an absolute URL. Set it, but know nothing reads it today.
 - Vercel Workflow requires the `workflow` package config to match the deploy. Verify it ships cleanly.
 - Add `NEXT_PUBLIC_SITE_URL` or equivalent if any code constructs absolute URLs (check email reset URL generation once task 08 is in).
 
