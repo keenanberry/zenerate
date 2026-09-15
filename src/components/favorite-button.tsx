@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toggleFavorite } from "@/lib/meditation/actions";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface FavoriteButtonProps {
@@ -27,6 +28,10 @@ export function FavoriteButton({
         await toggleFavorite(meditationId);
       } catch {
         setIsFavorited(isFavorited);
+        // No success toast -- the filled heart is confirmation enough. The
+        // failure case needs one, because the heart silently snapping back
+        // is indistinguishable from a UI glitch.
+        toast.error("Couldn't update favorite");
       }
     });
   }

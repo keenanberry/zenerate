@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { FolderPlus, Plus, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import type { CollectionWithCount } from "@/lib/meditation/types";
 
 interface AddToCollectionDialogProps {
@@ -48,20 +49,28 @@ export function AddToCollectionDialog({
         setCollections(cols);
         setSelectedIds(new Set(ids));
       })
-      .catch(console.error)
+      .catch(() => {
+        // Without this the popover renders "No collections yet", which is
+        // indistinguishable from genuinely having none.
+        if (!cancelled) toast.error("Couldn't load collections");
+      })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
   }, [open, meditationId]);
 
-  function handleToggle(collectionId: string) {
-    const isSelected = selectedIds.has(collectionId);
-    const delta = isSelected ? -1 : 1;
+  /** Apply a membership change to local state. Symmetrical, so the optimistic
+   *  update and its rollback are the same call with inverted arguments. */
+  function applyMembership(
+    collectionId: string,
+    selected: boolean,
+    delta: number,
+  ) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (isSelected) next.delete(collectionId);
-      else next.add(collectionId);
+      if (selected) next.add(collectionId);
+      else next.delete(collectionId);
       return next;
     });
     setCollections((prev) =>
@@ -69,24 +78,66 @@ export function AddToCollectionDialog({
         c.id === collectionId ? { ...c, item_count: c.item_count + delta } : c,
       ),
     );
+  }
+
+  function handleToggle(collectionId: string) {
+    const isSelected = selectedIds.has(collectionId);
+    const delta = isSelected ? -1 : 1;
+    const name =
+      collections.find((c) => c.id === collectionId)?.name ?? "collection";
+
+    applyMembership(collectionId, !isSelected, delta);
+
     startTransition(async () => {
-      if (isSelected) {
-        await removeFromCollection(collectionId, meditationId);
-      } else {
-        await addToCollection(collectionId, meditationId);
+      try {
+        if (isSelected) {
+          await removeFromCollection(collectionId, meditationId);
+          toast.success(`Removed from ${name}`);
+        } else {
+          await addToCollection(collectionId, meditationId);
+          toast.success(`Added to ${name}`);
+        }
+      } catch {
+        applyMembership(collectionId, isSelected, -delta);
+        toast.error(
+          isSelected
+            ? `Couldn't remove from ${name}`
+            : `Couldn't add to ${name}`,
+        );
       }
     });
   }
 
   function handleCreate() {
-    if (!newName.trim()) return;
+    const name = newName.trim();
+    if (!name) return;
     startTransition(async () => {
-      const col = await createCollection({ name: newName.trim() });
-      await addToCollection(col.id, meditationId);
+      let col;
+      try {
+        col = await createCollection({ name });
+      } catch {
+        toast.error("Couldn't create collection");
+        return;
+      }
+
+      // The collection now exists. If adding to it fails, say so precisely --
+      // reporting "couldn't create" would leave the user surprised by an
+      // empty collection the next time they open this popover.
+      try {
+        await addToCollection(col.id, meditationId);
+      } catch {
+        setCollections((prev) => [{ ...col, item_count: 0 }, ...prev]);
+        setNewName("");
+        setShowNew(false);
+        toast.error(`Created ${name}, but couldn't add this meditation`);
+        return;
+      }
+
       setSelectedIds((prev) => new Set([...prev, col.id]));
       setCollections((prev) => [{ ...col, item_count: 1 }, ...prev]);
       setNewName("");
       setShowNew(false);
+      toast.success(`Added to ${name}`);
     });
   }
 
