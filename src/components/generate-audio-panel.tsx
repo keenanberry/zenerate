@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { VoicePicker } from "@/components/voice-picker";
 import { Loader2, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 
 const DEFAULT_VOICE_ID = "Mu5jxyqZOLIGltFpfalg"; // Jameson
 
@@ -66,6 +67,11 @@ export function GenerateAudioPanel({
         throw new Error(data.error ?? "Failed to start audio generation");
       }
 
+      // Success only. Failures are rendered inline by this panel already --
+      // toasting them too would report one failure twice.
+      toast.success("Audio generation started", {
+        description: "This takes a few minutes. You can leave this page.",
+      });
       onStarted();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");

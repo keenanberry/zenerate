@@ -38,7 +38,7 @@ the repo goes public in task 09.
 | # | Task | Status | Notes |
 |---|---|---|---|
 | 11 | [Password reset flow](./11-password-reset.md) | Not started | Needs 08 |
-| 12 | [Toast notifications](./12-toast-notifications.md) | Not started | Sonner installed, zero `toast.` calls in the codebase |
+| 12 | [Toast notifications](./12-toast-notifications.md) | Done | Success/error toasts on the mutation surface; add-to-collection gained real rollback. Theme verified in both modes |
 | 13 | [Download button](./13-download-button.md) | Not started | Shape depends on 02 |
 | 14 | [Error / not-found boundaries](./14-error-boundaries.md) | Not started | No `error.tsx` or `not-found.tsx` exists |
 | 15 | [Terms / Privacy pages](./15-legal-pages.md) | Not started | Required for UGC |

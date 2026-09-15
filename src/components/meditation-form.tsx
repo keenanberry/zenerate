@@ -21,6 +21,7 @@ import { ScriptEditor } from "@/components/script-editor";
 import { WizardSteps } from "@/components/wizard-steps";
 import { createMeditation } from "@/lib/meditation/actions";
 import { buildMeditationPrompt } from "@/lib/ai/prompts";
+import { toast } from "sonner";
 import {
   meditationTemplates,
   type MeditationTemplate,
@@ -172,9 +173,15 @@ export function MeditationForm() {
           focus: focus || undefined,
         },
       });
+      toast.success("Meditation saved");
       router.push(`/meditation/${meditation.id}`);
-    } catch (err) {
-      console.error("Failed to save:", err);
+    } catch {
+      // The generated script is still in component state and the user is not
+      // navigated away, so the retry is free -- say that, because a silently
+      // re-enabled Save button reads as "nothing happened".
+      toast.error("Couldn't save meditation", {
+        description: "Your script is still here. Try saving again.",
+      });
     } finally {
       setSaving(false);
     }

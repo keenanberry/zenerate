@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Globe, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { updateMeditation } from "@/lib/meditation/actions";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface VisibilityToggleProps {
@@ -26,6 +27,7 @@ export function VisibilityToggle({
         await updateMeditation(meditationId, { is_public: newValue });
       } catch {
         setIsPublic(isPublic);
+        toast.error("Couldn't update visibility");
       }
     });
   }
