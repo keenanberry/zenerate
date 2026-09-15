@@ -40,7 +40,7 @@ the repo goes public in task 09.
 | 11 | [Password reset flow](./11-password-reset.md) | Not started | Needs 08 |
 | 12 | [Toast notifications](./12-toast-notifications.md) | Not started | Sonner installed, zero `toast.` calls in the codebase |
 | 13 | [Download button](./13-download-button.md) | Not started | Shape depends on 02 |
-| 14 | [Error / not-found boundaries](./14-error-boundaries.md) | Not started | No `error.tsx` or `not-found.tsx` exists |
+| 14 | [Error / not-found boundaries](./14-error-boundaries.md) | Done | Root 404 + root/`(app)` error boundaries + `global-error`. Lights up two existing `notFound()` call sites |
 | 15 | [Terms / Privacy pages](./15-legal-pages.md) | Not started | Required for UGC |
 | 16 | [LLM duration constraints](./16-llm-duration-constraints.md) | Not started | Sequence after 18 |
 | 17 | [Sound effects library](./17-sound-effects-library.md) | Not started | Requires snapshot rebuild |
