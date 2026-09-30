@@ -31,7 +31,7 @@ the repo goes public in task 09.
 | 07 | [Production Supabase project](./07-production-supabase.md) | Not started | Staying on Free — see 10 |
 | 08 | [Transactional email](./08-transactional-email.md) | Not started | Supabase's built-in sender is not production-viable |
 | 09 | [Vercel deploy + domain](./09-vercel-deploy.md) | Not started | Repo goes public here. `zeneratestudio.com` |
-| 10 | [Supabase keepalive + backups](./10-supabase-keepalive.md) | Not started | Free projects pause after 7 days and need a *manual* restore |
+| 10 | [Supabase keepalive + backups](./10-supabase-keepalive.md) | In progress | Cron route + `vercel.json` + tested restore script done. Needs `CRON_SECRET`, a prod dump, and cron confirmed firing |
 
 ## Phase 2 — Product completeness
 
