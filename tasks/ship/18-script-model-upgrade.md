@@ -1,6 +1,6 @@
 # Script Model Upgrade
 
-**Status:** Not started
+**Status:** Done, except the side-by-side (needs an Anthropic key)
 **Priority:** Nice to have — cheap, strictly beneficial, no reason to defer
 **Depends on:** 01 (touch the route once, not twice)
 
@@ -24,12 +24,42 @@ product.
 
 ## Acceptance criteria
 
-- [ ] Model id updated to `claude-sonnet-5`
+- [x] Model id updated to `claude-sonnet-5`
 - [ ] Same prompt generated on `claude-sonnet-4-6`, `claude-sonnet-5` and `claude-opus-5`, at 5 / 15 / 30 minutes, and compared side by side before settling
 - [ ] Whichever model wins is recorded here with a one-line reason, so the next person doesn't re-run the comparison
-- [ ] `MEDITATION_SYSTEM_PROMPT` re-read against the chosen model — prompts written for an older model are frequently over-prescriptive for a newer one and can actively reduce quality
-- [ ] `maxOutputTokens` set explicitly (currently unbounded — see task 01)
-- [ ] Generated scripts still parse cleanly through `src/lib/meditation/parser.ts`; the marker syntax is strict and a model change can shift formatting
+- [x] `MEDITATION_SYSTEM_PROMPT` re-read. **Left as-is, deliberately.** Most of its length is the markup contract, which is load-bearing rather than over-prescriptive: `parser.ts` matches anchored regexes against the whole trimmed line, so the format rules are a hard interface, not style advice. The `Guidelines` block is genuinely stylistic and is the part to trim if Sonnet 5's output reads stiff — but that judgement needs the side-by-side below
+- [x] `maxOutputTokens` set explicitly — **already done by task 01** (`8000`). This criterion was stale; nothing to change
+- [x] Parser locked down with **17 characterization tests** (`parser.test.ts` — it previously had none). It cannot be verified against real Sonnet 5 output without an API key, so instead the parser's exact current behaviour is now pinned, including the silent-failure paths a formatting shift would trigger
+
+## Resolved during implementation
+
+**Thinking behaviour changes silently on this swap, so it is now set explicitly.** On
+`claude-sonnet-4-6`, omitting the `thinking` parameter meant *no* thinking. On Sonnet 5,
+the same omission runs **adaptive** thinking. This route streams into the create wizard,
+and thinking blocks stream with empty text (`display` defaults to `"omitted"`), so the
+swap alone would have made the user watch a blank panel while the model reasoned — and
+billed those thinking tokens at output rates. The route now sets
+`thinking: { type: "adaptive" }` with `effort: "low"`.
+
+**No breaking parameters were in use.** Sonnet 5 rejects `temperature`/`top_p`/`top_k`
+and assistant prefill with a 400. This route used none of them, so the swap needed no
+other change.
+
+**The parser had zero tests before this task.** That is the real risk in a model change:
+`parser.ts` drops any line starting with `*[` that does not match a marker regex — it is
+neither parsed as a marker nor kept as speech. A model emitting `*[PAUSE: 3 seconds]*
+Welcome back.` on one line loses **both** the pause and the words "Welcome back", with no
+error. The new tests pin that behaviour so it is a deliberate decision rather than a
+surprise.
+
+## Still needs an Anthropic API key
+
+- [ ] **The 3 × 3 side-by-side** (`claude-sonnet-4-6` / `claude-sonnet-5` / `claude-opus-5`, at 5 / 15 / 30 minutes). Cannot be run without `ANTHROPIC_API_KEY`
+- [ ] **Record which model wins, with a one-line reason**, so nobody re-runs the comparison
+
+Sonnet 5 is a strict improvement over 4-6 on price *and* generation regardless of how the
+comparison lands, so shipping the swap now is safe. The open question is only whether
+Opus 5 is worth ~$0.68/month more at ~30 scripts/month.
 
 ## Implementation notes
 
@@ -40,4 +70,4 @@ product.
 
 ## Open questions
 
-- Is script quality currently a felt problem, or is it fine? If nobody has complained, the honest answer may be "swap to Sonnet 5 for the price cut and stop there". Worth deciding after the side-by-side rather than before.
+- Is script quality currently a felt problem, or is it fine? Still open — nobody has generated a script in production yet, so there is no evidence either way. Revisit once the key is set and real scripts exist.
