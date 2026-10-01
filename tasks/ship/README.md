@@ -28,9 +28,9 @@ the repo goes public in task 09.
 | # | Task | Status | Notes |
 |---|---|---|---|
 | 06 | [ElevenLabs production account](./06-elevenlabs-production.md) | Not started | Free tier grants **no commercial rights**. Starter, $6/mo |
-| 07 | [Production Supabase project](./07-production-supabase.md) | Not started | Staying on Free — see 10 |
+| 07 | [Production Supabase project](./07-production-supabase.md) | Done* | Live. Migrations, private bucket, email confirmation and redirects all verified. *Creating a meditation still needs the Anthropic key |
 | 08 | [Transactional email](./08-transactional-email.md) | Not started | Supabase's built-in sender is not production-viable |
-| 09 | [Vercel deploy + domain](./09-vercel-deploy.md) | Not started | Repo goes public here. `zeneratestudio.com` |
+| 09 | [Vercel deploy + domain](./09-vercel-deploy.md) | Deployed | Live at `www.zeneratestudio.com`, repo public, auth working. Remaining env vars blocked on the ElevenLabs/Anthropic accounts |
 | 10 | [Supabase keepalive + backups](./10-supabase-keepalive.md) | In progress | Cron route + `vercel.json` + tested restore script done. Needs `CRON_SECRET`, a prod dump, and cron confirmed firing |
 
 ## Phase 2 — Product completeness
