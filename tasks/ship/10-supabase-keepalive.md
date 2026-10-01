@@ -1,6 +1,6 @@
 # Supabase Keepalive + Backups
 
-**Status:** Not started
+**Status:** In progress — code done, two criteria need production
 **Priority:** Ship-blocker
 **Depends on:** 07 (production project), 09 (Vercel project for the cron)
 
@@ -20,18 +20,24 @@ mitigating it with a periodic dump. This task implements both halves.
 ## Acceptance criteria
 
 **Keepalive**
-- [ ] `src/app/api/cron/keepalive/route.ts` performs a trivial authenticated DB read (e.g. `select count(*) from meditations limit 1`)
-- [ ] Route rejects requests without Vercel's cron secret — it must not be an open endpoint
-- [ ] `vercel.json` declares a daily cron hitting it (Vercel Hobby permits one run per day, fired within an hour window — sufficient against a 7-day threshold)
+- [x] `src/app/api/cron/keepalive/route.ts` — service-role `count` on `meditations` with `head: true` (the query is the point, not its result). `export const dynamic = "force-dynamic"`, because a cached response would touch no database at all and the keepalive would look healthy while doing nothing
+- [x] Rejects anything without `Authorization: Bearer $CRON_SECRET`, compared in constant time. **Fails closed**: if `CRON_SECRET` is unset the route 503s rather than running unauthenticated, so a forgotten env var cannot quietly leave an open endpoint pointed at the database. 12 unit tests cover missing/wrong/prefix/no-scheme/absent-secret
+- [x] `vercel.json` created (did not exist) with a daily cron at 07:00 UTC
 - [ ] Cron confirmed firing in the Vercel dashboard after first deploy
-- [ ] Failure is visible — a silently broken keepalive is worse than none, since it fails exactly when nobody is looking
+- [x] Optional dead-man's-switch via `KEEPALIVE_PING_URL`. **Vercel's logs can show a run that failed; they cannot show a run that never happened** — cron disabled, `vercel.json` dropped by a deploy, project already paused. Those are the failures that bite. If the variable is set the route POSTs after a successful read, so a healthchecks.io-style service alerts when pings stop; unset, it is skipped entirely and there is no third-party dependency. A failed ping never fails the run, and a failed *read* never pings
 
 **Backups**
-- [ ] A documented `pg_dump` procedure in this file that can be run from a laptop against the production connection string
+- [x] Documented — but in **`docs/runbooks/backup-restore.md`**, not here. `tasks/ship/` becomes historical once shipped; a restore procedure has to be findable at 2am in a year. Covers the exact command, why each flag, what is *not* in the dump, and the production restore path
 - [ ] Run at least once before launch, so a known-good restore path exists from day one
-- [ ] Weekly cadence — a calendar reminder is acceptable; this does not need automating for a single-user app
+- [x] Weekly cadence documented in the runbook. **Your calendar reminder to create**
 - [ ] Dumps stored somewhere off Supabase (local disk plus a cloud drive is fine)
-- [ ] A restore actually tested once against a scratch local database. An untested backup is not a backup
+- [x] **Tested.** `scripts/verify-backup.sh` restores a dump into a throwaway local database, prints per-table row counts, and drops it. Exercised end-to-end against a dump of the local stack: 0 unexpected errors, 2 users / 7 meditations / 3 collections / 7 collection_items / 5 favorites restored, 7 of 7 scripts intact. It refuses to run against a hosted Supabase URL, since it CREATEs and DROPs databases
+
+## Still needs production
+
+- [ ] **Cron confirmed firing in the Vercel dashboard** — only observable after deploy
+- [ ] **Run the dump once against production**, so a known-good restore path exists from day one. Needs the production database password, so it is yours to run. Command is in the runbook; tell me the row counts and I will sanity-check them
+- [ ] `CRON_SECRET` set in Vercel (`openssl rand -hex 32`). Until then the route correctly refuses everything, including Vercel's own cron
 
 ## Implementation notes
 
@@ -42,4 +48,4 @@ mitigating it with a periodic dump. This task implements both halves.
 
 ## Open questions
 
-- **Whether a daily cron reliably prevents pausing is unverified.** Supabase describes the trigger as "low activity over a 7-day period" without publishing a threshold. A daily authenticated query should qualify, but this is a workaround rather than a supported feature. Watch for a pause notification during the first month and escalate to Pro if it fires.
+- **Whether a daily cron reliably prevents pausing is still unverified.** Supabase describes the trigger as "low activity over a 7-day period" without publishing a threshold. A daily authenticated query should qualify, but this is a workaround rather than a supported feature, and no amount of code can make it supported. Watch for a pause notification during the first month and escalate to Pro if it fires. The dead-man's-switch is what tells you if it does.
