@@ -39,7 +39,7 @@ the repo goes public in task 09.
 |---|---|---|---|
 | 11 | [Password reset flow](./11-password-reset.md) | Not started | Needs 08 |
 | 12 | [Toast notifications](./12-toast-notifications.md) | Done | Success/error toasts on the mutation surface; add-to-collection gained real rollback. Theme verified in both modes |
-| 13 | [Download button](./13-download-button.md) | Not started | Shape depends on 02 |
+| 13 | [Download button](./13-download-button.md) | Done* | Streams via an authorized route, never `<a download>` on a signed URL. *iOS Safari check needs a real device |
 | 14 | [Error / not-found boundaries](./14-error-boundaries.md) | Done | Root 404 + root/`(app)` error boundaries + `global-error`. Lights up two existing `notFound()` call sites |
 | 15 | [Terms / Privacy pages](./15-legal-pages.md) | Not started | Required for UGC |
 | 16 | [LLM duration constraints](./16-llm-duration-constraints.md) | Not started | Sequence after 18 |

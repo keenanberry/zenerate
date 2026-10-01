@@ -5,11 +5,20 @@ import WaveSurfer from "wavesurfer.js";
 import Hover from "wavesurfer.js/dist/plugins/hover.esm.js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Pause, Play, Volume2, VolumeOff } from "lucide-react";
+import { Download, Pause, Play, Volume2, VolumeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AudioPlayerProps {
   audioUrl: string;
+  /**
+   * Needed for the download link. The player deliberately does NOT download
+   * `audioUrl` directly: that is a signed URL to a private bucket, and iOS
+   * Safari ignores the `download` attribute on cross-origin links -- it
+   * navigates to the file instead of saving it, which is useless on the phone
+   * this feature exists for. The route streams it back from our own origin
+   * with Content-Disposition instead.
+   */
+  meditationId: string;
 }
 
 function formatTime(seconds: number): string {
@@ -25,7 +34,7 @@ function resolveCssColor(cssVar: string, fallback: string): string {
   return val || fallback;
 }
 
-export function AudioPlayer({ audioUrl }: AudioPlayerProps) {
+export function AudioPlayer({ audioUrl, meditationId }: AudioPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -144,6 +153,21 @@ export function AudioPlayer({ audioUrl }: AudioPlayerProps) {
           <div className="flex flex-1" />
 
           <div className="flex items-center gap-2">
+            {/* A real link, not an onClick fetch: the browser's own download
+                handling is what works across desktop and mobile, and it keeps
+                the several-megabyte response out of JS memory entirely. The
+                filename comes from the route's Content-Disposition header, so
+                no `download` attribute is needed -- and relying on the header
+                is what makes it work on iOS Safari. */}
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" asChild>
+              <a
+                href={`/api/audio/${meditationId}/download`}
+                aria-label="Download audio"
+                title="Download"
+              >
+                <Download className="h-4 w-4" />
+              </a>
+            </Button>
             <Button
               variant="ghost"
               size="icon"
