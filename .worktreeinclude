@@ -1,0 +1,18 @@
+# Orca copies these ignored paths from the primary checkout when it creates a
+# worktree. Keep entries literal: globs and negation are not supported.
+#
+# Two things this does NOT do, both worth knowing:
+#
+#   - It copies at creation time and does not backfill. Worktrees that already
+#     exist keep whatever they had; recreate them, or copy the file in once.
+#   - The copies are independent. Rotating a key in the primary checkout does
+#     not update any worktree, and a stale copy fails in ways that look like
+#     application bugs rather than configuration ones. Resync after rotating.
+
+# Local development environment. Without this, a fresh worktree has no Supabase
+# URL or keys and every authed page throws on the service-role client.
+.env.local
+
+# Preserves the Vercel project link so `vercel` commands and the sandbox
+# snapshot script work in a worktree without running `vercel link` again.
+.vercel
