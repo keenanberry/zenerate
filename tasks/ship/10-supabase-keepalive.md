@@ -37,7 +37,7 @@ mitigating it with a periodic dump. This task implements both halves.
 
 - [ ] **Cron confirmed firing in the Vercel dashboard** — only observable after deploy
 - [ ] **Run the dump once against production**, so a known-good restore path exists from day one. Needs the production database password, so it is yours to run. Command is in the runbook; tell me the row counts and I will sanity-check them
-- [ ] `CRON_SECRET` set in Vercel (`openssl rand -hex 32`). Until then the route correctly refuses everything, including Vercel's own cron
+- [x] `CRON_SECRET` set in Vercel — confirmed from outside: the deployed route returns **401** to an unauthenticated request. Had the secret been missing it would have returned **503**, because the route fails closed. The 401/503 distinction is what makes this verifiable without access to the env var itself
 
 ## Implementation notes
 

@@ -1,6 +1,6 @@
 # Vercel Deploy Setup
 
-**Status:** Not started
+**Status:** Deployed and live. Remaining items are blocked on the ElevenLabs/Anthropic accounts
 **Priority:** Ship-blocker
 **Depends on:** 07 (prod Supabase for env vars), 08 (email)
 
@@ -14,17 +14,17 @@ The app must be deployed to Vercel so users can access it. Vercel Workflow and S
 ## Acceptance criteria
 - [x] Repo audited for committed secrets — nothing sensitive in history. **Audited 2026-09-15 against `810564c`:** `.env.local`/`.env`/`.env.production`/`.vercel` never committed on any branch; every blob in all history scanned for `sk-ant-`, `sk_`, `ghp_`, `github_pat_`, `AKIA`, `xoxb-` and PEM private-key headers — zero hits; the only JWT in history decodes to `{"iss":"supabase-demo","role":"anon"}`, the published local-dev key. CI uses dummy env values, no real secrets. `seed.sql` carries the task-04 production guard and its `password123` users are local-only (task 07 creates a fresh prod project, so no such rows exist there)
 - [x] Task 01's endpoint fix re-verified still in place (the unbounded-risk item, since a public repo publishes the endpoint's exact shape): `src/app/api/generate/route.ts` gates auth at :21 → validates type/emptiness/`MAX_PROMPT_CHARS` at :28-39 → reserves quota at :41 with 429/503 → only then calls Anthropic at :60, capped at `maxOutputTokens: 8000`
-- [ ] Repo made public on GitHub
-- [ ] `vercel link` run locally to bind this repo to the Vercel project
-- [ ] Vercel project created and connected to the GitHub repo
-- [ ] All env vars set in Vercel (Production + Preview): Supabase keys, `ANTHROPIC_API_KEY`, `ELEVENLABS_API_KEY`, `AUDIO_SANDBOX_SNAPSHOT_ID`, `VERCEL_TOKEN`, `VERCEL_TEAM_ID`, `VERCEL_PROJECT_ID`, `PER_USER_MONTHLY_AUDIO_LIMIT`, `MAX_GLOBAL_AUDIO_GENERATIONS_PER_MONTH`
+- [x] Repo made public on GitHub
+- [x] `vercel link` run — `.vercel/project.json` present (and gitignored)
+- [x] Vercel project created and connected
+- [ ] Env vars **partially** set. Done: the three Supabase keys, and `CRON_SECRET` (confirmed set, because `/api/cron/keepalive` returns 401 rather than the 503 it would return if the secret were missing). Still missing: `ANTHROPIC_API_KEY`, `ELEVENLABS_API_KEY`, `AUDIO_SANDBOX_SNAPSHOT_ID`. **Note `NEXT_PUBLIC_*` vars are inlined at build time** — adding one later needs a redeploy, not just a save
 - [ ] Sandbox snapshot rebuilt against prod context if needed (should be same snapshot as dev)
-- [ ] First deploy succeeds and landing page loads
-- [ ] Sign up + sign in work in production
+- [x] Deploy succeeds; `/` and `/login` return 200, and a bogus path returns a branded 404
+- [x] Sign up and sign in both verified end to end — signup → confirmation email → `/auth/callback` → `/dashboard`
 - [ ] End-to-end: create meditation → generate script → generate audio → play audio all work in prod
-- [ ] `zeneratestudio.com` registered and linked as the custom domain
-- [ ] `NEXT_PUBLIC_SITE_URL=https://zeneratestudio.com` set in Vercel (Production) and in `.env.example`
-- [ ] Supabase auth redirect allowlist updated for the production domain (ties to task 07)
+- [x] `zeneratestudio.com` registered and linked. **The apex 308-redirects to `www`**, so `www.zeneratestudio.com` is what actually serves — that is the origin `window.location.origin` produces, and therefore the one Supabase must allowlist
+- [ ] `NEXT_PUBLIC_SITE_URL` — **not yet verified as set**, and nothing reads it today: `/auth/callback` derives its redirect from the request's own `origin`, so it self-adapts to whatever domain serves. It becomes load-bearing at task 08 for email templates. When set, use the **`www`** form to match the canonical origin
+- [x] Supabase redirect allowlist updated — proven by the confirmation link completing the round trip
 
 ## Implementation notes
 - `.gitignore` already excludes `.env.local` — verify with `git log --all -- .env.local`.
@@ -32,6 +32,18 @@ The app must be deployed to Vercel so users can access it. Vercel Workflow and S
 - `NEXT_PUBLIC_SITE_URL` is **not referenced anywhere in `src/` yet** — the auth callback derives its redirect from the request's own `origin`, so it self-adapts to whatever domain serves it. The variable becomes load-bearing at task 08, when email templates need an absolute URL. Set it, but know nothing reads it today.
 - Vercel Workflow requires the `workflow` package config to match the deploy. Verify it ships cleanly.
 - Add `NEXT_PUBLIC_SITE_URL` or equivalent if any code constructs absolute URLs (check email reset URL generation once task 08 is in).
+
+## Verified in production
+
+A security pass was run against the live deployment, which matters more here than
+elsewhere because the repo is now public and the endpoint shapes are published:
+
+| Check | Result |
+|---|---|
+| `/api/generate` with no session | **401 Unauthorized** — task 01's fix holding in production |
+| `/api/cron/keepalive` with no/!wrong bearer | **401** — and 401 rather than 503 proves `CRON_SECRET` is set |
+| `meditation-audio` bucket, anonymous | `NoSuchBucket` — private, as Phase 0's signing design requires |
+| `anon` role against every table | `permission denied` — no anonymous read anywhere |
 
 ## Resolved
 **Sandbox capacity on Hobby is not a constraint.** Hobby includes 5 Active-CPU-hours/month, 420 GB-hours provisioned memory, 5,000 creations, 10 concurrent sandboxes, and a 45-minute max session. Our sandbox runs 2 vCPU for ~5 minutes and is mostly I/O-wait on ElevenLabs, which is not billed as Active CPU. That works out to roughly 300 generations/month — about 10x the ElevenLabs Starter ceiling of ~32. ElevenLabs runs dry long before Vercel does. Exceeding Hobby quotas pauses sandbox creation rather than incurring charges.
