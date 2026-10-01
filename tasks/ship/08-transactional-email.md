@@ -23,7 +23,7 @@ then quietly throttle.
 - [ ] Custom SMTP configured in the production Supabase project's auth settings
 - [ ] Sending domain verified: SPF, DKIM and DMARC records added to `zeneratestudio.com`
 - [ ] From-address set to something durable (`noreply@zeneratestudio.com`), not a personal inbox
-- [ ] Supabase auth email templates customised — the defaults say "Supabase" and look like phishing
+- [ ] Supabase auth email templates customised. **Confirmed in production 2026-09-30** — the default confirmation email arrives from `noreply@mail.app.supabase.io`, is titled only "Confirm your email address", never names Zenerate or `zeneratestudio.com` anywhere, and carries a "powered by Supabase" footer with an "Opt out of these emails" link. A recipient has no way to tell what they signed up for, which is both a conversion problem and a phishing-report risk. Needs: sender name and address on the domain, the product name in the subject and body, a line saying what Zenerate is, and the footer gone
 - [ ] Templates use `NEXT_PUBLIC_SITE_URL` so links point at production, not localhost
 - [ ] Deliverability verified end-to-end: sign up with a Gmail address and a non-Gmail address, confirm both land in the inbox and not spam
 - [ ] Password reset email verified the same way once task 11 lands

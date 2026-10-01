@@ -44,7 +44,7 @@ the repo goes public in task 09.
 | 15 | [Terms / Privacy pages](./15-legal-pages.md) | Not started | Required for UGC |
 | 16 | [LLM duration constraints](./16-llm-duration-constraints.md) | Not started | Sequence after 18 |
 | 17 | [Sound effects library](./17-sound-effects-library.md) | Not started | Requires snapshot rebuild |
-| 18 | [Script model upgrade](./18-script-model-upgrade.md) | Not started | `claude-sonnet-5` is newer *and* cheaper than the pinned 4-6 |
+| 18 | [Script model upgrade](./18-script-model-upgrade.md) | Done* | Swapped to `claude-sonnet-5` with explicit low-effort thinking; parser now has tests. *Side-by-side comparison still needs an Anthropic key |
 | 18c | [ESLint import restriction bypassed by relative paths](https://github.com/keenanberry/zenerate/issues/4) | Done | Rule now matches the module by basename regex, covering aliased, relative and dynamic-`import()` forms |
 | 18b | [Public content unreachable signed out](./18b-public-content-signed-out.md) | Not started | Found during Phase 0. `(app)/layout.tsx` redirects every anon visitor, so /discover and public meditations are login-walled |
 

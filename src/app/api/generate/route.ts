@@ -58,10 +58,32 @@ export async function POST(req: Request) {
   }
 
   const result = streamText({
-    model: anthropic("claude-sonnet-4-6"),
+    model: anthropic("claude-sonnet-5"),
     system: MEDITATION_SYSTEM_PROMPT,
     prompt,
     maxOutputTokens: 8000,
+    providerOptions: {
+      anthropic: {
+        // Both of these are set deliberately rather than left to default.
+        //
+        // On claude-sonnet-4-6, omitting `thinking` meant no thinking at all.
+        // On Sonnet 5 the same omission runs ADAPTIVE thinking, so the model
+        // swap would have silently turned it on. That matters here because
+        // this route streams to the create wizard: thinking blocks stream
+        // with empty text, so the user watches a blank panel until reasoning
+        // finishes, and the thinking tokens bill at output rates.
+        //
+        // Low effort keeps some structural reasoning -- a meditation has an
+        // arc, and pacing the pauses against a requested duration is real
+        // work -- without the long pre-stream pause. Writing a meditation
+        // script is a creative task, not a reasoning-heavy one, so the top of
+        // the effort range buys little here. Revisit alongside task 16
+        // (duration constraints), which is the part that would most benefit
+        // from more deliberation.
+        thinking: { type: "adaptive" },
+        effort: "low",
+      },
+    },
   });
 
   return result.toTextStreamResponse();
