@@ -26,8 +26,12 @@ function readPositiveInt(name: string, fallback: number): number {
  * them from the capped cost, not the average call.
  *
  *   maxOutputTokens: 8000 (src/app/api/generate/route.ts)
- *   Sonnet output pricing -> ~$0.12 worst case per call
- *   globalCap: 300 * $0.12 = ~$36/month worst-case exposure
+ *   claude-sonnet-5 output at $10/MTok -> ~$0.08 worst case per call
+ *   globalCap: 300 * $0.08 = ~$24/month worst-case exposure
+ *
+ * Note that since the model swap in task 18 this budget also covers thinking
+ * tokens, which count toward max_tokens. At effort "low" against ~300-token
+ * scripts the headroom is enormous, but the 8000 is no longer script-only.
  *
  * That is well above the project spec's "<$1/month Anthropic" line, which
  * describes typical usage, not this ceiling. The gap is intentional: this

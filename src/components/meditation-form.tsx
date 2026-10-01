@@ -21,6 +21,7 @@ import { ScriptEditor } from "@/components/script-editor";
 import { WizardSteps } from "@/components/wizard-steps";
 import { createMeditation } from "@/lib/meditation/actions";
 import { buildMeditationPrompt } from "@/lib/ai/prompts";
+import { checkDuration, formatDuration } from "@/lib/meditation/duration";
 import { toast } from "sonner";
 import {
   meditationTemplates,
@@ -110,6 +111,17 @@ export function MeditationForm() {
   });
 
   const currentScript = editedScript ?? completion;
+
+  /**
+   * Estimated runtime of the script in hand, against what was asked for.
+   *
+   * Only meaningful once generation has finished -- a partial stream is always
+   * "short", and warning mid-stream would fire on every single generation.
+   */
+  const durationCheck =
+    currentScript && !isLoading
+      ? checkDuration(currentScript, parseInt(duration))
+      : null;
 
   function applyTemplate(template: MeditationTemplate) {
     setSelectedTemplate(template.id);
@@ -431,6 +443,25 @@ export function MeditationForm() {
                 </p>
               </CardContent>
             </Card>
+          )}
+
+          {durationCheck && !durationCheck.withinTolerance && (
+            /* Warn, never block. The estimate carries real uncertainty (the
+               speech rate is derived, not measured), and a regeneration costs
+               one of the user's monthly script generations -- so this states
+               what it found and leaves the decision to them. The Regenerate
+               button above is right there if they want another. */
+            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm">
+              <p className="font-medium">
+                This runs about {formatDuration(durationCheck.totalSeconds)}, not{" "}
+                {duration} minutes
+              </p>
+              <p className="mt-1 text-muted-foreground">
+                {durationCheck.ratio < 1
+                  ? "Shorter than you asked for. Regenerate, or edit the script and lengthen the silence blocks."
+                  : "Longer than you asked for. Regenerate, or edit the script and shorten the silence blocks."}
+              </p>
+            </div>
           )}
 
           {(completion || isLoading) && (
