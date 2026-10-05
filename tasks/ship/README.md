@@ -42,7 +42,7 @@ the repo goes public in task 09.
 | 13 | [Download button](./13-download-button.md) | Done* | Streams via an authorized route, never `<a download>` on a signed URL. *iOS Safari check needs a real device |
 | 14 | [Error / not-found boundaries](./14-error-boundaries.md) | Done | Root 404 + root/`(app)` error boundaries + `global-error`. Lights up two existing `notFound()` call sites |
 | 15 | [Terms / Privacy pages](./15-legal-pages.md) | Not started | Required for UGC |
-| 16 | [LLM duration constraints](./16-llm-duration-constraints.md) | Not started | Sequence after 18 |
+| 16 | [LLM duration constraints](./16-llm-duration-constraints.md) | Done | Long sessions were 82% of requested; now 98%, with the spread cut from 24 points to 6. Measured before/after |
 | 17 | [Sound effects library](./17-sound-effects-library.md) | Not started | Requires snapshot rebuild |
 | 18 | [Script model upgrade](./18-script-model-upgrade.md) | Done* | Swapped to `claude-sonnet-5` with explicit low-effort thinking; parser now has tests. *Side-by-side comparison still needs an Anthropic key |
 | 18c | [ESLint import restriction bypassed by relative paths](https://github.com/keenanberry/zenerate/issues/4) | Done | Rule now matches the module by basename regex, covering aliased, relative and dynamic-`import()` forms |
