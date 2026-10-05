@@ -13,6 +13,17 @@ AI-powered meditation script and audio generation platform.
 
 See `docs/architecture.md` for how the audio pipeline works end-to-end.
 
+## Worktrees
+
+Orca copies the ignored paths listed in `.worktreeinclude` (`.env.local`, `.vercel`) from
+the primary checkout when it creates a worktree, so a new worktree can run immediately.
+
+Two limits: it applies **at creation time only** and does not backfill existing worktrees,
+and the copies are **independent** — rotating a key in the primary checkout leaves every
+worktree stale. A stale or missing `SUPABASE_SERVICE_ROLE_KEY` surfaces as
+`permission denied` or a thrown service-role client, which reads as an application bug
+rather than a configuration one. Resync worktrees after rotating a secret.
+
 ## Local Dev
 
 ```bash
