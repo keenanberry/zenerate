@@ -68,7 +68,7 @@ export function AudioSection({
   }
 
   if (status === "completed" && audioUrl) {
-    return <AudioPlayer audioUrl={audioUrl} />;
+    return <AudioPlayer audioUrl={audioUrl} meditationId={meditation.id} />;
   }
 
   if (status === "processing_audio") {
