@@ -46,7 +46,7 @@ the repo goes public in task 09.
 | 17 | [Sound effects library](./17-sound-effects-library.md) | Not started | Requires snapshot rebuild |
 | 18 | [Script model upgrade](./18-script-model-upgrade.md) | Done* | Swapped to `claude-sonnet-5` with explicit low-effort thinking; parser now has tests. *Side-by-side comparison still needs an Anthropic key |
 | 18c | [ESLint import restriction bypassed by relative paths](https://github.com/keenanberry/zenerate/issues/4) | Done | Rule now matches the module by basename regex, covering aliased, relative and dynamic-`import()` forms |
-| 18b | [Public content unreachable signed out](./18b-public-content-signed-out.md) | Not started | Found during Phase 0. `(app)/layout.tsx` redirects every anon visitor, so /discover and public meditations are login-walled |
+| 18b | [Public content unreachable signed out](./18b-public-content-signed-out.md) | Done* | `/discover` and public meditations open signed out; downloads stay account-only. *`anon` grant can only be verified in production |
 
 > **If you need to launch sooner, this is the phase to cut.** 14 and 15 are genuinely
 > required. 16 and 17 could slip to `post-ship/` without embarrassment.

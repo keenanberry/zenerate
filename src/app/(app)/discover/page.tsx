@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { createClient } from "@/lib/supabase/server";
 import { getPublicMeditations } from "@/lib/meditation/actions";
 import { MeditationListView } from "@/components/meditation-list-view";
 import { DiscoverViewWrapper } from "./view-wrapper";
@@ -9,7 +10,13 @@ export const metadata = {
 };
 
 async function DiscoverFeed({ search }: { search?: string }) {
-  const meditations = await getPublicMeditations(search);
+  const supabase = await createClient();
+  const [
+    meditations,
+    {
+      data: { user },
+    },
+  ] = await Promise.all([getPublicMeditations(search), supabase.auth.getUser()]);
 
   if (meditations.length === 0) {
     return (
@@ -26,7 +33,8 @@ async function DiscoverFeed({ search }: { search?: string }) {
     );
   }
 
-  return <MeditationListView meditations={meditations} />;
+  // Favouriting needs an account; signed out, the button would only error.
+  return <MeditationListView meditations={meditations} showFavorite={!!user} />;
 }
 
 function Loading() {

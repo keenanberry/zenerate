@@ -1,8 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { mockGetMeditation, mockFetch } = vi.hoisted(() => ({
+const { mockGetUser, mockGetMeditation, mockFetch } = vi.hoisted(() => ({
+  mockGetUser: vi.fn(),
   mockGetMeditation: vi.fn(),
   mockFetch: vi.fn(),
+}));
+
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: async () => ({ auth: { getUser: mockGetUser } }),
 }));
 
 vi.mock("@/lib/meditation/actions", () => ({
@@ -31,12 +36,26 @@ describe("GET /api/audio/[id]/download", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal("fetch", mockFetch);
+    mockGetUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
     mockGetMeditation.mockResolvedValue({
       id: "abc",
       title: "Morning Calm — Gratitude",
       audio_url: SIGNED_URL,
     });
     mockFetch.mockResolvedValue(audioResponse());
+  });
+
+  describe("downloads are for signed-in users", () => {
+    it("401s with no session, even for a public meditation", async () => {
+      // Signed-out visitors can read public meditations (task 18b) and so
+      // could reach this route; keeping a copy is reserved for accounts.
+      mockGetUser.mockResolvedValue({ data: { user: null } });
+      const res = await GET(req(), ctx());
+
+      expect(res.status).toBe(401);
+      expect(mockGetMeditation).not.toHaveBeenCalled();
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
   });
 
   describe("authorization is delegated, not reimplemented", () => {
