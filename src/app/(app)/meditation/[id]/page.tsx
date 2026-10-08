@@ -59,10 +59,10 @@ export default async function MeditationDetailPage({
 
   return (
     <div className="space-y-6">
-      <Link href="/dashboard">
+      <Link href={user ? "/dashboard" : "/discover"}>
         <Button variant="ghost" size="sm" className="gap-2">
           <ArrowLeft className="h-4 w-4" />
-          Back to Library
+          {user ? "Back to Library" : "Back to Discover"}
         </Button>
       </Link>
 
@@ -87,12 +87,16 @@ export default async function MeditationDetailPage({
               isPublic={meditation.is_public}
             />
           )}
-          <FavoriteButton
-            meditationId={meditation.id}
-            isFavorited={meditation.is_favorited ?? false}
-            size="default"
-          />
-          <AddToCollectionDialog meditationId={meditation.id} />
+          {user && (
+            <>
+              <FavoriteButton
+                meditationId={meditation.id}
+                isFavorited={meditation.is_favorited ?? false}
+                size="default"
+              />
+              <AddToCollectionDialog meditationId={meditation.id} />
+            </>
+          )}
         </div>
       </div>
 
@@ -101,6 +105,7 @@ export default async function MeditationDetailPage({
       <AudioSection
         meditation={meditation}
         isOwner={isOwner}
+        isSignedIn={!!user}
         quota={quota}
         freeRetryEventId={freeRetry.eventId}
       />

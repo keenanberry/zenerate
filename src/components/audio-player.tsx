@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import WaveSurfer from "wavesurfer.js";
 import Hover from "wavesurfer.js/dist/plugins/hover.esm.js";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,11 @@ interface AudioPlayerProps {
    * with Content-Disposition instead.
    */
   meditationId: string;
+  /**
+   * Downloads are for signed-in users. Signed out, the button becomes a
+   * sign-in prompt in the same spot; the route enforces this independently.
+   */
+  canDownload: boolean;
 }
 
 function formatTime(seconds: number): string {
@@ -34,7 +40,11 @@ function resolveCssColor(cssVar: string, fallback: string): string {
   return val || fallback;
 }
 
-export function AudioPlayer({ audioUrl, meditationId }: AudioPlayerProps) {
+export function AudioPlayer({
+  audioUrl,
+  meditationId,
+  canDownload,
+}: AudioPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -160,13 +170,23 @@ export function AudioPlayer({ audioUrl, meditationId }: AudioPlayerProps) {
                 no `download` attribute is needed -- and relying on the header
                 is what makes it work on iOS Safari. */}
             <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" asChild>
-              <a
-                href={`/api/audio/${meditationId}/download`}
-                aria-label="Download audio"
-                title="Download"
-              >
-                <Download className="h-4 w-4" />
-              </a>
+              {canDownload ? (
+                <a
+                  href={`/api/audio/${meditationId}/download`}
+                  aria-label="Download audio"
+                  title="Download"
+                >
+                  <Download className="h-4 w-4" />
+                </a>
+              ) : (
+                <Link
+                  href="/login"
+                  aria-label="Sign in to download"
+                  title="Sign in to download"
+                >
+                  <Download className="h-4 w-4" />
+                </Link>
+              )}
             </Button>
             <Button
               variant="ghost"

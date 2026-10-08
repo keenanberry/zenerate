@@ -42,7 +42,7 @@ Seeded test users: `alice@example.com` / `bob@example.com` — password `passwor
 
 | Path | Purpose |
 |---|---|
-| `src/app/(app)/` | Authed routes — dashboard, create, discover, meditation/[id], collections/[id] |
+| `src/app/(app)/` | In-app routes. `discover`, `meditation/[id]` are public; `(authed)/` holds dashboard, create, collections/[id] |
 | `src/app/(auth)/` | Login + auth callbacks |
 | `src/app/api/generate/` | Script generation endpoint (streams from Anthropic) |
 | `src/app/api/audio/generate/` | Audio pipeline trigger — validates, kicks off workflow |
@@ -58,7 +58,7 @@ Seeded test users: `alice@example.com` / `bob@example.com` — password `passwor
 
 ## Conventions
 
-- **Route groups** — `(app)` is authed, `(auth)` is public. Auth gating happens in `src/app/(app)/layout.tsx`.
+- **Route groups** — `(app)` renders for anyone; `(app)/(authed)` redirects signed-out visitors, and its `layout.tsx` is the only auth gate. A page signed-out visitors can reach reads as the `anon` role, which needs a table `GRANT` as well as an RLS policy — local grants `anon` everything, so only production catches a missing one.
 - **Server actions** live in `src/lib/*/actions.ts`, called from client components for mutations.
 - **Status state machine** — meditations move `generating_script` → `script_ready` → `processing_audio` → `completed` / `failed`. `audio-section.tsx` switches UI on this.
 - **Public vs private** — `meditations.is_public` + RLS policies enforce visibility.

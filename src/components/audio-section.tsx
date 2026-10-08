@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 interface AudioSectionProps {
   meditation: MeditationWithMeta;
   isOwner: boolean;
+  isSignedIn: boolean;
   quota: QuotaProp;
   freeRetryEventId: string | null;
 }
@@ -20,6 +21,7 @@ interface AudioSectionProps {
 export function AudioSection({
   meditation,
   isOwner,
+  isSignedIn,
   quota,
   freeRetryEventId,
 }: AudioSectionProps) {
@@ -68,7 +70,13 @@ export function AudioSection({
   }
 
   if (status === "completed" && audioUrl) {
-    return <AudioPlayer audioUrl={audioUrl} meditationId={meditation.id} />;
+    return (
+      <AudioPlayer
+        audioUrl={audioUrl}
+        meditationId={meditation.id}
+        canDownload={isSignedIn}
+      />
+    );
   }
 
   if (status === "processing_audio") {
