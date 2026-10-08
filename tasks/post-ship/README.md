@@ -11,6 +11,7 @@ Work that's out of scope for initial ship but tracked for the next cycle. No ord
 | [Form-based script editor](./form-based-script-editor.md) | Structured editor (add/remove sections, inline sound picker) |
 | [Public content moderation](./public-content-moderation.md) | Report, review, flag for `/discover` |
 | [Analytics](./analytics.md) | Usage + conversion funnel tracking |
+| [Account deletion](./account-deletion.md) | Self-serve delete, including the audio files storage does not cascade |
 | [Error tracking](./error-tracking.md) | Sentry or similar for production visibility |
 | [AI gateway](./ai-gateway.md) | Route model calls through Vercel AI Gateway for token/cost/latency visibility |
 | [Agent user memory](./agent-user-memory.md) | Remember user preferences across generations |

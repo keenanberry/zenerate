@@ -3,6 +3,10 @@
 **Status:** Not started
 **Priority:** Post-ship
 
+> **Update `/privacy` in the same PR.** The policy states that Zenerate uses no
+> analytics or tracking tools and lists every service provider by name. Adding an analytics tool
+> makes that false the day it ships.
+
 ## Why it matters
 After ship, we need to know: how many signups, how many of those generate a script, how many generate audio, how many return, where users drop off. Without this, product decisions are pure guesswork.
 
