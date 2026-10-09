@@ -1,6 +1,6 @@
 # Icon Set + OG Image
 
-**Status:** Not started
+**Status:** Done* (*the share-preview checks in iMessage, Slack, X and Discord, and the on-device home-screen check, need a deployed URL and a phone: the operator's, after merge)
 **Priority:** Ship-blocker
 **Depends on:** 21 (Nocturne palette)
 **Blocks:** 24 (PWA manifest needs the icons), 26 (SEO metadata needs the OG image)
@@ -18,25 +18,29 @@ bare URL.
 ## Acceptance criteria
 
 **Mark**
-- [ ] A bodhi tree mark, drawn as SVG by hand (not traced from a raster), in the Nocturne
+- [x] A bodhi tree mark, drawn as SVG by hand (not traced from a raster), in the Nocturne
       palette. Where the full tree will not read, a single bodhi leaf: the heart shape with
       the long drip tip is the recognisable part. Decided with the operator 2026-10-09
-- [ ] Fallback if the mark does not hold at 16px after one honest attempt: a Lora wordmark,
-      as originally planned. Do not spend a day on the tree
-- [ ] Legible at 16px in a browser tab and at 180px on a phone home screen. Test both before committing
-- [ ] Works on the Nocturne dark ground and on white
+- [x] Fallback if the mark does not hold at 16px after one honest attempt: a Lora wordmark,
+      as originally planned. Do not spend a day on the tree. *Not needed: the full tree failed
+      at 16px, the leaf held, so no wordmark (see Outcome)*
+- [x] Legible at 16px in a browser tab and at 180px on a phone home screen. Test both before committing.
+      *16px checked in Chrome on its light and dark tab colours; 180px checked at 1:1 on dark and
+      white grounds with iOS-style corners*
+  - [ ] The same on a real phone home screen (operator, after merge)
+- [x] Works on the Nocturne dark ground and on white
 
 **Icon set**
-- [ ] `favicon.ico` replacing the Next.js default
-- [ ] `icon-192.png`, `icon-512.png`
-- [ ] `icon-maskable-512.png` with correct safe-zone padding — Android crops to a circle and an unpadded icon loses its edges
-- [ ] `apple-touch-icon.png` at 180×180, no transparency (iOS composites transparent icons onto black)
-- [ ] Starter SVGs deleted from `public/`
+- [x] `favicon.ico` replacing the Next.js default
+- [x] `icon-192.png`, `icon-512.png`
+- [x] `icon-maskable-512.png` with correct safe-zone padding — Android crops to a circle and an unpadded icon loses its edges
+- [x] `apple-touch-icon.png` at 180×180, no transparency (iOS composites transparent icons onto black)
+- [x] Starter SVGs deleted from `public/`
 
 **OG image**
-- [ ] `og-image.png` at 1200×630, dark, carrying the mark and the one-line pitch from `PRODUCT.md` ("Meditations composed for you, not picked from a catalogue.")
-- [ ] Rendered preview checked in at least two of: iMessage, Slack, Twitter/X, Discord — they crop and letterbox differently
-- [ ] Text large enough to read in a feed thumbnail
+- [x] `og-image.png` at 1200×630, dark, carrying the mark and the one-line pitch from `PRODUCT.md` ("Meditations composed for you, not picked from a catalogue.")
+- [ ] Rendered preview checked in at least two of: iMessage, Slack, Twitter/X, Discord — they crop and letterbox differently (operator, after merge)
+- [x] Text large enough to read in a feed thumbnail
 
 ## Implementation notes
 
@@ -51,3 +55,85 @@ bare URL.
   The operator may generate raster references with an image model to steer the drawing;
   the shipped source is still the hand-drawn SVG, because a traced raster is lossy at 16px.)*
   ~~Does the mark need to encode "zen" or "audio" at all, or is a clean wordmark enough?~~
+
+## Outcome (2026-10-09)
+
+**What shipped**
+
+- `src/assets/brand/mark.svg`: the source. A bodhi leaf held tip-up, heart-shaped with the
+  long drip tip, its veins drawn as a small tree: the midrib is the trunk, three pairs of
+  side veins are the branches. Hand-drawn on a 100-unit grid, no raster traced.
+- `src/components/brand-mark.tsx`: `BrandMark`, the same geometry inline in `currentColor`.
+  The veins are cut out with a per-instance mask (`useId`), so the ground shows through on
+  Midnight, Paper or white. `veins={false}` for nav and favicon sizes; `title` gives it an
+  accessible name, and without one it is `aria-hidden`. Not placed anywhere yet: the nav and
+  landing header belong to a follow-up after task 22.
+- `scripts/build-icons.ts` renders every export from the source with `@resvg/resvg-js`:
+  `src/app/favicon.ico` (16/32/48), `public/icon-192.png`, `public/icon-512.png`,
+  `public/icon-maskable-512.png`, `public/apple-touch-icon.png` (180×180, opaque) and
+  `public/og-image.png` (1200×630). `--check` re-renders in memory and fails if a committed
+  file differs.
+- The five Next.js starter SVGs are gone from `public/`.
+
+**Decisions**
+
+- *The tree, honestly attempted, did not hold.* A full bodhi tree (spreading canopy, trunk,
+  flared roots) read as a mushroom at 16px. The rose trunk vanished against the amethyst
+  canopy, and at 180px it was a generic cartoon tree with nothing bodhi about it. The leaf
+  held at both sizes, so the leaf is the mark and the tree lives inside it as the veins.
+  The Lora wordmark fallback was not needed.
+- *Tip-up, with a curving tip.* Symmetric and upright, the plain silhouette reads as a
+  spade (tip up) or a valentine heart (tip down). A long drip tip that leans slightly,
+  a shallow notch and a thin curved stem make it a leaf. Tilting it read as a leaf too,
+  but lost the leaf-as-tree reading.
+- *Two colours, no gradient.* Amethyst Glow leaf, Rose Quartz veins, on Midnight. The
+  purple-to-rose gradient stays the player's (The One Gradient Rule).
+- *Veins only from 64px.* At 16, 32 and 48px the veins blur into the leaf, so the favicon
+  is the plain silhouette, on a transparent ground at full size. In Chrome's light and
+  dark tab strips the leaf, tip and stem read. The weakest pairing is an inactive light
+  tab (`#dee1e6`), where Amethyst Glow is legible but low in contrast. A Midnight tile
+  behind it was tried and rejected: it shrinks the leaf to 12px.
+- *`icon-192`/`icon-512` are full-bleed Midnight, not transparent.* Task 25 uses them as
+  lock-screen artwork, and an opaque square holds on any ground an install surface or
+  media UI puts it on. The maskable icon is the same with the mark at 0.68 scale. Its
+  artwork reaches 0.329 of the width from the centre, inside the 0.4 safe circle; the
+  build measures this from the pixels and fails above 0.4.
+- *Colours from DESIGN.md.* The build reads the frontmatter tokens (`midnight`,
+  `amethyst-glow`, `rose-quartz`, `moonlit`) and converts OKLCH to sRGB hex, because
+  resvg does not parse `oklch()`.
+- *Lora as a committed TTF.* `src/assets/brand/fonts/Lora-Medium.ttf` (static instance,
+  OFL, licence alongside), with system fonts off. The OG text then renders the same on
+  any machine and needs no network. The OG layout measures the rendered pitch and
+  centres mark and text as one group, so a font change cannot push the text off the
+  card.
+- *favicon.ico only in `src/app/`.* A second copy in `public/` would collide with the App
+  Router's file convention at `/favicon.ico`. Nothing is wired into metadata (task 26) or
+  a manifest (task 24).
+
+**Evidence**
+
+- `npx tsx scripts/build-icons.ts --check` prints every file with its dimensions and reports
+  all six byte-identical to a fresh render. Two consecutive builds produce the same SHA-256.
+- The build asserts the apple-touch-icon and OG image are fully opaque and the maskable
+  artwork is inside the safe zone.
+- Unit tests for every pure function: OKLCH conversion against the CSS Color 4 primaries,
+  frontmatter parsing, ICO encoding, PNG header reading, opacity, safe-zone reach, ink
+  measurement, the SVG composition, and `BrandMark` against the source SVG's geometry.
+- Browser (Chrome, local dev on :3123, temporary preview route since removed), in order:
+  - dark at desktop width;
+  - dark at 390px, in a 390px iframe, with no horizontal scroll;
+  - light at both widths;
+  - the favicon at 16 CSS px on Chrome's light and dark tab colours;
+  - the 180px icons at 1:1 on white and black;
+  - the maskable icon under a circle and a squircle crop;
+  - the OG image at 300px wide, where the 66px pitch lands at about 16px.
+
+**Found along the way**
+
+- `npm install` with npm 11.16 rewrites the whole `package-lock.json` (about 23k lines) by
+  re-resolving peer dependencies. This PR splices in only the `@resvg/*` entries
+  (`npm ci --dry-run` accepts it). The next dependency change will meet the same rewrite.
+- `vitest.config.ts` only collected tests under `src/`; it now also picks up
+  `scripts/**/*.test.ts`.
+- `BrandMark` gets unique mask ids from `useId` (`_S_4_` style in React 19.2), and the masks
+  resolve in Chrome with several instances on one page.
