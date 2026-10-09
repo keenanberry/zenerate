@@ -38,19 +38,25 @@ export function Nav({ isSignedIn }: { isSignedIn: boolean }) {
           </Link>
           <nav className="flex items-center gap-1 sm:gap-2">
             {visibleItems.map((item) => (
-              <Link key={item.href} href={item.href}>
-                <Button
-                  variant={pathname.startsWith(item.href) ? "secondary" : "ghost"}
-                  size="sm"
-                  className={cn(
-                    "gap-2",
-                    pathname.startsWith(item.href) && "font-medium"
-                  )}
+              <Button
+                key={item.href}
+                asChild
+                variant={pathname.startsWith(item.href) ? "secondary" : "ghost"}
+                size="sm"
+                className={cn(
+                  "gap-2",
+                  pathname.startsWith(item.href) && "font-medium"
+                )}
+              >
+                <Link
+                  href={item.href}
+                  aria-current={pathname.startsWith(item.href) ? "page" : undefined}
                 >
-                  <item.icon className="h-4 w-4" />
-                  <span className="hidden sm:inline">{item.label}</span>
-                </Button>
-              </Link>
+                  <item.icon className="h-4 w-4" aria-hidden />
+                  {/* Icons only below sm; the label stays for screen readers. */}
+                  <span className="sr-only sm:not-sr-only">{item.label}</span>
+                </Link>
+              </Button>
             ))}
           </nav>
         </div>
@@ -58,16 +64,16 @@ export function Nav({ isSignedIn }: { isSignedIn: boolean }) {
           <ThemeToggle />
           {isSignedIn ? (
             <Button variant="ghost" size="sm" onClick={handleSignOut} className="gap-2">
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Sign out</span>
+              <LogOut className="h-4 w-4" aria-hidden />
+              <span className="sr-only sm:not-sr-only">Sign out</span>
             </Button>
           ) : (
-            <Link href="/login">
-              <Button variant="ghost" size="sm" className="gap-2">
-                <LogIn className="h-4 w-4" />
-                <span className="hidden sm:inline">Sign in</span>
-              </Button>
-            </Link>
+            <Button asChild variant="ghost" size="sm" className="gap-2">
+              <Link href="/login">
+                <LogIn className="h-4 w-4" aria-hidden />
+                <span className="sr-only sm:not-sr-only">Sign in</span>
+              </Link>
+            </Button>
           )}
         </div>
       </div>
