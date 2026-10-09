@@ -24,7 +24,8 @@ a template. It's the first thing anyone sees, and after task 09 it's what
 **Content**
 - [ ] Hero leads with what makes this different from Calm or Headspace: you *make* the meditation, it isn't picked from a catalogue
 - [ ] The generation flow is shown, not just described — the most compelling thing here is watching a script stream in
-- [ ] One-line pitch locked and reused as the meta description in task 26 (that task lists it as an open question; resolve it here)
+- [ ] One-line pitch used verbatim as the hero line: **"Meditations composed for you, not picked
+      from a catalogue."** Locked 2026-10-09 in `PRODUCT.md`; tasks 23 and 26 reuse it
 - [ ] Honest about the free-tier quota rather than letting a new user discover the 3/month cap after signing up
 
 **Design**

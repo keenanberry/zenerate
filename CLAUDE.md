@@ -66,16 +66,11 @@ Seeded test users: `alice@example.com` / `bob@example.com` — password `passwor
 
 ## Sandbox Snapshot — Critical Gotcha
 
-`src/lib/audio/generate-audio.ts` **and everything it imports** (currently `loudness.ts`) are **baked into the sandbox snapshot**, as are the sound effects in `scripts/sound-effects.ts`. Any edit to either requires rebuilding:
+`src/lib/audio/generate-audio.ts` **and everything it imports** (currently `loudness.ts`) are **baked into the sandbox snapshot**, as are the sound effects in `scripts/sound-effects.ts`. Without a rebuilt snapshot and a redeployed `AUDIO_SANDBOX_SNAPSHOT_ID`, an edit to any of them has zero effect on what runs. The `audio-pipeline` skill in `.claude/skills/` has the full loop.
 
-```bash
-npx tsx scripts/create-sandbox-snapshot.ts
-# copy the printed snapshot ID into AUDIO_SANDBOX_SNAPSHOT_ID, locally and in Vercel, then redeploy
-```
+## Design System
 
-Without a rebuild, changes have zero effect on what actually runs. The build needs a `VERCEL_OIDC_TOKEN` and production `SOUND_EFFECTS_SUPABASE_*` credentials; the script header says how to get both without overwriting `.env.local`. `scripts/test-audio-generation.ts` checks a snapshot end to end.
-
-A new sound goes in `src/lib/meditation/sounds.ts` (what the prompt offers) and `scripts/sound-effects.ts` (what the build produces); a test fails if they drift.
+`DESIGN.md` at the repo root is the design contract, and `PRODUCT.md` the product record; the Impeccable tooling reads both. The `zenerate-design` skill in `.claude/skills/` is the working procedure for any change a visitor sees, including the verification order (dark first, then light, then phone width).
 
 ## Pre-Ship Work
 

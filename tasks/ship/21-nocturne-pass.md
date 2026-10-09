@@ -15,8 +15,10 @@ background is `oklch(0.9777 0.0041 301.4256)` — chroma 0.004, effectively neut
 All the amethyst is in the dark theme, which is currently treated as an afterthought.
 
 Direction chosen during brainstorming: **Nocturne, dark-first, with one gradient moment
-on the player.** Full rationale in `docs/superpowers/specs/2026-09-11-go-live-design.md`;
-the approved mockup is preserved in `.superpowers/brainstorm/*/content/visual-direction.html`.
+on the player.** Full rationale in `docs/superpowers/specs/2026-09-11-go-live-design.md`.
+The brainstorm mockup lived in gitignored scratch and no longer exists; `DESIGN.md` at the
+repo root is the surviving record of the direction (tokens, named rules, do's and don'ts),
+and the `zenerate-design` skill is the working procedure. Read both before starting.
 
 ## Acceptance criteria
 
@@ -50,6 +52,14 @@ the approved mockup is preserved in `.superpowers/brainstorm/*/content/visual-di
 
 - Work through theme tokens in `globals.css`, not per-component overrides. If a change needs a raw colour value in a component, the token set is wrong.
 - The `.dark` block (`globals.css:131+`) is where the real palette lives. Start there.
+- **The rose lives in different tokens per theme.** In light, `--accent` is the rose
+  (`oklch(0.7889 0.0802 359.9375)`). In dark, `--accent` is a plum hover surface and the rose
+  is `--accent-foreground` (`oklch(0.8391 0.0692 2.6681)`, also `--chart-2`). A gradient built
+  from `--primary` → `--accent` is purple-to-purple in dark. Give the gradient its own token
+  pair (both blocks) rather than reaching through `--accent`.
+- **`--font-sans` is as broken as `--font-serif`.** `next/font` registers faces under hashed
+  names, so `--font-sans: Geist` matches nothing either; the whole app is in the system sans
+  today. Task 20 fixes both. Land 20 before judging any type decision here.
 - Do not touch the audio pipeline or data fetching. This is a presentation-layer task; keeping it that way makes it reviewable.
 - `docs/ui-roadmap.md` items 12 (Animations) and the "Design System Refinements" section overlap with this. Fold in what's cheap, leave the rest on the roadmap, and prune what this task closes.
 
