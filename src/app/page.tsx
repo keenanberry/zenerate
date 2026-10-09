@@ -6,7 +6,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 import { getScriptQuotaConfig } from "@/lib/ai/quota";
 import { getQuotaConfig } from "@/lib/audio/quota";
-import { firstPassage, freeTierSummary } from "@/lib/landing/copy";
+import { countOf, firstPassage, freeTierSummary } from "@/lib/landing/copy";
 import {
   getLatestPublicMeditation,
   type LatestMeditation,
@@ -68,10 +68,10 @@ export default async function LandingPage() {
 
   // Read from the same config the quota checks enforce, so the page cannot
   // drift from the caps when the environment changes them.
-  const freeTier = freeTierSummary({
+  const caps = {
     audio: getQuotaConfig().perUserCap,
     script: getScriptQuotaConfig().perUserCap,
-  });
+  };
   const composeHref = user ? "/create" : "/login";
 
   return (
@@ -79,7 +79,7 @@ export default async function LandingPage() {
       <Nav isSignedIn={!!user} />
 
       <main className="flex-1">
-        <section className="mx-auto grid max-w-5xl gap-12 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,27rem)] lg:items-center lg:gap-16">
+        <section className="mx-auto grid max-w-5xl grid-cols-1 gap-12 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,27rem)] lg:items-center lg:gap-16">
           <div className="space-y-6">
             <h1 className="font-serif text-[clamp(2rem,5vw,3rem)] leading-[1.15] font-medium tracking-[-0.01em] text-balance">
               Meditations composed for you, not picked from a catalogue.
@@ -99,7 +99,8 @@ export default async function LandingPage() {
               </Button>
             </div>
             <p className="max-w-[56ch] text-sm text-muted-foreground">
-              Free with an email account. {freeTier}
+              Free with an email account, up to{" "}
+              {countOf(caps.audio, "narrated meditation")} a month.
             </p>
           </div>
 
@@ -126,17 +127,17 @@ export default async function LandingPage() {
         </section>
 
         <section className="border-t">
-          <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-20">
+          <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-20">
             {latest ? (
               <LatestOnDiscover meditation={latest} />
             ) : (
-              <div className="space-y-3">
+              <div className="max-w-3xl space-y-3">
                 <h2 className="font-serif text-2xl leading-tight font-medium">
                   Hear one first
                 </h2>
                 <p className="max-w-[60ch] text-muted-foreground">
                   Meditations people choose to publish are on{" "}
-                  <Link href="/discover" className="text-primary underline-offset-4 hover:underline">
+                  <Link href="/discover" className="text-primary underline underline-offset-4">
                     Discover
                   </Link>
                   , open to anyone without an account.
@@ -147,32 +148,34 @@ export default async function LandingPage() {
         </section>
 
         <section className="border-t">
-          <div className="mx-auto max-w-3xl space-y-4 px-4 py-16 sm:px-6 sm:py-20">
-            <h2 className="font-serif text-2xl leading-tight font-medium">
-              Free, at hobby scale
-            </h2>
-            <div className="max-w-[60ch] space-y-4 text-muted-foreground">
-              <p>
-                Zenerate is one person&apos;s project, and there is no paid
-                plan. An account is free. {freeTier} The counts reset on the
-                first of each month (UTC), and a narration that fails can be
-                tried again once without using one up.
-              </p>
-              <p>
-                Scripts are written by AI and narrated by AI voices. The{" "}
-                <Link href="/terms" className="text-primary underline-offset-4 hover:underline">
-                  Terms
-                </Link>{" "}
-                say what that means for you.
-              </p>
-            </div>
-            {!user && (
-              <div className="pt-4">
-                <Button asChild size="lg">
-                  <Link href="/login">Create a free account</Link>
-                </Button>
+          <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-20">
+            <div className="max-w-3xl space-y-4">
+              <h2 className="font-serif text-2xl leading-tight font-medium">
+                Free, at hobby scale
+              </h2>
+              <div className="max-w-[60ch] space-y-4 text-muted-foreground">
+                <p>
+                  Zenerate is one person&apos;s project, and there is no paid
+                  plan. An account is free. {freeTierSummary(caps)} The counts
+                  reset on the first of each month (UTC), and a narration that
+                  fails can be tried again once without using one up.
+                </p>
+                <p>
+                  Scripts are written by AI and narrated by AI voices. The{" "}
+                  <Link href="/terms" className="text-primary underline underline-offset-4">
+                    Terms
+                  </Link>{" "}
+                  say what that means for you.
+                </p>
               </div>
-            )}
+              {!user && (
+                <div className="pt-4">
+                  <Button asChild size="lg">
+                    <Link href="/login">Create a free account</Link>
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </section>
       </main>
@@ -191,7 +194,7 @@ function LatestOnDiscover({ meditation }: { meditation: LatestMeditation }) {
   ].filter(Boolean);
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-3xl space-y-6">
       <h2 className="font-serif text-2xl leading-tight font-medium">
         Hear one first
       </h2>
@@ -218,7 +221,7 @@ function LatestOnDiscover({ meditation }: { meditation: LatestMeditation }) {
       </Link>
       <p className="text-sm text-muted-foreground">
         More on{" "}
-        <Link href="/discover" className="text-primary underline-offset-4 hover:underline">
+        <Link href="/discover" className="text-primary underline underline-offset-4">
           Discover
         </Link>
         , open to anyone without an account.
