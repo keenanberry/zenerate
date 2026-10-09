@@ -66,14 +66,16 @@ Seeded test users: `alice@example.com` / `bob@example.com` — password `passwor
 
 ## Sandbox Snapshot — Critical Gotcha
 
-`src/lib/audio/generate-audio.ts` is **baked into the sandbox snapshot**. Any edit requires rebuilding:
+`src/lib/audio/generate-audio.ts` **and everything it imports** (currently `loudness.ts`) are **baked into the sandbox snapshot**, as are the sound effects in `scripts/sound-effects.ts`. Any edit to either requires rebuilding:
 
 ```bash
 npx tsx scripts/create-sandbox-snapshot.ts
-# copy the printed snapshot ID into AUDIO_SANDBOX_SNAPSHOT_ID
+# copy the printed snapshot ID into AUDIO_SANDBOX_SNAPSHOT_ID, locally and in Vercel, then redeploy
 ```
 
-Without a rebuild, changes to that file have zero effect on what actually runs. Same applies when bundling new sound effect files into the snapshot.
+Without a rebuild, changes have zero effect on what actually runs. The build needs a `VERCEL_OIDC_TOKEN` and production `SOUND_EFFECTS_SUPABASE_*` credentials; the script header says how to get both without overwriting `.env.local`. `scripts/test-audio-generation.ts` checks a snapshot end to end.
+
+A new sound goes in `src/lib/meditation/sounds.ts` (what the prompt offers) and `scripts/sound-effects.ts` (what the build produces); a test fails if they drift.
 
 ## Pre-Ship Work
 

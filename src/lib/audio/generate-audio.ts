@@ -2,8 +2,9 @@
  * Standalone audio generation script that runs inside a Vercel Sandbox.
  *
  * Reads config.json from the sandbox filesystem, processes each meditation
- * segment (TTS, silence, sound effects), concatenates them, optionally mixes
- * background music, and writes the final MP3 to output.mp3.
+ * segment (TTS, silence, sound effects), normalizes the narration's loudness,
+ * concatenates them, optionally mixes background music, and writes the final
+ * MP3 to output.mp3.
  *
  * This file is compiled to JS and baked into the sandbox snapshot — it is NOT
  * uploaded per-run. Only config.json is written at runtime.
@@ -16,9 +17,11 @@ import { readFile, writeFile, mkdir, copyFile, access } from "node:fs/promises";
 import { join } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
+import { narrationGainDb, parseIntegratedLoudness } from "./loudness";
 
 // ---------------------------------------------------------------------------
-// Types (self-contained — no imports from the main project)
+// Types (self-contained — the only project import is ./loudness, which has no
+// dependencies and is bundled in by esbuild)
 // ---------------------------------------------------------------------------
 
 interface Segment {
@@ -129,11 +132,51 @@ function generateSilence(
 // Audio concatenation via FFmpeg
 // ---------------------------------------------------------------------------
 
+/**
+ * Applied to every speech segment. The gain brings narration to the target
+ * level; the limiter catches peaks it pushes past -1 dBFS -- a quiet voice can
+ * need +14 dB, and its peaks land close to clipping.
+ */
+function narrationFilter(gainDb: number): string {
+  return `volume=${gainDb.toFixed(2)}dB,alimiter=limit=0.891:level=false`;
+}
+
+/** Integrated loudness of all the narration, measured as one stream. */
+function measureNarration(speechFiles: string[]): Promise<number | null> {
+  if (speechFiles.length === 0) return Promise.resolve(null);
+
+  return new Promise((resolve) => {
+    const command = ffmpeg();
+    for (const file of speechFiles) {
+      command.input(file);
+    }
+    const inputs = speechFiles.map((_, i) => `[${i}:a]`).join("");
+
+    command
+      .complexFilter(
+        `${inputs}concat=n=${speechFiles.length}:v=0:a=1,ebur128=framelog=quiet[out]`,
+      )
+      .outputOptions("-map", "[out]")
+      .format("null")
+      .output("-")
+      .on("end", (_stdout: string | null, stderr: string | null) =>
+        resolve(parseIntegratedLoudness(stderr ?? "")),
+      )
+      // A failed measurement leaves narration unadjusted rather than failing
+      // the whole meditation.
+      .on("error", () => resolve(null))
+      .run();
+  });
+}
+
 function concatenateAudio(
   audioFiles: string[],
   outputPath: string,
+  speechIndices: Set<number>,
+  narrationGain: number,
 ): Promise<void> {
-  if (audioFiles.length === 1) {
+  const adjustSpeech = narrationGain !== 0 && speechIndices.size > 0;
+  if (audioFiles.length === 1 && !adjustSpeech) {
     return copyFile(audioFiles[0], outputPath);
   }
 
@@ -144,8 +187,17 @@ function concatenateAudio(
       command.input(file);
     }
 
-    const filterInputs = audioFiles.map((_, i) => `[${i}:a]`).join("");
-    const filterComplex = `${filterInputs}concat=n=${audioFiles.length}:v=0:a=1[out]`;
+    const adjusted = audioFiles
+      .map((_, i) =>
+        adjustSpeech && speechIndices.has(i)
+          ? `[${i}:a]${narrationFilter(narrationGain)}[s${i}];`
+          : "",
+      )
+      .join("");
+    const filterInputs = audioFiles
+      .map((_, i) => (adjustSpeech && speechIndices.has(i) ? `[s${i}]` : `[${i}:a]`))
+      .join("");
+    const filterComplex = `${adjusted}${filterInputs}concat=n=${audioFiles.length}:v=0:a=1[out]`;
 
     command
       .complexFilter(filterComplex)
@@ -195,6 +247,8 @@ function mixBackgroundMusic(
 
 interface ProcessingResult {
   audioFiles: string[];
+  /** Positions in audioFiles that hold narration. */
+  speechIndices: Set<number>;
   ttsCharacters: number;
   ttsRequests: number;
 }
@@ -206,6 +260,7 @@ async function processSegments(
   voiceSettings?: Config["voiceSettings"],
 ): Promise<ProcessingResult> {
   const audioFiles: string[] = [];
+  const speechIndices = new Set<number>();
   let ttsCharacters = 0;
   let ttsRequests = 0;
 
@@ -219,6 +274,7 @@ async function processSegments(
         const chars = await generateSpeech(client, segment.content!, voiceId, outPath, voiceSettings);
         ttsCharacters += chars;
         ttsRequests++;
+        speechIndices.add(i);
         console.log(`  → ${chars} characters billed`);
         break;
       }
@@ -244,7 +300,7 @@ async function processSegments(
     audioFiles.push(outPath);
   }
 
-  return { audioFiles, ttsCharacters, ttsRequests };
+  return { audioFiles, speechIndices, ttsCharacters, ttsRequests };
 }
 
 // ---------------------------------------------------------------------------
@@ -267,17 +323,29 @@ async function main(): Promise<void> {
   });
 
   // Process all segments sequentially to stay within API rate limits
-  const { audioFiles, ttsCharacters, ttsRequests } = await processSegments(
-    config.segments,
-    client,
-    config.voiceId,
-    config.voiceSettings,
+  const { audioFiles, speechIndices, ttsCharacters, ttsRequests } =
+    await processSegments(
+      config.segments,
+      client,
+      config.voiceId,
+      config.voiceSettings,
+    );
+
+  console.log("Measuring narration loudness...");
+  const measured = await measureNarration(
+    audioFiles.filter((_, i) => speechIndices.has(i)),
+  );
+  const narrationGain = narrationGainDb(measured);
+  console.log(
+    measured === null
+      ? "  → could not measure; narration left unadjusted"
+      : `  → ${measured} LUFS, applying ${narrationGain.toFixed(1)} dB`,
   );
 
   // Concatenate all segment audio into a single file
   console.log("Concatenating segments...");
   const voiceOnlyPath = join(TEMP_DIR, "voice-only.mp3");
-  await concatenateAudio(audioFiles, voiceOnlyPath);
+  await concatenateAudio(audioFiles, voiceOnlyPath, speechIndices, narrationGain);
 
   // Mix background music if provided
   if (config.backgroundMusic && (await fileExists(config.backgroundMusic))) {

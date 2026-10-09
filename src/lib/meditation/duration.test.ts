@@ -26,6 +26,23 @@ describe("estimateDuration", () => {
     expect(out.speechSeconds).toBeLessThan(65);
   });
 
+  it("counts each sound effect at its real length", () => {
+    const out = estimateDuration(
+      "*[SOUND: gong-deep.mp3]*\n*[SOUND: chime-soft.mp3]*",
+    );
+    expect(out.soundSeconds).toBe(12 + 4);
+  });
+
+  it("counts an unknown sound as the 1s of silence the pipeline substitutes", () => {
+    const out = estimateDuration("*[SOUND: thunder.mp3]*");
+    expect(out.soundSeconds).toBe(1);
+  });
+
+  it("includes sounds in the total", () => {
+    const out = estimateDuration("*[PAUSE: 5 seconds]*\n*[SOUND: bell-tibetan.mp3]*");
+    expect(out.totalSeconds).toBe(5 + 7);
+  });
+
   it("totals all three components", () => {
     const script = [
       "Welcome to this practice.", // 4 words
