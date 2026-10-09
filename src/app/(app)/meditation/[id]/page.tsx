@@ -8,7 +8,7 @@ import { VisibilityToggle } from "@/components/visibility-toggle";
 import { AddToCollectionDialog } from "@/components/add-to-collection-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { ScriptPlaybackProvider } from "@/components/script-playback";
 import { ArrowLeft, Clock } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -58,70 +58,76 @@ export default async function MeditationDetailPage({
       : { available: false, eventId: null };
 
   return (
-    <div className="space-y-6">
-      <Link href={user ? "/dashboard" : "/discover"}>
-        <Button variant="ghost" size="sm" className="gap-2">
-          <ArrowLeft className="h-4 w-4" />
-          {user ? "Back to Library" : "Back to Discover"}
-        </Button>
-      </Link>
+    // The player and a 65ch script set the width; the shell's grid width
+    // would leave the script floating in a wide card.
+    <div className="mx-auto max-w-3xl space-y-10">
+      <div className="space-y-6">
+        <Link href={user ? "/dashboard" : "/discover"}>
+          <Button variant="ghost" size="sm" className="-ml-3 gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            {user ? "Back to Library" : "Back to Discover"}
+          </Button>
+        </Link>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="font-serif text-2xl font-medium tracking-tight">
-            {meditation.title}
-          </h1>
-          <p className="text-sm text-muted-foreground">{meditation.prompt}</p>
-          <div className="flex items-center gap-2 pt-1">
-            <Badge variant="secondary">{meditation.status.replace(/_/g, " ")}</Badge>
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Clock className="h-3 w-3" />
-              {new Date(meditation.created_at).toLocaleDateString()}
-            </span>
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-2">
+            <h1 className="font-serif text-2xl font-medium tracking-tight text-balance">
+              {meditation.title}
+            </h1>
+            <p className="max-w-[60ch] text-muted-foreground">{meditation.prompt}</p>
+            <div className="flex items-center gap-3 pt-1">
+              <Badge variant="secondary">{meditation.status.replace(/_/g, " ")}</Badge>
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Clock className="h-3 w-3" />
+                {new Date(meditation.created_at).toLocaleDateString()}
+              </span>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {isOwner && meditation.status === "completed" && (
-            <VisibilityToggle
-              meditationId={meditation.id}
-              isPublic={meditation.is_public}
-            />
-          )}
-          {user && (
-            <>
-              <FavoriteButton
+          <div className="flex items-center gap-2">
+            {isOwner && meditation.status === "completed" && (
+              <VisibilityToggle
                 meditationId={meditation.id}
-                isFavorited={meditation.is_favorited ?? false}
-                size="default"
+                isPublic={meditation.is_public}
               />
-              <AddToCollectionDialog meditationId={meditation.id} />
-            </>
-          )}
+            )}
+            {user && (
+              <>
+                <FavoriteButton
+                  meditationId={meditation.id}
+                  isFavorited={meditation.is_favorited ?? false}
+                  size="default"
+                />
+                <AddToCollectionDialog meditationId={meditation.id} />
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      <Separator />
+      <ScriptPlaybackProvider>
+        <div className="space-y-10">
+          <AudioSection
+            meditation={meditation}
+            isOwner={isOwner}
+            isSignedIn={!!user}
+            quota={quota}
+            freeRetryEventId={freeRetry.eventId}
+          />
 
-      <AudioSection
-        meditation={meditation}
-        isOwner={isOwner}
-        isSignedIn={!!user}
-        quota={quota}
-        freeRetryEventId={freeRetry.eventId}
-      />
-
-      {meditation.script && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-serif text-lg font-medium">
-              Meditation Script
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScriptViewer script={meditation.script} />
-          </CardContent>
-        </Card>
-      )}
+          {meditation.script && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-serif text-xl font-medium">
+                  Meditation Script
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScriptViewer script={meditation.script} />
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </ScriptPlaybackProvider>
     </div>
   );
 }
