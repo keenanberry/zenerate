@@ -137,3 +137,31 @@ bare URL.
   `scripts/**/*.test.ts`.
 - `BrandMark` gets unique mask ids from `useId` (`_S_4_` style in React 19.2), and the masks
   resolve in Chrome with several instances on one page.
+
+**Follow-up (2026-10-09): the mark placed in the UI**
+
+- `src/components/nav.tsx`: `BrandMark` beside the lowercase `zenerate` wordmark, 22px,
+  `text-primary`, `veins={false}`. One component, so it reaches the landing page, the app
+  shell and the legal layout; task 22 left no separate header markup in `src/app/page.tsx`.
+- `src/app/(auth)/login/page.tsx`: the mark at 64px with its veins, stacked above the
+  wordmark and the card title. The link's hit area shrinks to the mark and wordmark
+  (`justify-self-center`) instead of the card's full width.
+- *Alignment.* Measured in Chrome: Geist bold at 18px has a 12.8px cap height, so a 20–24px
+  mark cannot sit inside it. The leaf's base sits on the baseline (38.7px against a 38px
+  baseline, the overshoot a round letter has) and the stem hangs like a descender, which
+  takes `-translate-y-px` on top of `items-center`. 22px, not 20: at 20 the leaf read light
+  beside the bold wordmark.
+- *Colour.* `text-primary` (Amethyst Glow in dark, Amethyst in light), matching the icon
+  set; no gradient. As a graphic it clears 3:1 on every ground: 6.5:1 on Midnight, 5.9:1
+  on the dark card, 3.6:1 on Paper, 3.9:1 on the white card.
+- *Accessibility.* The mark is `aria-hidden` (no `title`); the wordmark text stays the
+  link's name.
+- *Checked*, on a dev server on :3127, in order: dark at 1440px; dark at 390px (landing and
+  login, `scrollWidth` 390, no overflow with the signed-in nav, the widest variant); light at
+  390, 600 and 1440px; every `Nav` usage site (`/`, `/dashboard`, `/discover`, `/terms`) in
+  both themes at 1440px; the impeccable detector once on both files, no findings.
+- *Found.* A hot edit left the dev server server-rendering the old class, which showed as a
+  hydration mismatch on the mark's `<svg>`; a clean restart cleared it, and every check above
+  ran after it. `DESIGN.md` (Navigation: "Wordmark `zenerate` in bold…") and `PRODUCT.md`
+  (Brand Commitments: "Logo: none exists") predate the mark and now lag the UI; neither file
+  was in this follow-up's scope.
