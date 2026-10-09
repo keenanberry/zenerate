@@ -1,13 +1,18 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getPublicMeditations } from "@/lib/meditation/actions";
+import { pageMetadata } from "@/lib/seo/metadata";
 import { MeditationListView } from "@/components/meditation-list-view";
 import { DiscoverViewWrapper } from "./view-wrapper";
 import { DiscoverSearch } from "./search";
 
-export const metadata = {
+export const metadata = pageMetadata({
   title: "Discover | Zenerate",
-};
+  socialTitle: "Discover meditations",
+  description:
+    "Meditations other people composed on Zenerate and chose to share. Written and narrated with AI, free to listen to, no account needed.",
+  path: "/discover",
+});
 
 async function DiscoverFeed({ search }: { search?: string }) {
   const supabase = await createClient();
