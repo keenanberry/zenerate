@@ -139,6 +139,9 @@ components:
     backgroundColor: "{colors.midnight}"
     textColor: "{colors.moonlit}"
     height: "64px"
+  brand-mark:
+    textColor: "{colors.amethyst-glow}"
+    size: "22px"
   play-button:
     backgroundColor: "linear-gradient(135deg, oklch(0.7058 0.0777 302.0489), oklch(0.8391 0.0692 2.6681))"
     textColor: "{colors.midnight}"
@@ -435,6 +438,13 @@ texture in the interface and it stays unadorned.
   and a label that is `sr-only` below `sm`, never `hidden`, so the icon-only items keep an
   accessible name; the active item is `secondary` with `aria-current="page"`. The theme toggle is an icon button whose sun
   and moon cross-fade with a rotate.
+- The wordmark has the Brand Mark beside it at 22px, in `text-primary`, veins off.
+
+### Brand Mark
+The bodhi leaf, `BrandMark` in `src/components/brand-mark.tsx`, drawn in `currentColor`:
+colour comes from a text token, size from `size-*`. Veins are cut out of the leaf only at
+64px and above (the login card); below that it is the silhouette (nav, favicon). Never
+filled with a gradient: the gradient belongs to the player.
 
 ### Script Viewer (signature)
 The reading surface. Spoken passages are Script type at a 65ch measure, 24px apart, with

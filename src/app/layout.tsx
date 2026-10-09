@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { GROUND_DARK, GROUND_LIGHT } from "@/lib/brand/ground";
+import { defaultMetadata } from "@/lib/seo/metadata";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,9 +28,10 @@ const lora = Lora({
 });
 
 export const metadata: Metadata = {
-  title: "Zenerate — AI Meditation Generator",
-  description:
-    "Create personalized meditation experiences with AI. Generate scripts, build your library, and discover community meditations.",
+  // --- SEO (task 26): metadataBase, the pitch as the default description, the
+  // OG image and the large-image card. Pages worth sharing override these
+  // through pageMetadata().
+  ...defaultMetadata,
 
   // --- Install (task 24). The manifest is `manifest.ts`; iOS ignores most of
   // it and reads these instead. "default" keeps the page inside the safe area

@@ -11,7 +11,15 @@ import {
   getLatestPublicMeditation,
   type LatestMeditation,
 } from "@/lib/landing/latest-meditation";
+import { pageMetadata } from "@/lib/seo/metadata";
 import { createClient } from "@/lib/supabase/server";
+
+export const metadata = pageMetadata({
+  title: "Zenerate — AI Meditation Generator",
+  description:
+    "Describe the meditation you need in your own words. Zenerate writes the script with AI, narrates it and sets its pauses and bells into one audio file.",
+  path: "/",
+});
 
 // Written in the markup the model writes, so it renders through the real
 // ScriptViewer. An example, and labelled as one on the page.

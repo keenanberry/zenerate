@@ -1,3 +1,5 @@
+import { cache } from "react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMeditation } from "@/lib/meditation/actions";
@@ -13,18 +15,25 @@ import { ArrowLeft, Clock } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getQuotaUsage, isFreeRetryAvailable } from "@/lib/audio/quota";
+import { meditationMetadata } from "@/lib/seo/metadata";
+
+// One read per request, shared by generateMetadata and the page. React's
+// cache is scoped to this request's render and keeps nothing between viewers;
+// the read stays cookie-bound and the route stays dynamic. Do not swap it for
+// unstable_cache, "use cache" or revalidate: the result carries a signed audio
+// URL minted for this viewer (see src/lib/audio/signed-url.ts).
+const loadMeditation = cache(getMeditation);
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string }>;
-}) {
+}): Promise<Metadata> {
   const { id } = await params;
   try {
-    const meditation = await getMeditation(id);
-    return { title: `${meditation.title} | Zenerate` };
+    return meditationMetadata(await loadMeditation(id));
   } catch {
-    return { title: "Meditation | Zenerate" };
+    return meditationMetadata(null);
   }
 }
 
@@ -36,7 +45,7 @@ export default async function MeditationDetailPage({
   const { id } = await params;
   let meditation;
   try {
-    meditation = await getMeditation(id);
+    meditation = await loadMeditation(id);
   } catch {
     notFound();
   }
