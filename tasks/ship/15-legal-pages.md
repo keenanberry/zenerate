@@ -34,7 +34,8 @@ Both pages publish it, so set up the forwarder before announcing the app.
 - Vercel was missing from the processor list. It hosts the app, sees request logs,
   and runs the audio sandbox.
 
-**Follow-ups filed:** `post-ship/account-deletion.md`. Deletion is email-only, and
+**Follow-ups filed:** `post-ship/backup-retention.md`: nothing prunes dumps yet, so
+the 30-day promise is unenforced. `post-ship/account-deletion.md`. Deletion is email-only, and
 storage objects do not cascade, so the policy's "audio is deleted" promise is manual
 until that ships. Notes added to task 08, `post-ship/analytics.md` and
 `post-ship/error-tracking.md`: each adds a provider the policy must name.
