@@ -62,7 +62,7 @@ the repo goes public in task 09.
 | 23 | [Icon set + OG image](./23-icon-set-og-image.md) | Done* | Bodhi leaf mark with its veins drawn as a tree (`src/assets/brand/mark.svg`), a `BrandMark` component, every raster rebuilt by `scripts/build-icons.ts`. Mark placed in the nav and login card (follow-up). *Share previews and the phone home-screen check are the operator's |
 | 24 | [PWA manifest & install](./24-pwa-manifest.md) | Done* | Manifest at `/manifest.webmanifest` (standalone, opens to `/dashboard`, Midnight theme, maskable icon), iOS meta with the `default` status bar, no service worker. Lighthouse installability passes. *iPhone install and in-app sign-in are the operator's |
 | 25 | [Lock-screen audio](./25-lock-screen-audio.md) | Done* | Media Session on wavesurfer's own `<audio>`: title, artwork, play/pause, 15 s skips, seekbar. *Every device check is the operator's: Mac Now Playing, iPhone lock screen, PWA |
-| 26 | [SEO metadata](./26-seo-metadata.md) | Not started | Needs 22 (pitch) and 23 (OG image) |
+| 26 | [SEO metadata](./26-seo-metadata.md) | Done* | `metadataBase` from `NEXT_PUBLIC_SITE_URL` (falls back to production), the pitch as default description, OG image + large Twitter card, per-page cards for `/`, `/discover` and public meditations, `robots.ts`, live `sitemap.ts`. `/meditation/[id]` still dynamic. *Real-app share previews and the Facebook debugger are the operator's, after deploy |
 
 ---
 
