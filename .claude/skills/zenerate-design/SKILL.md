@@ -30,23 +30,25 @@ reference the variable with a fallback inside `var()` so `global-error.tsx`, whi
 without the root layout, still gets a font. Never spell a family name into a token: it
 matches only by accident of the bundler, and loses the metric-matched fallback.
 
-**The Token Rule.** Colour comes from the `--color-*` set in `globals.css:7-73`:
+**The Token Rule.** Colour comes from the `--color-*` set in `globals.css:7-81`:
 `bg-primary/10`, `text-accent-foreground`, `text-muted-foreground`, `bg-destructive/10`
 and so on. When a state needs a colour the set lacks, add a token to both `:root` and
-`.dark` and use it. Three files carry raw palette classes from before this rule; a change
-that touches one of them replaces them with tokens:
-
-- `src/components/script-viewer.tsx:36-64` (amber, blue, purple markers)
-- `src/components/meditation-card.tsx:22-26` (status badges)
-- `src/components/meditation-form.tsx:454` (duration warning)
+`.dark` and use it. The non-violet states already have tokens (task 21): `--candle`,
+`--sage` and `--periwinkle` (status badges, script markers, the duration warning), and
+`--card-hover` and `--track` for hover surfaces and unfilled tracks. Reach for those
+before adding another. Before review this returns nothing:
+`grep -rnE "(bg|text|border)-(red|amber|blue|green|emerald|yellow|purple)-[0-9]" src`.
 
 **The Lightness Rule.** On a dark surface, elevation is the step from `--background` to
-`--card`, never a shadow. New code carries no `shadow-*` class. The `shadow-sm` on
-`src/components/ui/card.tsx:10` is stock shadcn and leaves in task 21.
+`--card`, never a shadow, and hover on a raised surface is `bg-card-hover`. New code
+carries no `shadow-*` class. Task 21 removed the stock shadows from every in-flow
+primitive; only the floating layers in `src/components/ui/` (dialog, sheet, popover,
+dropdown menu, select list) keep theirs, and DESIGN.md's Elevation section says why.
 
-**The One Gradient Rule.** The purple-to-rose gradient (`--primary` to `--accent`) belongs
-to the play button and the played waveform in `src/components/audio-player.tsx`, and to
-nothing else.
+**The One Gradient Rule.** The purple-to-rose gradient (`--gradient-start` to
+`--gradient-end`, never `--primary` to `--accent`, which is purple-to-plum in dark)
+belongs to the play button and the played waveform in `src/components/audio-player.tsx`,
+and to nothing else. The halo behind the player (`player-halo`) is its only companion.
 
 ## Verify, in this order
 

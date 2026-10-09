@@ -75,16 +75,19 @@ Provide feedback on a generated script and regenerate with context, rather than 
 
 ### 12. Animations & Transitions
 - Page transitions between routes (Framer Motion or View Transitions API)
-- Card hover effects with subtle depth/shadow changes
 - Smooth expand/collapse for script sections
 - Gentle fade-in for streaming script text during generation
+
+Task 21 did card hover (a lighter surface, `--card-hover`, not a shadow: shadows are
+out under DESIGN.md's Lightness Rule) and the playback fade in the script viewer.
 
 ### 13. Accessibility
 - ARIA labels on all interactive elements
 - Keyboard navigation through card grids
 - Screen reader announcements for status changes
 - Focus management after dialog close
-- Reduced motion preference support
+- Reduced motion: transitions added or touched in task 21 are under `motion-safe:`; the
+  shadcn overlay animations (dialog, popover, menus) are not yet
 
 ### 14. PWA Support
 - Service worker for offline access to saved scripts
@@ -95,12 +98,7 @@ Provide feedback on a generated script and regenerate with context, rather than 
 
 ## Design System Refinements
 
-### Color Usage
-- Use the rose-pink accent color more intentionally — currently underused
-- Gradient backgrounds for hero sections and card headers
-- Subtle purple-to-pink gradient on the primary CTA button
-
-### Spacing & Layout
-- Increase card padding for a more "breathable" feel (meditation app should feel spacious)
-- Max width of content area could be narrower for script reading (prose-friendly width ~65ch)
-- More vertical whitespace between sections
+Colour usage and spacing were settled by the Nocturne pass (task 21) and are recorded in
+`DESIGN.md`: the rose lives in the player gradient, card padding and vertical rhythm are a
+table under Layout, and width is chosen per content type. Gradients on heroes, card
+headers or CTAs are ruled out by the One Gradient Rule, not deferred.

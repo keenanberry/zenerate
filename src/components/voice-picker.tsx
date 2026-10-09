@@ -117,7 +117,7 @@ export function VoicePicker({ selectedVoiceId, onSelect }: VoicePickerProps) {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">{voice.name}</span>
-                    <Badge variant="outline" className="text-[10px] capitalize">
+                    <Badge variant="outline" className="capitalize">
                       {voice.gender}
                     </Badge>
                   </div>
