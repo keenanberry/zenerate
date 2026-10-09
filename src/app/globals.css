@@ -70,11 +70,21 @@
   --shadow-opacity: var(--shadow-opacity);
   --color-shadow-color: var(--shadow-color);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-card-hover: var(--card-hover);
+  --color-track: var(--track);
+  --color-gradient-start: var(--gradient-start);
+  --color-gradient-end: var(--gradient-end);
+  --color-gradient-foreground: var(--gradient-foreground);
+  --color-candle: var(--candle);
+  --color-sage: var(--sage);
+  --color-periwinkle: var(--periwinkle);
 }
 
 :root {
   --radius: 0.5rem;
-  --background: oklch(0.9777 0.0041 301.4256);
+  /* Paper: the same violet as the dark ground at enough chroma to read as
+     lilac rather than grey. Was oklch(0.9777 0.0041 301.4256). */
+  --background: oklch(0.9690 0.0150 300.0000);
   --foreground: oklch(0.3651 0.0325 287.0807);
   --card: oklch(1.0000 0 0);
   --card-foreground: oklch(0.3651 0.0325 287.0807);
@@ -90,7 +100,7 @@
   --accent-foreground: oklch(0.3394 0.0441 1.7583);
   --destructive: oklch(0.6332 0.1578 22.6734);
   --border: oklch(0.8447 0.0226 300.1421);
-  --input: oklch(0.9329 0.0124 301.2783);
+  --input: oklch(0.8447 0.0226 300.1421);
   --ring: oklch(0.6104 0.0767 299.7335);
   --chart-1: oklch(0.6104 0.0767 299.7335);
   --chart-2: oklch(0.7889 0.0802 359.9375);
@@ -106,6 +116,25 @@
   --sidebar-border: oklch(0.8719 0.0198 302.1690);
   --sidebar-ring: oklch(0.6104 0.0767 299.7335);
   --destructive-foreground: oklch(0.9777 0.0041 301.4256);
+  /* A raised surface under the pointer: one step lighter than --card in dark,
+     a breath of tint over white in light. */
+  --card-hover: oklch(0.9860 0.0080 300.0000);
+  /* The unfilled part of anything that fills: the unplayed waveform, the
+     volume slider. Quieter than text, louder than a hairline. */
+  --track: oklch(0.8447 0.0226 300.1421);
+  /* The player gradient, and nothing else (DESIGN.md, The One Gradient Rule).
+     Its own pair because the rose is --accent here and --accent-foreground in
+     .dark. */
+  --gradient-start: oklch(0.6104 0.0767 299.7335);
+  --gradient-end: oklch(0.7889 0.0802 359.9375);
+  --gradient-foreground: oklch(0.2166 0.0215 292.8474);
+  /* Light gets the shape of the glow, not its luminosity: a flat tint. */
+  --player-halo: color-mix(in oklch, var(--gradient-start) 9%, transparent);
+  /* Tertiary hues for states and script markers, dark enough to be text on
+     white and on Paper. */
+  --candle: oklch(0.5200 0.0900 70.0000);
+  --sage: oklch(0.5000 0.0700 170.0000);
+  --periwinkle: oklch(0.5000 0.0800 258.0000);
   --font-sans: var(--font-geist-sans, sans-serif);
   --font-serif: var(--font-lora, Georgia, serif);
   --font-mono: var(--font-geist-mono, monospace);
@@ -161,6 +190,21 @@
   --sidebar-border: oklch(0.2847 0.0346 291.2726);
   --sidebar-ring: oklch(0.7058 0.0777 302.0489);
   --destructive-foreground: oklch(0.2166 0.0215 292.8474);
+  --card-hover: oklch(0.2847 0.0346 291.2726);
+  --track: oklch(0.4604 0.0472 295.5578);
+  --gradient-start: oklch(0.7058 0.0777 302.0489);
+  --gradient-end: oklch(0.8391 0.0692 2.6681);
+  --gradient-foreground: oklch(0.2166 0.0215 292.8474);
+  /* The one lit thing in the room: a soft radial behind the player. */
+  --player-halo: radial-gradient(
+    60% 65% at 50% 45%,
+    color-mix(in oklch, var(--gradient-start) 24%, transparent),
+    color-mix(in oklch, var(--gradient-end) 6%, transparent) 55%,
+    transparent 75%
+  );
+  --candle: oklch(0.8540 0.0882 76.8292);
+  --sage: oklch(0.7321 0.0749 169.8670);
+  --periwinkle: oklch(0.7857 0.0645 258.0839);
   --radius: 0.5rem;
   --font-sans: var(--font-geist-sans, sans-serif);
   --font-serif: var(--font-lora, Georgia, serif);
@@ -181,6 +225,12 @@
   --shadow-lg: 1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 4px 6px 0px hsl(0 0% 0% / 0.06);
   --shadow-xl: 1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 8px 10px 0px hsl(0 0% 0% / 0.06);
   --shadow-2xl: 1px 2px 5px 1px hsl(0 0% 0% / 0.15);
+}
+
+/* The halo behind the audio player: a radial glow in dark, a flat tint in
+   light. The value lives in --player-halo so the theme decides which. */
+@utility player-halo {
+  background: var(--player-halo);
 }
 
 @layer base {
