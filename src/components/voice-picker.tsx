@@ -6,14 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, Play, Square, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface Voice {
-  voiceId: string;
-  name: string;
-  description: string;
-  gender: string;
-  previewUrl: string | null;
-}
+import type { Voice } from "@/lib/voices/catalog";
 
 interface VoicePickerProps {
   selectedVoiceId: string | null;
@@ -96,7 +89,7 @@ export function VoicePicker({ selectedVoiceId, onSelect }: VoicePickerProps) {
           </Badge>
         )}
       </div>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {voices.map((voice) => {
           const isSelected = selectedVoiceId === voice.voiceId;
           const isPlaying = playingId === voice.voiceId;

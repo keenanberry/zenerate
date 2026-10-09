@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { VoicePicker } from "@/components/voice-picker";
 import { Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-
-const DEFAULT_VOICE_ID = "Mu5jxyqZOLIGltFpfalg"; // Jameson
+import { DEFAULT_VOICE_ID } from "@/lib/voices/catalog";
 
 export type QuotaProp = {
   used: number;
@@ -27,7 +26,8 @@ export function GenerateAudioPanel({
   quota,
   onStarted,
 }: GenerateAudioPanelProps) {
-  const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
+  // Pre-selected, so the voice that will be used is the one shown.
+  const [selectedVoiceId, setSelectedVoiceId] = useState(DEFAULT_VOICE_ID);
   const [generating, setGenerating] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +50,7 @@ export function GenerateAudioPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           meditationId,
-          voiceId: selectedVoiceId ?? DEFAULT_VOICE_ID,
+          voiceId: selectedVoiceId,
         }),
       });
 

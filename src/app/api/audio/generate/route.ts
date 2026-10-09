@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@/lib/supabase/service-role";
 import { processAudioWorkflow } from "@/lib/audio/workflow";
 import { reserveAudioGeneration, getQuotaConfig } from "@/lib/audio/quota";
+import { resolveVoiceId } from "@/lib/voices/catalog";
+import { getVoices } from "@/lib/voices/server";
 
 export const maxDuration = 30;
 
@@ -38,7 +40,7 @@ export async function POST(req: Request) {
 
   const { data: meditation, error } = await supabase
     .from("meditations")
-    .select("id, user_id, status")
+    .select("id, user_id, status, settings")
     .eq("id", meditationId)
     .single();
 
@@ -57,6 +59,26 @@ export async function POST(req: Request) {
       },
       { status: 409 },
     );
+  }
+
+  // Validate the voice before reserving quota, so a rejected request never
+  // costs the user a generation. Only a requested voice needs the list; a
+  // retry sends none and reuses the voice saved on the meditation.
+  let allowedVoices = new Set<string>();
+  if (voiceId !== undefined && voiceId !== null) {
+    try {
+      allowedVoices = new Set((await getVoices()).map((v) => v.voiceId));
+    } catch (err) {
+      console.error("Could not load voices:", err);
+      return NextResponse.json(
+        { error: "Voices are temporarily unavailable. Try again shortly." },
+        { status: 503 },
+      );
+    }
+  }
+  const voice = resolveVoiceId(voiceId, allowedVoices);
+  if (!voice.ok) {
+    return NextResponse.json({ error: "Unknown voice" }, { status: 400 });
   }
 
   const serviceClient = createServiceClient();
@@ -87,7 +109,14 @@ export async function POST(req: Request) {
 
   const { error: updateError } = await supabase
     .from("meditations")
-    .update({ status: "processing_audio", updated_at: new Date().toISOString() })
+    .update({
+      status: "processing_audio",
+      updated_at: new Date().toISOString(),
+      // Saved so a free retry, which sends no voice, narrates in the same one.
+      ...(voice.voiceId && {
+        settings: { ...(meditation.settings ?? {}), voice: voice.voiceId },
+      }),
+    })
     .eq("id", meditationId);
 
   if (updateError) {
@@ -104,7 +133,7 @@ export async function POST(req: Request) {
 
   const run = await start(processAudioWorkflow, [
     meditationId,
-    typeof voiceId === "string" ? voiceId : null,
+    voice.voiceId,
     reserve.eventId,
   ]);
 
