@@ -261,11 +261,13 @@ antique; a global sans makes the script feel like a settings page.
 
 ### Named Rules
 **The Loaded Face Rule.** A font token names a face only if `src/app/layout.tsx` loads it
-with `next/font` and the token references that face's CSS variable. `next/font` registers
-faces under hashed family names, so a token that spells the family out (`--font-sans:
-Geist`, `--font-serif: "Lora"`, `--font-mono: "Fira Code"`) matches nothing and falls back
-to the system. All three do today. Task 20 wires Lora and Geist and reconciles mono to
-Geist Mono.
+with `next/font` and the token references that face's CSS variable. The variable carries
+the metric-matched fallback `next/font` generates, and it does not depend on the family
+name the bundler registers (Turbopack keeps the plain name, webpack hashes it); a token
+that names a face nobody loads, as `"Lora"` and `"Fira Code"` once did, falls back to the
+system without a word. All three tokens are now wired: `--font-sans` to Geist,
+`--font-serif` to Lora and `--font-mono` to Geist Mono, through their variables in every
+block that declares them (task 20).
 
 **The Measure Rule.** Prose gets a measure: 65ch for the script, about 60ch for legal and
 descriptive text. A prose column never inherits the shell's `max-w-5xl`.

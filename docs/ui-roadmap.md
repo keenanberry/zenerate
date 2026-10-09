@@ -95,10 +95,6 @@ Provide feedback on a generated script and regenerate with context, rather than 
 
 ## Design System Refinements
 
-### Typography
-- The amethyst-haze theme defines a serif font (Lora) — consider using it for meditation script text to create a more literary, calming reading experience
-- Larger line-height for script text (1.8+) to improve readability
-
 ### Color Usage
 - Use the rose-pink accent color more intentionally — currently underused
 - Gradient backgrounds for hero sections and card headers

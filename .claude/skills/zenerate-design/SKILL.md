@@ -21,13 +21,14 @@ to work inside it in this codebase.
 A token table cannot catch these. Each names the rule, then where it is broken today.
 
 **The Loaded Face Rule.** A font token is real only when `src/app/layout.tsx` loads the
-face with `next/font` and the token references that face's CSS variable. `next/font`
-registers each face under a hashed family name, so a token that names the family never
-matches it: `--font-sans: Geist` (`globals.css:10`) and `--font-serif: "Lora"`
-(`globals.css:48`, `:110`, `:166`) both fall back to system fonts today. Task 20 wires
-them. Until it lands, use the class DESIGN.md's type scale calls for (`font-serif` for
-Script and Headline) so the markup is right when the face arrives, and say in your report
-that the face is unwired. Wiring it is task 20's job, done its way, not a side effect.
+face with `next/font` and the token references that face's CSS variable. All three are
+wired (task 20): `--font-sans`, `--font-serif` and `--font-mono` in `globals.css` point at
+`--font-geist-sans`, `--font-lora` and `--font-geist-mono` in the `@theme inline`, `:root`
+and `.dark` blocks. A new face takes the same path: load it with a `variable`, add that
+class to `<html>` (not `<body>`, or Tailwind's `html` font rule cannot resolve it), and
+reference the variable with a fallback inside `var()` so `global-error.tsx`, which renders
+without the root layout, still gets a font. Never spell a family name into a token: it
+matches only by accident of the bundler, and loses the metric-matched fallback.
 
 **The Token Rule.** Colour comes from the `--color-*` set in `globals.css:7-73`:
 `bg-primary/10`, `text-accent-foreground`, `text-muted-foreground`, `bg-destructive/10`
