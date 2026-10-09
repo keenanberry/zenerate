@@ -90,7 +90,7 @@ export function GenerateAudioPanel({
 
   return (
     <Card>
-      <CardContent className="space-y-5 pt-6">
+      <CardContent className="space-y-6">
         <div className="space-y-1">
           <h2 className="font-serif text-lg font-medium">Generate Audio</h2>
           <p className="text-sm text-muted-foreground">

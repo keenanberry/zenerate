@@ -41,7 +41,7 @@ export function ScriptEditor({ script, onChange }: ScriptEditorProps) {
       </div>
 
       {/* Desktop: side-by-side / Mobile: tabbed */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2">
         <div
           className={cn(
             "space-y-2",
@@ -74,7 +74,7 @@ export function ScriptEditor({ script, onChange }: ScriptEditorProps) {
           <label className="hidden text-xs font-medium text-muted-foreground md:block">
             Preview
           </label>
-          <div className="min-h-[400px] rounded-md border bg-card p-4">
+          <div className="min-h-[400px] rounded-md border bg-card p-5">
             <ScriptViewer script={script} />
           </div>
         </div>

@@ -80,7 +80,7 @@ export function VoicePicker({ selectedVoiceId, onSelect }: VoicePickerProps) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium">Choose a voice</h3>
         {selectedVoiceId && (
@@ -89,7 +89,7 @@ export function VoicePicker({ selectedVoiceId, onSelect }: VoicePickerProps) {
           </Badge>
         )}
       </div>
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         {voices.map((voice) => {
           const isSelected = selectedVoiceId === voice.voiceId;
           const isPlaying = playingId === voice.voiceId;
@@ -98,8 +98,8 @@ export function VoicePicker({ selectedVoiceId, onSelect }: VoicePickerProps) {
             <Card
               key={voice.voiceId}
               className={cn(
-                "cursor-pointer p-3 transition-all hover:bg-accent/50",
-                isSelected && "border-primary bg-primary/5 ring-1 ring-primary/30",
+                "cursor-pointer p-4 hover:bg-card-hover motion-safe:transition-colors",
+                isSelected && "border-primary bg-card-hover ring-1 ring-primary/30",
               )}
               onClick={() => onSelect(voice.voiceId)}
             >

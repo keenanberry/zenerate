@@ -20,7 +20,7 @@ async function DiscoverFeed({ search }: { search?: string }) {
 
   if (meditations.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed py-12">
+      <div className="flex flex-col items-center justify-center gap-2 rounded-xl border px-6 py-16 text-center">
         <p className="text-muted-foreground">
           {search ? "No meditations found." : "No public meditations yet."}
         </p>
@@ -39,11 +39,11 @@ async function DiscoverFeed({ search }: { search?: string }) {
 
 function Loading() {
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {[...Array(5)].map((_, i) => (
         <div
           key={i}
-          className="h-14 animate-pulse rounded-md border bg-muted/50"
+          className="h-16 rounded-md border bg-muted/50 motion-safe:animate-pulse"
         />
       ))}
     </div>
@@ -58,8 +58,8 @@ export default async function DiscoverPage({
   const { q } = await searchParams;
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="space-y-10">
+      <div className="space-y-2">
         <h1 className="font-serif text-2xl font-medium tracking-tight">Discover</h1>
         <p className="text-muted-foreground">
           Explore meditations shared by the community.

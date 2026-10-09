@@ -19,7 +19,9 @@ export default async function AppLayout({
   return (
     <div className="flex min-h-screen flex-col">
       <Nav isSignedIn={!!user} />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+      {/* The shell is the widest column, sized for card grids. Pages with any
+          other content type (prose, forms, the player) narrow themselves. */}
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
         {children}
       </main>
       <SiteFooter />
