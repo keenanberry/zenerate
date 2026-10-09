@@ -1,4 +1,5 @@
 import { parseMeditationText } from "./parser";
+import { soundSeconds as lengthOfSound } from "./sounds";
 
 /**
  * Estimate how long a meditation script will actually run.
@@ -38,6 +39,8 @@ export type DurationEstimate = {
   pauseSeconds: number;
   /** Sum of `*[SILENCE: N minutes]*`. Exact. */
   silenceSeconds: number;
+  /** Sum of `*[SOUND: file]*` lengths, from the sound catalog. Exact. */
+  soundSeconds: number;
   totalSeconds: number;
   /** Share of runtime that is narration, 0-1. Low is good for long sessions. */
   speechRatio: number;
@@ -49,6 +52,7 @@ export function estimateDuration(script: string): DurationEstimate {
   let words = 0;
   let pauseSeconds = 0;
   let silenceSeconds = 0;
+  let soundSeconds = 0;
 
   for (const segment of segments) {
     if (segment.type === "speech") {
@@ -58,16 +62,20 @@ export function estimateDuration(script: string): DurationEstimate {
       pauseSeconds += segment.duration;
     } else if (segment.type === "silence") {
       silenceSeconds += segment.duration;
+    } else if (segment.type === "sound") {
+      soundSeconds += lengthOfSound(segment.file);
     }
   }
 
   const speechSeconds = Math.round((words / EFFECTIVE_WORDS_PER_MINUTE) * 60);
-  const totalSeconds = speechSeconds + pauseSeconds + silenceSeconds;
+  const totalSeconds =
+    speechSeconds + pauseSeconds + silenceSeconds + soundSeconds;
 
   return {
     speechSeconds,
     pauseSeconds,
     silenceSeconds,
+    soundSeconds,
     totalSeconds,
     speechRatio: totalSeconds > 0 ? speechSeconds / totalSeconds : 0,
   };

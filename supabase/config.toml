@@ -112,6 +112,13 @@ public = false
 file_size_limit = "50MiB"
 allowed_mime_types = ["audio/mpeg"]
 
+# Recorded sound effects, downloaded by scripts/create-sandbox-snapshot.ts.
+# Production holds the real files; this local bucket exists for parity only.
+[storage.buckets.sound-effects]
+public = false
+file_size_limit = "5MiB"
+allowed_mime_types = ["audio/mpeg"]
+
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]
 enabled = true

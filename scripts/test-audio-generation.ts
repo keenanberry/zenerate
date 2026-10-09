@@ -2,8 +2,9 @@
  * Integration test for the audio generation pipeline.
  *
  * Spins up a Vercel Sandbox from the snapshot, runs generate-audio.js with a
- * minimal meditation script (~50 characters of speech), and validates the
- * output MP3 and result.json.
+ * minimal meditation script (~80 characters of speech, two sound effects),
+ * and validates the output MP3, result.json, that every sound was found and
+ * that narration loudness was measured.
  *
  * Prerequisites:
  *   - AUDIO_SANDBOX_SNAPSHOT_ID set in .env.local
@@ -54,11 +55,12 @@ async function main() {
 
   const config = {
     segments: [
+      { type: "sound", file: "bell-tibetan.mp3" },
       { type: "speech", content: "Welcome. Take a deep breath." },
       { type: "pause", duration: 2 },
       { type: "speech", content: "Now slowly exhale." },
       { type: "silence", duration: 5 },
-      { type: "sound", file: "gong.mp3" },
+      { type: "sound", file: "gong-gentle.mp3" },
       { type: "speech", content: "When you are ready, open your eyes." },
     ],
     voiceId: "EXAVITQu4vr4xnSDxMaL",
@@ -98,6 +100,15 @@ async function main() {
       throw new Error(`generate-audio.js failed (exit ${result.exitCode}):\n${stderr}`);
     }
     log(`Generation completed in ${(genTime / 1000).toFixed(1)}s`);
+
+    const stdout = await result.stdout();
+    if (stdout.includes("Sound not found")) {
+      throw new Error("A sound effect is missing from the snapshot's /sounds");
+    }
+    if (!/LUFS, applying/.test(stdout)) {
+      throw new Error("Narration loudness was not measured");
+    }
+    log("All sound effects found; narration loudness normalized");
 
     // Validate output.mp3
     log("Reading output.mp3...");

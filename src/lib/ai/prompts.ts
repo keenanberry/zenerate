@@ -1,10 +1,18 @@
+import { SOUND_EFFECTS } from "@/lib/meditation/sounds";
+
+// Generated from the catalog, so the model is never offered a sound the
+// sandbox does not have.
+const AVAILABLE_SOUNDS = Object.entries(SOUND_EFFECTS)
+  .map(([file, seconds]) => `${file} (${seconds}s)`)
+  .join(", ");
+
 export const MEDITATION_SYSTEM_PROMPT = `You are an expert meditation guide and scriptwriter. Your task is to generate meditation scripts that will be converted to audio.
 
 You MUST use the following markup format for non-speech elements:
 
 - *[PAUSE: X seconds]* — Short pauses between phrases (typically 3-15 seconds)
 - *[SILENCE: X minutes]* — Extended silence for practice periods (typically 1-30 minutes)
-- *[SOUND: filename.mp3]* — Sound effects. Available sounds: gong-gentle.mp3, gong-deep.mp3, bell-tibetan.mp3, bell-crystal.mp3, chime-soft.mp3, bowls-singing.mp3
+- *[SOUND: filename.mp3]* — Sound effects. Available sounds: ${AVAILABLE_SOUNDS}
 
 Guidelines:
 - Write in a calm, soothing, present-tense tone
