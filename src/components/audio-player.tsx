@@ -8,9 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Download, Pause, Play, Volume2, VolumeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  useMediaSession,
+  watchMediaElement,
+} from "@/components/use-media-session";
 
 interface AudioPlayerProps {
   audioUrl: string;
+  /** Shown on the lock screen and in the OS media controls. */
+  title: string;
   /**
    * Needed for the download link. The player deliberately does NOT download
    * `audioUrl` directly: that is a signed URL to a private bucket, and iOS
@@ -42,6 +48,7 @@ function resolveCssColor(cssVar: string, fallback: string): string {
 
 export function AudioPlayer({
   audioUrl,
+  title,
   meditationId,
   canDownload,
 }: AudioPlayerProps) {
@@ -53,6 +60,12 @@ export function AudioPlayer({
   const [volume, setVolume] = useState(0.8);
   const [muted, setMuted] = useState(false);
   const [ready, setReady] = useState(false);
+  // The <audio> element wavesurfer plays through, for the lock screen.
+  const [media, setMedia] = useState<HTMLMediaElement | null>(null);
+  // Read when a player is created, so a volume change does not recreate it.
+  const volumeRef = useRef(volume);
+
+  useMediaSession(media, title);
 
   const initWaveSurfer = useCallback(() => {
     if (!containerRef.current) return;
@@ -89,16 +102,17 @@ export function AudioPlayer({
     ws.on("ready", () => {
       setDuration(ws.getDuration());
       setReady(true);
-      ws.setVolume(volume);
+      ws.setVolume(volumeRef.current);
     });
 
     ws.on("timeupdate", (time) => setCurrentTime(time));
     ws.on("play", () => setIsPlaying(true));
     ws.on("pause", () => setIsPlaying(false));
     ws.on("finish", () => setIsPlaying(false));
+    watchMediaElement(ws, setMedia);
 
     wavesurferRef.current = ws;
-  }, [audioUrl, volume]);
+  }, [audioUrl]);
 
   useEffect(() => {
     initWaveSurfer();
@@ -115,6 +129,7 @@ export function AudioPlayer({
     const val = parseFloat(e.target.value);
     setVolume(val);
     setMuted(val === 0);
+    volumeRef.current = val;
     wavesurferRef.current?.setVolume(val);
   }
 
@@ -122,9 +137,11 @@ export function AudioPlayer({
     if (muted) {
       const restored = volume > 0 ? volume : 0.8;
       setMuted(false);
+      volumeRef.current = restored;
       wavesurferRef.current?.setVolume(restored);
     } else {
       setMuted(true);
+      volumeRef.current = 0;
       wavesurferRef.current?.setVolume(0);
     }
   }

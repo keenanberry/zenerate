@@ -61,7 +61,7 @@ the repo goes public in task 09.
 | 22 | [Landing page rewrite](./22-landing-page-rewrite.md) | Not started | Still advertises audio as "(Coming soon)" |
 | 23 | [Icon set + OG image](./23-icon-set-og-image.md) | Not started | `public/` is still the Next.js starter SVGs |
 | 24 | [PWA manifest & install](./24-pwa-manifest.md) | Not started | Installable, no service worker |
-| 25 | [Lock-screen audio](./25-lock-screen-audio.md) | Not started | Highest-value item in the phase |
+| 25 | [Lock-screen audio](./25-lock-screen-audio.md) | Done* | Media Session on wavesurfer's own `<audio>`: title, artwork, play/pause, 15 s skips, seekbar. *Every device check is the operator's: Mac Now Playing, iPhone lock screen, PWA |
 | 26 | [SEO metadata](./26-seo-metadata.md) | Not started | Needs 22 (pitch) and 23 (OG image) |
 
 ---
