@@ -28,15 +28,15 @@ export function Nav({ isSignedIn }: { isSignedIn: boolean }) {
 
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-        <div className="flex items-center gap-2 sm:gap-6">
+      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
+        <div className="flex items-center gap-3 sm:gap-8">
           <Link
             href={isSignedIn ? "/dashboard" : "/"}
             className="text-lg font-bold tracking-tight"
           >
             zenerate
           </Link>
-          <nav className="flex items-center gap-0.5 sm:gap-1">
+          <nav className="flex items-center gap-1 sm:gap-2">
             {visibleItems.map((item) => (
               <Link key={item.href} href={item.href}>
                 <Button
@@ -54,7 +54,7 @@ export function Nav({ isSignedIn }: { isSignedIn: boolean }) {
             ))}
           </nav>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 sm:gap-2">
           <ThemeToggle />
           {isSignedIn ? (
             <Button variant="ghost" size="sm" onClick={handleSignOut} className="gap-2">

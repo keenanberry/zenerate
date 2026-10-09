@@ -19,7 +19,7 @@ export function MeditationTrackList({
   return (
     <div className="w-full">
       {/* Header row */}
-      <div className="flex items-center gap-3 border-b px-2 pb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="flex items-center gap-3 border-b px-2 pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
         {showIndex && <span className="w-8 text-center">#</span>}
         <span className="flex-1">Title</span>
         <span className="hidden w-28 sm:block">Type</span>

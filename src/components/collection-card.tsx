@@ -65,7 +65,7 @@ export function CollectionCard({ collection }: CollectionCardProps) {
 
   return (
     <>
-      <Card className="group relative transition-colors hover:bg-muted/50">
+      <Card className="group relative gap-5 hover:bg-card-hover motion-safe:transition-colors">
         <Link
           href={`/collections/${collection.id}`}
           className="absolute inset-0 z-0"
@@ -73,17 +73,17 @@ export function CollectionCard({ collection }: CollectionCardProps) {
           <span className="sr-only">View {collection.name}</span>
         </Link>
 
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-3">
+        <CardHeader>
+          <div className="flex items-center gap-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
               <FolderOpen className="h-5 w-5 text-primary" />
             </div>
             <div className="min-w-0 flex-1">
-              <CardTitle className="truncate text-base">
+              <CardTitle className="truncate font-serif text-lg leading-snug font-medium">
                 {collection.name}
               </CardTitle>
               {collection.description && (
-                <p className="text-xs text-muted-foreground line-clamp-1">
+                <p className="mt-1 text-sm text-muted-foreground line-clamp-1">
                   {collection.description}
                 </p>
               )}
@@ -97,7 +97,7 @@ export function CollectionCard({ collection }: CollectionCardProps) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="relative z-10 h-8 w-8 shrink-0 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:data-[state=open]:opacity-100"
+                  className="relative z-10 h-8 w-8 shrink-0 motion-safe:transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 sm:data-[state=open]:opacity-100"
                   onClick={(e) => e.preventDefault()}
                 >
                   <MoreHorizontal className="h-4 w-4" />

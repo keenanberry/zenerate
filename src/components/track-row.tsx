@@ -64,7 +64,7 @@ export function TrackRow({
   return (
     <div
       className={cn(
-        "group flex items-center gap-3 rounded-md px-2 py-2.5 transition-colors hover:bg-muted/50",
+        "group flex items-center gap-3 rounded-md px-2 py-3.5 hover:bg-muted/50 motion-safe:transition-colors",
         playing && "bg-primary/5",
       )}
     >

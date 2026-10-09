@@ -37,27 +37,29 @@ export default async function CollectionDetailPage({
   }
 
   return (
-    <div className="space-y-6">
-      <Link href="/dashboard?tab=collections">
-        <Button variant="ghost" size="sm" className="gap-2">
-          <ArrowLeft className="h-4 w-4" />
-          Back to Library
-        </Button>
-      </Link>
+    <div className="space-y-10">
+      <div className="space-y-6">
+        <Link href="/dashboard?tab=collections">
+          <Button variant="ghost" size="sm" className="-ml-3 gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Library
+          </Button>
+        </Link>
 
-      <div>
-        <h1 className="font-serif text-2xl font-medium tracking-tight">{collection.name}</h1>
-        {collection.description && (
-          <p className="text-muted-foreground">{collection.description}</p>
-        )}
-        <p className="mt-1 text-sm text-muted-foreground">
-          {meditations.length}{" "}
-          {meditations.length === 1 ? "meditation" : "meditations"}
-        </p>
+        <div className="space-y-2">
+          <h1 className="font-serif text-2xl font-medium tracking-tight">{collection.name}</h1>
+          {collection.description && (
+            <p className="max-w-[60ch] text-muted-foreground">{collection.description}</p>
+          )}
+          <p className="text-sm text-muted-foreground">
+            {meditations.length}{" "}
+            {meditations.length === 1 ? "meditation" : "meditations"}
+          </p>
+        </div>
       </div>
 
       {meditations.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed py-12">
+        <div className="flex flex-col items-center justify-center gap-2 rounded-xl border px-6 py-16 text-center">
           <p className="text-muted-foreground">This collection is empty.</p>
           <p className="text-xs text-muted-foreground">
             Add meditations from their detail page.

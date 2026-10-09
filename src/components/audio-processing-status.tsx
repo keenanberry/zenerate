@@ -60,7 +60,7 @@ export function AudioProcessingStatus({
   if (failed) {
     return (
       <Card>
-        <CardContent className="flex flex-col items-center gap-4 py-10">
+        <CardContent className="flex flex-col items-center gap-5 py-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
             <AlertCircle className="h-6 w-6 text-destructive" />
           </div>
@@ -88,9 +88,9 @@ export function AudioProcessingStatus({
 
   return (
     <Card>
-      <CardContent className="flex flex-col items-center gap-4 py-10">
+      <CardContent className="flex flex-col items-center gap-5 py-4">
         <div className="relative flex h-16 w-16 items-center justify-center">
-          <div className="absolute inset-0 animate-ping rounded-full bg-primary/10" />
+          <div className="absolute inset-0 rounded-full motion-safe:animate-ping bg-primary/10" />
           <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary/15">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>

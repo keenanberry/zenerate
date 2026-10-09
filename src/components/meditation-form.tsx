@@ -217,7 +217,7 @@ export function MeditationForm() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <WizardSteps
         steps={STEPS}
         currentStep={step}
@@ -226,11 +226,11 @@ export function MeditationForm() {
 
       {/* Step 1: Type & Duration */}
       {step === 0 && (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {/* Manual selectors */}
-          <Card className="py-4">
+          <Card>
             <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-6 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Type</Label>
                   <Select
@@ -282,14 +282,14 @@ export function MeditationForm() {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
+              <span className="bg-background px-3 text-muted-foreground">
                 or start from a template
               </span>
             </div>
           </div>
 
           {/* Template presets */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
             {meditationTemplates.map((template) => {
               const Icon = iconMap[template.icon] ?? Sparkles;
               const isSelected = selectedTemplate === template.id;
@@ -299,9 +299,9 @@ export function MeditationForm() {
                   type="button"
                   onClick={() => applyTemplate(template)}
                   className={cn(
-                    "flex flex-col items-center gap-2 rounded-lg border p-4 text-center transition-all hover:border-primary/50 hover:bg-accent/50",
+                    "flex flex-col items-center gap-3 rounded-xl border bg-card px-3 py-5 text-center hover:border-primary/50 hover:bg-card-hover motion-safe:transition-colors",
                     isSelected &&
-                      "border-primary bg-primary/5 ring-1 ring-primary/30"
+                      "border-primary bg-card-hover ring-1 ring-primary/30"
                   )}
                 >
                   <div
@@ -330,7 +330,7 @@ export function MeditationForm() {
       {/* Step 2: Intention & Preferences */}
       {step === 1 && (
         <Card>
-          <CardContent className="space-y-5 pt-6">
+          <CardContent className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="focus">Focus / Intention</Label>
               <Input
@@ -374,7 +374,7 @@ export function MeditationForm() {
 
       {/* Step 3: Generate & Preview */}
       {step === 2 && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {generateError && (
             <p
               role="alert"
@@ -436,7 +436,7 @@ export function MeditationForm() {
 
           {isLoading && !completion && (
             <Card>
-              <CardContent className="flex items-center justify-center gap-3 py-16">
+              <CardContent className="flex items-center justify-center gap-3 py-12">
                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
                 <p className="text-sm text-muted-foreground">
                   Generating your meditation script...
@@ -451,7 +451,7 @@ export function MeditationForm() {
                one of the user's monthly script generations -- so this states
                what it found and leaves the decision to them. The Regenerate
                button above is right there if they want another. */
-            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm">
+            <div className="rounded-lg border border-candle/40 bg-candle/10 px-4 py-3 text-sm">
               <p className="font-medium">
                 This runs about {formatDuration(durationCheck.totalSeconds)}, not{" "}
                 {duration} minutes
@@ -473,7 +473,7 @@ export function MeditationForm() {
                 />
               ) : (
                 <Card>
-                  <CardContent className="pt-6">
+                  <CardContent>
                     <ScriptViewer script={currentScript || ""} />
                     {isLoading && completion && (
                       <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
@@ -491,9 +491,9 @@ export function MeditationForm() {
 
       {/* Step 4: Save & Configure */}
       {step === 3 && (
-        <div className="space-y-6">
+        <div className="space-y-8">
           <Card>
-            <CardContent className="space-y-5 pt-6">
+            <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="final-title">Title</Label>
                 <Input
@@ -511,8 +511,8 @@ export function MeditationForm() {
 
           {/* Summary */}
           <Card>
-            <CardContent className="pt-6">
-              <h3 className="mb-3 text-sm font-medium text-muted-foreground">
+            <CardContent>
+              <h3 className="mb-4 text-sm font-medium text-muted-foreground">
                 Summary
               </h3>
               <div className="flex flex-wrap gap-2">
@@ -528,7 +528,7 @@ export function MeditationForm() {
       )}
 
       {/* Navigation */}
-      <div className="flex items-center justify-between pt-2">
+      <div className="flex items-center justify-between pt-4">
         <Button
           type="button"
           variant="ghost"

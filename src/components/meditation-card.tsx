@@ -18,12 +18,14 @@ interface MeditationCardProps {
   showVisibility?: boolean;
 }
 
+// Tertiary hues as tokens (DESIGN.md, The Token Rule): in progress is
+// Candle, waiting on you is Periwinkle, working is Amethyst, done is Sage.
 const statusColors: Record<string, string> = {
-  generating_script: "bg-yellow-500/10 text-yellow-600",
-  script_ready: "bg-green-500/10 text-green-600",
-  processing_audio: "bg-blue-500/10 text-blue-600",
-  completed: "bg-emerald-500/10 text-emerald-600",
-  failed: "bg-red-500/10 text-red-600",
+  generating_script: "bg-candle/10 text-candle",
+  script_ready: "bg-periwinkle/10 text-periwinkle",
+  processing_audio: "bg-primary/10 text-primary",
+  completed: "bg-sage/10 text-sage",
+  failed: "bg-destructive/10 text-destructive",
 };
 
 const statusLabels: Record<string, string> = {
@@ -40,11 +42,11 @@ export function MeditationCard({
   showVisibility = false,
 }: MeditationCardProps) {
   return (
-    <Card className="group relative transition-colors hover:bg-muted/50">
+    <Card className="group relative gap-5 hover:bg-card-hover motion-safe:transition-colors">
       <Link href={`/meditation/${meditation.id}`} className="absolute inset-0 z-0" />
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="line-clamp-1 text-base">
+      <CardHeader className="gap-2">
+        <div className="flex items-start justify-between gap-3">
+          <CardTitle className="line-clamp-2 font-serif text-lg leading-snug font-medium">
             {meditation.title}
           </CardTitle>
           <div className="relative z-10 flex items-center gap-1">
@@ -61,12 +63,12 @@ export function MeditationCard({
             )}
           </div>
         </div>
-        <CardDescription className="line-clamp-2 text-xs">
+        <CardDescription className="line-clamp-2">
           {meditation.prompt}
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="flex items-center gap-2">
+      <CardContent className="mt-auto">
+        <div className="flex items-center gap-2.5">
           <Badge
             variant="secondary"
             className={statusColors[meditation.status] ?? ""}

@@ -56,10 +56,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
+    <div className="flex min-h-screen items-center justify-center px-4 py-12">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <Link href="/" className="mb-2 inline-block">
+        <CardHeader className="gap-3 text-center">
+          <Link href="/" className="mb-3 inline-block">
             <span className="text-2xl font-bold tracking-tight">zenerate</span>
           </Link>
           <CardTitle className="font-serif text-xl font-medium">
@@ -72,7 +72,7 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -99,7 +99,7 @@ export default function LoginPage() {
             {error && (
               <p className="text-sm text-destructive">{error}</p>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" size="lg" className="mt-2 w-full" disabled={loading}>
               {loading
                 ? "Loading..."
                 : isSignUp
@@ -107,7 +107,7 @@ export default function LoginPage() {
                   : "Sign in"}
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm">
+          <div className="mt-6 text-center text-sm">
             {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
             <button
               type="button"
@@ -120,7 +120,7 @@ export default function LoginPage() {
               {isSignUp ? "Sign in" : "Sign up"}
             </button>
           </div>
-          <p className="mt-4 text-center text-xs text-muted-foreground">
+          <p className="mt-6 text-center text-xs text-muted-foreground">
             By continuing, you agree to the{" "}
             <Link href="/terms" className="underline underline-offset-4">
               Terms

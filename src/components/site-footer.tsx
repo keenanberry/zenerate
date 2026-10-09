@@ -2,10 +2,10 @@ import Link from "next/link";
 
 export function SiteFooter() {
   return (
-    <footer className="border-t py-6">
-      <div className="mx-auto flex max-w-5xl flex-col items-center gap-2 px-4 text-center text-sm text-muted-foreground sm:flex-row sm:justify-between">
+    <footer className="border-t py-10">
+      <div className="mx-auto flex max-w-5xl flex-col items-center gap-3 px-4 text-center text-sm text-muted-foreground sm:flex-row sm:justify-between sm:px-6">
         <span>zenerate — AI-powered meditation generation</span>
-        <nav className="flex gap-4">
+        <nav className="flex gap-6">
           <Link href="/terms" className="underline-offset-4 hover:underline">
             Terms
           </Link>

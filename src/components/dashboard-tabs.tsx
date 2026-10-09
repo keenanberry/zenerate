@@ -50,7 +50,7 @@ function TabsInner({
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-3">
         <TabsList>
           <TabsTrigger value="meditations" className="gap-1.5">
             <Library className="h-4 w-4" />
@@ -69,15 +69,15 @@ function TabsInner({
         {showToggle && <ViewToggle view={view} onViewChange={setView} />}
       </div>
 
-      <TabsContent value="meditations" className="mt-6">
+      <TabsContent value="meditations" className="mt-8">
         {meditationsContent}
       </TabsContent>
 
-      <TabsContent value="favorites" className="mt-6">
+      <TabsContent value="favorites" className="mt-8">
         {favoritesContent}
       </TabsContent>
 
-      <TabsContent value="collections" className="mt-6">
+      <TabsContent value="collections" className="mt-8">
         {collectionsContent}
       </TabsContent>
     </Tabs>

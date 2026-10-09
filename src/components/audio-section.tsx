@@ -93,7 +93,7 @@ export function AudioSection({
   if (status === "failed" && isOwner) {
     return (
       <Card>
-        <CardContent className="flex flex-col items-center gap-4 py-10">
+        <CardContent className="flex flex-col items-center gap-5 py-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
             <AlertCircle className="h-6 w-6 text-destructive" />
           </div>

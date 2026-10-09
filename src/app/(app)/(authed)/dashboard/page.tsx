@@ -20,7 +20,7 @@ async function MyMeditations() {
 
   if (meditations.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed py-12">
+      <div className="flex flex-col items-center justify-center gap-4 rounded-xl border px-6 py-16 text-center">
         <p className="text-muted-foreground">No meditations yet.</p>
         <Link href="/create">
           <Button size="sm" className="gap-2">
@@ -45,7 +45,7 @@ async function Favorites() {
 
   if (meditations.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed py-12">
+      <div className="flex flex-col items-center justify-center gap-4 rounded-xl border px-6 py-16 text-center">
         <p className="text-muted-foreground">No favorites yet.</p>
         <Link href="/discover">
           <Button variant="outline" size="sm" className="gap-2">
@@ -64,7 +64,7 @@ async function Collections() {
 
   if (collections.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed py-12">
+      <div className="flex flex-col items-center justify-center gap-4 rounded-xl border px-6 py-16 text-center">
         <p className="text-muted-foreground">No collections yet.</p>
         <p className="text-xs text-muted-foreground">
           Create collections from any meditation detail page.
@@ -74,7 +74,7 @@ async function Collections() {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {collections.map((c) => (
         <CollectionCard key={c.id} collection={c} />
       ))}
@@ -84,11 +84,11 @@ async function Collections() {
 
 function Loading() {
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {[...Array(4)].map((_, i) => (
         <div
           key={i}
-          className="h-14 animate-pulse rounded-md border bg-muted/50"
+          className="h-16 rounded-md border bg-muted/50 motion-safe:animate-pulse"
         />
       ))}
     </div>
@@ -103,11 +103,11 @@ export default async function DashboardPage({
   const { tab } = await searchParams;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div className="min-w-0">
+    <div className="space-y-10">
+      <div className="flex items-end justify-between gap-4">
+        <div className="min-w-0 space-y-2">
           <h1 className="font-serif text-2xl font-medium tracking-tight">Library</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground">
             Your meditations, favorites, and collections.
           </p>
         </div>

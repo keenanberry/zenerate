@@ -6,8 +6,10 @@ export const metadata = {
 
 export default function CreatePage() {
   return (
-    <div className="space-y-8">
-      <div>
+    // A form, so a narrow column; wide enough for the script preview's 65ch
+    // measure inside a card on the Generate step.
+    <div className="mx-auto max-w-2xl space-y-10">
+      <div className="space-y-2">
         <h1 className="font-serif text-2xl font-medium tracking-tight">
           Create Meditation
         </h1>
