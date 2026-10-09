@@ -18,14 +18,16 @@ export function ScriptViewer({ script }: ScriptViewerProps) {
   }
 
   return (
-    <div className="space-y-3">
+    // The measure is set on the column in Lora's own `ch`, so markers line up
+    // with the passages; markers stay Geist.
+    <div className="max-w-[65ch] space-y-3 font-serif text-lg">
       {segments.map((segment, i) => {
         switch (segment.type) {
           case "speech":
             return (
               <div key={i} className="flex gap-3">
-                <MessageSquare className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
-                <p className="text-sm leading-relaxed">{segment.content}</p>
+                <MessageSquare className="mt-2.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                <p className="leading-[1.9]">{segment.content}</p>
               </div>
             );
           case "pause":
@@ -33,7 +35,7 @@ export function ScriptViewer({ script }: ScriptViewerProps) {
               <div
                 key={i}
                 className={cn(
-                  "flex items-center gap-2 rounded-md bg-amber-500/10 px-3 py-2 text-sm text-amber-700",
+                  "flex items-center gap-2 rounded-md font-sans bg-amber-500/10 px-3 py-2 text-sm text-amber-700",
                   "dark:text-amber-400"
                 )}
               >
@@ -46,7 +48,7 @@ export function ScriptViewer({ script }: ScriptViewerProps) {
               <div
                 key={i}
                 className={cn(
-                  "flex items-center gap-2 rounded-md bg-blue-500/10 px-3 py-2 text-sm text-blue-700",
+                  "flex items-center gap-2 rounded-md font-sans bg-blue-500/10 px-3 py-2 text-sm text-blue-700",
                   "dark:text-blue-400"
                 )}
               >
@@ -60,7 +62,7 @@ export function ScriptViewer({ script }: ScriptViewerProps) {
               <div
                 key={i}
                 className={cn(
-                  "flex items-center gap-2 rounded-md bg-purple-500/10 px-3 py-2 text-sm text-purple-700",
+                  "flex items-center gap-2 rounded-md font-sans bg-purple-500/10 px-3 py-2 text-sm text-purple-700",
                   "dark:text-purple-400"
                 )}
               >

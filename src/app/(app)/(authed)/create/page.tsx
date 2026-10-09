@@ -8,7 +8,7 @@ export default function CreatePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">
+        <h1 className="font-serif text-2xl font-medium tracking-tight">
           Create Meditation
         </h1>
         <p className="text-muted-foreground">

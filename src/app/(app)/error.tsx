@@ -30,7 +30,7 @@ export default function AppError({
 
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
-      <h2 className="text-xl font-semibold tracking-tight">
+      <h2 className="font-serif text-xl font-medium tracking-tight">
         This page didn&apos;t load
       </h2>
       <p className="mt-2 max-w-sm text-sm text-muted-foreground">

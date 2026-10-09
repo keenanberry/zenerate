@@ -56,7 +56,7 @@ the repo goes public in task 09.
 | # | Task | Status | Notes |
 |---|---|---|---|
 | 19 | [Repo skills](./19-repo-skills.md) | Done | `zenerate-design` + `audio-pipeline` skills, tested with and without; `DESIGN.md` and `PRODUCT.md` written for Impeccable. Read `DESIGN.md` before 20–23 |
-| 20 | [Typography foundation](./20-typography-foundation.md) | Not started | Lora is declared 3× in `globals.css` and never loaded |
+| 20 | [Typography foundation](./20-typography-foundation.md) | Done | Lora + Geist + Geist Mono wired through their `next/font` variables; script in Lora at 1.9 / 65ch, page headings in Lora, chrome in Geist |
 | 21 | [Nocturne pass](./21-nocturne-pass.md) | Not started | Dark-first + gradient player. Largest task in the phase |
 | 22 | [Landing page rewrite](./22-landing-page-rewrite.md) | Not started | Still advertises audio as "(Coming soon)" |
 | 23 | [Icon set + OG image](./23-icon-set-og-image.md) | Not started | `public/` is still the Next.js starter SVGs |

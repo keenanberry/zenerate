@@ -29,7 +29,7 @@ export default function Error({
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
-      <h1 className="text-2xl font-semibold tracking-tight">
+      <h1 className="font-serif text-2xl font-medium tracking-tight">
         Something went wrong
       </h1>
       <p className="mt-2 max-w-sm text-sm text-muted-foreground">

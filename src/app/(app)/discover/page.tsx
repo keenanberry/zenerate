@@ -60,7 +60,7 @@ export default async function DiscoverPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Discover</h1>
+        <h1 className="font-serif text-2xl font-medium tracking-tight">Discover</h1>
         <p className="text-muted-foreground">
           Explore meditations shared by the community.
         </p>
