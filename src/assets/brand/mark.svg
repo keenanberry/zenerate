@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!--
+    The Zenerate mark: a bodhi leaf held tip-up, its veins drawn as a small tree.
+    Drawn by hand on a 100-unit grid; this file is the source.
+
+    scripts/build-icons.ts reads the geometry below by id and renders every raster
+    in public/ and src/app/favicon.ico from it, taking colours from DESIGN.md.
+    src/components/brand-mark.tsx carries the same paths for inline use (a test
+    keeps them in step). Edit here, then run `npx tsx scripts/build-icons.ts`.
+
+    The fills here are Amethyst Glow and Rose Quartz, so the file previews as the
+    raster exports do. Below 64px the veins are left out: they blur to mush.
+  -->
+  <path id="leaf" fill="#a995c9" d="M44 2 C47 10 50 20 54 30 C58 38 70 44 78 51 C87 59 89 69 85 76 C81 83 72 86 62 85 C57 84.5 53 83 50 81 C47 83 43 84.5 38 85 C28 86 19 83 15 76 C11 69 13 59 22 51 C30 44 42 38 46 30 C49 22 47 10 44 2 Z"/>
+  <path id="stem" fill="#a995c9" d="M48.8 82 C49.4 88 49 93 47.2 98 L50.4 98 C52 93 52.2 88 51.4 82 Z"/>
+  <g id="veins" fill="none" stroke="#f2b8c6" stroke-width="1.9" stroke-linecap="round">
+    <path stroke-width="2.4" d="M50 81 C50 62 50 46 48 30"/>
+    <path d="M50 73 C58 73 68 70 75 64 M50 73 C42 73 32 70 25 64"/>
+    <path d="M50 62 C57 61 64 56 70 50 M50 62 C43 61 36 56 30 50"/>
+    <path d="M49.6 51 C54 49 57.5 45 60 40 M49.6 51 C45 49 42 45 39.5 40"/>
+  </g>
+</svg>
