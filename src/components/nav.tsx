@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Compass, LayoutDashboard, Plus, LogIn, LogOut } from "lucide-react";
+import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
@@ -32,8 +33,11 @@ export function Nav({ isSignedIn }: { isSignedIn: boolean }) {
         <div className="flex items-center gap-3 sm:gap-8">
           <Link
             href={isSignedIn ? "/dashboard" : "/"}
-            className="text-lg font-bold tracking-tight"
+            className="flex items-center gap-2 text-lg font-bold tracking-tight"
           >
+            {/* Decorative: the wordmark beside it is the link's name. Nudged up so
+                the leaf sits on the baseline and the stem hangs like a descender. */}
+            <BrandMark veins={false} className="size-5.5 shrink-0 -translate-y-px text-primary" />
             zenerate
           </Link>
           <nav className="flex items-center gap-1 sm:gap-2">
