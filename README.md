@@ -1,158 +1,150 @@
 # Zenerate
 
-AI-powered meditation script and audio generation platform built with Next.js, Supabase, and Vercel.
+Describe the meditation you want. Zenerate writes the script, narrates it, and assembles
+the audio: pauses, silences, sound effects and all. Live at
+[zeneratestudio.com](https://www.zeneratestudio.com).
 
-## Getting Started
+## How it works
 
-### Prerequisites
+1. **Script.** You describe a meditation (type, length, focus). Claude streams back a
+   script marked up with `*[PAUSE: 5 seconds]*`, `*[SILENCE: 1 minute]*` and
+   `*[SOUND: gong-gentle.mp3]*`. You can edit it before going further.
+2. **Voice.** Pick a narrator from the operator's ElevenLabs collection.
+3. **Audio.** A Vercel Workflow spins up a Vercel Sandbox from a pre-built snapshot.
+   Inside it, ElevenLabs narrates each spoken segment, FFmpeg renders the silences, drops in
+   the sound effects, normalizes the narration to -20 LUFS, and concatenates the result into
+   one MP3, which lands in a private Supabase Storage bucket.
+4. **Listen.** A waveform player streams it through short-lived signed URLs. Signed-in
+   users can download it, favourite it, file it into collections, and publish it to
+   `/discover`, which anyone can browse without an account.
 
-- Node.js 22+
-- Docker (for Supabase local development)
-- [Supabase CLI](https://supabase.com/docs/guides/cli)
+Meditations move through `generating_script → script_ready → processing_audio →
+completed | failed`. The free tier caps audio generation per user per month, sized to the
+ElevenLabs plan; the numbers and the reasoning are in `.env.example`.
 
-### Setup
+`docs/architecture.md` has the pipeline in detail.
+
+## Stack
+
+| | |
+|---|---|
+| App | Next.js 16 (App Router), TypeScript, Tailwind CSS v4, shadcn/ui |
+| Data | Supabase: Postgres with RLS, email/password Auth, Storage |
+| Script generation | AI SDK 6 with `@ai-sdk/anthropic`, streaming |
+| Narration | ElevenLabs text-to-speech |
+| Audio assembly | Vercel Workflow for durable orchestration, Vercel Sandbox for ephemeral FFmpeg compute |
+| Player | wavesurfer.js |
+| Hosting | Vercel, with a daily cron that keeps the free Supabase project awake |
+
+## Local development
+
+Prerequisites: Node.js 22 or newer, Docker, and the
+[Supabase CLI](https://supabase.com/docs/guides/cli).
 
 ```bash
-# Install dependencies
 npm install
-
-# Copy environment variables
-cp .env.example .env.local
-# Fill in API keys (see Environment Variables below)
-
-# Start Supabase (requires Docker)
-supabase start
-
-# Reset DB with seed data — LOCAL ONLY, destroys all data
-supabase db reset
-
-# Start the dev server
+cp .env.example .env.local      # then fill in the keys below
+supabase start                  # local Postgres, Auth and Storage in Docker
+supabase db reset               # applies migrations + seed data. LOCAL ONLY: destroys all data
 npm run dev
 ```
 
-> **Never run `supabase db reset` against a linked production project.** It drops all data and applies `supabase/seed.sql`, which creates test accounts with a known password. Production migrations go out with `supabase db push`, which applies migrations only by default — never pass `--include-seed` against a linked production project, or it will apply this same file.
+> **Never run `supabase db reset` against a linked production project.** It drops all data
+> and applies `supabase/seed.sql`, which creates test accounts with a known password.
+> Production migrations go out with `supabase db push`, which applies migrations only by
+> default. Never pass `--include-seed` against a linked production project.
 
-Sign in with a test account: `alice@example.com` / `password123`
+Seeded test accounts: `alice@example.com` and `bob@example.com`, password `password123`.
 
-### Environment Variables
+### Environment variables
 
-| Variable | Description |
+`.env.example` is the reference: every variable, its default, and why the default is what
+it is. The short version:
+
+| Variable | Needed for |
 |---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase API URL (from `supabase start`) |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key (from `supabase start`) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (from `supabase start`) |
-| `ANTHROPIC_API_KEY` | Anthropic API key for meditation script generation |
-| `ELEVENLABS_API_KEY` | ElevenLabs API key for text-to-speech |
-| `AUDIO_SANDBOX_SNAPSHOT_ID` | Vercel Sandbox snapshot ID (from snapshot builder) |
-| `VERCEL_TOKEN` | Vercel access token for Sandbox auth |
-| `VERCEL_TEAM_ID` | Vercel team ID |
-| `VERCEL_PROJECT_ID` | Vercel project ID |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Everything. Printed by `supabase start` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-side storage and status writes. Also from `supabase start` |
+| `ANTHROPIC_API_KEY` | Script generation |
+| `ELEVENLABS_API_KEY` | Narration, and the voice picker |
+| `AUDIO_SANDBOX_SNAPSHOT_ID` | Audio generation. Printed by the snapshot build script (below) |
+| `VERCEL_OIDC_TOKEN` | Sandbox auth when running audio generation or the snapshot build locally. Vercel injects it in production. Pull it with `vercel env pull` into a scratch file, not `.env.local`, which that command overwrites |
+| `PER_USER_MONTHLY_AUDIO_LIMIT`, `MAX_GLOBAL_AUDIO_GENERATIONS_PER_MONTH` | Audio quota. The global cap is derived from the ElevenLabs plan |
+| `PER_USER_MONTHLY_SCRIPT_LIMIT`, `MAX_GLOBAL_MONTHLY_SCRIPT_GENERATIONS` | Script quota, an abuse guard rather than a product limit |
+| `CRON_SECRET`, `KEEPALIVE_PING_URL` | The keepalive cron. The route fails closed without the secret |
+| `SOUND_EFFECTS_SUPABASE_URL`, `SOUND_EFFECTS_SUPABASE_SERVICE_ROLE_KEY` | Snapshot build only: the production bucket holding the recorded sound effects |
 
-## Architecture
+### Checks
 
-### Stack
-
-- **Next.js 16** — App Router, TypeScript, Tailwind CSS v4, shadcn/ui
-- **Supabase** — PostgreSQL, Auth, Storage
-- **AI SDK 6** — `@ai-sdk/anthropic` for meditation script generation
-- **Vercel Workflow** — durable multi-step orchestration for audio pipeline
-- **Vercel Sandbox** — ephemeral microVMs for FFmpeg audio processing
-- **ElevenLabs** — text-to-speech API
-
-### Audio Generation Pipeline
-
-The audio pipeline converts meditation scripts (with markup like `*[PAUSE: 5 seconds]*` and `*[SILENCE: 1 minute]*`) into MP3 files:
-
-```
-POST /api/audio/generate
-  → Vercel Workflow (durable orchestration)
-    → Step 1: Fetch meditation script from DB, parse segments
-    → Step 2: Spin up Vercel Sandbox from snapshot
-      → generate-audio.js runs inside the VM:
-        - ElevenLabs TTS for speech segments
-        - FFmpeg silence generation for pause/silence segments
-        - FFmpeg concatenation of all segments into final MP3
-      → Download output.mp3 + result.json from sandbox
-      → Upload MP3 to Supabase Storage
-    → Step 3: Update meditation status to "completed" with audio URL and generation metadata
+```bash
+npm run lint
+npx tsc --noEmit
+npm test            # vitest
+npm run build
 ```
 
-Key files:
+CI (`.github/workflows/ci.yml`) runs all four on every push to `main` and every pull
+request.
 
-| File | Purpose |
-|---|---|
-| `src/app/api/audio/generate/route.ts` | API endpoint — validates auth/ownership, triggers workflow |
-| `src/lib/audio/workflow.ts` | Vercel Workflow — orchestrates the full pipeline |
-| `src/lib/audio/generate-audio.ts` | Standalone script that runs inside the sandbox |
-| `src/lib/audio/storage.ts` | Supabase Storage upload + DB status updates |
-| `src/lib/meditation/parser.ts` | Parses script markup into typed segments |
-| `src/lib/meditation/types.ts` | TypeScript types for meditations, segments, generation metadata |
+## The audio sandbox snapshot
 
-### Cost Tracking
+Audio generation runs inside a Vercel Sandbox created from a snapshot that already
+contains FFmpeg, the Node dependencies, the compiled `generate-audio.js` and the sound
+effects. **`src/lib/audio/generate-audio.ts`, everything it imports, and
+`scripts/sound-effects.ts` are baked into that snapshot.** Editing any of them changes
+nothing at runtime until the snapshot is rebuilt and the new ID is deployed. The failure
+is silent: tests pass, the edit is in `main`, and production keeps running the old code.
 
-Each audio generation records metadata in the `generation_meta` JSONB column:
+```bash
+npx tsx scripts/create-sandbox-snapshot.ts     # prints the new snapshot ID
+```
 
-- `tts_characters` — total characters sent to ElevenLabs (maps to billing)
-- `tts_requests` — number of TTS API calls
-- `processing_time_ms` — total sandbox processing time
-- `generated_at` — ISO timestamp
+Put the printed ID in `AUDIO_SANDBOX_SNAPSHOT_ID`, both locally and in Vercel, redeploy,
+then prove it with `npx tsx scripts/test-audio-generation.ts`. The script header lists
+the credentials the build needs. The full loop lives in `.claude/skills/audio-pipeline/`.
+
+Sound effects are catalogued in `src/lib/meditation/sounds.ts` (what the script prompt may
+reference) and produced by `scripts/sound-effects.ts` (what the snapshot contains). A test
+fails if the two drift. Four are synthesized by FFmpeg at build time; two gongs are CC0
+recordings fetched from a private bucket and checksum-verified.
 
 ## Scripts
 
-### Build Sandbox Snapshot
+| Script | What it does |
+|---|---|
+| `scripts/create-sandbox-snapshot.ts` | Builds the sandbox snapshot. Run after any change to the baked-in files |
+| `scripts/test-audio-generation.ts` | End-to-end check of a snapshot: generates a short meditation and validates the MP3 |
+| `scripts/preview-sound-effects.ts` | Renders the synthesized sound effects locally so you can listen before baking them in |
+| `scripts/measure-script-duration.ts` | Generates scripts at several lengths and reports how close each lands to what was asked. Calls the real model |
+| `scripts/test-generation-quota.ts` | Manual check of the quota logic against local Supabase |
+| `scripts/verify-backup.sh` | Restores a `pg_dump` into a throwaway database and reports what landed |
 
-Creates a Vercel Sandbox snapshot pre-loaded with FFmpeg, Node dependencies, and the compiled `generate-audio.js` script. The snapshot is permanent (`expiration: 0`) so it won't expire.
+Each script's header documents its prerequisites.
 
-```bash
-npx tsx scripts/create-sandbox-snapshot.ts
-```
+## Deploying
 
-After running, copy the printed snapshot ID into `.env.local`:
+The app runs on Vercel Hobby with a Supabase Free project. Migrations go out with
+`supabase db push`. `vercel.json` schedules the daily keepalive ping that stops the free
+project from pausing. Backups are a weekly manual `pg_dump`; the procedure, what it does
+and does not cover, and how to test a dump are in `docs/runbooks/backup-restore.md`.
 
-```
-AUDIO_SANDBOX_SNAPSHOT_ID=<snapshot_id>
-```
+## Repository map
 
-**When to rebuild:** any time `src/lib/audio/generate-audio.ts` changes, since it's baked into the snapshot.
+| Path | What's there |
+|---|---|
+| `src/app/` | Routes. `(app)` is the in-app shell, `(app)/(authed)` the signed-in part, `(auth)` login, `(legal)` terms and privacy, `api/` route handlers |
+| `src/components/` | UI. `ui/` is shadcn |
+| `src/lib/` | `ai/` prompts and script quota, `audio/` the pipeline, `meditation/` parser, types and server actions, `supabase/` client factories, `voices/` the ElevenLabs catalogue |
+| `supabase/` | Migrations and local-only seed data |
+| `scripts/` | The table above |
+| `docs/` | `architecture.md`, `runbooks/`, `handoffs/` (session-to-session state), `superpowers/specs/` (design decisions), `ui-roadmap.md` |
+| `tasks/ship/` | The pre-launch checklist, one file per task with acceptance criteria and outcomes |
+| `tasks/post-ship/` | What was deliberately deferred |
 
-### Test Audio Generation
+## Working on this repo with an agent
 
-Runs an integration test that spins up a sandbox, generates audio from a minimal meditation script (~50 characters), and validates the output.
-
-```bash
-npx tsx scripts/test-audio-generation.ts
-```
-
-Output is saved to `test-output/test-meditation.mp3` for manual listening.
-
-### Manage Snapshots
-
-List all snapshots for your project:
-
-```bash
-npx sandbox snapshots list
-```
-
-Delete old snapshots you no longer need:
-
-```bash
-# Single snapshot
-npx sandbox snapshots delete <snapshot_id>
-
-# Multiple at once
-npx sandbox snapshots delete <snapshot_id_1> <snapshot_id_2>
-```
-
-## Development
-
-### Database Migrations
-
-Migrations live in `supabase/migrations/`. Apply them with:
-
-```bash
-supabase db reset    # resets and re-applies all migrations + seed data — LOCAL ONLY, destroys all data
-```
-
-### Project Status
-
-See `docs/project-status.md` for a detailed breakdown of what's built and what's next.
+`CLAUDE.md` carries the conventions. Two project skills in `.claude/skills/` enforce the
+things that go wrong silently: `zenerate-design` for anything a visitor sees, and
+`audio-pipeline` for anything the snapshot bakes in. `DESIGN.md` is the design system
+contract and `PRODUCT.md` the product record; both are read by the Impeccable design
+tooling. Each phase of work ends with a handoff in `docs/handoffs/`; start there.

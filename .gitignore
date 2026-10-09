@@ -44,3 +44,6 @@ next-env.d.ts
 
 # Superpowers brainstorming scratch
 .superpowers/
+
+# Impeccable per-machine overrides
+.impeccable/config.local.json

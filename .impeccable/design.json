@@ -1,0 +1,271 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-09T00:00:00Z",
+  "title": "Design System: Zenerate",
+  "extensions": {
+    "colorMeta": {
+      "amethyst-glow": {
+        "role": "primary",
+        "displayName": "Amethyst Glow",
+        "canonical": "oklch(0.7058 0.0777 302.0489)",
+        "tonalRamp": [
+          "oklch(0.15 0.0777 302.0489)",
+          "oklch(0.26 0.0777 302.0489)",
+          "oklch(0.38 0.0777 302.0489)",
+          "oklch(0.49 0.0777 302.0489)",
+          "oklch(0.61 0.0777 302.0489)",
+          "oklch(0.72 0.0777 302.0489)",
+          "oklch(0.84 0.0777 302.0489)",
+          "oklch(0.95 0.0777 302.0489)"
+        ]
+      },
+      "rose-quartz": {
+        "role": "secondary",
+        "displayName": "Rose Quartz",
+        "canonical": "oklch(0.8391 0.0692 2.6681)",
+        "tonalRamp": [
+          "oklch(0.15 0.0692 2.6681)",
+          "oklch(0.26 0.0692 2.6681)",
+          "oklch(0.38 0.0692 2.6681)",
+          "oklch(0.49 0.0692 2.6681)",
+          "oklch(0.61 0.0692 2.6681)",
+          "oklch(0.72 0.0692 2.6681)",
+          "oklch(0.84 0.0692 2.6681)",
+          "oklch(0.95 0.0692 2.6681)"
+        ]
+      },
+      "violet-shadow": {
+        "role": "secondary",
+        "displayName": "Violet Shadow",
+        "canonical": "oklch(0.4604 0.0472 295.5578)",
+        "tonalRamp": [
+          "oklch(0.15 0.0472 295.5578)",
+          "oklch(0.26 0.0472 295.5578)",
+          "oklch(0.38 0.0472 295.5578)",
+          "oklch(0.49 0.0472 295.5578)",
+          "oklch(0.61 0.0472 295.5578)",
+          "oklch(0.72 0.0472 295.5578)",
+          "oklch(0.84 0.0472 295.5578)",
+          "oklch(0.95 0.0472 295.5578)"
+        ]
+      },
+      "sage": {
+        "role": "tertiary",
+        "displayName": "Sage",
+        "canonical": "oklch(0.7321 0.0749 169.8670)",
+        "tonalRamp": [
+          "oklch(0.15 0.0749 169.867)",
+          "oklch(0.26 0.0749 169.867)",
+          "oklch(0.38 0.0749 169.867)",
+          "oklch(0.49 0.0749 169.867)",
+          "oklch(0.61 0.0749 169.867)",
+          "oklch(0.72 0.0749 169.867)",
+          "oklch(0.84 0.0749 169.867)",
+          "oklch(0.95 0.0749 169.867)"
+        ]
+      },
+      "candle": {
+        "role": "tertiary",
+        "displayName": "Candle",
+        "canonical": "oklch(0.8540 0.0882 76.8292)",
+        "tonalRamp": [
+          "oklch(0.15 0.0882 76.8292)",
+          "oklch(0.26 0.0882 76.8292)",
+          "oklch(0.38 0.0882 76.8292)",
+          "oklch(0.49 0.0882 76.8292)",
+          "oklch(0.61 0.0882 76.8292)",
+          "oklch(0.72 0.0882 76.8292)",
+          "oklch(0.84 0.0882 76.8292)",
+          "oklch(0.95 0.0882 76.8292)"
+        ]
+      },
+      "periwinkle": {
+        "role": "tertiary",
+        "displayName": "Periwinkle",
+        "canonical": "oklch(0.7857 0.0645 258.0839)",
+        "tonalRamp": [
+          "oklch(0.15 0.0645 258.0839)",
+          "oklch(0.26 0.0645 258.0839)",
+          "oklch(0.38 0.0645 258.0839)",
+          "oklch(0.49 0.0645 258.0839)",
+          "oklch(0.61 0.0645 258.0839)",
+          "oklch(0.72 0.0645 258.0839)",
+          "oklch(0.84 0.0645 258.0839)",
+          "oklch(0.95 0.0645 258.0839)"
+        ]
+      },
+      "ember": {
+        "role": "tertiary",
+        "displayName": "Ember",
+        "canonical": "oklch(0.6875 0.1420 21.4566)",
+        "tonalRamp": [
+          "oklch(0.15 0.142 21.4566)",
+          "oklch(0.26 0.142 21.4566)",
+          "oklch(0.38 0.142 21.4566)",
+          "oklch(0.49 0.142 21.4566)",
+          "oklch(0.61 0.142 21.4566)",
+          "oklch(0.72 0.142 21.4566)",
+          "oklch(0.84 0.142 21.4566)",
+          "oklch(0.95 0.142 21.4566)"
+        ]
+      },
+      "deep-night": { "role": "neutral", "displayName": "Deep Night", "canonical": "oklch(0.1985 0.0200 293.6639)", "tonalRamp": ["oklch(0.15 0.02 293.6639)", "oklch(0.26 0.02 293.6639)", "oklch(0.38 0.02 293.6639)", "oklch(0.49 0.02 293.6639)", "oklch(0.61 0.02 293.6639)", "oklch(0.72 0.02 293.6639)", "oklch(0.84 0.02 293.6639)", "oklch(0.95 0.02 293.6639)"] },
+      "midnight": { "role": "neutral", "displayName": "Midnight", "canonical": "oklch(0.2166 0.0215 292.8474)", "tonalRamp": ["oklch(0.15 0.0215 292.8474)", "oklch(0.26 0.0215 292.8474)", "oklch(0.38 0.0215 292.8474)", "oklch(0.49 0.0215 292.8474)", "oklch(0.61 0.0215 292.8474)", "oklch(0.72 0.0215 292.8474)", "oklch(0.84 0.0215 292.8474)", "oklch(0.95 0.0215 292.8474)"] },
+      "raised-night": { "role": "neutral", "displayName": "Raised Night", "canonical": "oklch(0.2544 0.0301 292.7315)", "tonalRamp": ["oklch(0.15 0.0301 292.7315)", "oklch(0.26 0.0301 292.7315)", "oklch(0.38 0.0301 292.7315)", "oklch(0.49 0.0301 292.7315)", "oklch(0.61 0.0301 292.7315)", "oklch(0.72 0.0301 292.7315)", "oklch(0.84 0.0301 292.7315)", "oklch(0.95 0.0301 292.7315)"] },
+      "hush": { "role": "neutral", "displayName": "Hush", "canonical": "oklch(0.2560 0.0320 294.8380)", "tonalRamp": ["oklch(0.15 0.032 294.838)", "oklch(0.26 0.032 294.838)", "oklch(0.38 0.032 294.838)", "oklch(0.49 0.032 294.838)", "oklch(0.61 0.032 294.838)", "oklch(0.72 0.032 294.838)", "oklch(0.84 0.032 294.838)", "oklch(0.95 0.032 294.838)"] },
+      "well": { "role": "neutral", "displayName": "Well", "canonical": "oklch(0.2847 0.0346 291.2726)", "tonalRamp": ["oklch(0.15 0.0346 291.2726)", "oklch(0.26 0.0346 291.2726)", "oklch(0.38 0.0346 291.2726)", "oklch(0.49 0.0346 291.2726)", "oklch(0.61 0.0346 291.2726)", "oklch(0.72 0.0346 291.2726)", "oklch(0.84 0.0346 291.2726)", "oklch(0.95 0.0346 291.2726)"] },
+      "hairline": { "role": "neutral", "displayName": "Hairline", "canonical": "oklch(0.3063 0.0359 293.3367)", "tonalRamp": ["oklch(0.15 0.0359 293.3367)", "oklch(0.26 0.0359 293.3367)", "oklch(0.38 0.0359 293.3367)", "oklch(0.49 0.0359 293.3367)", "oklch(0.61 0.0359 293.3367)", "oklch(0.72 0.0359 293.3367)", "oklch(0.84 0.0359 293.3367)", "oklch(0.95 0.0359 293.3367)"] },
+      "plum-hover": { "role": "neutral", "displayName": "Plum Hover", "canonical": "oklch(0.3181 0.0321 308.6149)", "tonalRamp": ["oklch(0.15 0.0321 308.6149)", "oklch(0.26 0.0321 308.6149)", "oklch(0.38 0.0321 308.6149)", "oklch(0.49 0.0321 308.6149)", "oklch(0.61 0.0321 308.6149)", "oklch(0.72 0.0321 308.6149)", "oklch(0.84 0.0321 308.6149)", "oklch(0.95 0.0321 308.6149)"] },
+      "dusk": { "role": "neutral", "displayName": "Dusk", "canonical": "oklch(0.6974 0.0282 300.0614)", "tonalRamp": ["oklch(0.15 0.0282 300.0614)", "oklch(0.26 0.0282 300.0614)", "oklch(0.38 0.0282 300.0614)", "oklch(0.49 0.0282 300.0614)", "oklch(0.61 0.0282 300.0614)", "oklch(0.72 0.0282 300.0614)", "oklch(0.84 0.0282 300.0614)", "oklch(0.95 0.0282 300.0614)"] },
+      "moonlit": { "role": "neutral", "displayName": "Moonlit", "canonical": "oklch(0.9053 0.0245 293.5570)", "tonalRamp": ["oklch(0.15 0.0245 293.557)", "oklch(0.26 0.0245 293.557)", "oklch(0.38 0.0245 293.557)", "oklch(0.49 0.0245 293.557)", "oklch(0.61 0.0245 293.557)", "oklch(0.72 0.0245 293.557)", "oklch(0.84 0.0245 293.557)", "oklch(0.95 0.0245 293.557)"] },
+      "paper": { "role": "neutral", "displayName": "Paper (light ground)", "canonical": "oklch(0.9777 0.0041 301.4256)", "tonalRamp": ["oklch(0.15 0.0041 301.4256)", "oklch(0.26 0.0041 301.4256)", "oklch(0.38 0.0041 301.4256)", "oklch(0.49 0.0041 301.4256)", "oklch(0.61 0.0041 301.4256)", "oklch(0.72 0.0041 301.4256)", "oklch(0.84 0.0041 301.4256)", "oklch(0.95 0.0041 301.4256)"] },
+      "paper-raised": { "role": "neutral", "displayName": "Paper Raised (light cards)", "canonical": "oklch(1 0 0)", "tonalRamp": ["oklch(0.15 0 0)", "oklch(0.26 0 0)", "oklch(0.38 0 0)", "oklch(0.49 0 0)", "oklch(0.61 0 0)", "oklch(0.72 0 0)", "oklch(0.84 0 0)", "oklch(0.95 0 0)"] },
+      "paper-muted": { "role": "neutral", "displayName": "Paper Muted", "canonical": "oklch(0.8906 0.0139 299.7754)", "tonalRamp": ["oklch(0.15 0.0139 299.7754)", "oklch(0.26 0.0139 299.7754)", "oklch(0.38 0.0139 299.7754)", "oklch(0.49 0.0139 299.7754)", "oklch(0.61 0.0139 299.7754)", "oklch(0.72 0.0139 299.7754)", "oklch(0.84 0.0139 299.7754)", "oklch(0.95 0.0139 299.7754)"] },
+      "paper-hairline": { "role": "neutral", "displayName": "Paper Hairline", "canonical": "oklch(0.8447 0.0226 300.1421)", "tonalRamp": ["oklch(0.15 0.0226 300.1421)", "oklch(0.26 0.0226 300.1421)", "oklch(0.38 0.0226 300.1421)", "oklch(0.49 0.0226 300.1421)", "oklch(0.61 0.0226 300.1421)", "oklch(0.72 0.0226 300.1421)", "oklch(0.84 0.0226 300.1421)", "oklch(0.95 0.0226 300.1421)"] },
+      "lilac": { "role": "secondary", "displayName": "Lilac (light secondary)", "canonical": "oklch(0.8957 0.0265 300.2416)", "tonalRamp": ["oklch(0.15 0.0265 300.2416)", "oklch(0.26 0.0265 300.2416)", "oklch(0.38 0.0265 300.2416)", "oklch(0.49 0.0265 300.2416)", "oklch(0.61 0.0265 300.2416)", "oklch(0.72 0.0265 300.2416)", "oklch(0.84 0.0265 300.2416)", "oklch(0.95 0.0265 300.2416)"] },
+      "ink": { "role": "neutral", "displayName": "Ink (light text)", "canonical": "oklch(0.3651 0.0325 287.0807)", "tonalRamp": ["oklch(0.15 0.0325 287.0807)", "oklch(0.26 0.0325 287.0807)", "oklch(0.38 0.0325 287.0807)", "oklch(0.49 0.0325 287.0807)", "oklch(0.61 0.0325 287.0807)", "oklch(0.72 0.0325 287.0807)", "oklch(0.84 0.0325 287.0807)", "oklch(0.95 0.0325 287.0807)"] },
+      "ink-soft": { "role": "neutral", "displayName": "Ink Soft", "canonical": "oklch(0.5288 0.0375 290.7895)", "tonalRamp": ["oklch(0.15 0.0375 290.7895)", "oklch(0.26 0.0375 290.7895)", "oklch(0.38 0.0375 290.7895)", "oklch(0.49 0.0375 290.7895)", "oklch(0.61 0.0375 290.7895)", "oklch(0.72 0.0375 290.7895)", "oklch(0.84 0.0375 290.7895)", "oklch(0.95 0.0375 290.7895)"] },
+      "amethyst": { "role": "primary", "displayName": "Amethyst (light primary)", "canonical": "oklch(0.6104 0.0767 299.7335)", "tonalRamp": ["oklch(0.15 0.0767 299.7335)", "oklch(0.26 0.0767 299.7335)", "oklch(0.38 0.0767 299.7335)", "oklch(0.49 0.0767 299.7335)", "oklch(0.61 0.0767 299.7335)", "oklch(0.72 0.0767 299.7335)", "oklch(0.84 0.0767 299.7335)", "oklch(0.95 0.0767 299.7335)"] },
+      "rose": { "role": "secondary", "displayName": "Rose (light accent)", "canonical": "oklch(0.7889 0.0802 359.9375)", "tonalRamp": ["oklch(0.15 0.0802 359.9375)", "oklch(0.26 0.0802 359.9375)", "oklch(0.38 0.0802 359.9375)", "oklch(0.49 0.0802 359.9375)", "oklch(0.61 0.0802 359.9375)", "oklch(0.72 0.0802 359.9375)", "oklch(0.84 0.0802 359.9375)", "oklch(0.95 0.0802 359.9375)"] },
+      "rose-ink": { "role": "secondary", "displayName": "Rose Ink (light accent text)", "canonical": "oklch(0.3394 0.0441 1.7583)", "tonalRamp": ["oklch(0.15 0.0441 1.7583)", "oklch(0.26 0.0441 1.7583)", "oklch(0.38 0.0441 1.7583)", "oklch(0.49 0.0441 1.7583)", "oklch(0.61 0.0441 1.7583)", "oklch(0.72 0.0441 1.7583)", "oklch(0.84 0.0441 1.7583)", "oklch(0.95 0.0441 1.7583)"] },
+      "ember-light": { "role": "tertiary", "displayName": "Ember (light destructive)", "canonical": "oklch(0.6332 0.1578 22.6734)", "tonalRamp": ["oklch(0.15 0.1578 22.6734)", "oklch(0.26 0.1578 22.6734)", "oklch(0.38 0.1578 22.6734)", "oklch(0.49 0.1578 22.6734)", "oklch(0.61 0.1578 22.6734)", "oklch(0.72 0.1578 22.6734)", "oklch(0.84 0.1578 22.6734)", "oklch(0.95 0.1578 22.6734)"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Landing hero and page titles. Lora; wired by task 20." },
+      "headline": { "displayName": "Headline", "purpose": "Section headings and meditation titles. Lora; wired by task 20." },
+      "script": { "displayName": "Script", "purpose": "Spoken passages in the script viewer, at a 65ch measure. Lora; wired by task 20." },
+      "body": { "displayName": "Body", "purpose": "Descriptions, legal text, form help." },
+      "ui": { "displayName": "UI", "purpose": "Buttons, nav items, tabs, menu items." },
+      "label": { "displayName": "Label", "purpose": "Badges, field labels, script markers." },
+      "mono": { "displayName": "Mono", "purpose": "Raw script editor and error digests. Geist Mono; the token still names Fira Code until task 20." }
+    },
+    "shadows": [
+      { "name": "none", "value": "none", "purpose": "The system. Elevation is a lighter surface token plus a Hairline border." },
+      { "name": "inherited-card", "value": "1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 1px 2px 0px hsl(0 0% 0% / 0.06)", "purpose": "Stock shadcn shadow-sm on Card; removed in task 21, not to be reused." },
+      { "name": "player-glow", "value": "0 0 80px 0 oklch(0.7058 0.0777 302.0489 / 0.25)", "purpose": "The one lit element: a soft radial behind the player in dark. Flat tint in light. Planned in task 21." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Default easing for state transitions (Tailwind transition-all)." },
+      { "name": "duration-state", "value": "150ms", "purpose": "Hover and focus colour changes." },
+      { "name": "duration-progress", "value": "300ms", "purpose": "Wizard step and progress bar fills." },
+      { "name": "reduced-motion", "value": "prefers-reduced-motion: reduce", "purpose": "Every new transition is wrapped in motion-safe: or disabled under this query." }
+    ],
+    "breakpoints": [
+      { "name": "phone", "value": "390px" },
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one filled action on a surface.",
+      "html": "<button class=\"ds-btn-primary\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z\"/></svg>Start Creating</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border: 0; border-radius: 6px; background: var(--primary, oklch(0.7058 0.0777 302.0489)); color: var(--primary-foreground, oklch(0.2166 0.0215 292.8474)); font-family: Geist, sans-serif; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: background 150ms cubic-bezier(0.4,0,0.2,1), box-shadow 150ms; } .ds-btn-primary:hover { background: color-mix(in oklch, var(--primary, oklch(0.7058 0.0777 302.0489)) 90%, transparent); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring, oklch(0.7058 0.0777 302.0489)) 50%, transparent); } .ds-btn-primary:disabled { opacity: 0.5; pointer-events: none; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action beside a primary, or a retry.",
+      "html": "<button class=\"ds-btn-outline\">Explore</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border: 1px solid var(--input, oklch(0.2847 0.0346 291.2726)); border-radius: 6px; background: color-mix(in oklch, var(--input, oklch(0.2847 0.0346 291.2726)) 30%, transparent); color: var(--foreground, oklch(0.9053 0.0245 293.5570)); font-family: Geist, sans-serif; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: background 150ms, color 150ms; } .ds-btn-outline:hover { background: color-mix(in oklch, var(--input, oklch(0.2847 0.0346 291.2726)) 50%, transparent); } .ds-btn-outline:focus-visible { outline: none; border-color: var(--ring, oklch(0.7058 0.0777 302.0489)); box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring, oklch(0.7058 0.0777 302.0489)) 50%, transparent); }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Nav items, transport controls, sign in and out.",
+      "html": "<button class=\"ds-btn-ghost\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><polygon points=\"16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76\"/></svg>Discover</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; color: var(--foreground, oklch(0.9053 0.0245 293.5570)); font-family: Geist, sans-serif; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: background 150ms, color 150ms; } .ds-btn-ghost:hover { background: color-mix(in oklch, var(--accent, oklch(0.3181 0.0321 308.6149)) 50%, transparent); color: var(--accent-foreground, oklch(0.8391 0.0692 2.6681)); } .ds-btn-ghost:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring, oklch(0.7058 0.0777 302.0489)) 50%, transparent); }"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Text fields in the login form and the create wizard.",
+      "html": "<input class=\"ds-input\" type=\"email\" placeholder=\"you@example.com\" />",
+      "css": ".ds-input { height: 36px; width: 100%; min-width: 0; padding: 4px 12px; border: 1px solid var(--input, oklch(0.2847 0.0346 291.2726)); border-radius: 6px; background: color-mix(in oklch, var(--input, oklch(0.2847 0.0346 291.2726)) 30%, transparent); color: var(--foreground, oklch(0.9053 0.0245 293.5570)); font-family: Geist, sans-serif; font-size: 0.875rem; transition: border-color 150ms, box-shadow 150ms; } .ds-input::placeholder { color: var(--muted-foreground, oklch(0.6974 0.0282 300.0614)); } .ds-input:focus-visible { outline: none; border-color: var(--ring, oklch(0.7058 0.0777 302.0489)); box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring, oklch(0.7058 0.0777 302.0489)) 50%, transparent); } .ds-input:disabled { opacity: 0.5; cursor: not-allowed; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Meditation cards, collection cards, the player, the processing state.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">Morning Calm</div><div class=\"ds-card-desc\">Start your day centered and grounded with gentle breath awareness.</div><span class=\"ds-badge\">Completed</span></div>",
+      "css": ".ds-card { display: flex; flex-direction: column; gap: 12px; padding: 24px; border: 1px solid var(--border, oklch(0.3063 0.0359 293.3367)); border-radius: 12px; background: var(--card, oklch(0.2544 0.0301 292.7315)); color: var(--card-foreground, oklch(0.9053 0.0245 293.5570)); font-family: Geist, sans-serif; transition: background 150ms; } .ds-card:hover { background: color-mix(in oklch, var(--muted, oklch(0.2560 0.0320 294.8380)) 50%, var(--card, oklch(0.2544 0.0301 292.7315))); } .ds-card-title { font-size: 1rem; font-weight: 600; line-height: 1; } .ds-card-desc { font-size: 0.75rem; color: var(--muted-foreground, oklch(0.6974 0.0282 300.0614)); } .ds-badge { align-self: flex-start; display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; background: var(--secondary, oklch(0.4604 0.0472 295.5578)); color: var(--secondary-foreground, oklch(0.9053 0.0245 293.5570)); font-size: 0.75rem; font-weight: 500; }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Meditation status on cards. Secondary fill; the per-status colours move to tokens under the Token Rule.",
+      "html": "<span class=\"ds-badge-status\">Script Ready</span>",
+      "css": ".ds-badge-status { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border: 1px solid transparent; border-radius: 9999px; background: var(--secondary, oklch(0.4604 0.0472 295.5578)); color: var(--secondary-foreground, oklch(0.9053 0.0245 293.5570)); font-family: Geist, sans-serif; font-size: 0.75rem; font-weight: 500; white-space: nowrap; }"
+    },
+    {
+      "name": "Navigation",
+      "kind": "nav",
+      "refersTo": "nav",
+      "description": "The 56px top bar: wordmark, section links, theme toggle, sign in or out.",
+      "html": "<header class=\"ds-nav\"><a class=\"ds-nav-brand\" href=\"#\">zenerate</a><nav class=\"ds-nav-items\"><a class=\"ds-nav-item ds-nav-item-active\" href=\"#\">Library</a><a class=\"ds-nav-item\" href=\"#\">Create</a><a class=\"ds-nav-item\" href=\"#\">Discover</a></nav></header>",
+      "css": ".ds-nav { display: flex; align-items: center; gap: 24px; height: 56px; padding: 0 16px; border-bottom: 1px solid var(--border, oklch(0.3063 0.0359 293.3367)); background: color-mix(in oklch, var(--background, oklch(0.2166 0.0215 292.8474)) 95%, transparent); backdrop-filter: blur(8px); font-family: Geist, sans-serif; } .ds-nav-brand { font-size: 1.125rem; font-weight: 700; letter-spacing: -0.025em; color: var(--foreground, oklch(0.9053 0.0245 293.5570)); text-decoration: none; } .ds-nav-items { display: flex; gap: 4px; } .ds-nav-item { display: inline-flex; align-items: center; height: 32px; padding: 0 12px; border-radius: 6px; color: var(--foreground, oklch(0.9053 0.0245 293.5570)); font-size: 0.875rem; font-weight: 500; text-decoration: none; transition: background 150ms, color 150ms; } .ds-nav-item:hover { background: color-mix(in oklch, var(--accent, oklch(0.3181 0.0321 308.6149)) 50%, transparent); color: var(--accent-foreground, oklch(0.8391 0.0692 2.6681)); } .ds-nav-item-active { background: var(--secondary, oklch(0.4604 0.0472 295.5578)); color: var(--secondary-foreground, oklch(0.9053 0.0245 293.5570)); }"
+    },
+    {
+      "name": "Script Cue",
+      "kind": "custom",
+      "refersTo": "badge",
+      "description": "A structural marker between spoken passages in the script viewer: pause, silence or sound. Token-coloured annotation, not prose.",
+      "html": "<div class=\"ds-script\"><p class=\"ds-script-line\">Let your attention settle on the breath, without changing it.</p><div class=\"ds-cue\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"14\" y=\"4\" width=\"4\" height=\"16\" rx=\"1\"/><rect x=\"6\" y=\"4\" width=\"4\" height=\"16\" rx=\"1\"/></svg><span class=\"ds-cue-label\">Pause</span><span class=\"ds-cue-value\">5 s</span><span class=\"ds-cue-rule\"></span></div><p class=\"ds-script-line\">Notice where the body meets the ground.</p></div>",
+      "css": ".ds-script { display: flex; flex-direction: column; gap: 20px; max-width: 65ch; } .ds-script-line { margin: 0; font-family: Lora, Georgia, serif; font-size: 1.125rem; line-height: 1.9; color: var(--foreground, oklch(0.9053 0.0245 293.5570)); text-wrap: pretty; } .ds-cue { display: flex; align-items: center; gap: 8px; color: var(--primary, oklch(0.7058 0.0777 302.0489)); user-select: none; } .ds-cue-label { font-family: Geist, sans-serif; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; } .ds-cue-value { font-family: Geist, sans-serif; font-size: 0.75rem; font-variant-numeric: tabular-nums; color: var(--muted-foreground, oklch(0.6974 0.0282 300.0614)); } .ds-cue-rule { flex: 1; height: 1px; background: var(--border, oklch(0.3063 0.0359 293.3367)); }"
+    },
+    {
+      "name": "Play Button",
+      "kind": "custom",
+      "refersTo": "play-button",
+      "description": "The gradient moment. Amethyst Glow to Rose Quartz on the play control; the only gradient in the product. Planned in task 21.",
+      "html": "<button class=\"ds-play\" aria-label=\"Play\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"currentColor\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linejoin=\"round\" style=\"transform: translateX(2px)\"><polygon points=\"6 3 20 12 6 21 6 3\"/></svg></button>",
+      "css": ".ds-play { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border: 0; border-radius: 9999px; background: linear-gradient(135deg, var(--primary, oklch(0.7058 0.0777 302.0489)), var(--accent-foreground, oklch(0.8391 0.0692 2.6681))); color: var(--primary-foreground, oklch(0.2166 0.0215 292.8474)); cursor: pointer; transition: transform 150ms cubic-bezier(0.4,0,0.2,1), filter 150ms; } .ds-play:hover { filter: brightness(1.08); } .ds-play:active { transform: scale(0.96); } .ds-play:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring, oklch(0.7058 0.0777 302.0489)) 50%, transparent); } @media (prefers-reduced-motion: reduce) { .ds-play { transition: none; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Nocturne Reading Room",
+    "overview": "A quiet room after dark. The ground is a deep amethyst night, the text is a pale lavender that reads like moonlight on paper, and the one source of light in the room is the player: a soft purple-to-rose glow where the sound comes from. Everything else recedes. Meditation scripts are set in a serif at a reading measure, because the script is read before it is heard and again after; the interface around it is a quiet sans that stays out of the way.\n\nDark is the design target, not a mode. It matches when people actually meditate and it is where the amethyst-haze palette has character; the light theme is the same room with the curtains open, checked for correctness on every surface but never the place a decision is made. Density is loose and unhurried: wide margins, generous card padding, slow transitions, nothing that reads as a dashboard.\n\nThe incumbent implementation is stock shadcn at dev-tool density, and it is the anti-reference for rhythm: h-14 navigation, py-8 sections, gap-2 rows and max-w-5xl on every column regardless of content. The tokens are right; the way they are used is what the Nocturne pass (task 21) changes.",
+    "keyCharacteristics": [
+      "Dark-first, light-correct",
+      "Serif for reading and headings, sans for chrome",
+      "Elevation by lightness, never by shadow",
+      "One gradient, on the player, and nowhere else",
+      "Soft and unhurried: generous padding, gentle radius, slow motion"
+    ],
+    "rules": [
+      { "name": "The Token Rule", "body": "Every colour in a component comes from a theme token: bg-primary/10, text-muted-foreground, border-border, bg-destructive/10. A Tailwind palette class (amber-500, blue-700, emerald-600) is a missing token; add the token to both :root and .dark in globals.css and use it.", "section": "colors" },
+      { "name": "The One Gradient Rule", "body": "Amethyst Glow to Rose Quartz appears on the play button and the played portion of the waveform. It appears nowhere else: not on CTAs, not on card headers, not on the hero. In light mode it renders as a flat tint, not a glow.", "section": "colors" },
+      { "name": "The Dark First Rule", "body": "A surface is designed and reviewed in dark, then checked in light. Never the reverse. A light-mode fix that would change the dark design is the wrong fix.", "section": "colors" },
+      { "name": "The Loaded Face Rule", "body": "A font token names a face only if src/app/layout.tsx loads it with next/font and the token references that face's CSS variable. next/font registers faces under hashed family names, so a token that spells the family out (--font-sans: Geist, --font-serif: \"Lora\", --font-mono: \"Fira Code\") matches nothing and falls back to the system. All three do today. Task 20 wires Lora and Geist and reconciles mono to Geist Mono.", "section": "typography" },
+      { "name": "The Measure Rule", "body": "Prose gets a measure: 65ch for the script, about 60ch for legal and descriptive text. A prose column never inherits the shell's max-w-5xl.", "section": "typography" },
+      { "name": "The Lightness Rule", "body": "Elevation is a lighter surface token, never a shadow-* class.", "section": "elevation" },
+      { "name": "The Flat Tint Rule", "body": "Anything that glows in dark is a flat tint in light. Light mode gets the shape of the signature, not its luminosity.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do design in dark and verify in light, in that order, on every surface you touch.",
+      "Do take colour from theme tokens, and add a token to both :root and .dark when one is missing.",
+      "Do set spoken script text in Script type at 65ch, and choose every other column's width by its content type rather than inheriting max-w-5xl.",
+      "Do express elevation as a lighter surface token with a Hairline border.",
+      "Do keep the gradient on the play button and the played waveform, as a flat tint in light.",
+      "Do verify at 390px wide, and wrap any new transition in motion-safe: or an equivalent prefers-reduced-motion guard.",
+      "Do check that any face a token names is loaded in layout.tsx and referenced by its --font-* variable."
+    ],
+    "donts": [
+      "Don't use a Tailwind palette class (bg-amber-500/10, text-blue-700, text-emerald-600) for anything a visitor sees.",
+      "Don't add a shadow-* class to new code, or reach for a shadow to lift a surface on dark.",
+      "Don't put the gradient on a CTA, a card header, a hero, or anything that is not the player.",
+      "Don't set Lora on body, or any serif on buttons, nav, labels or form controls.",
+      "Don't force dark on the landing page or anywhere else; defaultTheme=\"system\" stays.",
+      "Don't fix light mode in a way that changes the dark design."
+    ]
+  }
+}

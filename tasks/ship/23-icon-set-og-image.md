@@ -18,7 +18,11 @@ bare URL.
 ## Acceptance criteria
 
 **Mark**
-- [ ] A simple mark designed — a wordmark or monogram is fine; this does not need to be a logotype project
+- [ ] A bodhi tree mark, drawn as SVG by hand (not traced from a raster), in the Nocturne
+      palette. Where the full tree will not read, a single bodhi leaf: the heart shape with
+      the long drip tip is the recognisable part. Decided with the operator 2026-10-09
+- [ ] Fallback if the mark does not hold at 16px after one honest attempt: a Lora wordmark,
+      as originally planned. Do not spend a day on the tree
 - [ ] Legible at 16px in a browser tab and at 180px on a phone home screen. Test both before committing
 - [ ] Works on the Nocturne dark ground and on white
 
@@ -43,4 +47,7 @@ bare URL.
 
 ## Open questions
 
-- Does the mark need to encode "zen" or "audio" at all, or is a clean wordmark enough? A wordmark is faster, safer, and easier to make legible at 16px. Default: wordmark, unless something better falls out quickly.
+- *(Resolved 2026-10-09: a bodhi tree or bodhi leaf mark, SVG-authored, wordmark as fallback.
+  The operator may generate raster references with an image model to steer the drawing;
+  the shipped source is still the hand-drawn SVG, because a traced raster is lossy at 16px.)*
+  ~~Does the mark need to encode "zen" or "audio" at all, or is a clean wordmark enough?~~
