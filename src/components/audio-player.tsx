@@ -8,7 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Download, Pause, Play, Volume2, VolumeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useMediaSession } from "@/components/use-media-session";
+import {
+  useMediaSession,
+  watchMediaElement,
+} from "@/components/use-media-session";
 
 interface AudioPlayerProps {
   audioUrl: string;
@@ -57,9 +60,7 @@ export function AudioPlayer({
   const [volume, setVolume] = useState(0.8);
   const [muted, setMuted] = useState(false);
   const [ready, setReady] = useState(false);
-  // The <audio> element wavesurfer plays through. It lives in wavesurfer's
-  // shadow root, so it is in the document (and survives a backgrounded tab)
-  // without appearing in getElementsByTagName("audio").
+  // The <audio> element wavesurfer plays through, for the lock screen.
   const [media, setMedia] = useState<HTMLMediaElement | null>(null);
   // Read when a player is created, so a volume change does not recreate it.
   const volumeRef = useRef(volume);
@@ -101,7 +102,6 @@ export function AudioPlayer({
     ws.on("ready", () => {
       setDuration(ws.getDuration());
       setReady(true);
-      setMedia(ws.getMediaElement());
       ws.setVolume(volumeRef.current);
     });
 
@@ -109,6 +109,7 @@ export function AudioPlayer({
     ws.on("play", () => setIsPlaying(true));
     ws.on("pause", () => setIsPlaying(false));
     ws.on("finish", () => setIsPlaying(false));
+    watchMediaElement(ws, setMedia);
 
     wavesurferRef.current = ws;
   }, [audioUrl]);
@@ -117,7 +118,6 @@ export function AudioPlayer({
     initWaveSurfer();
     return () => {
       wavesurferRef.current?.destroy();
-      setMedia(null);
     };
   }, [initWaveSurfer]);
 

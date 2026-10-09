@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import type WaveSurfer from "wavesurfer.js";
 
 /**
  * Lock-screen and OS media controls for the meditation player, via the Media
@@ -161,6 +162,25 @@ function setHandler(
   } catch {
     // Unsupported action on this browser; skip it.
   }
+}
+
+/**
+ * Report the element a wavesurfer instance plays through: once it is ready,
+ * and null again when it is destroyed. With no `media` option, wavesurfer v7
+ * creates an <audio> inside its open shadow root, so the element is in the
+ * document (and plays on in a backgrounded tab) although
+ * `getElementsByTagName("audio")` cannot see it.
+ */
+export function watchMediaElement(
+  ws: Pick<WaveSurfer, "on" | "getMediaElement">,
+  onChange: (media: HTMLMediaElement | null) => void,
+): () => void {
+  const offReady = ws.on("ready", () => onChange(ws.getMediaElement()));
+  const offDestroy = ws.on("destroy", () => onChange(null));
+  return () => {
+    offReady();
+    offDestroy();
+  };
 }
 
 /**
