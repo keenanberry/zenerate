@@ -75,10 +75,12 @@ and the default meta description (task 26). Change it in all three or in none.
 ## Brand Commitments
 
 - Name: **Zenerate**, zen + generate. Rendered lowercase `zenerate` in the UI today.
-- Domain: `zeneratestudio.com`. Nothing hardcodes it.
-- Logo: none exists. Direction chosen 2026-10-09: a bodhi tree, or a single bodhi leaf
-  where the full tree will not read, drawn as SVG and kept as source in the repo. A plain
-  Lora wordmark is the fallback if the mark does not hold up at 16px. Task 23.
+- Domain: `zeneratestudio.com`. Pages read it from `NEXT_PUBLIC_SITE_URL`; the only
+  hardcoded copy is that variable's fallback in `src/lib/seo/metadata.ts` (task 26).
+- Logo: a bodhi leaf whose veins are drawn as a tree. Source `src/assets/brand/mark.svg`,
+  component `src/components/brand-mark.tsx`; it sits beside the wordmark in the nav and
+  above it on the login card. Every raster in `public/` and `src/app/favicon.ico` is
+  rebuilt from it by `scripts/build-icons.ts`. Task 23.
 - Copy voice: plain, honest, second person. "AI-generated" is stated, never hidden. No
   medical or outcome claims; the Terms say so.
 - Visual direction: Nocturne, dark-first, with one gradient moment on the player.
@@ -91,7 +93,8 @@ and the default meta description (task 26). Change it in all three or in none.
 - Example meditations and collections in `supabase/seed.sql`, local only.
 - Legal pages at `/terms` and `/privacy`: operator named, Missouri law, minimum age 16.
 - No testimonials, user counts, press, or case studies. Do not fabricate any.
-- No logo, icons or OG image. `public/` still holds the Next.js starter SVGs.
+- The mark, the icon set and a 1200×630 OG image carrying the pitch (task 23), wired into
+  share metadata on every page (task 26).
 
 ## Product Principles
 
