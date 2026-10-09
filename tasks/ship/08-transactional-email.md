@@ -21,6 +21,7 @@ then quietly throttle.
 
 - [ ] Transactional email provider chosen and account created (Resend is the default recommendation — generous free tier, good Supabase integration, simple DNS setup)
 - [ ] Custom SMTP configured in the production Supabase project's auth settings
+- [ ] Email provider added to the service-provider list on `/privacy` (`src/app/(legal)/privacy/page.tsx`): it receives every user's email address
 - [ ] Sending domain verified: SPF, DKIM and DMARC records added to `zeneratestudio.com`
 - [ ] From-address set to something durable (`noreply@zeneratestudio.com`), not a personal inbox
 - [ ] Supabase auth email templates customised. **Confirmed in production 2026-09-30** — the default confirmation email arrives from `noreply@mail.app.supabase.io`, is titled only "Confirm your email address", never names Zenerate or `zeneratestudio.com` anywhere, and carries a "powered by Supabase" footer with an "Opt out of these emails" link. A recipient has no way to tell what they signed up for, which is both a conversion problem and a phishing-report risk. Needs: sender name and address on the domain, the product name in the subject and body, a line saying what Zenerate is, and the footer gone

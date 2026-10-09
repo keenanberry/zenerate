@@ -3,6 +3,10 @@
 **Status:** Not started
 **Priority:** Post-ship
 
+> **Update `/privacy` in the same PR.** The policy states that Zenerate uses no
+> analytics or tracking tools and lists every service provider by name. Adding an error tracker (which receives request data)
+> makes that false the day it ships.
+
 ## Why it matters
 `error.tsx` boundaries (ship task 10) catch errors at render but don't tell the operator anything happened. In production, real errors need to be reported somewhere so they can be triaged and fixed. Also critical for the audio pipeline — a workflow can fail silently if no one's watching the logs.
 

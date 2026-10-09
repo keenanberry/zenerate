@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Sparkles, Library, Compass, Volume2 } from "lucide-react";
@@ -119,11 +120,7 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t py-6">
-        <div className="mx-auto max-w-5xl px-4 text-center text-sm text-muted-foreground">
-          zenerate — AI-powered meditation generation
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Nav } from "@/components/nav";
+import { SiteFooter } from "@/components/site-footer";
 
 /**
  * Shell for every in-app page, signed in or not. This layout deliberately
@@ -16,9 +17,12 @@ export default async function AppLayout({
   } = await supabase.auth.getUser();
 
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <Nav isSignedIn={!!user} />
-      <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+        {children}
+      </main>
+      <SiteFooter />
     </div>
   );
 }

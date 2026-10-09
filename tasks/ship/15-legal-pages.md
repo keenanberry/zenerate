@@ -1,18 +1,53 @@
 # Terms of Service + Privacy Policy
 
-**Status:** Not started
+**Status:** Done*
 **Priority:** Ship-blocker
 
 ## Why this blocks ship
 The app accepts user-generated content (meditation scripts, potentially public on `/discover`), stores personal data (email, hashed password via Supabase), and uses third-party AI services that process user inputs. Running this without Terms and a Privacy Policy is a legal and compliance risk, and required for payment processing later (Stripe will ask).
 
 ## Acceptance criteria
-- [ ] `/terms` page with Terms of Service
-- [ ] `/privacy` page with Privacy Policy
-- [ ] Both linked from the login/signup page (checkbox or footer text: "By continuing you agree to the Terms and Privacy Policy")
-- [ ] Both linked from an app-wide footer, or at minimum the marketing landing page
-- [ ] Privacy policy covers: email collection, Supabase as data processor, Anthropic + ElevenLabs as AI subprocessors that receive user content, storage of generated audio, cookies/session storage, data retention/deletion policy, contact email for requests
-- [ ] Terms cover: acceptable use (no violent/illegal content in scripts), ownership (user owns their generated meditations), service availability disclaimers, AI-generated content disclaimers, termination policy
+- [x] `/terms` page with Terms of Service
+- [x] `/privacy` page with Privacy Policy
+- [x] Both linked from the login/signup page (checkbox or footer text: "By continuing you agree to the Terms and Privacy Policy")
+- [x] Both linked from an app-wide footer, or at minimum the marketing landing page
+- [x] Privacy policy covers: email collection, Supabase as data processor, Anthropic + ElevenLabs as AI subprocessors that receive user content, storage of generated audio, cookies/session storage, data retention/deletion policy, contact email for requests
+- [x] Terms cover: acceptable use (no violent/illegal content in scripts), ownership (user owns their generated meditations), service availability disclaimers, AI-generated content disclaimers, termination policy
+
+## Outcome (2026-10-08)
+
+`src/app/(legal)/terms` and `src/app/(legal)/privacy`, plain `.tsx` in a public route
+group. Linked from the login/signup form and from a shared `SiteFooter` on the landing
+page and every `(app)` page, signed in or out.
+
+**Decisions:** operator named as Keenan Berry, an individual. Missouri law and courts.
+Minimum age **16**, which clears both COPPA (13) and GDPR's strictest default (16).
+Backups committed to **30 days** retention. Contact `privacy@zeneratestudio.com`.
+
+**Terms trimmed to a hobby-project version** at the operator's request: the headline is
+that the service can shut down at any time, with data deleted. Indemnity, the survival
+clause and most of the boilerplate are gone. Kept, briefly, because they protect an
+individual operator whether or not users are expected: as-is and the $50 liability
+cap, not-medical-advice, content rules with removal at discretion, Missouri law, and
+transfer to a successor.
+
+**\*Launch gate:** `privacy@` receives nothing until the forwarder exists (see below).
+Both pages publish it, so set up the forwarder before announcing the app.
+
+**Corrections to this file:**
+- The open question below assumed no cookies. Wrong: `@supabase/ssr` keeps the
+  session in cookies. They are strictly necessary, and there are no analytics, so a
+  disclosure suffices and no banner is needed.
+- Vercel was missing from the processor list. It hosts the app, sees request logs,
+  and runs the audio sandbox.
+
+**Follow-ups filed:** `post-ship/backup-retention.md`: nothing prunes dumps yet, so
+the 30-day promise is unenforced. `post-ship/account-deletion.md`. Deletion is email-only, and
+storage objects do not cascade, so the policy's "audio is deleted" promise is manual
+until that ships. Notes added to task 08, `post-ship/analytics.md` and
+`post-ship/error-tracking.md`: each adds a provider the policy must name.
+
+This is a draft by a non-lawyer. Have it reviewed before relying on it.
 
 ## Operating as an individual — settled 2026-09-14
 
