@@ -315,8 +315,9 @@ every other content type narrows itself inside the shell:
 - Descriptions under a title (meditation prompt, collection description): 60ch.
 
 The navigation is a single 64px bar with the lowercase wordmark on the left, section links
-beside it (icons only below `sm`), and theme toggle plus sign-in/out on the right. The
-landing page and the legal layout each duplicate this header; task 22 reconciles them.
+beside it (icons only below `sm`), and theme toggle plus sign-in/out on the right. One
+component (`src/components/nav.tsx`) renders it for the app shell, the landing page and
+the legal layout (task 22).
 
 Vertical rhythm, as settled in task 21:
 
@@ -336,7 +337,10 @@ Vertical rhythm, as settled in task 21:
 | Empty states | 64px vertical (`py-16`) |
 | Footer | 40px (`py-10`) |
 
-The landing page keeps `py-20`/`py-24` sections until task 22 rewrites it.
+The landing page (task 22) runs every section on the 64rem column with one left edge,
+`py-16 sm:py-20` between Hairline rules; the hero is `py-14 sm:py-20`. Prose inside a
+section narrows to 48rem and its paragraphs to 60ch, so the column edge stays shared while
+the measure stays readable.
 
 Breakpoints are Tailwind defaults (`sm` 640px, `md` 768px, `lg` 1024px). The phone target
 is 390px wide, because the next step for this product is an installed PWA. Everything must
@@ -427,8 +431,9 @@ texture in the interface and it stays unadorned.
 
 ### Navigation
 - A 64px bar, `border-b`, 95% Midnight with backdrop blur. Wordmark `zenerate` in bold
-  tracking-tight at 1.125rem. Items are ghost buttons with a 16px icon and a label hidden
-  below `sm`; the active item is `secondary`. The theme toggle is an icon button whose sun
+  tracking-tight at 1.125rem. Items are ghost buttons (`asChild` links) with a 16px icon
+  and a label that is `sr-only` below `sm`, never `hidden`, so the icon-only items keep an
+  accessible name; the active item is `secondary` with `aria-current="page"`. The theme toggle is an icon button whose sun
   and moon cross-fade with a rotate.
 
 ### Script Viewer (signature)
