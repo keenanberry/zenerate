@@ -87,9 +87,11 @@ opus agent given the same small task with and without the skill present.
 - Repo-wide, not directory-scoped, as the open question defaulted.
 
 **Found along the way, recorded where it belongs**
-- `--font-sans: Geist` is as broken as `--font-serif`: `next/font` registers faces under
-  hashed family names, so the whole app renders in the system sans today. DESIGN.md's
-  Loaded Face Rule and task 21's notes; task 20 fixes both.
+- ~~`--font-sans: Geist` is as broken as `--font-serif`~~: the setup claimed `next/font`
+  hashes family names so Geist matched nothing. Task 20 measured it: under Turbopack the
+  names are plain and Geist was already rendering; only Lora and Fira Code were unloaded.
+  Wiring the tokens through the `--font-*` variables was still right, and task 20 did it
+  for all three. DESIGN.md's Loaded Face Rule and the skill carry the accurate reason.
 - The rose is `--accent` in light but `--accent-foreground` in dark, so a `--primary` →
   `--accent` gradient is purple-to-purple in dark. Task 21's notes.
 - The brainstorm mockup task 21 cited was gitignored scratch and no longer exists.
