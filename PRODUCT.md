@@ -68,8 +68,9 @@ and the default meta description (task 26). Change it in all three or in none.
   be correct everywhere.
 - Single-operator operations: no admin dashboard, moderation, analytics or error
   tracking yet. All tracked in `tasks/post-ship/`.
-- Undecided: the free-tier copy on the landing page; whether the landing page carries
-  social proof at launch (there are no users yet, so none for now).
+- The landing page states the free tier before signup, reading both monthly caps from
+  the same config the quota checks enforce (task 22). Social proof at launch: none, since
+  there are no users yet; the space is left and revisited later.
 
 ## Brand Commitments
 
