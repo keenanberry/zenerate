@@ -60,7 +60,7 @@ the repo goes public in task 09.
 | 21 | [Nocturne pass](./21-nocturne-pass.md) | Done* | Dark-first surfaces, no in-flow shadows, gradient player with halo, script follows playback, markers in small-caps sans, rhythm table in `DESIGN.md`. *Phone and installed-PWA checks are the operator's |
 | 22 | [Landing page rewrite](./22-landing-page-rewrite.md) | Done* | Locked pitch as hero, a script streaming into the real viewer, newest public meditation, free tier read from the quota config. Shared `Nav` on landing and legal. Lighthouse 93/100 mobile, 100/100 desktop. *Installed-PWA check is the operator's, after 24 |
 | 23 | [Icon set + OG image](./23-icon-set-og-image.md) | Done* | Bodhi leaf mark with its veins drawn as a tree (`src/assets/brand/mark.svg`), a `BrandMark` component, every raster rebuilt by `scripts/build-icons.ts`. *Share previews and the phone home-screen check are the operator's |
-| 24 | [PWA manifest & install](./24-pwa-manifest.md) | Not started | Installable, no service worker |
+| 24 | [PWA manifest & install](./24-pwa-manifest.md) | Done* | Manifest at `/manifest.webmanifest` (standalone, opens to `/dashboard`, Midnight theme, maskable icon), iOS meta with the `default` status bar, no service worker. Lighthouse installability passes. *iPhone install and in-app sign-in are the operator's |
 | 25 | [Lock-screen audio](./25-lock-screen-audio.md) | Done* | Media Session on wavesurfer's own `<audio>`: title, artwork, play/pause, 15 s skips, seekbar. *Every device check is the operator's: Mac Now Playing, iPhone lock screen, PWA |
 | 26 | [SEO metadata](./26-seo-metadata.md) | Not started | Needs 22 (pitch) and 23 (OG image) |
 
