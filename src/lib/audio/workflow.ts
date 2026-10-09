@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { parseMeditationText } from "@/lib/meditation/parser";
 import { uploadAudio, updateMeditationStatus } from "./storage";
 import type { MeditationSegment, GenerationMeta } from "@/lib/meditation/types";
+import { DEFAULT_VOICE_ID } from "@/lib/voices/catalog";
 
 interface MeditationData {
   segments: MeditationSegment[];
@@ -50,7 +51,7 @@ async function fetchAndParse(meditationId: string): Promise<MeditationData> {
   const settings = meditation.settings ?? {};
   return {
     segments,
-    voiceId: settings.voice ?? "EXAVITQu4vr4xnSDxMaL",
+    voiceId: settings.voice ?? DEFAULT_VOICE_ID,
     backgroundMusic: settings.music ?? null,
     musicVolume: settings.volume ?? 0.15,
   };
