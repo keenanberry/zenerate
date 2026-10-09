@@ -30,4 +30,6 @@
 - `description` should be unique per page; avoid duplicating the same tagline everywhere.
 
 ## Open questions
-- What's the product's one-line pitch? Need to lock this before writing the landing description. Current README: "AI-powered meditation script and audio generation platform" — usable, maybe sharpen.
+- *(Resolved 2026-10-09, in `PRODUCT.md`: "Meditations composed for you, not picked from a
+  catalogue." Use it as the default description; per-page descriptions still differ.)*
+  ~~What's the product's one-line pitch?~~

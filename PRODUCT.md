@@ -30,6 +30,10 @@ The meditation is composed from your words, not picked from a library. Calm and 
 curate; Zenerate composes. A catalogue app cannot make that claim without becoming a
 different product. The landing page leads with it (task 22).
 
+One-line pitch, locked 2026-10-09: **"Meditations composed for you, not picked from a
+catalogue."** It is the landing hero line (task 22), the text on the OG image (task 23)
+and the default meta description (task 26). Change it in all three or in none.
+
 ## Operating Context
 
 - A personal tool made public. One operator, hobby scale, about $8 a month to run, no

@@ -34,7 +34,7 @@ bare URL.
 - [ ] Starter SVGs deleted from `public/`
 
 **OG image**
-- [ ] `og-image.png` at 1200×630, dark, carrying the mark and the one-line pitch from task 22
+- [ ] `og-image.png` at 1200×630, dark, carrying the mark and the one-line pitch from `PRODUCT.md` ("Meditations composed for you, not picked from a catalogue.")
 - [ ] Rendered preview checked in at least two of: iMessage, Slack, Twitter/X, Discord — they crop and letterbox differently
 - [ ] Text large enough to read in a feed thumbnail
 
