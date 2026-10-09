@@ -24,6 +24,13 @@ page and every `(app)` page, signed in or out.
 Minimum age **16**, which clears both COPPA (13) and GDPR's strictest default (16).
 Backups committed to **30 days** retention. Contact `privacy@zeneratestudio.com`.
 
+**Terms trimmed to a hobby-project version** at the operator's request: the headline is
+that the service can shut down at any time, with data deleted. Indemnity, the survival
+clause and most of the boilerplate are gone. Kept, briefly, because they protect an
+individual operator whether or not users are expected: as-is and the $50 liability
+cap, not-medical-advice, content rules with removal at discretion, Missouri law, and
+transfer to a successor.
+
 **\*Launch gate:** `privacy@` receives nothing until the forwarder exists (see below).
 Both pages publish it, so set up the forwarder before announcing the app.
 
