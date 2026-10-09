@@ -39,7 +39,7 @@ export default function GlobalError({
       </head>
       <body className="antialiased">
         <main className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center text-foreground">
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="font-serif text-2xl font-medium tracking-tight">
             Zenerate is having a moment
           </h1>
           <p className="mt-2 max-w-sm text-sm text-muted-foreground">

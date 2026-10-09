@@ -62,7 +62,9 @@ export default function LoginPage() {
           <Link href="/" className="mb-2 inline-block">
             <span className="text-2xl font-bold tracking-tight">zenerate</span>
           </Link>
-          <CardTitle>{isSignUp ? "Create an account" : "Welcome back"}</CardTitle>
+          <CardTitle className="font-serif text-xl font-medium">
+            {isSignUp ? "Create an account" : "Welcome back"}
+          </CardTitle>
           <CardDescription>
             {isSignUp
               ? "Sign up to start creating meditations"

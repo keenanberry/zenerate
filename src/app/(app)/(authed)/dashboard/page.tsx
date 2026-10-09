@@ -106,7 +106,7 @@ export default async function DashboardPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight">Library</h1>
+          <h1 className="font-serif text-2xl font-medium tracking-tight">Library</h1>
           <p className="text-sm text-muted-foreground">
             Your meditations, favorites, and collections.
           </p>

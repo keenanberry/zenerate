@@ -54,7 +54,7 @@ export default function LandingPage() {
       <main className="flex-1">
         {/* Hero */}
         <section className="mx-auto max-w-3xl px-4 py-24 text-center">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+          <h1 className="font-serif text-4xl font-bold tracking-tight sm:text-5xl">
             Meditation, <span className="text-primary">generated.</span>
           </h1>
           <p className="mt-4 text-lg text-muted-foreground">
@@ -81,7 +81,7 @@ export default function LandingPage() {
         {/* Features */}
         <section className="border-t bg-muted/30 py-20">
           <div className="mx-auto max-w-5xl px-4">
-            <h2 className="text-center text-2xl font-bold tracking-tight">
+            <h2 className="text-center font-serif text-2xl font-bold tracking-tight">
               Everything you need to build a meditation practice
             </h2>
             <div className="mt-12 grid gap-8 sm:grid-cols-2">
@@ -105,7 +105,7 @@ export default function LandingPage() {
         {/* CTA */}
         <section className="py-20">
           <div className="mx-auto max-w-2xl px-4 text-center">
-            <h2 className="text-2xl font-bold tracking-tight">
+            <h2 className="font-serif text-2xl font-bold tracking-tight">
               Ready to find your calm?
             </h2>
             <p className="mt-2 text-muted-foreground">

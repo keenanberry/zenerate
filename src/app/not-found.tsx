@@ -26,7 +26,7 @@ export default async function NotFound() {
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
         <Compass className="h-6 w-6 text-muted-foreground" />
       </div>
-      <h1 className="mt-6 text-2xl font-semibold tracking-tight">
+      <h1 className="mt-6 font-serif text-2xl font-medium tracking-tight">
         We couldn&apos;t find that
       </h1>
       <p className="mt-2 max-w-sm text-sm text-muted-foreground">

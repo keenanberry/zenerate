@@ -46,7 +46,7 @@ export default async function CollectionDetailPage({
       </Link>
 
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">{collection.name}</h1>
+        <h1 className="font-serif text-2xl font-medium tracking-tight">{collection.name}</h1>
         {collection.description && (
           <p className="text-muted-foreground">{collection.description}</p>
         )}

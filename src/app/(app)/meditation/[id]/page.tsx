@@ -68,7 +68,7 @@ export default async function MeditationDetailPage({
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="font-serif text-2xl font-medium tracking-tight">
             {meditation.title}
           </h1>
           <p className="text-sm text-muted-foreground">{meditation.prompt}</p>
@@ -113,7 +113,9 @@ export default async function MeditationDetailPage({
       {meditation.script && (
         <Card>
           <CardHeader>
-            <CardTitle>Meditation Script</CardTitle>
+            <CardTitle className="font-serif text-lg font-medium">
+              Meditation Script
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <ScriptViewer script={meditation.script} />
