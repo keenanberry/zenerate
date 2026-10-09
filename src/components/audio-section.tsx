@@ -73,6 +73,7 @@ export function AudioSection({
     return (
       <AudioPlayer
         audioUrl={audioUrl}
+        title={meditation.title}
         meditationId={meditation.id}
         canDownload={isSignedIn}
       />
