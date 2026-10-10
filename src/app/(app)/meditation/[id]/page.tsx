@@ -11,9 +11,8 @@ import { AddToCollectionDialog } from "@/components/add-to-collection-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScriptPlaybackProvider } from "@/components/script-playback";
-import { ArrowLeft, Clock } from "lucide-react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Clock } from "lucide-react";
+import { ParentLink } from "@/components/parent-link";
 import { getQuotaUsage, isFreeRetryAvailable } from "@/lib/audio/quota";
 import { meditationMetadata } from "@/lib/seo/metadata";
 
@@ -70,13 +69,12 @@ export default async function MeditationDetailPage({
     // The player and a 65ch script set the width; the shell's grid width
     // would leave the script floating in a wide card.
     <div className="mx-auto max-w-3xl space-y-10">
-      <div className="space-y-6">
-        <Link href={user ? "/dashboard" : "/discover"}>
-          <Button variant="ghost" size="sm" className="-ml-3 gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            {user ? "Back to Library" : "Back to Discover"}
-          </Button>
-        </Link>
+      <div className="space-y-3">
+        {/* The owner came from their library; everyone else, including a
+            signed-in visitor on a shared link, belongs to Discover. */}
+        <ParentLink href={isOwner ? "/dashboard" : "/discover"}>
+          {isOwner ? "Library" : "Discover"}
+        </ParentLink>
 
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-2">

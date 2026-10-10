@@ -1,9 +1,7 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { getCollectionWithItems } from "@/lib/meditation/actions";
 import { MeditationTrackList } from "@/components/meditation-track-list";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ParentLink } from "@/components/parent-link";
 import type { MeditationWithMeta } from "@/lib/meditation/types";
 import { RemoveFromCollectionButton } from "./remove-button";
 
@@ -38,13 +36,8 @@ export default async function CollectionDetailPage({
 
   return (
     <div className="space-y-10">
-      <div className="space-y-6">
-        <Link href="/dashboard?tab=collections">
-          <Button variant="ghost" size="sm" className="-ml-3 gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Library
-          </Button>
-        </Link>
+      <div className="space-y-3">
+        <ParentLink href="/dashboard?tab=collections">Collections</ParentLink>
 
         <div className="space-y-2">
           <h1 className="font-serif text-2xl font-medium tracking-tight">{collection.name}</h1>

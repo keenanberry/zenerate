@@ -330,7 +330,7 @@ Vertical rhythm, as settled in task 21:
 | Shell to content | 40px on a phone, 56px from `sm` (`py-10 sm:py-14`) |
 | Between page sections (header, player, script, tabs) | 40px (`space-y-10`) |
 | Title to its description | 8px (`space-y-2`) |
-| Back link to title block | 24px (`space-y-6`) |
+| Eyebrow link to title block | 12px (`space-y-3`) |
 | Tabs to their content | 32px (`mt-8`) |
 | Card padding | 24px on a phone, 32px from `sm` (`py-6 sm:py-8`, `px-6 sm:px-8`) |
 | Inside a card, between blocks | 24px (`gap-6` / `space-y-6`) |
@@ -439,6 +439,13 @@ texture in the interface and it stays unadorned.
   accessible name; the active item is `secondary` with `aria-current="page"`. The theme toggle is an icon button whose sun
   and moon cross-fade with a rotate.
 - The wordmark has the Brand Mark beside it at 22px, in `text-primary`, veins off.
+- A page that belongs to a section (a meditation, a collection) carries an eyebrow
+  above its title (`src/components/parent-link.tsx`): a Label-type link in Dusk with a
+  12px arrow, no box and no "Back", lifting to Foreground on hover. It names where the
+  page lives rather than promising a history it cannot honour, so the owner's meditation
+  says Library and anyone else's, including a signed-in visitor on a shared link, says
+  Discover. It replaced a ghost button that sat in its own 24px band and read as an
+  action beside the real ones.
 
 ### Brand Mark
 The bodhi leaf, `BrandMark` in `src/components/brand-mark.tsx`, drawn in `currentColor`:
@@ -469,6 +476,8 @@ script editor) there is no player, and the viewer stays evenly lit.
 A card holding the waveform above a row of controls: a 48px round play/pause button, a
 tabular-figure time readout in Dusk, and download, mute and (from `sm`) volume controls
 on the right. Phones use their hardware volume, so the slider is hidden below `sm`.
+Download and mute carry the shared Tooltip (300ms, from the root layout's provider), as
+the play buttons in lists do; a native `title` is too slow to notice and does not match.
 
 The play button and the played waveform are the gradient moment: the button is a
 `--gradient-start` to `--gradient-end` circle with a Midnight icon (`hover:brightness-110`,
