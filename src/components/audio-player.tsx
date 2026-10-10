@@ -5,6 +5,11 @@ import Link from "next/link";
 import WaveSurfer from "wavesurfer.js";
 import Hover from "wavesurfer.js/dist/plugins/hover.esm.js";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Card, CardContent } from "@/components/ui/card";
 import { Download, Pause, Play, Volume2, VolumeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -262,38 +267,47 @@ export function AudioPlayer({
                   filename comes from the route's Content-Disposition header, so
                   no `download` attribute is needed -- and relying on the header
                   is what makes it work on iOS Safari. */}
-              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" asChild>
-                {canDownload ? (
-                  <a
-                    href={`/api/audio/${meditationId}/download`}
-                    aria-label="Download audio"
-                    title="Download"
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" asChild>
+                    {canDownload ? (
+                      <a
+                        href={`/api/audio/${meditationId}/download`}
+                        aria-label="Download audio"
+                      >
+                        <Download className="h-4 w-4" />
+                      </a>
+                    ) : (
+                      <Link href="/login" aria-label="Sign in to download">
+                        <Download className="h-4 w-4" />
+                      </Link>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  {canDownload ? "Download" : "Sign in to download"}
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    onClick={toggleMute}
+                    aria-label={muted || volume === 0 ? "Unmute" : "Mute"}
                   >
-                    <Download className="h-4 w-4" />
-                  </a>
-                ) : (
-                  <Link
-                    href="/login"
-                    aria-label="Sign in to download"
-                    title="Sign in to download"
-                  >
-                    <Download className="h-4 w-4" />
-                  </Link>
-                )}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 shrink-0"
-                onClick={toggleMute}
-                aria-label={muted || volume === 0 ? "Unmute" : "Mute"}
-              >
-                {muted || volume === 0 ? (
-                  <VolumeOff className="h-4 w-4" />
-                ) : (
-                  <Volume2 className="h-4 w-4" />
-                )}
-              </Button>
+                    {muted || volume === 0 ? (
+                      <VolumeOff className="h-4 w-4" />
+                    ) : (
+                      <Volume2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  {muted || volume === 0 ? "Unmute" : "Mute"}
+                </TooltipContent>
+              </Tooltip>
               <input
                 type="range"
                 min={0}
