@@ -18,6 +18,7 @@ Work that's out of scope for initial ship but tracked for the next cycle. No ord
 | [Agent user memory](./agent-user-memory.md) | Remember user preferences across generations |
 | [Conversational script refinement](./conversational-script-refinement.md) | Chat to iterate on a script instead of one-shot generation |
 | [Tags and filters](./tags-and-filters.md) | Model-assigned tags from a fixed vocabulary, owner-adjustable; tag, type and duration filters on Discover and the Library |
+| [Stale audio run recovery](./stale-audio-run-recovery.md) | Unstick `processing_audio` rows whose workflow run died before `markFailed`; ask the run's status, refund the slot, offer the free retry |
 
 See `docs/ui-roadmap.md` for additional UX-focused improvements, and
 `docs/superpowers/specs/2026-09-11-go-live-design.md` for what was deliberately
