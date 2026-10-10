@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>Confirm your email for Zenerate</title>
+</head>
+<body style="margin:0;padding:0;background:#f6f3fe;color:#3d3c4f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">You signed up for Zenerate with this address.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f6f3fe;">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;">
+          <tr>
+            <td style="padding:0 8px 20px;">
+              <a href="{{ .SiteURL }}" style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:500;letter-spacing:-0.01em;color:#3d3c4f;text-decoration:none;">zenerate</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#ffffff;border:1px solid #cec9d9;border-radius:12px;padding:36px 32px 32px;">
+              <h1 style="margin:0 0 16px;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:500;line-height:1.25;letter-spacing:-0.01em;color:#3d3c4f;">Confirm your email</h1>
+              <p style="margin:0 0 24px;">You signed up for Zenerate with this address. Confirm it and you can start composing meditations.</p>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="background:#8a79ab;border-radius:8px;">
+                    <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:12px 22px;font-size:15px;font-weight:600;color:#f8f7fa;text-decoration:none;">Confirm email</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:24px 0 0;font-size:14px;line-height:1.5;color:#6b6880;">If the button doesn't open, paste this link into your browser:<br>
+                <a href="{{ .ConfirmationURL }}" style="color:#8a79ab;word-break:break-all;">{{ .ConfirmationURL }}</a></p>
+              <p style="margin:20px 0 0;font-size:14px;line-height:1.5;color:#6b6880;">If you didn't sign up, ignore this email. No account will be created.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 8px 0;font-size:13px;line-height:1.5;color:#6b6880;">
+              <p style="margin:0 0 8px;">Zenerate composes meditations from your words and narrates them with AI. It is run by one person, and this is the only kind of email it sends.</p>
+              <p style="margin:0;">Sent to {{ .Email }} because an account was just created with it. <a href="{{ .SiteURL }}/privacy" style="color:#6b6880;">Privacy</a></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
