@@ -17,6 +17,7 @@ Work that's out of scope for initial ship but tracked for the next cycle. No ord
 | [AI gateway](./ai-gateway.md) | Route model calls through Vercel AI Gateway for token/cost/latency visibility |
 | [Agent user memory](./agent-user-memory.md) | Remember user preferences across generations |
 | [Conversational script refinement](./conversational-script-refinement.md) | Chat to iterate on a script instead of one-shot generation |
+| [Tags and filters](./tags-and-filters.md) | Model-assigned tags from a fixed vocabulary, owner-adjustable; tag, type and duration filters on Discover and the Library |
 
 See `docs/ui-roadmap.md` for additional UX-focused improvements, and
 `docs/superpowers/specs/2026-09-11-go-live-design.md` for what was deliberately
