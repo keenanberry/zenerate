@@ -29,7 +29,7 @@ the repo goes public in task 09.
 |---|---|---|---|
 | 06 | [ElevenLabs production account](./06-elevenlabs-production.md) | Done | Starter active (operator, 2026-10-09); voices via the Zenerate collection (PR #25). Per-voice tuning deferred |
 | 07 | [Production Supabase project](./07-production-supabase.md) | Done | Live. Migrations, private bucket, email confirmation and redirects all verified; script and audio generation both ran in production 2026-10-10 |
-| 08 | [Transactional email](./08-transactional-email.md) | Not started | Supabase's built-in sender is not production-viable |
+| 08 | [Transactional email](./08-transactional-email.md) | Done* | Resend via its Supabase integration, `noreply@zeneratestudio.com`, templates in `supabase/templates/`. *Operator: paste the two templates into the production dashboard, then the inbox-placement check |
 | 09 | [Vercel deploy + domain](./09-vercel-deploy.md) | Deployed | Live at `www.zeneratestudio.com`, repo public, auth working, generation end to end in production 2026-10-10. `NEXT_PUBLIC_SITE_URL` still to set to the `www` host |
 | 10 | [Supabase keepalive + backups](./10-supabase-keepalive.md) | In progress | Cron route + `vercel.json` + tested restore script done. Needs `CRON_SECRET`, a prod dump, and cron confirmed firing |
 

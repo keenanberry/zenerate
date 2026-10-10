@@ -84,6 +84,14 @@ export default function PrivacyPage() {
           <a href="https://supabase.com/privacy">Supabase privacy policy</a>)
         </li>
         <li>
+          <strong>Resend</strong>: delivers account emails, such as sign-up
+          confirmation and password resets. Receives your email address. (
+          <a href="https://resend.com/legal/privacy-policy">
+            Resend privacy policy
+          </a>
+          )
+        </li>
+        <li>
           <strong>Vercel</strong>: hosts the website and runs the audio
           processing. Receives technical data with every request, and your
           script while audio is being produced. (
