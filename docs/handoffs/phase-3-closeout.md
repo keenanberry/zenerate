@@ -55,9 +55,9 @@ screen.
 
 **iPhone, Safari** (#29, #33, #34, #30, #31)
 4. Lock the screen during playback: audio continues, the lock screen shows the title and
-   the leaf, play/pause and the skips work, no previous/next buttons. Switch apps: audio
+   the mark, play/pause and the skips work, no previous/next buttons. Switch apps: audio
    continues.
-5. Share → Add to Home Screen: leaf on a Midnight tile, name "Zenerate", opens without
+5. Share → Add to Home Screen: the lotus on a Midnight tile, name "Zenerate", opens without
    Safari chrome, status bar legible. **The first launch shows you signed out.** iOS gives
    home-screen apps their own storage jar; sign in once inside the app and it persists.
    Then repeat the lock-screen checks inside the installed app, and open the landing page
@@ -70,14 +70,14 @@ screen.
 
 **Share cards** (#32, #35)
 7. Paste `https://www.zeneratestudio.com/` and one public meditation into at least two of
-   iMessage, Slack, X, Discord: large card, leaf, the pitch or the meditation's title and
+   iMessage, Slack, X, Discord: large card, the lotus, the pitch or the meditation's title and
    description. Run the Facebook sharing debugger on `/`, `/discover` and one meditation.
 8. Open `/robots.txt` and `/sitemap.xml` on production; the sitemap lists the live public
    meditations (it refreshes hourly).
 
 **Odds and ends**
 9. Favicon in Chrome's *light* tab theme; the inactive light tab is the weakest pairing.
-10. Android: the maskable icon's circle crop keeps the whole leaf.
+10. Android: the maskable icon's circle crop keeps the whole lotus.
 11. One product decision from #35: the owner of a private meditation sees its title in
     their own tab (with `noindex`); the brief had said a generic title. Keep or change,
     one line in `meditationMetadata`.

@@ -77,10 +77,10 @@ and the default meta description (task 26). Change it in all three or in none.
 - Name: **Zenerate**, zen + generate. Rendered lowercase `zenerate` in the UI today.
 - Domain: `zeneratestudio.com`. Pages read it from `NEXT_PUBLIC_SITE_URL`; the only
   hardcoded copy is that variable's fallback in `src/lib/seo/metadata.ts` (task 26).
-- Logo: a bodhi leaf whose veins are drawn as a tree. Source `src/assets/brand/mark.svg`,
-  component `src/components/brand-mark.tsx`; it sits beside the wordmark in the nav and
-  above it on the login card. Every raster in `public/` and `src/app/favicon.ico` is
-  rebuilt from it by `scripts/build-icons.ts`. Task 23.
+- Logo: a lotus in line art, five petals over a base line with three dots above. Source
+  `src/assets/brand/mark.svg`, component `src/components/brand-mark.tsx`; it sits beside
+  the wordmark in the nav and above it on the login card, and every icon and the OG image
+  are built from it. Chosen 2026-10-09 over the bodhi leaf, which read as a generic leaf.
 - Copy voice: plain, honest, second person. "AI-generated" is stated, never hidden. No
   medical or outcome claims; the Terms say so.
 - Visual direction: Nocturne, dark-first, with one gradient moment on the player.

@@ -4,58 +4,82 @@
  * from DESIGN.md through the build script.
  */
 
-export interface Vein {
-  d: string;
-  /** Set where a vein is heavier than the group's width: the midrib, the trunk. */
-  width?: number;
+export interface Dot {
+  cx: number;
+  cy: number;
+  r: number;
 }
 
 export interface Mark {
-  leaf: string;
-  stem: string;
-  veins: Vein[];
-  veinWidth: number;
+  /** The petal edges, as open strokes (the centre petal is closed). */
+  petals: string[];
+  /** The line under the flower. */
+  base: string;
+  /** The three dots above it. */
+  dots: Dot[];
+  /** Stroke width at 32px and up. */
+  strokeWidth: number;
+  /** Stroke width below 32px, where the base and dots are dropped. */
+  boldStrokeWidth: number;
 }
 
-/** Pull the leaf, stem and vein paths out of the source SVG by id. */
+/** Pull the petals, base and dots out of the source SVG by id. */
 export function readMark(svg: string): Mark {
-  const pathById = (id: string) => {
-    const match = svg.match(new RegExp(`<path[^>]*\\bid="${id}"[^>]*\\bd="([^"]+)"`));
-    if (!match) throw new Error(`mark.svg has no <path id="${id}">`);
-    return match[1];
+  const group = (id: string) => {
+    const match = svg.match(new RegExp(`<g[^>]*\\bid="${id}"([^>]*)>([\\s\\S]*?)<\\/g>`));
+    if (!match) throw new Error(`mark.svg has no <g id="${id}">`);
+    return { attrs: match[1], inner: match[2] };
   };
-  const veinGroup = svg.match(/<g[^>]*\bid="veins"([^>]*)>([\s\S]*?)<\/g>/);
-  if (!veinGroup) throw new Error('mark.svg has no <g id="veins">');
-  const width = veinGroup[1].match(/stroke-width="([\d.]+)"/);
-  if (!width) throw new Error("The veins group needs a stroke-width");
+  const number = (attrs: string, name: string, where: string) => {
+    const match = attrs.match(new RegExp(`\\b${name}="([\\d.]+)"`));
+    if (!match) throw new Error(`${where} needs a ${name}`);
+    return Number(match[1]);
+  };
+
+  const petals = group("petals");
+  const base = svg.match(/<path[^>]*\bid="base"[^>]*\bd="([^"]+)"/);
+  if (!base) throw new Error('mark.svg has no <path id="base">');
+  const dots = group("dots");
 
   return {
-    leaf: pathById("leaf"),
-    stem: pathById("stem"),
-    veins: [...veinGroup[2].matchAll(/<path([^>]*)\/>/g)].map(([, attrs]) => {
-      const d = attrs.match(/\bd="([^"]+)"/);
-      if (!d) throw new Error("A vein <path> has no d attribute");
-      const own = attrs.match(/stroke-width="([\d.]+)"/);
-      return own ? { d: d[1], width: Number(own[1]) } : { d: d[1] };
-    }),
-    veinWidth: Number(width[1]),
+    petals: [...petals.inner.matchAll(/<path[^>]*\bd="([^"]+)"/g)].map(([, d]) => d),
+    base: base[1],
+    dots: [...dots.inner.matchAll(/<circle([^>]*)\/>/g)].map(([, attrs]) => ({
+      cx: number(attrs, "cx", "A dot"),
+      cy: number(attrs, "cy", "A dot"),
+      r: number(attrs, "r", "A dot"),
+    })),
+    strokeWidth: number(petals.attrs, "stroke-width", "The petals group"),
+    boldStrokeWidth: number(petals.attrs, "data-bold-stroke-width", "The petals group"),
   };
 }
 
+/** Below this the lines close up, so the mark is drawn in the bold tier. */
+export const BOLD_BELOW_PX = 32;
+
+export type Tier = "ink" | "bold";
+
+export const tierFor = (size: number): Tier => (size < BOLD_BELOW_PX ? "bold" : "ink");
+
 export interface MarkColours {
-  leaf: string;
-  /** Omit to leave the veins out, as every size under 64px does. */
-  veins?: string;
+  ink: string;
+  /** The dots' colour; omit to draw them in the ink. */
+  dots?: string;
 }
 
-/** The mark as SVG markup on its own 100-unit grid. */
-export function markMarkup(mark: Mark, colours: MarkColours): string {
-  const body = `<path fill="${colours.leaf}" d="${mark.leaf}"/><path fill="${colours.leaf}" d="${mark.stem}"/>`;
-  if (!colours.veins) return body;
-  const veins = mark.veins
-    .map(({ d, width }) => (width ? `<path stroke-width="${width}" d="${d}"/>` : `<path d="${d}"/>`))
-    .join("");
-  return `${body}<g fill="none" stroke="${colours.veins}" stroke-width="${mark.veinWidth}" stroke-linecap="round">${veins}</g>`;
+/**
+ * The mark as SVG markup on its own 100-unit grid. The bold tier keeps only
+ * the petals, heavier, and drops them 5 units so their ink is centred in the
+ * box the way the full mark's is.
+ */
+export function markMarkup(mark: Mark, colours: MarkColours, tier: Tier = "ink"): string {
+  const stroke = (width: number) => `fill="none" stroke="${colours.ink}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"`;
+  const petals = mark.petals.map((d) => `<path d="${d}"/>`).join("");
+  if (tier === "bold") {
+    return `<g ${stroke(mark.boldStrokeWidth)} transform="translate(0 5)">${petals}</g>`;
+  }
+  const dots = mark.dots.map(({ cx, cy, r }) => `<circle cx="${cx}" cy="${cy}" r="${r}"/>`).join("");
+  return `<g ${stroke(mark.strokeWidth)}>${petals}<path d="${mark.base}"/></g><g fill="${colours.dots ?? colours.ink}">${dots}</g>`;
 }
 
 export interface IconOptions {
@@ -73,7 +97,7 @@ export function iconSvg({ size, scale, background, colours }: IconOptions, mark:
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 100 100">`,
     ground,
-    `<g transform="translate(50 50) scale(${scale}) translate(-50 -50)">${markMarkup(mark, colours)}</g>`,
+    `<g transform="translate(50 50) scale(${scale}) translate(-50 -50)">${markMarkup(mark, colours, tierFor(size))}</g>`,
     `</svg>`,
   ].join("");
 }
@@ -90,9 +114,9 @@ export interface OgOptions {
   fontSize: number;
 }
 
-/** Where the leaf's ink sits across its 100-unit box. */
-const LEAF_LEFT = 12;
-const LEAF_RIGHT = 88;
+/** Where the mark's ink sits across its 100-unit box: the outer petal tips plus half a stroke. */
+const MARK_LEFT = 3.5;
+const MARK_RIGHT = 96.5;
 
 /**
  * The pitch alone, set from x=0 on a transparent canvas the card's size.
@@ -115,13 +139,13 @@ export function pitchSvg(o: OgOptions): string {
 export function ogSvg(o: OgOptions, mark: Mark, textWidth: number): string {
   const markHeight = 0.46 * o.height;
   const markScale = markHeight / 100;
-  const leafWidth = ((LEAF_RIGHT - LEAF_LEFT) / 100) * markHeight;
+  const markWidth = ((MARK_RIGHT - MARK_LEFT) / 100) * markHeight;
   const gap = 0.045 * o.width;
 
-  const groupLeft = (o.width - (leafWidth + gap + textWidth)) / 2;
-  const markX = groupLeft - (LEAF_LEFT / 100) * markHeight;
+  const groupLeft = (o.width - (markWidth + gap + textWidth)) / 2;
+  const markX = groupLeft - (MARK_LEFT / 100) * markHeight;
   const markY = (o.height - markHeight) / 2;
-  const textX = groupLeft + leafWidth + gap;
+  const textX = groupLeft + markWidth + gap;
 
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${o.width}" height="${o.height}" viewBox="0 0 ${o.width} ${o.height}">`,

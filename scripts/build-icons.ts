@@ -42,12 +42,13 @@ const loraMedium = at("src/assets/brand/fonts/Lora-Medium.ttf");
 // in the meta description too, or not at all.
 const PITCH_LINES = ["Meditations composed", "for you, not picked", "from a catalogue."];
 
-/** Below this the veins blur into the leaf, so small sizes are the silhouette. */
-const VEINS_FROM_PX = 64;
+/** Below this the dots are specks, so they take the ink rather than the rose. */
+const ROSE_DOTS_FROM_PX = 64;
 
+// The tier (ink or bold) is chosen per size inside iconSvg.
 const markColours = (size: number) => ({
-  leaf: amethystGlow,
-  veins: size >= VEINS_FROM_PX ? roseQuartz : undefined,
+  ink: amethystGlow,
+  dots: size >= ROSE_DOTS_FROM_PX ? roseQuartz : amethystGlow,
 });
 
 function render(svg: string, options: ResvgRenderOptions = {}) {
@@ -71,8 +72,8 @@ interface Output {
 function build(): Output[] {
   const outputs: Output[] = [];
 
-  // favicon.ico: the silhouette, transparent, at the three sizes browsers ask
-  // for. Full-size in its box: at 16px every pixel of leaf counts.
+  // favicon.ico: transparent, at the three sizes browsers ask for. Full-size
+  // in its box: at 16px every pixel counts, and 16px gets the bold tier.
   const faviconSizes = [16, 32, 48];
   const favicon = encodeIco(
     faviconSizes.map((size) => ({ size, png: icon({ size, scale: 1 }).png })),
@@ -103,7 +104,7 @@ function build(): Output[] {
     height: 630,
     background: midnight,
     text: moonlit,
-    colours: { leaf: amethystGlow, veins: roseQuartz },
+    colours: { ink: amethystGlow, dots: roseQuartz },
     lines: PITCH_LINES,
     fontFamily: "Lora",
     fontSize: 66,
