@@ -35,9 +35,9 @@ export function Nav({ isSignedIn }: { isSignedIn: boolean }) {
             href={isSignedIn ? "/dashboard" : "/"}
             className="flex items-center gap-2 text-lg font-bold tracking-tight"
           >
-            {/* Decorative: the wordmark beside it is the link's name. Nudged up so
-                the leaf sits on the baseline and the stem hangs like a descender. */}
-            <BrandMark veins={false} className="size-5.5 shrink-0 -translate-y-px text-primary" />
+            {/* Decorative: the wordmark beside it is the link's name. Bold tier at
+                22px, as the favicon is. */}
+            <BrandMark bold className="size-5.5 shrink-0 text-primary" />
             zenerate
           </Link>
           <nav className="flex items-center gap-1 sm:gap-2">

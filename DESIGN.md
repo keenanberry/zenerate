@@ -438,7 +438,7 @@ texture in the interface and it stays unadorned.
   and a label that is `sr-only` below `sm`, never `hidden`, so the icon-only items keep an
   accessible name; the active item is `secondary` with `aria-current="page"`. The theme toggle is an icon button whose sun
   and moon cross-fade with a rotate.
-- The wordmark has the Brand Mark beside it at 22px, in `text-primary`, veins off.
+- The wordmark has the Brand Mark beside it at 22px, in `text-primary`, bold tier.
 - A page that belongs to a section (a meditation, a collection) carries an eyebrow
   above its title (`src/components/parent-link.tsx`): a Label-type link in Dusk with a
   12px arrow, no box and no "Back", lifting to Foreground on hover. It names where the
@@ -448,10 +448,17 @@ texture in the interface and it stays unadorned.
   action beside the real ones.
 
 ### Brand Mark
-The bodhi leaf, `BrandMark` in `src/components/brand-mark.tsx`, drawn in `currentColor`:
-colour comes from a text token, size from `size-*`. Veins are cut out of the leaf only at
-64px and above (the login card); below that it is the silhouette (nav, favicon). Never
-filled with a gradient: the gradient belongs to the player.
+A lotus in line art, `BrandMark` in `src/components/brand-mark.tsx`, drawn in
+`currentColor`: colour comes from a text token, size from `size-*`. Five petals as open
+strokes over a base line, three dots above; each side petal's inner edge ends on its
+neighbour's outline, so no line crosses another. Two tiers, both in
+`src/assets/brand/mark.svg`: the ink weight (stroke 5 on the 100-unit grid) with base and
+dots from 32px up, and the bold weight (8.5) with the petals alone below that, where the
+lines would close up. `bold` on the component and the size in the icon build choose the
+tier; the dots turn Rose Quartz from 64px, otherwise they take the ink. Every raster in
+`public/` and the favicon are rebuilt from the SVG by `scripts/build-icons.ts`; a test
+keeps the component's copy of the geometry in step. Chosen 2026-10-09 over the bodhi
+leaf (task 23), which read as a generic leaf at nav size.
 
 ### Script Viewer (signature)
 The reading surface. Spoken passages are Script type at a 65ch measure, 24px apart, with

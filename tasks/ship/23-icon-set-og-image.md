@@ -165,3 +165,13 @@ bare URL.
   ran after it. `DESIGN.md` (Navigation: "Wordmark `zenerate` in bold…") and `PRODUCT.md`
   (Brand Commitments: "Logo: none exists") predate the mark and now lag the UI; neither file
   was in this follow-up's scope.
+
+## Superseded (2026-10-09)
+
+The operator did not love the leaf once it was live: it read as a generic tree leaf. The
+mark is now a line-art lotus (the operator's reference was a tattoo-style five-petal
+lotus), drawn to the same pipeline: `mark.svg` is still the source, `build-icons.ts`
+still renders every raster, and the component test still holds the two in step. What
+changed is the shape and the small-size strategy: instead of dropping detail (veins) below
+64px, the mark has two stroke weights, and below 32px the petals alone carry it. The
+decisions above about grounds, scales, the maskable safe zone and the OG layout stand.
