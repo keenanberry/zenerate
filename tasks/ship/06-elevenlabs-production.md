@@ -1,6 +1,6 @@
 # ElevenLabs Production Account
 
-**Status:** Not started
+**Status:** Done (operator confirmed the Starter subscription 2026-10-09; voices shipped in PR #25)
 **Priority:** Ship-blocker
 **Blocks:** 03 (quota is derived from the purchased plan)
 
@@ -37,15 +37,27 @@ suggests).
 
 ## Acceptance criteria
 
-- [ ] ElevenLabs Starter subscription active on an account we control long-term (not a personal trial address that will lapse)
-- [ ] `ELEVENLABS_API_KEY` rotated to the paid account's key, updated locally and in Vercel
-- [ ] At least 4–6 meditation-appropriate voices selected from the Voice Library and added to the account, auditioned against a real generated script rather than the library preview
-- [ ] **`src/app/api/voices/route.ts:39` filter fixed** — it currently requires `v.category === "premade"` against a hardcoded set of six names, so Voice Library voices will not appear no matter what is added to the account
-- [ ] `VOICE_DESCRIPTIONS` updated for the new roster, written for meditation context ("slow, breathy, low register") not generic voice-acting terms
+- [x] ElevenLabs Starter subscription active on an account we control long-term (not a personal trial address that will lapse)
+- [x] `ELEVENLABS_API_KEY` rotated to the paid account's key, updated locally and in Vercel
+- [x] At least 4–6 meditation-appropriate voices selected from the Voice Library and added to the account, auditioned against a real generated script rather than the library preview
+- [x] **`src/app/api/voices/route.ts:39` filter fixed** — it currently requires `v.category === "premade"` against a hardcoded set of six names, so Voice Library voices will not appear no matter what is added to the account
+- [x] `VOICE_DESCRIPTIONS` updated for the new roster, written for meditation context ("slow, breathy, low register") not generic voice-acting terms
 - [ ] **`voiceSettings` wired through** — `src/lib/audio/generate-audio.ts:37-41` accepts stability/similarityBoost/style/speed, but the config assembled in `src/lib/audio/workflow.ts:74-80` omits it, so every voice silently runs on the hardcoded fallback
 - [ ] Per-voice tuning stored alongside each voice rather than one global default — different voices want different settings
-- [ ] Sandbox snapshot rebuilt after any `generate-audio.ts` change, `AUDIO_SANDBOX_SNAPSHOT_ID` updated locally and in Vercel
-- [ ] End-to-end: generate a full meditation on a new voice and listen to it start to finish
+- [x] Sandbox snapshot rebuilt after any `generate-audio.ts` change, `AUDIO_SANDBOX_SNAPSHOT_ID` updated locally and in Vercel
+- [x] End-to-end: generate a full meditation on a new voice and listen to it start to finish
+
+## Outcome
+
+- Starter is active on the operator's account (operator, 2026-10-09). The key in Vercel is
+  the paid account's.
+- The picker offers the operator's "Zenerate" collection (nine voices, Brittney default),
+  enforced server-side by an allowlist rather than a category filter: PR #25.
+- `voiceSettings` and per-voice tuning were **not** done; every voice runs on the
+  fallback in `generate-audio.ts` (speed 0.85, stability 0.5). Revisit only if a voice
+  sounds off in a real generation; it would need a snapshot rebuild.
+- End-to-end on Brittney: the launch sound check, 2026-10-09, all six sounds, local.
+  The production listen is on the Phase 3 operator checklist.
 
 ## Implementation notes
 
