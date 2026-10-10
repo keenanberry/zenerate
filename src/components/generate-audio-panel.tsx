@@ -7,6 +7,7 @@ import { VoicePicker } from "@/components/voice-picker";
 import { Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { DEFAULT_VOICE_ID } from "@/lib/voices/catalog";
+import { generateErrorMessage } from "@/lib/audio/generate-error";
 
 export type QuotaProp = {
   used: number;
@@ -56,15 +57,7 @@ export function GenerateAudioPanel({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        if (res.status === 429) {
-          throw new Error("Monthly limit reached");
-        }
-        if (res.status === 503) {
-          throw new Error(
-            "Audio generation is temporarily paused. Please try again next month.",
-          );
-        }
-        throw new Error(data.error ?? "Failed to start audio generation");
+        throw new Error(generateErrorMessage(res.status, data));
       }
 
       // Success only. Failures are rendered inline by this panel already --

@@ -47,3 +47,4 @@ next-env.d.ts
 
 # Impeccable per-machine overrides
 .impeccable/config.local.json
+/.swc

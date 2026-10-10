@@ -68,6 +68,15 @@ Seeded test users: `alice@example.com` / `bob@example.com` — password `passwor
 
 `src/lib/audio/generate-audio.ts` **and everything it imports** (currently `loudness.ts`) are **baked into the sandbox snapshot**, as are the sound effects in `scripts/sound-effects.ts`. Without a rebuilt snapshot and a redeployed `AUDIO_SANDBOX_SNAPSHOT_ID`, an edit to any of them has zero effect on what runs. The `audio-pipeline` skill in `.claude/skills/` has the full loop.
 
+## Workflow Package — Keep It On the Current Major
+
+Vercel's Workflow backend refuses to start runs from a package major it has retired
+(`HTTP 426: This Workflow 4.x beta release is no longer supported for starting new
+runs`). Local dev keeps working because the local world never talks to that backend, so
+the only symptom is production audio generation failing at start. Check
+`npm view workflow dist-tags` when touching the audio pipeline, and upgrade before a
+launch. The trigger route reverts the meditation and refunds the slot when a start fails.
+
 ## Design System
 
 `DESIGN.md` at the repo root is the design contract, and `PRODUCT.md` the product record; the Impeccable tooling reads both. The `zenerate-design` skill in `.claude/skills/` is the working procedure for any change a visitor sees, including the verification order (dark first, then light, then phone width).
