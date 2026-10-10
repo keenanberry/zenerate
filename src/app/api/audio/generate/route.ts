@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@/lib/supabase/service-role";
 import { processAudioWorkflow } from "@/lib/audio/workflow";
 import { reserveAudioGeneration, getQuotaConfig } from "@/lib/audio/quota";
+import { startRunOrRevert } from "@/lib/audio/start-run";
 import { resolveVoiceId } from "@/lib/voices/catalog";
 import { getVoices } from "@/lib/voices/server";
 
@@ -131,11 +132,34 @@ export async function POST(req: Request) {
     );
   }
 
-  const run = await start(processAudioWorkflow, [
-    meditationId,
-    voice.voiceId,
-    reserve.eventId,
-  ]);
+  const run = await startRunOrRevert({
+    start: () => start(processAudioWorkflow, [meditationId, voice.voiceId, reserve.eventId]),
+    // No run exists, so the workflow's own failure path will never fire:
+    // put the script back where it was and refund the reserved generation.
+    revert: async () => {
+      await Promise.all([
+        serviceClient
+          .from("meditations")
+          .update({ status: allowedStatus, updated_at: new Date().toISOString() })
+          .eq("id", meditationId),
+        serviceClient
+          .from("audio_generation_events")
+          .update({ status: "failed", completed_at: new Date().toISOString() })
+          .eq("id", reserve.eventId),
+      ]);
+    },
+  });
+
+  if (!run.ok) {
+    console.error(`Could not start the audio workflow for ${meditationId}:`, run.error);
+    return NextResponse.json(
+      {
+        error:
+          "Audio generation couldn't start. Nothing was used from your monthly allowance; try again in a minute.",
+      },
+      { status: 503 },
+    );
+  }
 
   return NextResponse.json(
     {
