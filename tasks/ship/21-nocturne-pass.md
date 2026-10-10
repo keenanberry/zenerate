@@ -1,6 +1,6 @@
 # Nocturne Pass
 
-**Status:** Done* — *the phone-in-hand checks (installed PWA, lock screen, Now Playing from the OS control) are the operator's, after merge; everything else was verified locally, with the completed-meditation player checked on a local harness because the local database holds no completed meditation
+**Status:** Done — the phone-in-hand checks (installed PWA, lock screen) were confirmed by the operator 2026-10-10; everything else was verified locally, with the completed-meditation player checked on a local harness because the local database holds no completed meditation. The Mac Now Playing control is still unchecked (task 25)
 **Priority:** Ship-blocker for the brand pass — the largest task in Phase 3
 **Depends on:** 19 (design skill), 20 (typography lands first)
 
@@ -45,7 +45,7 @@ and the `zenerate-design` skill is the working procedure. Read both before start
 
 **Verification**
 - [x] Every route checked in dark and light: `/`, `/login`, `/dashboard`, `/create`, `/discover`, `/meditation/[id]`, `/collections/[id]`
-- [x] Checked at phone width — this is about to become an installed PWA (390px emulated for every route; on a real phone and as an installed PWA: operator, after merge)
+- [x] Checked at phone width — this is about to become an installed PWA (390px emulated for every route; on a real phone and as an installed PWA: (operator, confirmed 2026-10-10))
 - [x] `prefers-reduced-motion` respected by any new transition
 
 ## Implementation notes

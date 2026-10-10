@@ -43,9 +43,11 @@ screen.
    `NEXT_PUBLIC_` values are inlined at build time. The fallback already points at
    production, so nothing is broken meanwhile (#35).
 2. Still open from Phase 2: confirm `AUDIO_SANDBOX_SNAPSHOT_ID` is
-   `snap_MXu6Sl0RX5di37AmE6j8vM7Nhz8y` and production was redeployed after setting it;
-   `curl` a public meditation with no cookies to prove the `anon` grant; run one real
-   production audio generation and listen.
+   `snap_MXu6Sl0RX5di37AmE6j8vM7Nhz8y` and production was redeployed after setting it.
+   **Done 2026-10-10:** the `anon` grant (`/discover` and a public meditation fetched
+   with no cookies return the title, the player and a signed audio URL) and the first
+   production audio generations, which needed the `workflow` upgrade in #43 first (the
+   4.x beta was refused with HTTP 426; see `CLAUDE.md`).
 
 **Mac, Chrome, screen unlocked** (#29)
 3. Play a completed meditation with a long silence. Control Center → Now Playing shows the
@@ -53,7 +55,9 @@ screen.
    continues with the tab backgrounded and Chrome hidden; narration resumes after the
    silence without a tap.
 
-**iPhone, Safari** (#29, #33, #34, #30, #31)
+**iPhone, Safari** (#29, #33, #34, #30, #31) — **confirmed by the operator 2026-10-10:**
+home-screen install and playback inside the installed app, reported as the iPhone checks
+done.
 4. Lock the screen during playback: audio continues, the lock screen shows the title and
    the mark, play/pause and the skips work, no previous/next buttons. Switch apps: audio
    continues.
@@ -72,8 +76,9 @@ screen.
 7. Paste `https://www.zeneratestudio.com/` and one public meditation into at least two of
    iMessage, Slack, X, Discord: large card, the lotus, the pitch or the meditation's title and
    description. Run the Facebook sharing debugger on `/`, `/discover` and one meditation.
-8. Open `/robots.txt` and `/sitemap.xml` on production; the sitemap lists the live public
-   meditations (it refreshes hourly).
+8. ~~Open `/robots.txt` and `/sitemap.xml` on production; the sitemap lists the live public
+   meditations (it refreshes hourly).~~ Done 2026-10-10: robots allows the public routes
+   and disallows the app ones; the sitemap listed both public meditations within the hour.
 
 **Odds and ends**
 9. Favicon in Chrome's *light* tab theme; the inactive light tab is the weakest pairing.
