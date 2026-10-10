@@ -1,6 +1,6 @@
 # PWA Manifest & Install
 
-**Status:** Done* (*installing on a real iPhone and signing in inside the installed app need a phone and the deployed HTTPS domain: the operator's, after merge)
+**Status:** Done. The operator installed it on an iPhone and played a meditation inside the installed app, 2026-10-10
 **Priority:** Ship-blocker for the stated goal — "I want this on my iPhone as an app"
 **Depends on:** 23 (icons), 09 (HTTPS domain — install requires a secure origin)
 
@@ -24,8 +24,8 @@ this task is the prerequisite for that later work, which is another reason to do
 - [x] `theme_color` and `background_color` matching the Nocturne dark ground
 - [x] Icons wired from task 23, including the maskable variant
 - [x] `appleWebApp` metadata set in `layout.tsx` (`capable`, `statusBarStyle`, `title`) — iOS reads these, not the manifest
-- [ ] Installed on a real iPhone via Safari → Share → Add to Home Screen, and verified: correct icon, correct name, opens chrome-less, status bar legible against the dark ground (operator, after merge)
-- [ ] Login verified **inside the installed app** — iOS standalone PWAs use a separate storage jar from Safari, so the session does not carry over and the first launch requires signing in again (operator, after merge)
+- [x] Installed on a real iPhone via Safari → Share → Add to Home Screen, and verified: correct icon, correct name, opens chrome-less, status bar legible against the dark ground (operator, confirmed 2026-10-10)
+- [x] Login verified **inside the installed app** — iOS standalone PWAs use a separate storage jar from Safari, so the session does not carry over and the first launch requires signing in again (operator, confirmed 2026-10-10)
 - [x] Safe-area insets respected so content doesn't sit under the notch or home indicator — by construction: the `default` status bar and no `viewport-fit=cover` keep the page inside the safe area; the on-device look is in the operator's list
 - [x] Verified the app still works normally as a browser tab
 

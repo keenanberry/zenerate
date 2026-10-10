@@ -1,6 +1,6 @@
 # Lock-Screen Audio (Media Session)
 
-**Status:** Done* — *every device check (the Mac Now Playing checks as well as the iPhone ones) is the operator's after merge: this Mac's session was password-locked for the whole run, so no page could become visible
+**Status:** Done* — the iPhone checks were confirmed by the operator 2026-10-10; *the Mac Now Playing checks are still the operator's: this Mac's session was password-locked for the whole run, so no page could become visible
 **Priority:** Ship-blocker — arguably the highest-value item in Phase 3
 **Depends on:** 24 (most valuable in the installed PWA, though it works in-browser too)
 
@@ -23,9 +23,9 @@ This matters more than installability, and it lives in the same neighbourhood of
 - [x] `previoustrack` / `nexttrack` deliberately left unset — there is no queue, and setting them puts dead buttons on the lock screen
 - [x] `navigator.mediaSession.playbackState` kept in sync with actual playback
 - [x] Feature-detected — `mediaSession` is absent on some browsers and must not throw
-- [ ] **Verified on a real iPhone**: start a meditation, lock the screen, confirm audio continues, confirm title and artwork appear on the lock screen, confirm the lock-screen play/pause controls work (operator, after merge)
-- [ ] Same verified in the installed PWA from task 24, not only in Safari (operator, after merge)
-- [ ] Verified audio survives switching to another app (operator, after merge)
+- [x] **Verified on a real iPhone**: start a meditation, lock the screen, confirm audio continues, confirm title and artwork appear on the lock screen, confirm the lock-screen play/pause controls work (operator, confirmed 2026-10-10)
+- [x] Same verified in the installed PWA from task 24, not only in Safari (operator, confirmed 2026-10-10)
+- [x] Verified audio survives switching to another app (operator, confirmed 2026-10-10)
 
 ## Implementation notes
 

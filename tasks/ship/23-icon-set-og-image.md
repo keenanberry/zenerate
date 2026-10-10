@@ -27,7 +27,7 @@ bare URL.
 - [x] Legible at 16px in a browser tab and at 180px on a phone home screen. Test both before committing.
       *16px checked in Chrome on its light and dark tab colours; 180px checked at 1:1 on dark and
       white grounds with iOS-style corners*
-  - [ ] The same on a real phone home screen (operator, after merge)
+  - [x] The same on a real phone home screen (operator, confirmed 2026-10-10)
 - [x] Works on the Nocturne dark ground and on white
 
 **Icon set**

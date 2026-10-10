@@ -1,6 +1,6 @@
 # Landing Page Rewrite
 
-**Status:** Done* (the installed-PWA check is the operator's, and needs task 24's manifest first)
+**Status:** Done (the installed-PWA check was confirmed by the operator 2026-10-10)
 **Priority:** Ship-blocker
 **Depends on:** 20 (typography), 21 (Nocturne tokens)
 
@@ -33,7 +33,7 @@ a template. It's the first thing anyone sees, and after task 09 it's what
 - [x] Respects system theme — does not force dark (see task 21's open question)
 - [x] Real product surface visible above the fold, not just an icon grid
 - [x] Works at phone width
-- [ ] Verified as an installed PWA start page (operator, after merge; needs task 24's manifest)
+- [x] Verified as an installed PWA start page (operator, confirmed 2026-10-10)
 
 ## Implementation notes
 
