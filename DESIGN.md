@@ -500,6 +500,16 @@ toggle recolours the player without recreating it or losing the playback positio
 Media Session binding (`use-media-session.ts`, task 25) sits outside the markup and is
 unaffected by the styling.
 
+### Landing Demo
+The hero's product surface (`src/components/script-stream-demo.tsx`): a card with a
+Label-style "Focus" line and a Writing/Ready state, the script streaming into the real
+Script Viewer, and under it a row of chips naming the six examples
+(`src/lib/landing/examples.ts`). Chips are pills in UI type at 12px with a Hairline
+border; the live one takes the Secondary fill, as the active nav item does, and a tap
+streams that example from its first word. The loop walks the six in order. Every
+script is rendered as an invisible sizer in one grid cell, so the card holds the tallest
+and never shifts. Under reduced motion the chosen script shows whole and chips swap it.
+
 ### Wizard Steps
 Three steps on the create page. Desktop: a row of 32px circles joined by 2px connector
 lines that fill in Amethyst Glow as steps complete, the current step ringed at 30%. Mobile:
