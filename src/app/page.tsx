@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { getScriptQuotaConfig } from "@/lib/ai/quota";
 import { getQuotaConfig } from "@/lib/audio/quota";
 import { countOf, firstPassage, freeTierSummary } from "@/lib/landing/copy";
+import { DEMO_EXAMPLES } from "@/lib/landing/examples";
 import {
   getLatestPublicMeditation,
   type LatestMeditation,
@@ -23,21 +24,6 @@ export const metadata = pageMetadata({
 
 // Written in the markup the model writes, so it renders through the real
 // ScriptViewer. An example, and labelled as one on the page.
-const DEMO_FOCUS = "the night before a hard conversation";
-const DEMO_SCRIPT = `*[SOUND: bell-tibetan.mp3]*
-
-Settle into wherever you are sitting. There is nothing to prepare in this moment, and nothing yet to say.
-
-*[PAUSE: 5 seconds]*
-
-Notice the conversation you have been rehearsing. Let it move a little further away, the way a voice sounds from another room.
-
-*[PAUSE: 8 seconds]*
-
-Breathe in slowly. As you breathe out, let your jaw soften and your shoulders drop.
-
-*[SILENCE: 1 minute]*`;
-
 // The four things the app does, in the order a visitor does them. Each is
 // checked against the code: the wizard's types, lengths and templates
 // (meditation-form.tsx, templates.ts), the script editor, the voice picker,
@@ -112,7 +98,7 @@ export default async function LandingPage() {
             </p>
           </div>
 
-          <ScriptStreamDemo focus={DEMO_FOCUS} script={DEMO_SCRIPT} />
+          <ScriptStreamDemo examples={DEMO_EXAMPLES} />
         </section>
 
         <section className="border-t">
