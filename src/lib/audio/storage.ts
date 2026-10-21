@@ -44,17 +44,20 @@ export async function uploadAudio(
 }
 
 /**
- * Update a meditation record's status and optional audio_path / generation_meta.
+ * Update a meditation record's status and optional audio_path / generation_meta,
+ * plus any `extra` columns that must change in the same write.
  */
 export async function updateMeditationStatus(
   meditationId: string,
   status: string,
   audioPath?: string,
   generationMeta?: GenerationMeta,
+  extra?: { script: string; draft_script: null },
 ): Promise<void> {
   const supabase = createServiceClient();
 
   const update: Record<string, unknown> = {
+    ...extra,
     status,
     updated_at: new Date().toISOString(),
   };

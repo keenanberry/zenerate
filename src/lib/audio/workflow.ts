@@ -12,6 +12,11 @@ interface MeditationData {
   voiceId: string;
   backgroundMusic: string | null;
   musicVolume: number;
+  /**
+   * The revision being rendered, when there is one. finalize makes it the
+   * script, so the saved script is always the one that was narrated.
+   */
+  renderedDraft: string | null;
 }
 
 interface GenerationResult {
@@ -32,18 +37,22 @@ async function fetchAndParse(meditationId: string): Promise<MeditationData> {
   const supabase = serviceClient();
   const { data: meditation, error } = await supabase
     .from("meditations")
-    .select("script, settings")
+    .select("script, draft_script, settings")
     .eq("id", meditationId)
     .single();
 
   if (error || !meditation) {
     throw new FatalError(`Meditation not found: ${error?.message ?? "no data"}`);
   }
-  if (!meditation.script) {
+  // A revision made after the audio lives in draft_script; render it in
+  // place of the current script. writeScript refuses while a render is in
+  // flight, so the draft cannot change under this run.
+  const script: string | null = meditation.draft_script ?? meditation.script;
+  if (!script) {
     throw new FatalError("Meditation has no script to process");
   }
 
-  const segments = parseMeditationText(meditation.script);
+  const segments = parseMeditationText(script);
   if (segments.length === 0) {
     throw new FatalError("No valid segments found in meditation script");
   }
@@ -54,6 +63,7 @@ async function fetchAndParse(meditationId: string): Promise<MeditationData> {
     voiceId: settings.voice ?? DEFAULT_VOICE_ID,
     backgroundMusic: settings.music ?? null,
     musicVolume: settings.volume ?? 0.15,
+    renderedDraft: meditation.draft_script ?? null,
   };
 }
 
@@ -124,10 +134,19 @@ async function finalize(
   audioPath: string,
   meta: GenerationMeta,
   eventId: string | null,
+  renderedDraft: string | null,
 ): Promise<void> {
   "use step";
 
-  await updateMeditationStatus(meditationId, "completed", audioPath, meta);
+  // Until task 32 adds versions, a rendered draft replaces the current
+  // version outright: it becomes the script and the old audio is overwritten.
+  await updateMeditationStatus(
+    meditationId,
+    "completed",
+    audioPath,
+    meta,
+    renderedDraft ? { script: renderedDraft, draft_script: null } : undefined,
+  );
   if (eventId) {
     const supabase = serviceClient();
     await supabase
@@ -168,7 +187,7 @@ export async function processAudioWorkflow(
       data.voiceId = voiceIdOverride;
     }
     const { audioPath, meta } = await generateAndUpload(meditationId, data);
-    await finalize(meditationId, audioPath, meta, eventId);
+    await finalize(meditationId, audioPath, meta, eventId, data.renderedDraft);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     await markFailed(meditationId, message, eventId);
