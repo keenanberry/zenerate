@@ -93,7 +93,7 @@ export function TrackRow({
           )}
         </span>
         <span className="hidden truncate text-xs text-muted-foreground sm:block">
-          {m.prompt.split("\n")[0]}
+          {m.prompt?.split("\n")[0]}
         </span>
       </Link>
 
