@@ -68,3 +68,32 @@ export function parseMeditationText(text: string): MeditationSegment[] {
 
   return segments;
 }
+
+const MARKER_LINE = [
+  /^\*\[PAUSE:\s*(\d+)\s*seconds?\]\*$/i,
+  /^\*\[SILENCE:\s*(\d+)\s*minutes?\]\*$/i,
+  /^\*\[SOUND:\s*(.+?)\]\*$/i,
+];
+
+/**
+ * Lines that look like markup but that `parseMeditationText` will not treat as
+ * a marker. A line starting with `*[` that fails every pattern is dropped
+ * silently; a marker written inside a sentence stays in the speech and is read
+ * aloud. Either way the script loses or garbles content without an error, so
+ * the studio reports these back to the model to fix.
+ */
+export function findMalformedMarkers(text: string): string[] {
+  const malformed: string[] = [];
+  for (const line of text.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    if (MARKER_LINE.some((pattern) => pattern.test(trimmed))) continue;
+    if (
+      trimmed.startsWith("*[") ||
+      /\[\s*(PAUSE|SILENCE|SOUND)\b/i.test(trimmed)
+    ) {
+      malformed.push(trimmed);
+    }
+  }
+  return malformed;
+}

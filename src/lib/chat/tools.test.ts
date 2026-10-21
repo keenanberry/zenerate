@@ -1,0 +1,231 @@
+import { describe, it, expect, beforeEach } from "vitest";
+import { studioTools, setDetailsInput, writeScriptInput, type StudioToolContext } from "./tools";
+
+type Row = Record<string, unknown>;
+type Write = { table: string; op: "insert" | "update"; values: Row };
+
+/**
+ * Just enough of the Supabase query builder for the tools: select().eq().single(),
+ * insert().select().single() and update().eq(). Writes are recorded, not applied.
+ */
+function fakeSupabase(tables: { chats: Row; meditations?: Row }) {
+  const writes: Write[] = [];
+  const from = (table: string) => {
+    const row = () => (table === "chats" ? tables.chats : tables.meditations);
+    const chain = {
+      select: () => chain,
+      eq: () => chain,
+      single: async () => ({ data: row() ?? null, error: row() ? null : { message: "none" } }),
+      insert: (values: Row) => {
+        writes.push({ table, op: "insert", values });
+        return {
+          select: () => ({ single: async () => ({ data: { id: "med-new" }, error: null }) }),
+        };
+      },
+      update: (values: Row) => {
+        writes.push({ table, op: "update", values });
+        return { eq: async () => ({ error: null }) };
+      },
+    };
+    return chain;
+  };
+  return { client: { from } as unknown as StudioToolContext["supabase"], writes };
+}
+
+function context(supabase: StudioToolContext["supabase"]): StudioToolContext {
+  return { supabase, userId: "user-1", chatId: "chat-1", prompt: "10 minutes to unwind" };
+}
+
+async function run<T>(
+  name: "writeScript" | "setDetails",
+  input: T,
+  ctx: StudioToolContext,
+) {
+  const execute = studioTools[name].execute as unknown as (
+    input: T,
+    options: { toolCallId: string; messages: []; context: StudioToolContext },
+  ) => Promise<Record<string, unknown>>;
+  return execute(input, { toolCallId: "call-1", messages: [], context: ctx });
+}
+
+// 10 minutes: ~30 words of speech, 30s of pauses, 9 min of silence, two 7s bells.
+const GOOD_SCRIPT = [
+  "*[SOUND: bell-tibetan.mp3]*",
+  "Welcome. Let the day fall away from your shoulders as you settle in and breathe slowly, softly, and without hurry.",
+  "*[PAUSE: 15 seconds]*",
+  "*[SILENCE: 9 minutes]*",
+  "*[PAUSE: 15 seconds]*",
+  "Gently return, and open your eyes when you are ready.",
+  "*[SOUND: bell-tibetan.mp3]*",
+].join("\n\n");
+
+describe("writeScript", () => {
+  let db: ReturnType<typeof fakeSupabase>;
+
+  beforeEach(() => {
+    db = fakeSupabase({ chats: { meditation_id: null } });
+  });
+
+  it("creates the meditation on the first call and links the chat", async () => {
+    const result = await run("writeScript", { durationMinutes: 10, script: GOOD_SCRIPT }, context(db.client));
+
+    expect(db.writes[0]).toMatchObject({
+      table: "meditations",
+      op: "insert",
+      values: {
+        user_id: "user-1",
+        prompt: "10 minutes to unwind",
+        script: GOOD_SCRIPT,
+        status: "script_ready",
+        is_public: false,
+      },
+    });
+    expect(db.writes[1]).toMatchObject({ table: "chats", op: "update", values: { meditation_id: "med-new" } });
+    expect(result).toMatchObject({
+      meditationId: "med-new",
+      savedAs: "script",
+      droppedMarkers: 0,
+      targetSeconds: 600,
+      segments: { speech: 2, pause: 2, silence: 1, sound: 2 },
+      withinTarget: true,
+    });
+  });
+
+  it("overwrites script while there is no audio yet", async () => {
+    db = fakeSupabase({
+      chats: { meditation_id: "med-1" },
+      meditations: { audio_path: null, status: "script_ready", settings: { type: "guided", duration: 10 } },
+    });
+    const result = await run("writeScript", { durationMinutes: 10, script: GOOD_SCRIPT }, context(db.client));
+
+    expect(result.savedAs).toBe("script");
+    expect(db.writes).toHaveLength(1);
+    expect(db.writes[0].values).toMatchObject({
+      script: GOOD_SCRIPT,
+      settings: { type: "guided", duration: 10 },
+    });
+    expect(db.writes[0].values).not.toHaveProperty("draft_script");
+  });
+
+  it("writes draft_script on a meditation with audio, leaving script and audio_path alone", async () => {
+    db = fakeSupabase({
+      chats: { meditation_id: "med-1" },
+      meditations: { audio_path: "user-1/med-1.mp3", status: "completed", settings: { duration: 10 } },
+    });
+    const result = await run("writeScript", { durationMinutes: 10, script: GOOD_SCRIPT }, context(db.client));
+
+    expect(result.savedAs).toBe("draft_script");
+    expect(db.writes).toHaveLength(1);
+    const values = db.writes[0].values;
+    expect(values.draft_script).toBe(GOOD_SCRIPT);
+    expect(values).not.toHaveProperty("script");
+    expect(values).not.toHaveProperty("audio_path");
+    expect(values).not.toHaveProperty("settings");
+  });
+
+  it("refuses while audio is rendering", async () => {
+    db = fakeSupabase({
+      chats: { meditation_id: "med-1" },
+      meditations: { audio_path: null, status: "processing_audio", settings: {} },
+    });
+    await expect(
+      run("writeScript", { durationMinutes: 10, script: GOOD_SCRIPT }, context(db.client)),
+    ).rejects.toThrow(/Audio is being made/);
+    expect(db.writes).toHaveLength(0);
+  });
+
+  it("reports malformed markers", async () => {
+    const script = GOOD_SCRIPT.replace("*[PAUSE: 15 seconds]*", "*[PAUSE: fifteen seconds]*");
+    const result = await run("writeScript", { durationMinutes: 10, script }, context(db.client));
+
+    expect(result.droppedMarkers).toBeGreaterThan(0);
+    expect(result.malformedLines).toEqual(["*[PAUSE: fifteen seconds]*"]);
+    expect(result.issues).toEqual(expect.arrayContaining([expect.stringMatching(/malformed/)]));
+  });
+
+  it("flags a script well short of its target", async () => {
+    const result = await run("writeScript", { durationMinutes: 20, script: GOOD_SCRIPT }, context(db.client));
+    expect(result.withinTarget).toBe(false);
+    expect(result.issues).toEqual(expect.arrayContaining([expect.stringMatching(/short of/)]));
+  });
+
+  it("flags sounds outside the catalog", async () => {
+    const script = GOOD_SCRIPT.replace("bell-tibetan.mp3", "rain.mp3");
+    const result = await run("writeScript", { durationMinutes: 10, script }, context(db.client));
+    expect(result.unknownSounds).toEqual(["rain.mp3"]);
+  });
+
+  it("requires a target length and a non-empty script", () => {
+    expect(writeScriptInput.safeParse({ script: GOOD_SCRIPT }).success).toBe(false);
+    expect(writeScriptInput.safeParse({ durationMinutes: 10, script: "" }).success).toBe(false);
+  });
+});
+
+describe("setDetails", () => {
+  const details = {
+    title: "Unwind",
+    description: "Ten quiet minutes to let a hard day go.",
+    tags: ["stress-relief", "rough-day"],
+    type: "guided",
+    durationMinutes: 10,
+  };
+
+  it("rejects a tag outside the vocabulary", () => {
+    const result = setDetailsInput.safeParse({ ...details, tags: ["stress-relief", "python"] });
+    expect(result.success).toBe(false);
+  });
+
+  it("takes 2 to 5 tags", () => {
+    expect(setDetailsInput.safeParse({ ...details, tags: ["sleep"] }).success).toBe(false);
+    expect(
+      setDetailsInput.safeParse({
+        ...details,
+        tags: ["sleep", "bedtime", "breathwork", "body-scan", "grounding", "mantra"],
+      }).success,
+    ).toBe(false);
+    expect(setDetailsInput.safeParse(details).success).toBe(true);
+  });
+
+  it("is the schema the tool exposes", () => {
+    expect(studioTools.setDetails.inputSchema).toBe(setDetailsInput);
+  });
+
+  it("writes title, description, tags and settings, and names the chat", async () => {
+    const db = fakeSupabase({
+      chats: { meditation_id: "med-1" },
+      meditations: { audio_path: null, settings: { duration: 10, voice: "v1" } },
+    });
+    await run("setDetails", details, context(db.client));
+
+    expect(db.writes[0]).toMatchObject({
+      table: "meditations",
+      values: {
+        title: "Unwind",
+        description: details.description,
+        tags: ["stress-relief", "rough-day"],
+        settings: { type: "guided", duration: 10, voice: "v1" },
+      },
+    });
+    expect(db.writes[1]).toMatchObject({ table: "chats", values: { title: "Unwind" } });
+  });
+
+  it("leaves settings alone once audio exists", async () => {
+    const db = fakeSupabase({
+      chats: { meditation_id: "med-1" },
+      meditations: { audio_path: "user-1/med-1.mp3", settings: { duration: 10 } },
+    });
+    await run("setDetails", { ...details, durationMinutes: 20 }, context(db.client));
+    expect(db.writes[0].values).not.toHaveProperty("settings");
+  });
+
+  it("asks for a script first when the chat has none", async () => {
+    const db = fakeSupabase({ chats: { meditation_id: null } });
+    await expect(run("setDetails", details, context(db.client))).rejects.toThrow(/writeScript first/);
+  });
+});
+
+describe("offerAudio", () => {
+  it("is client-side: it has no execute", () => {
+    expect(studioTools.offerAudio.execute).toBeUndefined();
+  });
+});

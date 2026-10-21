@@ -10,16 +10,14 @@ describe("countOf", () => {
 });
 
 describe("freeTierSummary", () => {
-  it("states both caps as given", () => {
-    expect(freeTierSummary({ audio: 3, script: 30 })).toBe(
-      "Each month an account can narrate 3 meditations and draft up to 30 scripts.",
+  it("states the audio cap as given", () => {
+    expect(freeTierSummary({ audio: 3 })).toBe(
+      "Each month an account can narrate 3 meditations. Writing and revising scripts doesn't count toward it.",
     );
   });
 
   it("stays grammatical at a cap of one", () => {
-    expect(freeTierSummary({ audio: 1, script: 1 })).toBe(
-      "Each month an account can narrate 1 meditation and draft up to 1 script.",
-    );
+    expect(freeTierSummary({ audio: 1 })).toMatch(/^Each month an account can narrate 1 meditation\. /);
   });
 });
 

@@ -1,17 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
- * Upper bound on a single generation prompt. The wizard's generated prompts
- * are a few hundred characters; this is an abuse guard, not a product limit.
+ * Upper bound on the text of a single chat message. A meditation request is a
+ * sentence or two; this is an abuse guard, not a product limit.
  */
-export const MAX_PROMPT_CHARS = 4000;
+export const MAX_MESSAGE_CHARS = 4000;
 
-export type ScriptQuotaConfig = {
-  perUserCap: number;
-  globalCap: number;
-};
-
-function readPositiveInt(name: string, fallback: number): number {
+export function readPositiveInt(name: string, fallback: number): number {
   const raw = process.env[name];
   if (raw === undefined || raw === "") return fallback;
   const parsed = Number(raw);
@@ -22,60 +17,42 @@ function readPositiveInt(name: string, fallback: number): number {
 }
 
 /**
- * These caps are an abuse ceiling, not an expected-spend estimate -- derive
- * them from the capped cost, not the average call.
+ * Chat turns are not metered against any user-facing quota. This is an abuse
+ * ceiling: it stops a stolen session or a runaway client from running up the
+ * Anthropic bill, and normal use never comes near it.
  *
- *   maxOutputTokens: 8000 (src/app/api/generate/route.ts)
- *   claude-sonnet-5 output at $10/MTok -> ~$0.08 worst case per call
- *   globalCap: 300 * $0.08 = ~$24/month worst-case exposure
+ * Sized off the worst case, like the audio caps:
  *
- * Note that since the model swap in task 18 this budget also covers thinking
- * tokens, which count toward max_tokens. At effort "low" against ~300-token
- * scripts the headroom is enormous, but the 8000 is no longer script-only.
+ *   maxOutputTokens: 8000 per step, 5 steps per turn (src/app/api/chat/route.ts)
+ *   claude-sonnet-5 output at $10/MTok -> ~$0.40 worst case per turn in output
+ *   200 turns -> ~$80 per user per day, worst case
  *
- * That is well above the project spec's "<$1/month Anthropic" line, which
- * describes typical usage, not this ceiling. The gap is intentional: this
- * cap exists to stop an open endpoint being used as a free Claude proxy,
- * not to bound normal spend. Actual spend tracks real prompt/response
- * lengths, which are far below the cap in ordinary use. Revisit the caps
- * (not this comment) if worst-case exposure needs to come down.
+ * Input tokens grow with the conversation and are not in that figure. Real
+ * turns are far smaller: a script is ~1-2k output tokens and most turns are a
+ * one-line reply. Revisit the default if worst-case exposure needs to come down.
  */
-export function getScriptQuotaConfig(): ScriptQuotaConfig {
-  return {
-    perUserCap: readPositiveInt("PER_USER_MONTHLY_SCRIPT_LIMIT", 30),
-    globalCap: readPositiveInt("MAX_GLOBAL_MONTHLY_SCRIPT_GENERATIONS", 300),
-  };
+export function getDailyChatMessageLimit(): number {
+  return readPositiveInt("PER_USER_DAILY_CHAT_MESSAGES", 200);
 }
 
-export type ScriptReserveOutcome =
-  | { ok: true; eventId: string }
-  | { ok: false; reason: "quota_exceeded" | "global_cap_reached" };
-
-const MAPPED_REASONS = new Set(["quota_exceeded", "global_cap_reached"]);
-
-export async function reserveScriptGeneration(
-  userId: string,
+/**
+ * The user's own messages over the last 24 hours, across all their chats.
+ * Runs on the RLS-bound client, so it can only ever see the caller's rows; the
+ * join filter says the same thing explicitly.
+ */
+export async function countRecentUserMessages(
   supabase: SupabaseClient,
-  config: ScriptQuotaConfig = getScriptQuotaConfig(),
-): Promise<ScriptReserveOutcome> {
-  const { data, error } = await supabase.rpc("reserve_script_generation", {
-    p_user_id: userId,
-    p_per_user_cap: config.perUserCap,
-    p_global_cap: config.globalCap,
-  });
+  userId: string,
+  now: Date = new Date(),
+): Promise<number> {
+  const since = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+  const { count, error } = await supabase
+    .from("chat_messages")
+    .select("id, chats!inner(user_id)", { count: "exact", head: true })
+    .eq("chats.user_id", userId)
+    .eq("role", "user")
+    .gte("created_at", since);
 
-  if (error) {
-    const reason = error.message?.trim();
-    if (reason && MAPPED_REASONS.has(reason)) {
-      return {
-        ok: false,
-        reason: reason as Extract<ScriptReserveOutcome, { ok: false }>["reason"],
-      };
-    }
-    throw new Error(`reserve_script_generation failed: ${error.message}`);
-  }
-  if (typeof data !== "string") {
-    throw new Error("reserve_script_generation returned non-string");
-  }
-  return { ok: true, eventId: data };
+  if (error) throw new Error(`counting chat messages failed: ${error.message}`);
+  return count ?? 0;
 }

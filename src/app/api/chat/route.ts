@@ -1,0 +1,191 @@
+import { NextResponse } from "next/server";
+import {
+  consumeStream,
+  convertToModelMessages,
+  createIdGenerator,
+  createUIMessageStreamResponse,
+  isStepCount,
+  streamText,
+  toUIMessageStream,
+  validateUIMessages,
+} from "ai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { STUDIO_SYSTEM_PROMPT } from "@/lib/ai/prompts";
+import {
+  countRecentUserMessages,
+  getDailyChatMessageLimit,
+  MAX_MESSAGE_CHARS,
+} from "@/lib/ai/quota";
+import { createClient } from "@/lib/supabase/server";
+import { loadChat, loadMessages, messageText, saveMessages, touchChat } from "@/lib/chat/store";
+import { studioTools, type StudioToolContext, type StudioUIMessage } from "@/lib/chat/tools";
+
+// A turn can be several model calls (write, check, rewrite, set details), and
+// a long script with thinking takes a while to stream.
+export const maxDuration = 300;
+
+/** Model calls per turn. Enough for write → fix → details → offer; caps a runaway loop. */
+const MAX_STEPS_PER_TURN = 5;
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const generateMessageId = createIdGenerator({ prefix: "msg", size: 16 });
+
+function isMessageShape(value: unknown): value is StudioUIMessage {
+  if (typeof value !== "object" || value === null) return false;
+  const m = value as Record<string, unknown>;
+  return typeof m.id === "string" && typeof m.role === "string" && Array.isArray(m.parts);
+}
+
+export async function POST(req: Request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await req.json().catch(() => null);
+  const chatId: unknown = body?.chatId;
+  const incoming: unknown = body?.message;
+
+  if (typeof chatId !== "string" || !UUID.test(chatId) || !isMessageShape(incoming)) {
+    return NextResponse.json(
+      { error: "chatId and message are required" },
+      { status: 400 },
+    );
+  }
+
+  // RLS hides other people's chats, so theirs and a missing one look alike.
+  const chat = await loadChat(supabase, chatId);
+  if (!chat) {
+    return NextResponse.json({ error: "Chat not found" }, { status: 404 });
+  }
+
+  const history = await loadMessages(supabase, chatId);
+
+  // Two shapes arrive here. A new user message is appended under a server id.
+  // The last assistant message coming back with a client-side tool result
+  // (offerAudio) replaces the stored copy, and the agent continues it.
+  const last = history.at(-1);
+  const isContinuation =
+    incoming.role === "assistant" && last?.role === "assistant" && last.id === incoming.id;
+
+  if (!isContinuation && incoming.role !== "user") {
+    return NextResponse.json({ error: "message must be a user message" }, { status: 400 });
+  }
+  if (messageText(incoming).length > MAX_MESSAGE_CHARS) {
+    return NextResponse.json(
+      { error: `message must be ${MAX_MESSAGE_CHARS} characters or fewer` },
+      { status: 400 },
+    );
+  }
+
+  // Every request runs the model, so every request counts, including a
+  // continuation. Its message is not a new user row, so add it by hand.
+  const used = await countRecentUserMessages(supabase, user.id);
+  if (used + (isContinuation ? 1 : 0) >= getDailyChatMessageLimit()) {
+    return NextResponse.json(
+      {
+        error:
+          "You've sent a lot of messages today. Take a breather, and pick this up again tomorrow.",
+      },
+      { status: 429 },
+    );
+  }
+
+  const message: StudioUIMessage = isContinuation
+    ? incoming
+    : { ...incoming, id: generateMessageId() };
+  const candidate = isContinuation ? [...history.slice(0, -1), message] : [...history, message];
+
+  let messages: StudioUIMessage[];
+  try {
+    messages = await validateUIMessages<StudioUIMessage>({
+      messages: candidate,
+      tools: studioTools,
+    });
+  } catch {
+    return NextResponse.json({ error: "message is not valid" }, { status: 400 });
+  }
+
+  // Saved before the model runs: it counts toward the ceiling at once, and a
+  // failed turn still leaves the request in the history.
+  const firstUser = messages.find((m) => m.role === "user");
+  const firstRequest = firstUser ? messageText(firstUser) : null;
+  await saveMessages(supabase, chatId, [message]);
+  await touchChat(supabase, chat, firstRequest);
+
+  const toolContext: StudioToolContext = {
+    supabase,
+    userId: user.id,
+    chatId,
+    prompt: firstRequest,
+  };
+
+  const result = streamText({
+    model: anthropic("claude-sonnet-5"),
+    // A cache breakpoint on the system prompt caches tools + prompt (~3k
+    // tokens), which every step of every turn re-sends.
+    instructions: {
+      role: "system",
+      content: STUDIO_SYSTEM_PROMPT,
+      providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } },
+    },
+    messages: await convertToModelMessages(messages, {
+      tools: studioTools,
+      // An offerAudio card the owner never answered has no result. Anthropic
+      // rejects a tool call without one, so drop it from what the model sees.
+      ignoreIncompleteToolCalls: true,
+    }),
+    tools: studioTools,
+    toolsContext: { writeScript: toolContext, setDetails: toolContext },
+    stopWhen: isStepCount(MAX_STEPS_PER_TURN),
+    maxOutputTokens: 8000,
+    providerOptions: {
+      anthropic: {
+        // Carried over from the one-shot route. Omitting `thinking` on Sonnet
+        // 5 runs adaptive thinking anyway, so it is set on purpose; low effort
+        // keeps the structural planning a script needs (arc, silence budget)
+        // without a long pause before the canvas starts filling.
+        thinking: { type: "adaptive" },
+        effort: "low",
+        // One tool per step. In parallel, setDetails can run before the
+        // writeScript that creates the meditation it writes to.
+        disableParallelToolUse: true,
+      },
+    },
+  });
+
+  // Unawaited: the model keeps running if the tab closes, so the turn still
+  // saves. consumeSseStream below does the same for the UI stream.
+  result.consumeStream();
+
+  const saved = new Set(history.map((m) => m.id));
+  const continuedId = isContinuation ? message.id : null;
+
+  return createUIMessageStreamResponse({
+    stream: toUIMessageStream({
+      stream: result.stream,
+      originalMessages: messages,
+      generateMessageId,
+      onError: (error) => {
+        console.error("[chat] stream error", error);
+        return "Something went wrong on our side. Try sending that again.";
+      },
+      onEnd: async ({ messages: final }) => {
+        try {
+          // New messages, plus the continued one whose parts just grew.
+          const changed = final.filter((m) => !saved.has(m.id) || m.id === continuedId);
+          await saveMessages(supabase, chatId, changed);
+          await touchChat(supabase, { id: chat.id, title: chat.title ?? firstRequest }, null);
+        } catch (error) {
+          console.error("[chat] saving the turn failed", error);
+        }
+      },
+    }),
+    consumeSseStream: consumeStream,
+  });
+}

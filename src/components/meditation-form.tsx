@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useCompletion } from "@ai-sdk/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -99,16 +98,17 @@ export function MeditationForm() {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [generateError, setGenerateError] = useState<string | null>(null);
 
-  const { completion, isLoading, complete } = useCompletion({
-    api: "/api/generate",
-    streamProtocol: "text",
-    onError: (error) => {
-      setGenerateError(
-        error.message ||
-          "Something went wrong generating your script. Please try again.",
-      );
-    },
-  });
+  // The one-shot /api/generate route is retired (task 29), and task 30
+  // replaces this wizard with the studio chat. Until then Generate says where
+  // script writing went instead of calling a route that no longer exists.
+  const completion = "";
+  const isLoading = false;
+  async function complete(prompt: string) {
+    void prompt;
+    setGenerateError(
+      "Script writing is moving into the new studio, which is almost ready. Check back soon.",
+    );
+  }
 
   const currentScript = editedScript ?? completion;
 

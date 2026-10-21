@@ -1,79 +1,67 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { getScriptQuotaConfig, reserveScriptGeneration, MAX_PROMPT_CHARS } from "./quota";
+import {
+  countRecentUserMessages,
+  getDailyChatMessageLimit,
+  MAX_MESSAGE_CHARS,
+} from "./quota";
 
-describe("getScriptQuotaConfig", () => {
+describe("getDailyChatMessageLimit", () => {
   const original = { ...process.env };
 
   beforeEach(() => {
-    delete process.env.PER_USER_MONTHLY_SCRIPT_LIMIT;
-    delete process.env.MAX_GLOBAL_MONTHLY_SCRIPT_GENERATIONS;
+    delete process.env.PER_USER_DAILY_CHAT_MESSAGES;
   });
 
   afterEach(() => {
     process.env = { ...original };
   });
 
-  it("returns defaults when env vars unset", () => {
-    const cfg = getScriptQuotaConfig();
-    expect(cfg.perUserCap).toBe(30);
-    expect(cfg.globalCap).toBe(300);
+  it("defaults to 200", () => {
+    expect(getDailyChatMessageLimit()).toBe(200);
   });
 
-  it("reads positive integer env vars", () => {
-    process.env.PER_USER_MONTHLY_SCRIPT_LIMIT = "5";
-    process.env.MAX_GLOBAL_MONTHLY_SCRIPT_GENERATIONS = "50";
-    const cfg = getScriptQuotaConfig();
-    expect(cfg.perUserCap).toBe(5);
-    expect(cfg.globalCap).toBe(50);
+  it("reads a positive integer env var", () => {
+    process.env.PER_USER_DAILY_CHAT_MESSAGES = "5";
+    expect(getDailyChatMessageLimit()).toBe(5);
   });
 
-  it("throws on non-numeric env vars", () => {
-    process.env.PER_USER_MONTHLY_SCRIPT_LIMIT = "lots";
-    expect(() => getScriptQuotaConfig()).toThrow(/PER_USER_MONTHLY_SCRIPT_LIMIT/);
+  it("throws on a non-numeric env var", () => {
+    process.env.PER_USER_DAILY_CHAT_MESSAGES = "lots";
+    expect(() => getDailyChatMessageLimit()).toThrow(/PER_USER_DAILY_CHAT_MESSAGES/);
   });
 });
 
-function makeRpcSupabase(rpcResult: { data: unknown; error: { message: string } | null }) {
-  return { rpc: vi.fn().mockResolvedValue(rpcResult) };
+function makeCountSupabase(result: { count: number | null; error: { message: string } | null }) {
+  const query = {
+    select: vi.fn(() => query),
+    eq: vi.fn(() => query),
+    gte: vi.fn(() => Promise.resolve(result)),
+  };
+  return { from: vi.fn(() => query), query };
 }
 
-describe("reserveScriptGeneration", () => {
-  const config = { perUserCap: 30, globalCap: 300 };
+describe("countRecentUserMessages", () => {
+  it("counts the user's own user-role messages over the last 24 hours", async () => {
+    const supabase = makeCountSupabase({ count: 7, error: null });
+    const now = new Date("2026-10-21T12:00:00Z");
+    const n = await countRecentUserMessages(supabase as never, "user-1", now);
 
-  it("returns the new event id on success", async () => {
-    const supabase = makeRpcSupabase({ data: "evt-1", error: null });
-    const result = await reserveScriptGeneration("user-1", supabase as never, config);
-    expect(result).toEqual({ ok: true, eventId: "evt-1" });
-    expect(supabase.rpc).toHaveBeenCalledWith("reserve_script_generation", {
-      p_user_id: "user-1",
-      p_per_user_cap: 30,
-      p_global_cap: 300,
-    });
+    expect(n).toBe(7);
+    expect(supabase.from).toHaveBeenCalledWith("chat_messages");
+    expect(supabase.query.eq).toHaveBeenCalledWith("chats.user_id", "user-1");
+    expect(supabase.query.eq).toHaveBeenCalledWith("role", "user");
+    expect(supabase.query.gte).toHaveBeenCalledWith("created_at", "2026-10-20T12:00:00.000Z");
   });
 
-  it("maps quota_exceeded", async () => {
-    const supabase = makeRpcSupabase({ data: null, error: { message: "quota_exceeded" } });
-    const result = await reserveScriptGeneration("user-1", supabase as never, config);
-    expect(result).toEqual({ ok: false, reason: "quota_exceeded" });
-  });
-
-  it("maps global_cap_reached", async () => {
-    const supabase = makeRpcSupabase({ data: null, error: { message: "global_cap_reached" } });
-    const result = await reserveScriptGeneration("user-1", supabase as never, config);
-    expect(result).toEqual({ ok: false, reason: "global_cap_reached" });
-  });
-
-  it("rethrows unknown errors", async () => {
-    const supabase = makeRpcSupabase({ data: null, error: { message: "connection refused" } });
-    await expect(
-      reserveScriptGeneration("user-1", supabase as never, config),
-    ).rejects.toThrow(/connection refused/);
+  it("rethrows a query error", async () => {
+    const supabase = makeCountSupabase({ count: null, error: { message: "boom" } });
+    await expect(countRecentUserMessages(supabase as never, "user-1")).rejects.toThrow(/boom/);
   });
 });
 
-describe("MAX_PROMPT_CHARS", () => {
+describe("MAX_MESSAGE_CHARS", () => {
   it("is a sane positive cap", () => {
-    expect(MAX_PROMPT_CHARS).toBeGreaterThan(500);
-    expect(MAX_PROMPT_CHARS).toBeLessThan(20000);
+    expect(MAX_MESSAGE_CHARS).toBeGreaterThan(500);
+    expect(MAX_MESSAGE_CHARS).toBeLessThan(20000);
   });
 });
