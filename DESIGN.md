@@ -285,7 +285,7 @@ antique; a global sans makes the script feel like a settings page.
   task 21: markers are instructions to the narrator, not words to read, so they leave the
   reading face; italic serif would read as part of the script). Geist ships no true small
   caps, so capitals at Label size stand in for them rather than synthesized ones. Geist.
-- **Mono** (400, 0.875rem, 1.625): the raw script editor and error digests. Geist Mono.
+- **Mono** (400, 0.875rem, 1.625): error digests. Geist Mono.
 
 ### Named Rules
 **The Loaded Face Rule.** A font token names a face only if `src/app/layout.tsx` loads it
@@ -310,9 +310,15 @@ every other content type narrows itself inside the shell:
   `/collections/[id]`): the full 64rem.
 - A meditation (`/meditation/[id]`): 48rem (`max-w-3xl`), which holds the player and a
   card whose script runs at 65ch.
-- The create wizard: 42rem (`max-w-2xl`). Wider than a plain form because the Generate
-  step shows the script at 65ch inside a card; the template grid is three columns at
-  most.
+- The studio's front door (`/create`): 42rem (`max-w-2xl`), one large input with the
+  Recent drafts below it as a ruled list.
+- The studio (`/create/[chatId]`): the full 64rem, as two panes from `md`. The chat column
+  is 20rem (24rem from `lg`) and the canvas takes the rest. Inside the 64rem shell that
+  sets the script at about 45ch (502px at `lg`), under its 65ch cap but still a
+  comfortable measure; letting the studio run wider than the shell is the lever if it
+  reads cramped. Both panes fill the viewport under the nav, less
+  the shell's padding, and scroll on their own, with the composer at the bottom of the
+  chat. Under `md` the chat fills the column and the canvas is a bottom sheet.
 - Login and dialogs: a single 28rem card (`max-w-md`).
 - Legal pages: the 48rem `(legal)` column with the article itself at 60ch in Body type.
 - Descriptions under a title (meditation prompt, collection description): 60ch.
@@ -386,7 +392,7 @@ gets the shape of the signature, not its luminosity.
 
 Gently rounded, never pill-shaped except where the element is a circle. The base radius
 is 0.5rem: cards and dialogs at 12px (`rounded-xl`), buttons, inputs and script markers
-at 6px (`rounded-md`), badges, avatars, the play button and the wizard step circles fully
+at 6px (`rounded-md`), badges, avatars, the play button and the studio's "Script updated" pill fully
 round. Borders are 1px Hairline everywhere; there are no 2px borders and no dashed borders
 (empty states lost theirs in task 21).
 
@@ -430,7 +436,8 @@ texture in the interface and it stays unadorned.
   in dark, 12px horizontal padding, Body type (0.875rem from `md` up).
 - **Focus:** border to `--ring` and the 3px ring.
 - **Error:** border and ring to Ember at 20% (40% in dark). **Disabled:** 50% opacity.
-- The raw script editor is a `textarea` in Mono at 400px minimum height.
+- The studio composer is the same field at 48px minimum, growing with its text to 160px,
+  with a 32px send (or stop) icon button inside its bottom-right corner.
 
 ### Navigation
 - A 64px bar, `border-b`, 95% Midnight with backdrop blur. Wordmark `zenerate` in bold
@@ -476,8 +483,8 @@ padding, upcoming passages sit at 80%, and passed ones dim to Dusk; passed marke
 to 60% opacity. The fade is 700ms under `motion-safe:` and instant otherwise. Where a
 passage sits in the audio is estimated (`src/lib/meditation/timeline.ts`): pauses,
 silences and sounds have exact lengths, and speech is scaled from its word count so the
-timeline ends where the audio does. Outside the meditation page (the create wizard, the
-script editor) there is no player, and the viewer stays evenly lit.
+timeline ends where the audio does. Outside the meditation page (the studio canvas, the
+landing demo) there is no player, and the viewer stays evenly lit.
 
 ### Audio Player (signature)
 A card holding the waveform above a row of controls: a 48px round play/pause button, a
@@ -510,10 +517,35 @@ streams that example from its first word. The loop walks the six in order. Every
 script is rendered as an invisible sizer in one grid cell, so the card holds the tallest
 and never shifts. Under reduced motion the chosen script shows whole and chips swap it.
 
-### Wizard Steps
-Three steps on the create page. Desktop: a row of 32px circles joined by 2px connector
-lines that fill in Amethyst Glow as steps complete, the current step ringed at 30%. Mobile:
-a "Step 2 of 3" line over a 6px progress bar. Transitions are 300ms.
+### Studio
+The chat and its canvas (`src/components/studio/`), the way Claude builds an artifact:
+the conversation on the left, the script on the right.
+
+- **Chat:** the person's messages are Secondary-fill bubbles at 85% width on the right;
+  the agent's replies are plain Body text on the ground, with no bubble. Each
+  `writeScript` is a chip, not the script: a 6px-radius Card-surface button with a 16px
+  Amethyst Glow file icon, "Draft 2" in UI type and the length in Dusk, hover
+  `--card-hover`, and tapping it brings the canvas forward. While the draft streams the
+  icon is a spinner and the label "Writing draft 2". `setDetails` is one Dusk line naming
+  the title in Lora. Cards from other tools render through `renderStudioPart`.
+- **Canvas:** a Card that fills its column, header and body split by a Hairline rule. The
+  header has a Label-type "Draft N" and the status on the right: "Writing" with a spinner,
+  "About 10 min", or, more than 10% off target, the estimate and the target in Candle
+  with a warning icon. A draft the turn never saved says "Not saved" in Candle, so a
+  half-streamed script is never shown as saved. Below that sit the title in Lora at
+  1.25rem and the tags as Secondary badges. The body is the Script Viewer, followed to its
+  newest line while it streams until the reader scrolls up; a "Follow the writing" outline
+  button then sits at the foot of the canvas until they return to the bottom. A script
+  opened on a reload starts at its top.
+- **Phone sheet:** under `md` the canvas opens as a bottom sheet at 88% of the viewport,
+  top corners at 12px, with the close button in the canvas header. When a new draft
+  arrives, a round Secondary pill sits in flow above the composer, "Writing the script"
+  with a spinner while it streams and "Script updated" after, and tapping it opens the
+  sheet.
+- **Errors:** inline at the end of the conversation, in a 12px-radius block on a 10% Ember
+  fill with a 30% Ember border and a "Try again" outline button, for a 429 and a broken
+  stream alike. A reload that lands while a reply is still being written shows a Card
+  saying so, with a Reload button.
 
 ### Processing State
 A centred card with a 48px Amethyst Glow circle holding a spinning loader, ringed by a

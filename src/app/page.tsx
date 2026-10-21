@@ -24,18 +24,17 @@ export const metadata = pageMetadata({
 // Written in the markup the model writes, so it renders through the real
 // ScriptViewer. An example, and labelled as one on the page.
 // The four things the app does, in the order a visitor does them. Each is
-// checked against the code: the wizard's types, lengths and templates
-// (meditation-form.tsx, templates.ts), the script editor, the voice picker,
-// the sound effects (sounds.ts), download, favourites, collections and the
-// visibility toggle.
+// checked against the code: the studio chat and its canvas
+// (src/components/studio/), the voice picker, the sound effects (sounds.ts),
+// download, favourites, collections and the visibility toggle.
 const steps = [
   {
     title: "Describe it",
-    body: "Choose a type and a length from 5 to 60 minutes, then say in your own words what it is for. Or begin from a template.",
+    body: "Say in a sentence what it is for and how long. Writing starts straight away; if the request is too vague to write from, you get one short question first.",
   },
   {
     title: "Read the script",
-    body: "It streams in as it is written, with pauses, silences and sounds marked between the passages. Change anything before it is narrated.",
+    body: "It streams in beside the conversation as it is written, with pauses, silences and sounds marked between the passages. Change anything by asking, before it is narrated.",
   },
   {
     title: "Hear it",
