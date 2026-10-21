@@ -6,7 +6,7 @@ AI-powered meditation script and audio generation platform.
 
 - **Next.js 16** — App Router, TypeScript, Tailwind CSS v4, shadcn/ui (amethyst-haze theme)
 - **Supabase** — Postgres, Auth (email/password), Storage
-- **AI SDK 6** — `@ai-sdk/anthropic` for script generation (streaming)
+- **AI SDK 7** — `@ai-sdk/anthropic` for the studio chat agent (streaming, tools)
 - **Vercel Workflow** + **Vercel Sandbox** — durable orchestration and ephemeral FFmpeg compute
 - **ElevenLabs** — text-to-speech
 - **wavesurfer.js** — audio player with waveform
@@ -44,12 +44,13 @@ Seeded test users: `alice@example.com` / `bob@example.com` — password `passwor
 |---|---|
 | `src/app/(app)/` | In-app routes. `discover`, `meditation/[id]` are public; `(authed)/` holds dashboard, create, collections/[id] |
 | `src/app/(auth)/` | Login + auth callbacks |
-| `src/app/api/generate/` | Script generation endpoint (streams from Anthropic) |
+| `src/app/api/chat/` | Studio chat agent — persisted chat, tools, daily message ceiling |
 | `src/app/api/audio/generate/` | Audio pipeline trigger — validates, kicks off workflow |
 | `src/app/proxy.ts` | Supabase session refresh |
 | `src/lib/audio/` | Audio pipeline — `workflow.ts`, `generate-audio.ts`, `storage.ts` |
-| `src/lib/meditation/` | Parser, types, server actions |
-| `src/lib/ai/` | LLM prompt + script generation logic |
+| `src/lib/meditation/` | Parser, types, tag vocabulary, server actions |
+| `src/lib/ai/` | System prompts + the daily chat ceiling |
+| `src/lib/chat/` | Studio tools (`writeScript`, `setDetails`, `offerAudio`), chat persistence, chat server actions |
 | `src/lib/supabase/` | Client factories (server, browser, service-role) |
 | `src/components/` | UI components |
 | `supabase/migrations/` | SQL migrations |

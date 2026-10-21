@@ -4,7 +4,6 @@ import { Nav } from "@/components/nav";
 import { ScriptStreamDemo } from "@/components/script-stream-demo";
 import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
-import { getScriptQuotaConfig } from "@/lib/ai/quota";
 import { getQuotaConfig } from "@/lib/audio/quota";
 import { countOf, firstPassage, freeTierSummary } from "@/lib/landing/copy";
 import { DEMO_EXAMPLES } from "@/lib/landing/examples";
@@ -60,12 +59,9 @@ export default async function LandingPage() {
     getLatestPublicMeditation(supabase),
   ]);
 
-  // Read from the same config the quota checks enforce, so the page cannot
-  // drift from the caps when the environment changes them.
-  const caps = {
-    audio: getQuotaConfig().perUserCap,
-    script: getScriptQuotaConfig().perUserCap,
-  };
+  // Read from the same config the quota check enforces, so the page cannot
+  // drift from the cap when the environment changes it.
+  const caps = { audio: getQuotaConfig().perUserCap };
   const composeHref = user ? "/create" : "/login";
 
   return (
@@ -150,8 +146,8 @@ export default async function LandingPage() {
               <div className="max-w-[60ch] space-y-4 text-muted-foreground">
                 <p>
                   Zenerate is one person&apos;s project, and there is no paid
-                  plan. An account is free. {freeTierSummary(caps)} The counts
-                  reset on the first of each month (UTC), and a narration that
+                  plan. An account is free. {freeTierSummary(caps)} The count
+                  resets on the first of each month (UTC), and a narration that
                   fails can be tried again once without using one up.
                 </p>
                 <p>

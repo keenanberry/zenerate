@@ -13,9 +13,9 @@
  *
  * This calls the real Anthropic API and costs real money -- roughly a cent per
  * sample at Sonnet 5 pricing. It does not touch the database, production, or
- * any generation quota: it calls the model directly with the same system
- * prompt and settings as `/api/generate`, deliberately bypassing the route so
- * a measurement run cannot burn a user's monthly allowance.
+ * any chat ceiling: it calls the model directly with the one-shot system
+ * prompt and the studio's model settings, bypassing /api/chat so a
+ * measurement run leaves no chats behind.
  */
 import { config } from "dotenv";
 import { streamText } from "ai";

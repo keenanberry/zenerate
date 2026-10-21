@@ -6,15 +6,15 @@ export function countOf(n: number, singular: string, plural = `${singular}s`): s
 }
 
 /**
- * The free tier in one sentence, from the caps the quota code enforces. The
- * numbers come from the environment (`PER_USER_MONTHLY_AUDIO_LIMIT`,
- * `PER_USER_MONTHLY_SCRIPT_LIMIT`), so the page never states a cap the app
- * does not apply.
+ * The free tier in one sentence, from the cap the audio quota enforces. The
+ * number comes from the environment (`PER_USER_MONTHLY_AUDIO_LIMIT`), so the
+ * page never states a cap the app does not apply. Scripts have no monthly cap
+ * since the studio replaced the one-shot generator.
  */
-export function freeTierSummary(caps: { audio: number; script: number }): string {
+export function freeTierSummary(caps: { audio: number }): string {
   return (
-    `Each month an account can narrate ${countOf(caps.audio, "meditation")} ` +
-    `and draft up to ${countOf(caps.script, "script")}.`
+    `Each month an account can narrate ${countOf(caps.audio, "meditation")}. ` +
+    "Writing and revising scripts doesn't count toward it."
   );
 }
 

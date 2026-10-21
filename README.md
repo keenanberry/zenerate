@@ -70,7 +70,7 @@ it is. The short version:
 | `AUDIO_SANDBOX_SNAPSHOT_ID` | Audio generation. Printed by the snapshot build script (below) |
 | `VERCEL_OIDC_TOKEN` | Sandbox auth when running audio generation or the snapshot build locally. Vercel injects it in production. Pull it with `vercel env pull` into a scratch file, not `.env.local`, which that command overwrites |
 | `PER_USER_MONTHLY_AUDIO_LIMIT`, `MAX_GLOBAL_AUDIO_GENERATIONS_PER_MONTH` | Audio quota. The global cap is derived from the ElevenLabs plan |
-| `PER_USER_MONTHLY_SCRIPT_LIMIT`, `MAX_GLOBAL_MONTHLY_SCRIPT_GENERATIONS` | Script quota, an abuse guard rather than a product limit |
+| `PER_USER_DAILY_CHAT_MESSAGES` | Studio chat ceiling (default 200 a day), an abuse guard rather than a product limit |
 | `CRON_SECRET`, `KEEPALIVE_PING_URL` | The keepalive cron. The route fails closed without the secret |
 | `SOUND_EFFECTS_SUPABASE_URL`, `SOUND_EFFECTS_SUPABASE_SERVICE_ROLE_KEY` | Snapshot build only: the production bucket holding the recorded sound effects |
 
@@ -116,7 +116,6 @@ recordings fetched from a private bucket and checksum-verified.
 | `scripts/test-audio-generation.ts` | End-to-end check of a snapshot: generates a short meditation and validates the MP3 |
 | `scripts/preview-sound-effects.ts` | Renders the synthesized sound effects locally so you can listen before baking them in |
 | `scripts/measure-script-duration.ts` | Generates scripts at several lengths and reports how close each lands to what was asked. Calls the real model |
-| `scripts/test-generation-quota.ts` | Manual check of the quota logic against local Supabase |
 | `scripts/verify-backup.sh` | Restores a `pg_dump` into a throwaway database and reports what landed |
 
 Each script's header documents its prerequisites.
@@ -134,7 +133,7 @@ and does not cover, and how to test a dump are in `docs/runbooks/backup-restore.
 |---|---|
 | `src/app/` | Routes. `(app)` is the in-app shell, `(app)/(authed)` the signed-in part, `(auth)` login, `(legal)` terms and privacy, `api/` route handlers |
 | `src/components/` | UI. `ui/` is shadcn |
-| `src/lib/` | `ai/` prompts and script quota, `audio/` the pipeline, `meditation/` parser, types and server actions, `supabase/` client factories, `voices/` the ElevenLabs catalogue |
+| `src/lib/` | `ai/` prompts and the chat ceiling, `chat/` the studio tools and chat persistence, `audio/` the pipeline, `meditation/` parser, types and server actions, `supabase/` client factories, `voices/` the ElevenLabs catalogue |
 | `supabase/` | Migrations and local-only seed data |
 | `scripts/` | The table above |
 | `docs/` | `architecture.md`, `runbooks/`, `handoffs/` (session-to-session state), `superpowers/specs/` (design decisions), `ui-roadmap.md` |

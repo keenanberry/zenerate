@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseMeditationText } from "./parser";
+import { findMalformedMarkers, parseMeditationText } from "./parser";
 
 /**
  * Characterization tests for the markup parser.
@@ -165,5 +165,29 @@ describe("parseMeditationText", () => {
     it("returns nothing for empty input", () => {
       expect(parseMeditationText("")).toEqual([]);
     });
+  });
+});
+
+describe("findMalformedMarkers", () => {
+  it("returns nothing for well-formed markup", () => {
+    const script =
+      "*[SOUND: bell-tibetan.mp3]*\n\nBreathe in.\n\n*[PAUSE: 5 seconds]*\n\n*[SILENCE: 2 minutes]*";
+    expect(findMalformedMarkers(script)).toEqual([]);
+  });
+
+  it("flags a marker line the parser would drop", () => {
+    expect(findMalformedMarkers("Breathe.\n*[PAUSE: five seconds]*\nRest.")).toEqual([
+      "*[PAUSE: five seconds]*",
+    ]);
+  });
+
+  it("flags a marker written inside a sentence", () => {
+    expect(
+      findMalformedMarkers("Breathe in *[PAUSE: 3 seconds]* and let go."),
+    ).toEqual(["Breathe in *[PAUSE: 3 seconds]* and let go."]);
+  });
+
+  it("flags a marker missing its asterisks", () => {
+    expect(findMalformedMarkers("[SILENCE: 5 minutes]")).toEqual(["[SILENCE: 5 minutes]"]);
   });
 });
