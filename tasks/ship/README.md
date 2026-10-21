@@ -2,10 +2,15 @@
 
 Work required before deploying Zenerate to real users.
 
-Decisions and rationale live in **`docs/superpowers/specs/2026-09-11-go-live-design.md`** —
-read that first. This folder is the operational tracking.
+Decisions and rationale live in two specs: **`docs/superpowers/specs/2026-09-11-go-live-design.md`**
+for Phases 0–3, and **`docs/superpowers/specs/2026-10-20-agentic-studio-design.md`** for
+Phases 4–6 (the chat studio, Discover, seeding and launch). Read the one for your phase
+first. This folder is the operational tracking.
 
-Tasks are grouped into four phases. Earlier phases gate later ones; within a phase, take
+**Signups stay closed until Phase 6 is done.** There is no launch date: Zenerate opens
+when the list below is finished, not before.
+
+Tasks are grouped into seven phases. Earlier phases gate later ones; within a phase, take
 the lowest-numbered `Not started` task unless its `Depends on` says otherwise.
 
 ---
@@ -29,19 +34,19 @@ the repo goes public in task 09.
 |---|---|---|---|
 | 06 | [ElevenLabs production account](./06-elevenlabs-production.md) | Done | Starter active (operator, 2026-10-09); voices via the Zenerate collection (PR #25). Per-voice tuning deferred |
 | 07 | [Production Supabase project](./07-production-supabase.md) | Done | Live. Migrations, private bucket, email confirmation and redirects all verified; script and audio generation both ran in production 2026-10-10 |
-| 08 | [Transactional email](./08-transactional-email.md) | Done* | Resend via its Supabase integration, `noreply@zeneratestudio.com`, templates in `supabase/templates/`. *Operator: paste the two templates into the production dashboard, then the inbox-placement check |
-| 09 | [Vercel deploy + domain](./09-vercel-deploy.md) | Deployed | Live at `www.zeneratestudio.com`, repo public, auth working, generation end to end in production 2026-10-10. `NEXT_PUBLIC_SITE_URL` still to set to the `www` host |
-| 10 | [Supabase keepalive + backups](./10-supabase-keepalive.md) | In progress | Cron route + `vercel.json` + tested restore script done. Needs `CRON_SECRET`, a prod dump, and cron confirmed firing |
+| 08 | [Transactional email](./08-transactional-email.md) | Done | Resend via its Supabase integration, `noreply@zeneratestudio.com`, templates in `supabase/templates/`, pasted into production by the operator 2026-10-20. The reset email's end-to-end check moves to 11 |
+| 09 | [Vercel deploy + domain](./09-vercel-deploy.md) | Done | Live at `www.zeneratestudio.com`, repo public, auth working, generation end to end in production 2026-10-10. `NEXT_PUBLIC_SITE_URL` set to the `www` host (operator, 2026-10-20) |
+| 10 | [Supabase keepalive + backups](./10-supabase-keepalive.md) | In progress | Cron route + `vercel.json` + tested restore script done; the operator reports the cron working (2026-10-20). Still to confirm: the cron's run log in Vercel, and a production dump from the backup job |
 
 ## Phase 2 — Product completeness
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 11 | [Password reset flow](./11-password-reset.md) | Not started | Needs 08 |
+| 11 | [Password reset flow](./11-password-reset.md) | Not started | 08 is done and Resend sends the reset email, but the `/forgot-password` and `/reset-password` pages and the login link don't exist yet |
 | 12 | [Toast notifications](./12-toast-notifications.md) | Done | Success/error toasts on the mutation surface; add-to-collection gained real rollback. Theme verified in both modes |
 | 13 | [Download button](./13-download-button.md) | Done* | Streams via an authorized route, never `<a download>` on a signed URL. *iOS Safari check needs a real device |
 | 14 | [Error / not-found boundaries](./14-error-boundaries.md) | Done | Root 404 + root/`(app)` error boundaries + `global-error`. Lights up two existing `notFound()` call sites |
-| 15 | [Terms / Privacy pages](./15-legal-pages.md) | Done* | `/terms` + `/privacy` live, linked from signup and a site-wide footer. *Launch gate: the `privacy@` forwarder (with 08) |
+| 15 | [Terms / Privacy pages](./15-legal-pages.md) | Done* | `/terms` + `/privacy` live, linked from signup and a site-wide footer. *Launch gate: the `privacy@` forwarder, still to set up (operator) |
 | 16 | [LLM duration constraints](./16-llm-duration-constraints.md) | Done | Long sessions were 82% of requested; now 98%, with the spread cut from 24 points to 6. Measured before/after |
 | 17 | [Sound effects library](./17-sound-effects-library.md) | Done* | 4 synthesized + 2 CC0 gongs, plus narration normalized to -20 LUFS. *Needs the new snapshot ID in Vercel + redeploy |
 | 18 | [Script model upgrade](./18-script-model-upgrade.md) | Done* | Swapped to `claude-sonnet-5` with explicit low-effort thinking; parser now has tests. *Side-by-side comparison still needs an Anthropic key |
@@ -61,8 +66,69 @@ the repo goes public in task 09.
 | 22 | [Landing page rewrite](./22-landing-page-rewrite.md) | Done* | Locked pitch as hero, a script streaming into the real viewer, newest public meditation, free tier read from the quota config. Shared `Nav` on landing and legal. Lighthouse 93/100 mobile, 100/100 desktop. Installed-PWA check confirmed by the operator 2026-10-10 |
 | 23 | [Icon set + OG image](./23-icon-set-og-image.md) | Done* | Bodhi leaf mark with its veins drawn as a tree (`src/assets/brand/mark.svg`), a `BrandMark` component, every raster rebuilt by `scripts/build-icons.ts`. Mark placed in the nav and login card (follow-up); now the lotus (PR #40). *Share previews are still the operator's; the phone home-screen check was confirmed 2026-10-10 |
 | 24 | [PWA manifest & install](./24-pwa-manifest.md) | Done | Manifest at `/manifest.webmanifest` (standalone, opens to `/dashboard`, Midnight theme, maskable icon), iOS meta with the `default` status bar, no service worker. Lighthouse installability passes. iPhone install and in-app playback confirmed by the operator 2026-10-10 |
-| 25 | [Lock-screen audio](./25-lock-screen-audio.md) | Done* | Media Session on wavesurfer's own `<audio>`: title, artwork, play/pause, 15 s skips, seekbar. iPhone lock screen and PWA confirmed by the operator 2026-10-10. *Mac Now Playing is still unchecked |
+| 25 | [Lock-screen audio](./25-lock-screen-audio.md) | Done | Media Session on wavesurfer's own `<audio>`: title, artwork, play/pause, 15 s skips, seekbar. iPhone lock screen and PWA confirmed by the operator 2026-10-10; Mac Now Playing confirmed 2026-10-20 |
 | 26 | [SEO metadata](./26-seo-metadata.md) | Done* | `metadataBase` from `NEXT_PUBLIC_SITE_URL` (falls back to production), the pitch as default description, OG image + large Twitter card, per-page cards for `/`, `/discover` and public meditations, `robots.ts`, live `sitemap.ts`. `/meditation/[id]` still dynamic. *Real-app share previews and the Facebook debugger are the operator's, after deploy |
+
+## Phase 4 — Studio (Wave A: everything seeding needs)
+
+The create wizard and the script editor are replaced by one conversation: describe the
+meditation, watch the script stream into a canvas beside the chat, change it by asking,
+and make the audio from cards in the chat. See the studio spec.
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 27 | [AI SDK 7 upgrade](./27-ai-sdk-7.md) | Not started | Before any chat code. Lockfile with the project `.npmrc` |
+| 28 | [Studio schema + operator wipe](./28-studio-schema.md) | Not started | Final schema: chats, messages, versions, tags, description, plays, house picks. Wipe runbook, run before it reaches production |
+| 29 | [Chat agent route](./29-chat-agent.md) | Not started | `/api/chat`, tools, tag vocabulary, daily ceiling; retires `/api/generate` and the script quota (closes #5) |
+| 30 | [Studio UI: chat + canvas](./30-studio-ui.md) | Not started | `/create` is one input; the canvas follows the stream; the sheet on phones; wizard and editor deleted |
+| 31 | [Audio from the chat](./31-audio-from-chat.md) | Not started | Voice, Make audio (click only), progress, inline player; operator quota exemption |
+
+## Phase 5 — Studio (Wave B) & Discover
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 32 | [Versions, replace-or-keep, continue in chat](./32-versions.md) | Not started | Draft promotion in `workflow.ts` (not the snapshot); switcher for the owner only |
+| 33 | [Details editing + tag display](./33-details-and-tags-ui.md) | Not started | The only hand-edit left: title, description, tags |
+| 34 | [Sound previews in chat](./34-sound-previews.md) | Not started | Browser copies of the effects; snapshot unchanged |
+| 35 | [Designed cover system](./35-cover-system.md) | Not started | Deterministic covers; amends `DESIGN.md` (One Gradient Rule) |
+| 36 | [Discover rebuild](./36-discover-rebuild.md) | Not started | Search, filters, 8 category cards, Popular, Picked for you, play tracking |
+
+## Phase 6 — Seed & open
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 37 | [House meditations](./37-house-meditations.md) | Not started | Operator makes 24 through the chat, 3 per category; 6–8 featured. Needs Wave A only |
+| 38 | [Privacy update + open signups](./38-privacy-and-launch.md) | Not started | `/privacy` covers chats and plays; the launch checklist ends with enabling signups |
+
+### Running Phases 4–5 with Orca
+
+Wave A runs as three parallel lanes after 27 and 28: **29 → 30**, **29 → 31** (31 can
+build its cards beside 30 against 30's `renderStudioPart`), then 37 opens once 27–31
+are in production. Wave B (32–36) is five mostly independent workers. 35 and 36 touch
+Discover and can pair, and 36 can start with a placeholder cover slot.
+
+- **Workers edit only their own task file.** The coordinator updates this README's
+  tables, because parallel edits to adjacent rows conflict every time.
+- **Localhost workers share one Supabase auth cookie.** No worker signs out.
+- **The `npmrc-legacy-peer-deps` note applies:** never commit a worker's whole-lockfile
+  churn.
+
+### Review focus for Phases 4–5
+
+These are the failure modes the spec implies that no single task's tests cover. Each
+reviewer checks the ones that touch their task:
+
+1. **A reload or closed tab mid-stream.** A half-written script must never be saved or
+   shown as the script; the canvas shows the last complete one (29, 30).
+2. **Off-topic and injection requests.** "Write me code" or "ignore your instructions"
+   gets a one-line decline (29).
+3. **A revision silently drops content.** Malformed markers surface in the tool result,
+   and the duration estimate flags a 20-minute script that shrank (29, 30).
+4. **Audio without a click.** Nothing but the card's button and the page's retry calls
+   the trigger route, and a double click reserves once (31).
+5. **Chat privacy in production.** As `anon` and as another user, the chat tables return
+   nothing for a public meditation. Local grants hide a mistake, so check production
+   (28, 38).
 
 ---
 

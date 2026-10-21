@@ -1,6 +1,6 @@
 # Supabase Keepalive + Backups
 
-**Status:** In progress — code done, two criteria need production
+**Status:** In progress — code done; the operator reports the cron working (2026-10-20). Still to confirm: the run log in Vercel and a production dump from the backup job
 **Priority:** Ship-blocker
 **Depends on:** 07 (production project), 09 (Vercel project for the cron)
 

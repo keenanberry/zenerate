@@ -1,6 +1,6 @@
 # Vercel Deploy Setup
 
-**Status:** Deployed and live. Remaining items are blocked on the ElevenLabs/Anthropic accounts
+**Status:** Done — live; `NEXT_PUBLIC_SITE_URL` set to the `www` host by the operator 2026-10-20
 **Priority:** Ship-blocker
 **Depends on:** 07 (prod Supabase for env vars), 08 (email)
 

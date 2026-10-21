@@ -83,5 +83,9 @@ launch. The trigger route reverts the meditation and refunds the slot when a sta
 
 ## Pre-Ship Work
 
-Tracked in `tasks/ship/` — see `tasks/ship/README.md` for the full checklist.
+Tracked in `tasks/ship/` — see `tasks/ship/README.md` for the full checklist. Phases 4–6
+replace the create wizard and script editor with a chat studio, rebuild `/discover`, seed
+it, then open signups; their spec is
+`docs/superpowers/specs/2026-10-20-agentic-studio-design.md`. Signups stay closed until
+Phase 6 is done.
 Post-ship ideas live in `tasks/post-ship/`.
