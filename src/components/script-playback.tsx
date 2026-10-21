@@ -7,7 +7,7 @@ import { createContext, useCallback, useContext, useState } from "react";
  * so the passage being spoken can brighten and passed ones dim.
  *
  * Both sides are optional: a player outside a provider reports to nobody, and
- * a viewer outside one (the create wizard, the script editor) renders evenly
+ * a viewer outside one (the studio canvas, the landing demo) renders evenly
  * lit, as if nothing were playing.
  */
 
