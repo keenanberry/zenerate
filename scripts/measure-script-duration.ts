@@ -51,7 +51,7 @@ async function generate(minutes: number): Promise<string> {
   // measuring at all.
   const result = streamText({
     model: anthropic("claude-sonnet-5"),
-    system: MEDITATION_SYSTEM_PROMPT,
+    instructions: MEDITATION_SYSTEM_PROMPT,
     prompt: buildMeditationPrompt({ type: "guided", duration: minutes }),
     maxOutputTokens: 8000,
     providerOptions: {

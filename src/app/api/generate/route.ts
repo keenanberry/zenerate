@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { streamText } from "ai";
+import { createTextStreamResponse, streamText } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { MEDITATION_SYSTEM_PROMPT } from "@/lib/ai/prompts";
 import { createClient } from "@/lib/supabase/server";
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model: anthropic("claude-sonnet-5"),
-    system: MEDITATION_SYSTEM_PROMPT,
+    instructions: MEDITATION_SYSTEM_PROMPT,
     prompt,
     maxOutputTokens: 8000,
     providerOptions: {
@@ -86,5 +86,5 @@ export async function POST(req: Request) {
     },
   });
 
-  return result.toTextStreamResponse();
+  return createTextStreamResponse({ stream: result.textStream });
 }
