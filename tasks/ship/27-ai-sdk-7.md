@@ -1,6 +1,6 @@
 # AI SDK 7 Upgrade
 
-**Status:** Done (PR open, awaiting review)
+**Status:** Done (PR #50)
 **Priority:** Phase 4, Wave A. First, so no chat code starts on a superseded major.
 **Phase:** 4 (studio)
 **Depends on:** nothing

@@ -1,6 +1,6 @@
 # Studio Schema + Operator Data Wipe
 
-**Status:** Done (PR open, awaiting review)
+**Status:** Done (PR #49); the operator runs the wipe before `supabase db push`
 **Priority:** Phase 4, Wave A. The schema is final from day one, because seeded rows are never migrated.
 **Phase:** 4 (studio)
 **Depends on:** nothing (can run beside 27)

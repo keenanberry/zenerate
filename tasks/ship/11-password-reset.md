@@ -1,6 +1,6 @@
 # Password Reset Flow
 
-**Status:** Done locally; production E2E and dashboard steps are the operator's (see Outcome)
+**Status:** Done* (PR #51); production redirect URL and E2E are the operator's
 **Priority:** Ship-blocker
 
 ## Why this blocks ship
