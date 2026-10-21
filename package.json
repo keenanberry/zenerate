@@ -11,13 +11,13 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.46",
-    "@ai-sdk/react": "^3.0.99",
+    "@ai-sdk/anthropic": "^4.0.85",
+    "@ai-sdk/react": "^4.0.152",
     "@elevenlabs/elevenlabs-js": "^2.37.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.97.0",
     "@vercel/sandbox": "^1.7.1",
-    "ai": "^6.0.97",
+    "ai": "^7.0.148",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.575.0",

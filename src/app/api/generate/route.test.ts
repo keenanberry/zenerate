@@ -18,8 +18,9 @@ vi.mock("@ai-sdk/anthropic", () => ({
 vi.mock("ai", () => ({
   streamText: (...args: unknown[]) => {
     mockStreamText(...args);
-    return { toTextStreamResponse: () => new Response("script text", { status: 200 }) };
+    return { textStream: new ReadableStream<string>() };
   },
+  createTextStreamResponse: () => new Response("script text", { status: 200 }),
 }));
 vi.mock("@/lib/ai/quota", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/ai/quota")>();
@@ -28,6 +29,7 @@ vi.mock("@/lib/ai/quota", async (importOriginal) => {
 
 import { POST } from "./route";
 import { MAX_PROMPT_CHARS } from "@/lib/ai/quota";
+import { MEDITATION_SYSTEM_PROMPT } from "@/lib/ai/prompts";
 
 function post(body: unknown) {
   return new Request("http://localhost/api/generate", {
@@ -104,5 +106,12 @@ describe("POST /api/generate", () => {
     await POST(post({ prompt: "make me a meditation" }));
     const args = mockStreamText.mock.calls[0][0] as { maxOutputTokens?: number };
     expect(args.maxOutputTokens).toBeGreaterThan(0);
+  });
+
+  it("passes the system prompt as instructions", async () => {
+    await POST(post({ prompt: "make me a meditation" }));
+    const args = mockStreamText.mock.calls[0][0] as Record<string, unknown>;
+    expect(args.instructions).toBe(MEDITATION_SYSTEM_PROMPT);
+    expect(args).not.toHaveProperty("system");
   });
 });
