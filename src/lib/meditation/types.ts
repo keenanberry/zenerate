@@ -1,3 +1,5 @@
+import type { UIMessage } from "ai";
+
 export type MeditationStatus =
   | "generating_script"
   | "script_ready"
@@ -16,14 +18,27 @@ export interface Meditation {
   id: string;
   user_id: string;
   title: string;
-  prompt: string;
+  /** The wizard's one-line request. Null for meditations made in the studio. */
+  prompt: string | null;
+  /** One or two sentences, set by the studio agent and editable by the owner. */
+  description: string | null;
+  /** Tags from the fixed vocabulary in tags.ts. */
+  tags: string[];
+  /** The current version's script. */
   script: string | null;
+  /**
+   * A revision made after the current version has audio. A finished render
+   * promotes it to `script` and archives the old version.
+   */
+  draft_script: string | null;
   /** Short-lived signed URL, minted server-side at read time. Never persisted. */
   audio_url: string | null;
   /** Storage path within the meditation-audio bucket. This is what the DB holds. */
   audio_path?: string | null;
   status: MeditationStatus;
   is_public: boolean;
+  /** House pick, set by the operator in SQL. */
+  is_featured: boolean;
   settings: MeditationSettings;
   generation_meta: GenerationMeta | null;
   created_at: string;
@@ -37,6 +52,38 @@ export interface MeditationSettings {
   voice?: string;
   music?: string;
   volume?: number;
+}
+
+/** An archived version. The current version is the meditations row itself. */
+export interface MeditationVersion {
+  id: string;
+  meditation_id: string;
+  script: string;
+  /** Storage path in meditation-audio. Delete the object with the row; storage does not cascade. */
+  audio_path: string | null;
+  voice: string | null;
+  generation_meta: GenerationMeta | null;
+  created_at: string;
+}
+
+/** One chat per meditation. A null meditation_id is a draft with no script yet. */
+export interface Chat {
+  id: string;
+  user_id: string;
+  meditation_id: string | null;
+  title: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** A chat_messages row: one AI SDK UIMessage, with the id the server generated. */
+export interface ChatMessageRow {
+  id: string;
+  chat_id: string;
+  role: UIMessage["role"];
+  parts: UIMessage["parts"];
+  metadata: unknown;
+  created_at: string;
 }
 
 export interface Collection {
