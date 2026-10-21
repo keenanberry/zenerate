@@ -25,7 +25,11 @@ Reference: https://vercel.com/docs/vercel-sandbox
 ## Architecture
 
 ```
-User saves script
+Owner clicks Make audio on the studio chat's audio card
+(or the meditation page's Generate / free retry)
+       │
+       ▼
+POST /api/audio/generate (status check, quota reservation)
        │
        ▼
 Vercel Workflow (orchestrator)
@@ -45,10 +49,29 @@ Vercel Workflow (orchestrator)
        │
        ├── 5. Upload MP3 to Supabase Storage
        │
-       ├── 6. Update meditation status → completed
+       ├── 6. Update meditation status → completed (a rendered draft_script
+       │       becomes the script in the same write)
        │
        └── 7. Destroy sandbox
 ```
+
+## What Triggers a Render
+
+The studio chat is the main trigger. The chat agent's `offerAudio` tool has no `execute`:
+it only shows the audio card (`src/components/studio/audio-card.tsx`), and a render starts
+when the owner presses **Make audio** there. The card posts to `/api/audio/generate` and
+only then answers the tool with `addToolOutput`, so the agent can never spend a render on
+its own. The only other callers of the route are the meditation page's generate panel and
+its free retry (`audio-section.tsx`).
+
+The route accepts a meditation in `script_ready`, or in `completed` when it has a
+`draft_script` (a revision the agent made after the audio existed). The workflow renders
+`draft_script` when it is set, and on success makes it the `script` and clears it, so the
+new audio replaces the old one. Task 32 replaces that with versions and archiving.
+
+Quota: `reserveAudioGeneration` in `src/lib/audio/quota.ts` enforces the per-user and
+global monthly caps through the `reserve_audio_generation` RPC. Users listed in
+`QUOTA_EXEMPT_USER_IDS` skip both caps, and their renders are left out of the global total.
 
 ## Sandbox Template
 
@@ -235,7 +258,9 @@ Per meditation (assuming ~2 min of speech, 10 min total with silence):
 
 | File | Purpose |
 |---|---|
+| `src/components/studio/audio-card.tsx` | The chat's voice + Make audio card; the main trigger |
 | `src/app/api/audio/generate/route.ts` | Entry point — auth + ownership check, triggers workflow |
+| `src/lib/audio/quota.ts` | Monthly caps, free retries and the operator exemption |
 | `src/lib/audio/workflow.ts` | Vercel Workflow — durable orchestration |
 | `src/lib/audio/generate-audio.ts` | Runs inside the sandbox (baked into snapshot) |
 | `src/lib/audio/storage.ts` | Supabase Storage upload + status updates |
@@ -250,4 +275,4 @@ generating_script → script_ready → processing_audio → completed
                                                     ↘ failed
 ```
 
-`src/components/audio-section.tsx` switches on `status` to render the generate panel, processing status, audio player, or retry state.
+`src/components/audio-section.tsx` switches on `status` to render the generate panel, processing status, audio player, or retry state. The studio's audio card does the same inside the chat. A meditation with audio and a `draft_script` goes `completed → processing_audio → completed` when the draft is rendered.

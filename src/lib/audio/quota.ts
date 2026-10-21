@@ -33,11 +33,33 @@ export function getQuotaConfig(): QuotaConfig {
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+/**
+ * The operator's accounts, from `QUOTA_EXEMPT_USER_IDS` (comma-separated
+ * user ids). Read on every call so a test or a redeploy sees the current
+ * value. ElevenLabs' own credit balance is the backstop for these renders.
+ */
+function exemptUserIds(): string[] {
+  return (process.env.QUOTA_EXEMPT_USER_IDS ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+}
+
+/** An exempt user skips both caps, and their renders don't count toward the global total. */
+export function isQuotaExempt(userId: string): boolean {
+  return exemptUserIds().includes(userId);
+}
+
+/** Postgres integer max: a cap the reserve RPC can never reach. */
+const NO_CAP = 2147483647;
+
 export type QuotaUsage = {
   used: number;
   limit: number;
   remaining: number;
   resetsAt: string;
+  /** True for an exempt user; `remaining` is then meaningless. */
+  unlimited: boolean;
 };
 
 function currentYearMonth(): string {
@@ -74,6 +96,7 @@ export async function getQuotaUsage(
     limit: config.perUserCap,
     remaining: Math.max(config.perUserCap - used, 0),
     resetsAt: nextMonthFirstUtcIso(),
+    unlimited: isQuotaExempt(userId),
   };
 }
 
@@ -131,16 +154,52 @@ export type ReserveOutcome =
 
 const MAPPED_REASONS = new Set(["quota_exceeded", "global_cap_reached", "invalid_retry"]);
 
+/**
+ * Exempt users' counted events this month, so the global cap can be raised
+ * past them. Same predicate as the RPC's global count.
+ */
+async function countExemptEvents(exemptIds: string[], supabase: SupabaseClient): Promise<number> {
+  if (exemptIds.length === 0) return 0;
+  const { count, error } = await supabase
+    .from("audio_generation_events")
+    .select("id", { count: "exact", head: true })
+    .in("user_id", exemptIds)
+    .eq("year_month", currentYearMonth())
+    .eq("is_free_retry", false)
+    .in("status", ["pending", "completed"]);
+  if (error) {
+    throw new Error(`Failed to count exempt generations: ${error.message}`);
+  }
+  return count ?? 0;
+}
+
+/**
+ * The exemption lives here rather than in the RPC, so it needs no migration.
+ * An exempt user reserves with caps the RPC can never reach (retries are
+ * still validated). Everyone else gets the global cap raised by the exempt
+ * events already counted, which takes them out of the total. An exempt
+ * render landing between that count and the RPC lowers the effective cap by
+ * one for that request, which errs on the safe side.
+ */
 export async function reserveAudioGeneration(
   input: ReserveInput,
   supabase: SupabaseClient,
   config: QuotaConfig = getQuotaConfig(),
 ): Promise<ReserveOutcome> {
+  const exemptIds = exemptUserIds();
+  const exempt = exemptIds.includes(input.userId);
+  const caps = exempt
+    ? { perUser: NO_CAP, global: NO_CAP }
+    : {
+        perUser: config.perUserCap,
+        global: config.globalCap + (await countExemptEvents(exemptIds, supabase)),
+      };
+
   const { data, error } = await supabase.rpc("reserve_audio_generation", {
     p_user_id: input.userId,
     p_meditation_id: input.meditationId,
-    p_per_user_cap: config.perUserCap,
-    p_global_cap: config.globalCap,
+    p_per_user_cap: caps.perUser,
+    p_global_cap: caps.global,
     p_retry_of: input.retryOfEventId,
   });
 

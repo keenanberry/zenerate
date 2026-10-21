@@ -41,7 +41,7 @@ export async function POST(req: Request) {
 
   const { data: meditation, error } = await supabase
     .from("meditations")
-    .select("id, user_id, status, settings")
+    .select("id, user_id, status, settings, draft_script")
     .eq("id", meditationId)
     .single();
 
@@ -52,11 +52,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const allowedStatus = retryOfEventId ? "failed" : "script_ready";
-  if (meditation.status !== allowedStatus) {
+  // A retry follows a failed render. Otherwise there must be a script with no
+  // audio yet, or a revision (draft_script) made after the audio, which the
+  // workflow renders in place of the current script.
+  const hasDraft = meditation.draft_script !== null;
+  const allowedStatuses = retryOfEventId
+    ? ["failed"]
+    : hasDraft
+      ? ["script_ready", "completed"]
+      : ["script_ready"];
+  if (!allowedStatuses.includes(meditation.status)) {
     return NextResponse.json(
       {
-        error: `Cannot generate audio: meditation status is "${meditation.status}", expected "${allowedStatus}"`,
+        error: `Cannot generate audio: meditation status is "${meditation.status}", expected ${allowedStatuses.map((s) => `"${s}"`).join(" or ")}`,
       },
       { status: 409 },
     );
@@ -108,7 +116,10 @@ export async function POST(req: Request) {
     );
   }
 
-  const { error: updateError } = await supabase
+  // Compare-and-set on the status read above: of two requests that both
+  // passed the status check (a double click), only one flips the row, and the
+  // other gives its reservation back.
+  const { data: flipped, error: updateError } = await supabase
     .from("meditations")
     .update({
       status: "processing_audio",
@@ -118,14 +129,22 @@ export async function POST(req: Request) {
         settings: { ...(meditation.settings ?? {}), voice: voice.voiceId },
       }),
     })
-    .eq("id", meditationId);
+    .eq("id", meditationId)
+    .eq("status", meditation.status)
+    .select("id");
 
-  if (updateError) {
+  if (updateError || !flipped || flipped.length === 0) {
     // Refund the reserved slot so the user isn't charged for our failure.
     await serviceClient
       .from("audio_generation_events")
       .update({ status: "failed", completed_at: new Date().toISOString() })
       .eq("id", reserve.eventId);
+    if (!updateError) {
+      return NextResponse.json(
+        { error: "Audio is already being made for this meditation." },
+        { status: 409 },
+      );
+    }
     return NextResponse.json(
       { error: "Failed to update meditation status" },
       { status: 500 },
@@ -140,7 +159,7 @@ export async function POST(req: Request) {
       await Promise.all([
         serviceClient
           .from("meditations")
-          .update({ status: allowedStatus, updated_at: new Date().toISOString() })
+          .update({ status: meditation.status, updated_at: new Date().toISOString() })
           .eq("id", meditationId),
         serviceClient
           .from("audio_generation_events")

@@ -14,6 +14,8 @@ export type QuotaProp = {
   limit: number;
   remaining: number;
   resetsAt: string;
+  /** An exempt operator: no cap applies. */
+  unlimited?: boolean;
 };
 
 interface GenerateAudioPanelProps {
@@ -33,8 +35,8 @@ export function GenerateAudioPanel({
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const exhausted = quota.remaining === 0;
-  const isLast = quota.remaining === 1;
+  const exhausted = !quota.unlimited && quota.remaining === 0;
+  const isLast = !quota.unlimited && quota.remaining === 1;
   const resetDate = new Date(quota.resetsAt).toLocaleDateString(undefined, {
     month: "long",
     day: "numeric",
@@ -102,7 +104,11 @@ export function GenerateAudioPanel({
           </div>
         )}
 
-        {exhausted ? (
+        {quota.unlimited ? (
+          <p className="text-xs text-muted-foreground">
+            Your account has unlimited audio generations.
+          </p>
+        ) : exhausted ? (
           <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
             You&apos;ve used all {quota.limit} audio generations this month. Resets {resetDate}.
           </div>
