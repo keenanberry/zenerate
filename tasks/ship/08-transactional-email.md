@@ -1,6 +1,6 @@
 # Transactional Email
 
-**Status:** Done* — *the production paste of the two templates and the inbox-placement check are the operator's; the reset email's end-to-end check waits on task 11
+**Status:** Done — the operator pasted both templates into production 2026-10-20; the reset email's end-to-end check waits on task 11
 **Priority:** Ship-blocker
 **Depends on:** 07 (production Supabase project), 09 (domain, for DNS records)
 **Blocks:** 11 (password reset is unusable without working email)

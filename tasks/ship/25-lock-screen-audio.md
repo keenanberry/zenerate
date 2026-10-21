@@ -1,6 +1,6 @@
 # Lock-Screen Audio (Media Session)
 
-**Status:** Done* — the iPhone checks were confirmed by the operator 2026-10-10; *the Mac Now Playing checks are still the operator's: this Mac's session was password-locked for the whole run, so no page could become visible
+**Status:** Done — iPhone checks confirmed by the operator 2026-10-10, Mac Now Playing 2026-10-20
 **Priority:** Ship-blocker — arguably the highest-value item in Phase 3
 **Depends on:** 24 (most valuable in the installed PWA, though it works in-browser too)
 

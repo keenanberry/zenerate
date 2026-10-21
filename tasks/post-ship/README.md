@@ -8,17 +8,25 @@ Work that's out of scope for initial ship but tracked for the next cycle. No ord
 | [Paid tier](./paid-tier.md) | Stripe integration, tiered quotas, custom voice upload |
 | [Google / Apple auth](./google-apple-auth.md) | OAuth providers via Supabase |
 | [Admin dashboard](./admin-dashboard.md) | User + usage + cost visibility for the operator |
-| [Form-based script editor](./form-based-script-editor.md) | Structured editor (add/remove sections, inline sound picker) |
 | [Public content moderation](./public-content-moderation.md) | Report, review, flag for `/discover` |
 | [Analytics](./analytics.md) | Usage + conversion funnel tracking |
 | [Backup retention](./backup-retention.md) | Prune dumps past 30 days, as `/privacy` promises; re-apply deletions after a restore |
 | [Account deletion](./account-deletion.md) | Self-serve delete, including the audio files storage does not cascade |
 | [Error tracking](./error-tracking.md) | Sentry or similar for production visibility |
 | [AI gateway](./ai-gateway.md) | Route model calls through Vercel AI Gateway for token/cost/latency visibility |
-| [Agent user memory](./agent-user-memory.md) | Remember user preferences across generations |
-| [Conversational script refinement](./conversational-script-refinement.md) | Chat to iterate on a script instead of one-shot generation |
-| [Tags and filters](./tags-and-filters.md) | Model-assigned tags from a fixed vocabulary, owner-adjustable; tag, type and duration filters on Discover and the Library |
+| [Agent user memory](./agent-user-memory.md) | Remember user preferences across generations. Unblocked by the chat agent (ship 29) |
+| [Generated cover art](./generated-cover-art.md) | Per-meditation artwork replacing the designed covers from ship task 35 |
 | [Stale audio run recovery](./stale-audio-run-recovery.md) | Unstick `processing_audio` rows whose workflow run died before `markFailed`; ask the run's status, refund the slot, offer the free retry |
+
+## Promoted or dropped (2026-10-20)
+
+The agentic studio spec (`docs/superpowers/specs/2026-10-20-agentic-studio-design.md`)
+moved three items out of this folder:
+
+- **Conversational script refinement** is now the studio itself, ship tasks 27–32.
+- **Tags and filters** is now ship tasks 28, 29 (vocabulary), 33 and 36.
+- **Form-based script editor** is dropped. Editing happens by conversation, and the
+  only hand-edit left is title, description and tags (ship 33).
 
 See `docs/ui-roadmap.md` for additional UX-focused improvements, and
 `docs/superpowers/specs/2026-09-11-go-live-design.md` for what was deliberately
@@ -35,10 +43,10 @@ each is a single contained change, not a project:
 | [#2](https://github.com/keenanberry/zenerate/issues/2) | Advisory lock collision between audio and script quota reservations |
 | [#3](https://github.com/keenanberry/zenerate/issues/3) | Drop the retained `meditations.audio_url` column |
 | [#4](https://github.com/keenanberry/zenerate/issues/4) | ~~ESLint import restriction bypassed by relative paths~~ — **closed** by PR #9 (tracked as 18c) |
-| [#5](https://github.com/keenanberry/zenerate/issues/5) | Script quota slot burned when the Anthropic call fails. **Worth re-reading now the app is live** — its likeliest failure mode is an API call failing, and every one permanently consumes a user's quota |
+| [#5](https://github.com/keenanberry/zenerate/issues/5) | Script quota slot burned when the Anthropic call fails. **Moot once ship task 29 lands**: it retires the monthly script quota, so close #5 with that PR |
 | [#6](https://github.com/keenanberry/zenerate/issues/6) | Extract `readPositiveInt` into a shared module |
 | [#7](https://github.com/keenanberry/zenerate/issues/7) | Mid-file import in `src/lib/audio/quota.ts` |
-| [#19](https://github.com/keenanberry/zenerate/issues/19) | Evaluate `claude-sonnet-5-5` (released 2026-09-28, after the task 18 swap). Also folds in task 18's never-run 3×3 comparison |
+| [#19](https://github.com/keenanberry/zenerate/issues/19) | Evaluate `claude-sonnet-5-5` (released 2026-09-28, after the task 18 swap). Also folds in task 18's never-run 3×3 comparison. Now measured on real chats as part of ship task 29 |
 
 > The #3/#4 rows were swapped in an earlier revision of this table — #4 is the ESLint rule,
 > #3 is the column drop. `tasks/ship/README.md` had the same error and was corrected in PR #9.

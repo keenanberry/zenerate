@@ -1,7 +1,7 @@
 # Go-Live Design
 
 **Date:** 2026-09-11
-**Status:** Approved decisions, pending implementation plan
+**Status:** Approved decisions; Phases 0–3 implemented. Phases 4–6 (studio, Discover, seeding, launch) are specified in `2026-10-20-agentic-studio-design.md`.
 **Scope:** Everything required to put Zenerate in front of real users, plus an installable PWA and a brand pass.
 
 ---
@@ -234,7 +234,7 @@ Deferred to `tasks/post-ship/` and `docs/ui-roadmap.md`:
 - Offline playback and web push (need a service worker; push additionally requires the PWA be installed).
 - Discover filters, sorting, infinite scroll.
 - Skeleton loaders and illustrated empty states.
-- Conversational script regeneration; the form-based script editor.
+- Conversational script regeneration; the form-based script editor. *(2026-10-20: the first became the studio, Phases 4–6 in `2026-10-20-agentic-studio-design.md`, and the second was dropped.)*
 - User profiles, paid tier, OAuth providers, admin dashboard, moderation, analytics, error tracking.
 - Native mobile. The PWA is explicitly the answer for now.
 

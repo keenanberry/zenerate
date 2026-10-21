@@ -2,7 +2,7 @@
 
 **Status:** Not started
 **Priority:** Post-ship
-**Related:** [Conversational script refinement](./conversational-script-refinement.md) — see *The coupling* below
+**Related:** `tasks/ship/29-chat-agent.md` (the agent loop this builds on). See *The coupling* below.
 
 ## Why it matters
 
@@ -14,13 +14,19 @@ collects type, duration, focus and preferences per generation and then forgets a
 Remembering preferences across generations is the difference between a tool you configure
 each time and one that gets to know you.
 
+> **Update 2026-10-20:** the agent loop now exists in the plan. Ship task 29 replaces the
+> one-shot route with a persisted chat whose agent has tools, so Shape B is no longer
+> blocked. The wizard is gone too, so "prefill the create wizard" below now means
+> "inject into the chat agent's prompt." Both shapes stay post-ship: get the studio in
+> front of real users first, then see what they repeat.
+
 ## The coupling worth understanding first
 
 The instinct is "give the agent a memory tool." That presupposes something that does not
 exist yet: **there is no agent loop.** `/api/generate` is a single `streamText` call with
 no tools, which returns one script and ends. A memory *tool* only makes sense once the
 model can decide to call it mid-conversation — and the thing that creates that loop is
-[conversational script refinement](./conversational-script-refinement.md).
+conversational script refinement (now ship tasks 27–32).
 
 So there are two shapes, and they cost very different amounts:
 

@@ -2,11 +2,16 @@
 
 Post-ship UI improvements, roughly ordered by impact. For pre-ship work see `tasks/ship/`.
 
+> **2026-10-20:** the agentic studio spec
+> (`docs/superpowers/specs/2026-10-20-agentic-studio-design.md`) pulled items 1 and 3
+> into the ship list as tasks 27–36. They are kept below, struck through, so the
+> numbering others cite stays stable.
+
 ---
 
 ## High Priority
 
-### 1. Discover Page Improvements
+### 1. ~~Discover Page Improvements~~ → ship task 36 (sort, pagination and creator attribution are still open here)
 - **Category filters** — pills for meditation type (guided, breathwork, body scan, etc.)
 - **Duration filters** — 5 min, 10 min, 15 min, 20+ min
 - **Sort options** — newest, most favorited, trending
@@ -18,8 +23,8 @@ Post-ship UI improvements, roughly ordered by impact. For pre-ship work see `tas
 - **Illustrated empty states** — custom illustrations for "no meditations yet", "no favorites", "empty collection"
 - **Optimistic updates** — favorite/unfavorite, add-to-collection should feel instant (already partially done)
 
-### 3. Conversational Script Regeneration
-Provide feedback on a generated script and regenerate with context, rather than manual section editing. Feeds into the post-ship form-based editor.
+### 3. ~~Conversational Script Regeneration~~ → ship tasks 27–32
+The studio replaces the wizard and the editor with a conversation. The form-based editor is dropped.
 
 ---
 
@@ -42,7 +47,7 @@ Provide feedback on a generated script and regenerate with context, rather than 
 - **Copy script** button for sharing the raw text
 
 ### 7. Search & Filtering on Dashboard
-- Add search to "My Meditations" tab (currently only Discover has search)
+- Add search to "My Meditations" tab (currently only Discover has search). Ship task 28's `search` column makes this a query, not a project
 - Filter by status (script ready, processing, completed)
 - Filter by type from settings metadata
 - Sort by date, title, or status
