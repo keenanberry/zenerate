@@ -6,15 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import Link from "next/link";
-import { BrandMark } from "@/components/brand-mark";
+import { AuthCard } from "@/components/auth-card";
 
 export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -57,84 +50,83 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-md">
-        <CardHeader className="gap-3 text-center">
-          <Link href="/" className="mb-3 inline-flex flex-col items-center gap-3 justify-self-center">
-            <BrandMark className="size-16 text-primary" />
-            <span className="text-2xl font-bold tracking-tight">zenerate</span>
-          </Link>
-          <CardTitle className="font-serif text-xl font-medium">
-            {isSignUp ? "Create an account" : "Welcome back"}
-          </CardTitle>
-          <CardDescription>
-            {isSignUp
-              ? "Sign up to start creating meditations"
-              : "Sign in to your account"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-            </div>
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
+    <AuthCard
+      title={isSignUp ? "Create an account" : "Welcome back"}
+      description={
+        isSignUp
+          ? "Sign up to start creating meditations"
+          : "Sign in to your account"
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-baseline justify-between gap-4">
+            <Label htmlFor="password">Password</Label>
+            {!isSignUp && (
+              <Link
+                href="/forgot-password"
+                className="text-sm text-primary underline-offset-4 hover:underline"
+              >
+                Forgot password?
+              </Link>
             )}
-            <Button type="submit" size="lg" className="mt-2 w-full" disabled={loading}>
-              {loading
-                ? "Loading..."
-                : isSignUp
-                  ? "Create account"
-                  : "Sign in"}
-            </Button>
-          </form>
-          <div className="mt-6 text-center text-sm">
-            {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setError(null);
-              }}
-              className="text-primary underline-offset-4 hover:underline"
-            >
-              {isSignUp ? "Sign in" : "Sign up"}
-            </button>
           </div>
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            By continuing, you agree to the{" "}
-            <Link href="/terms" className="underline underline-offset-4">
-              Terms
-            </Link>{" "}
-            and{" "}
-            <Link href="/privacy" className="underline underline-offset-4">
-              Privacy Policy
-            </Link>
-            .
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+          <Input
+            id="password"
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={6}
+          />
+        </div>
+        {error && (
+          <p className="text-sm text-destructive">{error}</p>
+        )}
+        <Button type="submit" size="lg" className="mt-2 w-full" disabled={loading}>
+          {loading
+            ? "Loading..."
+            : isSignUp
+              ? "Create account"
+              : "Sign in"}
+        </Button>
+      </form>
+      <div className="mt-6 text-center text-sm">
+        {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
+        <button
+          type="button"
+          onClick={() => {
+            setIsSignUp(!isSignUp);
+            setError(null);
+          }}
+          className="text-primary underline-offset-4 hover:underline"
+        >
+          {isSignUp ? "Sign in" : "Sign up"}
+        </button>
+      </div>
+      <p className="mt-6 text-center text-xs text-muted-foreground">
+        By continuing, you agree to the{" "}
+        <Link href="/terms" className="underline underline-offset-4">
+          Terms
+        </Link>{" "}
+        and{" "}
+        <Link href="/privacy" className="underline underline-offset-4">
+          Privacy Policy
+        </Link>
+        .
+      </p>
+    </AuthCard>
   );
 }
