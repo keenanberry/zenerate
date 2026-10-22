@@ -1,6 +1,6 @@
 # Landing Page Refresh for the Studio
 
-**Status:** Done (PR pending review)
+**Status:** Done (PR #73)
 **Priority:** Phase 6 (seed & open)
 **Phase:** 6
 **Depends on:** 22 (landing page), 30 (studio UI), 32 (versions), 35 (covers), 36 (Discover), 40 and 44 (ambience), 43 (next step after a draft)

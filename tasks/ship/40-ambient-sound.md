@@ -1,7 +1,6 @@
 # Ambient Background Sound
 
-**Status:** Done (PR #68). Mixed audio needs the operator's snapshot rebuild; until
-then a chosen bed renders as narration alone.
+**Status:** Done (PR #68); snapshot rebuilt and live via task 44.
 **Priority:** Phase 6
 **Phase:** 6 (seed & open)
 **Depends on:** 17 (sound effects, -20 LUFS narration), 31 (audio from chat), 34 (sound previews)
