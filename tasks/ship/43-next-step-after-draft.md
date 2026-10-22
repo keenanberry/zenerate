@@ -1,6 +1,6 @@
 # A Clear Next Step After Every Draft
 
-**Status:** Done, awaiting review
+**Status:** Done (PR #70)
 **Priority:** Phase 6. The studio's core loop: draft, then audio.
 **Phase:** 6 (seed & open)
 **Depends on:** 29 (chat agent), 31 (audio from chat), 34 (previews), 41 (cap rewrites)

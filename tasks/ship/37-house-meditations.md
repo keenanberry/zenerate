@@ -1,6 +1,6 @@
 # House Meditations (Seeding)
 
-**Status:** Not started
+**Status:** In progress (operator)
 **Priority:** Phase 6. Run by the operator; agents assist.
 **Phase:** 6 (seed & open)
 **Depends on:** Wave A (27–31) in production. 32–36 are not required to start.

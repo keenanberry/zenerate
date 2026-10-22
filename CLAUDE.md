@@ -61,7 +61,7 @@ Seeded test users: `alice@example.com` / `bob@example.com` — password `passwor
 
 - **Route groups** — `(app)` renders for anyone; `(app)/(authed)` redirects signed-out visitors, and its `layout.tsx` is the only auth gate. A page signed-out visitors can reach reads as the `anon` role, which needs a table `GRANT` as well as an RLS policy — local grants `anon` everything, so only production catches a missing one.
 - **Server actions** live in `src/lib/*/actions.ts`, called from client components for mutations.
-- **Status state machine** — meditations move `generating_script` → `script_ready` → `processing_audio` → `completed` / `failed`. `audio-section.tsx` switches UI on this.
+- **Status state machine** — meditations move `script_ready` → `processing_audio` → `completed` / `failed`. `audio-section.tsx` switches UI on this. A revision made after the audio exists is a **draft** in the owner-only `meditation_drafts` table with its own render state; rendering it never changes the meditation's status, so a public page keeps playing the current version until the draft is promoted (see `docs/architecture.md`).
 - **Public vs private** — `meditations.is_public` + RLS policies enforce visibility.
 - **Supabase clients** — use `createClient()` from the right factory: `server.ts` in server components / route handlers, `browser.ts` in client components, `service-role.ts` only in trusted server code that needs to bypass RLS.
 

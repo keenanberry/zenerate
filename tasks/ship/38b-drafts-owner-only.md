@@ -1,6 +1,6 @@
 # Drafts Owner-Only
 
-**Status:** Done (PR A #64 migration; PR B code + drop). Awaiting merge in that order.
+**Status:** Done (PRs #64, #65); verified in production as `anon`
 **Priority:** Phase 6. Blocks opening signups.
 **Phase:** 6 (seed & open)
 **Depends on:** 32 (versions), 36 (discover reads)

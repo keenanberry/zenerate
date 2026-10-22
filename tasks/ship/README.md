@@ -97,9 +97,14 @@ and make the audio from cards in the chat. See the studio spec.
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 37 | [House meditations](./37-house-meditations.md) | Not started | Operator makes 24 through the chat, 3 per category; 6–8 featured. Needs Wave A only |
-| 38 | [Privacy update + open signups](./38-privacy-and-launch.md) | In progress | `/privacy` covers chats and plays; the launch checklist ends with enabling signups |
-| 38b | [Drafts owner-only](./38b-drafts-owner-only.md) | Not started | **Blocks signups.** `draft_script` / `draft_status` sit on `meditations`, which `anon` can read on public rows, so an in-progress revision is reachable through the API. Move them to an owner-only table; prove no draft text reaches `anon` |
+| 37 | [House meditations](./37-house-meditations.md) | In progress | Operator makes 24 through the chat, 3 per category; 6–8 featured with `is_featured` (Popular and Picked for you stay hidden until then). Best after the snapshot rebuild (40) so the seeds get ambience |
+| 38 | [Privacy update + open signups](./38-privacy-and-launch.md) | In progress | Code half done (PR #63): `/privacy` covers conversations, plays, versions and what goes public; chat text no longer copied to `meditations.prompt`. Left: the operator's launch checklist, ending with enabling signups |
+| 38b | [Drafts owner-only](./38b-drafts-owner-only.md) | Done | Drafts live in owner-only `meditation_drafts` (PR #64 migration, then #65 code + column drop). Verified in production as `anon`: `meditations.draft_script` → 42703, `meditation_drafts` → 42501 |
+| 39 | [Studio mobile fixes](./39-studio-mobile-fixes.md) | Done* | Sideways scroll from the player halo, the composer pinned to the visual viewport on the studio route, the voice picker on a container query, the meditation header's actions on their own row (PR #66). *Operator: real-iPhone keyboard and PWA checks |
+| 40 | [Ambient background sound](./40-ambient-sound.md) | Done* | Five beds (rain, ocean, forest, drone, brown noise) on the Make audio card, None by default; fixed amix normalization dropping narration 6 dB (PR #68). *Operator: rebuild the snapshot, set `AUDIO_SANDBOX_SNAPSHOT_ID`, listen to one render; until then a chosen bed renders as narration alone |
+| 41 | [Cap script rewrites](./41-cap-rewrites.md) | Done | Accept within ±2 min or ±15%; one length-driven rewrite per turn, enforced in code; writes per turn 1.19 → 1.05 (PR #67) |
+| 42 | [Cover variety](./42-cover-variety.md) | Done* | Hue pair per tag from 10 hues, 14 motifs (9 not round), mirrored and varied compositions; 21 → 47 distinct looks in 48; `setDetails` accepts a comma-separated tags string (PR #69). *Operator: phone check of Discover and Library |
+| 43 | [Next step after every draft](./43-next-step-after-draft.md) | Done* | Every script turn ends with a length-and-choice line; Make the audio / Change something chips; Make the audio only offers the card (10/10 each) (PR #70). *Operator: phone check of the chips |
 
 ### Running Phases 4–5 with Orca
 
