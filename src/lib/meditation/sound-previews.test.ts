@@ -18,7 +18,11 @@ describe("sound previews", () => {
   });
 
   it("has no file the catalog has dropped", () => {
-    expect(readdirSync(PUBLIC_SOUNDS).sort()).toEqual(Object.keys(SOUND_EFFECTS).sort());
+    // ambient/ holds the ambient beds, which ambience.test.ts checks.
+    const files = readdirSync(PUBLIC_SOUNDS, { withFileTypes: true })
+      .filter((entry) => entry.isFile())
+      .map((entry) => entry.name);
+    expect(files.sort()).toEqual(Object.keys(SOUND_EFFECTS).sort());
   });
 
   it("serves the same recordings the snapshot verifies", () => {

@@ -6,6 +6,9 @@
  *   - The sound effects in scripts/sound-effects.ts, in /sounds: synthesized
  *     ones rendered here by the sandbox's FFmpeg, recorded ones downloaded
  *     from the production `sound-effects` bucket and checksum-verified
+ *   - The ambient beds in scripts/ambient-beds.ts, in /sounds/ambient:
+ *     synthesized ones rendered here, recorded ones read from
+ *     public/sounds/ambient/ and checksum-verified
  *
  * Prerequisites:
  *   1. Run `vercel link` to connect to a Vercel project
@@ -35,8 +38,10 @@ import { Sandbox } from "@vercel/sandbox";
 import { createClient } from "@supabase/supabase-js";
 import { build } from "esbuild";
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { Writable } from "node:stream";
 import { RECORDED_SOUNDS, SYNTHESIZED_SOUNDS, ffmpegArgs } from "./sound-effects";
+import { RECORDED_BEDS, SYNTHESIZED_BEDS, bedArgs, bedFile } from "./ambient-beds";
 
 function log(msg: string) {
   console.log(`[snapshot] ${msg}`);
@@ -94,9 +99,23 @@ async function fetchRecordedSounds(): Promise<{ path: string; content: Buffer }[
   return files;
 }
 
+/** The committed recorded beds, verified like the bucket's sounds. */
+function readRecordedBeds(): { path: string; content: Buffer }[] {
+  return RECORDED_BEDS.map((bed) => {
+    const content = readFileSync(resolve(ROOT, "public/sounds/ambient", bedFile(bed.id)));
+    const sha256 = createHash("sha256").update(content).digest("hex");
+    if (sha256 !== bed.sha256) {
+      throw new Error(`Checksum mismatch for ambient ${bed.id}: got ${sha256}`);
+    }
+    log(`  ambient/${bedFile(bed.id)} verified (${(content.length / 1024).toFixed(0)} KB)`);
+    return { path: `sounds/ambient/${bedFile(bed.id)}`, content };
+  });
+}
+
 async function main() {
   log("Fetching recorded sound effects...");
   const recordedSounds = await fetchRecordedSounds();
+  const recordedBeds = readRecordedBeds();
 
   log("Compiling generate-audio.ts → JS...");
   const scriptBuffer = await compileGenerateAudio();
@@ -167,7 +186,23 @@ async function main() {
     }
     log(`  ${sound.file} rendered`);
   }
-  const listing = await sandbox.runCommand("ls", ["-l", "sounds"]);
+
+  log("Installing ambient beds...");
+  await sandbox.mkDir("sounds/ambient");
+  await sandbox.writeFiles(recordedBeds);
+  for (const bed of SYNTHESIZED_BEDS) {
+    const render = await sandbox.runCommand({
+      cmd: "ffmpeg",
+      args: ["-hide_banner", "-loglevel", "error", ...bedArgs(bed, `sounds/ambient/${bedFile(bed.id)}`)],
+      stdout: out,
+      stderr: out,
+    });
+    if (render.exitCode !== 0) {
+      throw new Error(`Rendering ambient ${bed.id} failed with exit code ${render.exitCode}`);
+    }
+    log(`  ambient/${bedFile(bed.id)} rendered`);
+  }
+  const listing = await sandbox.runCommand("ls", ["-lR", "sounds"]);
   log(`  /sounds:\n${await listing.stdout()}`);
 
   log("Taking snapshot (permanent, expiration: 0)...");

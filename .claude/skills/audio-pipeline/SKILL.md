@@ -13,7 +13,7 @@ the PR merges, production keeps running the old code, and the symptom reads as a
 ## What the snapshot bakes in
 
 `scripts/create-sandbox-snapshot.ts` bundles `src/lib/audio/generate-audio.ts` with
-esbuild, so every file it imports goes with it (today `loudness.ts`), and it renders or
+esbuild, so every file it imports goes with it (today `loudness.ts` and `mix.ts`), and it renders or
 downloads every sound in `scripts/sound-effects.ts` into `/sounds`. A new import in
 `generate-audio.ts` is a new baked-in file: add it to the list in `CLAUDE.md`.
 
@@ -47,6 +47,12 @@ length in seconds) and `scripts/sound-effects.ts` (what the build produces);
 mix with normalized narration, because LUFS matching put the pure-tone synths about 15 dB
 away from where they sounded right. Leave the levels alone unless you have listened.
 `scripts/preview-sound-effects.ts` renders the synthesized ones locally for that.
+
+Ambient beds follow the same split: `src/lib/meditation/ambience.ts` names them and sets
+their mix volume, `scripts/ambient-beds.ts` builds them into `/sounds/ambient`, and
+`ambience.test.ts` fails if they drift. The recorded beds are committed in
+`public/sounds/ambient/` (the card's previews) and the build reads them from there; after
+changing a synthesized recipe, run `scripts/export-sound-previews.ts --ambient`.
 
 ## Local ffmpeg
 

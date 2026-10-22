@@ -90,6 +90,7 @@ vi.mock("@vercel/sandbox", () => ({
 }));
 
 import { processAudioWorkflow } from "./workflow";
+import { AMBIENCES } from "@/lib/meditation/ambience";
 
 const USER = "user-1";
 const CURRENT = "The current script, already narrated.";
@@ -123,10 +124,15 @@ function seedDraftRender() {
   );
 }
 
-function narratedText() {
+function sandboxConfig() {
   const [[files]] = mockWriteFiles.mock.calls;
-  const config = JSON.parse(files[0].content.toString());
-  return config.segments.map((s: { content?: string }) => s.content).join(" ");
+  return JSON.parse(files[0].content.toString());
+}
+
+function narratedText() {
+  return sandboxConfig()
+    .segments.map((s: { content?: string }) => s.content)
+    .join(" ");
 }
 
 beforeEach(() => {
@@ -195,6 +201,51 @@ describe("processAudioWorkflow", () => {
       audio_path: uploads[0],
     });
     expect(db.meditation_versions).toHaveLength(0);
+  });
+
+  it("mixes the bed saved in settings.music at its saved volume", async () => {
+    seed({
+      script: CURRENT,
+      audio_path: null,
+      status: "processing_audio",
+      settings: { voice: "voice-old", music: "rain", volume: 0.3 },
+    });
+
+    await processAudioWorkflow("med-1", null, "evt-1");
+
+    expect(sandboxConfig()).toMatchObject({
+      backgroundMusic: "sounds/ambient/rain.mp3",
+      musicVolume: 0.3,
+    });
+  });
+
+  it("mixes nothing when no bed was chosen, or the saved one is unknown", async () => {
+    seed({
+      script: CURRENT,
+      audio_path: null,
+      status: "processing_audio",
+      settings: { music: "whale-song" },
+    });
+
+    await processAudioWorkflow("med-1", null, "evt-1");
+
+    expect(sandboxConfig().backgroundMusic).toBeNull();
+  });
+
+  it("mixes a draft render's chosen bed and saves it only on promotion", async () => {
+    seedDraftRender();
+
+    await processAudioWorkflow("med-1", "voice-new", "evt-1", "ocean");
+
+    expect(sandboxConfig()).toMatchObject({
+      backgroundMusic: "sounds/ambient/ocean.mp3",
+      musicVolume: AMBIENCES.ocean.volume,
+    });
+    expect(meditation().settings).toEqual({
+      voice: "voice-new",
+      music: "ocean",
+      volume: AMBIENCES.ocean.volume,
+    });
   });
 
   it("marks a first render failed when it fails", async () => {

@@ -67,7 +67,7 @@ Seeded test users: `alice@example.com` / `bob@example.com` — password `passwor
 
 ## Sandbox Snapshot — Critical Gotcha
 
-`src/lib/audio/generate-audio.ts` **and everything it imports** (currently `loudness.ts`) are **baked into the sandbox snapshot**, as are the sound effects in `scripts/sound-effects.ts`. Without a rebuilt snapshot and a redeployed `AUDIO_SANDBOX_SNAPSHOT_ID`, an edit to any of them has zero effect on what runs. The `audio-pipeline` skill in `.claude/skills/` has the full loop.
+`src/lib/audio/generate-audio.ts` **and everything it imports** (currently `loudness.ts` and `mix.ts`) are **baked into the sandbox snapshot**, as are the sound effects in `scripts/sound-effects.ts` and the ambient beds in `scripts/ambient-beds.ts`. Without a rebuilt snapshot and a redeployed `AUDIO_SANDBOX_SNAPSHOT_ID`, an edit to any of them has zero effect on what runs. The `audio-pipeline` skill in `.claude/skills/` has the full loop.
 
 ## Workflow Package — Keep It On the Current Major
 

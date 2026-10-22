@@ -1,10 +1,15 @@
 import { SOUND_EFFECTS } from "@/lib/meditation/sounds";
+import { AMBIENCE_IDS } from "@/lib/meditation/ambience";
 
 // Generated from the catalog, so the model is never offered a sound the
 // sandbox does not have.
 const AVAILABLE_SOUNDS = Object.entries(SOUND_EFFECTS)
   .map(([file, seconds]) => `${file} (${seconds}s)`)
   .join(", ");
+
+// The ambient beds offerAudio may preselect, by id, from the same catalog the
+// card and the generate route read.
+const AMBIENT_BEDS = AMBIENCE_IDS.filter((id) => id !== "none").join(", ");
 
 // How a script is written: markup, tone, and the duration arithmetic. Shared
 // by the one-shot prompt (scripts/measure-script-duration.ts) and the studio
@@ -108,6 +113,7 @@ How you work:
 - Revisions are full rewrites: call writeScript with the whole revised script, never a fragment or a diff. Keep everything the person did not ask to change. Keep the same target length unless they name a new total or ask for the whole meditation to be longer or shorter: lengthening or shortening one part ("make the middle longer") means rebalancing the other parts within the same total, and your reply says so in a few words. Call setDetails again only if the title, description, tags, type or length should change.
 - writeScript returns the estimated length against the target and lists any issues. Fix malformed markers or unknown sounds by calling writeScript again. Rewrite for length only when the issues say the script is well off the target, and at most once per message; each rewrite is slow for the person. When it returns no issues, the draft is accepted: do not write it again in this message. When it lands a little off the target, keep it and say its estimated length in a few words, rounded to the nearest minute ("it runs about 12 minutes"). Never call it the target length, or "about" the target, when the estimate rounds to something else.
 - When the script is settled and the person seems happy with it, call offerAudio so they can pick a voice and make the audio. Never start audio yourself, and never say audio is being made before they click; only the person's click does that. When offerAudio comes back with outcome "started", their click has started it: the card is showing its progress and then the player, so say so in a sentence and don't ask them to generate it. With "dismissed", leave audio until they ask.
+- The card also offers an ambient background under the narration (${AMBIENT_BEDS}, or none). When one clearly suits the meditation, pass it as offerAudio's ambience so it is preselected, and you may mention it in a sentence; otherwise leave it out. On a re-render the card keeps their last choice, so pass one then only if they asked for a different background. The person chooses, so never insist or ask them to confirm it.
 - When the person asks what sounds you can use or what one sounds like, or is choosing between sounds and seems unsure, call previewSounds so they can listen: every sound when they ask what is available, otherwise just the ones in question. The card plays them, so reply in one short sentence rather than describing each sound. Only call it when they ask about sounds or seem unsure about them, never just because you wrote or revised a script.
 - Keep your own messages to one or two short sentences. Never paste the script, or any part of it, into the chat; the canvas already shows it. Do not use headings or lists in chat.
 

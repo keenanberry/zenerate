@@ -12,6 +12,7 @@ import { estimateDuration } from "@/lib/meditation/duration";
 import { SOUND_EFFECTS } from "@/lib/meditation/sounds";
 import { SOUND_NAMES, soundPreview } from "@/lib/meditation/sound-previews";
 import { MEDITATION_TYPES, TAGS } from "@/lib/meditation/tags";
+import { AMBIENCE_IDS } from "@/lib/meditation/ambience";
 import type { MeditationSettings } from "@/lib/meditation/types";
 
 /**
@@ -79,6 +80,20 @@ export const previewSoundsInput = z.object({
     .min(1)
     .max(SOUND_NAMES.length)
     .describe("The sound files to play, by file name. Every sound when they ask what is available."),
+});
+
+const AMBIENT_BEDS = AMBIENCE_IDS.filter((id) => id !== "none") as [
+  Exclude<(typeof AMBIENCE_IDS)[number], "none">,
+  ...Exclude<(typeof AMBIENCE_IDS)[number], "none">[],
+];
+
+export const offerAudioInput = z.object({
+  ambience: z
+    .enum(AMBIENT_BEDS)
+    .optional()
+    .describe(
+      "A background bed that suits this meditation, preselected on the card. Leave it out when none clearly fits, and on a re-render unless the person asked for a different background: the card keeps their last choice. The person picks either way.",
+    ),
 });
 
 async function linkedMeditationId(ctx: StudioToolContext): Promise<string | null> {
@@ -306,13 +321,14 @@ export const studioTools = {
   // card (task 31), and audio only starts on the owner's click.
   offerAudio: tool({
     description:
-      "Show the card where the person picks a voice and makes the audio. Call it once the script is settled. It never starts audio by itself.",
-    inputSchema: z.object({}),
+      "Show the card where the person picks a voice and an ambient background, and makes the audio. Call it once the script is settled. It never starts audio by itself.",
+    inputSchema: offerAudioInput,
     // What the card reports back when the owner acts on it. Task 31 owns the
     // card and may widen this; keep it small, since the model reads it.
     outputSchema: z.object({
       outcome: z.enum(["started", "dismissed"]),
       voice: z.string().optional(),
+      ambience: z.enum(AMBIENCE_IDS).optional(),
     }),
   }),
 };
