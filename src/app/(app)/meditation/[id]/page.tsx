@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScriptPlaybackProvider } from "@/components/script-playback";
 import { Clock } from "lucide-react";
 import { ParentLink } from "@/components/parent-link";
+import { MeditationCover } from "@/components/meditation-cover";
 import { getQuotaUsage, isFreeRetryAvailable } from "@/lib/audio/quota";
 import { meditationMetadata } from "@/lib/seo/metadata";
 
@@ -77,7 +78,13 @@ export default async function MeditationDetailPage({
         </ParentLink>
 
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-2">
+          <MeditationCover
+            id={meditation.id}
+            tags={meditation.tags ?? []}
+            title={meditation.title}
+            size={160}
+          />
+          <div className="space-y-2 sm:mr-auto">
             <h1 className="font-serif text-2xl font-medium tracking-tight text-balance">
               {meditation.title}
             </h1>

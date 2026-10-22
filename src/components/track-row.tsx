@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { FavoriteButton } from "@/components/favorite-button";
 import { TrackPlayButton } from "@/components/track-play-button";
+import { MeditationCover } from "@/components/meditation-cover";
 import { Badge } from "@/components/ui/badge";
 import type { MeditationWithMeta } from "@/lib/meditation/types";
 import { Clock, Globe } from "lucide-react";
@@ -76,6 +77,8 @@ export function TrackRow({
           onPlayingChange={setPlaying}
         />
       )}
+
+      <MeditationCover id={m.id} tags={m.tags ?? []} title={m.title} size={48} />
 
       <Link
         href={`/meditation/${m.id}`}

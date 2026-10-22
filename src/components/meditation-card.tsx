@@ -9,6 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { FavoriteButton } from "@/components/favorite-button";
 import { InlinePlayButton } from "@/components/inline-play-button";
+import { MeditationCover } from "@/components/meditation-cover";
 import type { MeditationWithMeta } from "@/lib/meditation/types";
 import { Globe, Clock } from "lucide-react";
 
@@ -45,6 +46,13 @@ export function MeditationCard({
     <Card className="group relative gap-5 hover:bg-card-hover motion-safe:transition-colors">
       <Link href={`/meditation/${meditation.id}`} className="absolute inset-0 z-0" />
       <CardHeader className="gap-2">
+        <MeditationCover
+          id={meditation.id}
+          tags={meditation.tags ?? []}
+          title={meditation.title}
+          size={64}
+          className="mb-2"
+        />
         <div className="flex items-start justify-between gap-3">
           <CardTitle className="line-clamp-2 font-serif text-lg leading-snug font-medium">
             {meditation.title}
