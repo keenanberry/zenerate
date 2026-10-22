@@ -13,7 +13,8 @@ interface AudioProcessingStatusProps {
   onFailed: () => void;
   /**
    * Watch a draft render instead: the meditation stays completed throughout,
-   * so its progress is draft_status, which clears when the draft is promoted.
+   * so its progress is the draft's render status, which clears when the draft
+   * is promoted.
    */
   draft?: boolean;
 }

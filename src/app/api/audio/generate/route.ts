@@ -41,7 +41,7 @@ export async function POST(req: Request) {
 
   const { data: meditation, error } = await supabase
     .from("meditations")
-    .select("id, user_id, status, settings, draft_script, draft_status")
+    .select("id, user_id, status, settings")
     .eq("id", meditationId)
     .single();
 
@@ -52,15 +52,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const { data: draft, error: draftError } = await supabase
+    .from("meditation_drafts")
+    .select("render_status")
+    .eq("meditation_id", meditationId)
+    .maybeSingle();
+  if (draftError) {
+    return NextResponse.json({ error: "Failed to read the draft" }, { status: 500 });
+  }
+
   // A retry follows a failed render. Otherwise there must be a script with no
-  // audio yet, or a revision (draft_script) made after the audio, which the
-  // workflow renders in place of the current script.
+  // audio yet, or a revision (a meditation_drafts row) made after the audio,
+  // which the workflow renders in place of the current script.
   //
   // A revision of a meditation that has audio is a draft render: status stays
   // completed for its whole life, so the current version keeps playing for
-  // everyone, and draft_status carries the render's own state instead.
-  const draftStatus = meditation.draft_status as "processing" | "failed" | null;
-  const draftRender = meditation.status === "completed" && meditation.draft_script !== null;
+  // everyone, and the draft's render_status carries the render's own state
+  // instead. It lives in the owner-only drafts table, never on the meditation.
+  const draftStatus = (draft?.render_status ?? null) as "processing" | "failed" | null;
+  const draftRender = meditation.status === "completed" && draft !== null;
   const allowed = retryOfEventId
     ? meditation.status === "failed" || (draftRender && draftStatus === "failed")
     : meditation.status === "script_ready" || (draftRender && draftStatus !== "processing");
@@ -124,29 +134,34 @@ export async function POST(req: Request) {
 
   // Compare-and-set on the state read above: of two requests that both
   // passed the check (a double click), only one flips the row, and the other
-  // gives its reservation back.
-  let flip = supabase
-    .from("meditations")
-    .update({
-      updated_at: new Date().toISOString(),
-      ...(draftRender
-        ? // The voice is saved when the draft is promoted, not now: until
-          // then settings describe the current version.
-          { draft_status: "processing" }
-        : {
-            status: "processing_audio",
-            // Saved so a free retry, which sends no voice, narrates in the same one.
-            ...(voice.voiceId && {
-              settings: { ...(meditation.settings ?? {}), voice: voice.voiceId },
-            }),
-          }),
-    })
-    .eq("id", meditationId)
-    .eq("status", meditation.status);
+  // gives its reservation back. A draft render flips the draft, and the voice
+  // is saved when the draft is promoted, not now: until then settings
+  // describe the current version.
+  const now = new Date().toISOString();
+  let flip;
   if (draftRender) {
-    flip = draftStatus === null ? flip.is("draft_status", null) : flip.eq("draft_status", draftStatus);
+    flip = supabase
+      .from("meditation_drafts")
+      .update({ render_status: "processing", updated_at: now })
+      .eq("meditation_id", meditationId);
+    flip = draftStatus === null ? flip.is("render_status", null) : flip.eq("render_status", draftStatus);
+  } else {
+    flip = supabase
+      .from("meditations")
+      .update({
+        updated_at: now,
+        status: "processing_audio",
+        // Saved so a free retry, which sends no voice, narrates in the same one.
+        ...(voice.voiceId && {
+          settings: { ...(meditation.settings ?? {}), voice: voice.voiceId },
+        }),
+      })
+      .eq("id", meditationId)
+      .eq("status", meditation.status);
   }
-  const { data: flipped, error: updateError } = await flip.select("id");
+  const { data: flipped, error: updateError } = await flip.select(
+    draftRender ? "meditation_id" : "id",
+  );
 
   if (updateError || !flipped || flipped.length === 0) {
     // Refund the reserved slot so the user isn't charged for our failure.
@@ -172,13 +187,15 @@ export async function POST(req: Request) {
     // put the script back where it was and refund the reserved generation.
     revert: async () => {
       await Promise.all([
-        serviceClient
-          .from("meditations")
-          .update({
-            ...(draftRender ? { draft_status: draftStatus } : { status: meditation.status }),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", meditationId),
+        draftRender
+          ? serviceClient
+              .from("meditation_drafts")
+              .update({ render_status: draftStatus, updated_at: new Date().toISOString() })
+              .eq("meditation_id", meditationId)
+          : serviceClient
+              .from("meditations")
+              .update({ status: meditation.status, updated_at: new Date().toISOString() })
+              .eq("id", meditationId),
         serviceClient
           .from("audio_generation_events")
           .update({ status: "failed", completed_at: new Date().toISOString() })

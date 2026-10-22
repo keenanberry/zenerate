@@ -24,13 +24,11 @@ export interface Meditation {
   description: string | null;
   /** Tags from the fixed vocabulary in tags.ts. */
   tags: string[];
-  /** The current version's script. */
-  script: string | null;
   /**
-   * A revision made after the current version has audio. A finished render
-   * promotes it to `script` and archives the old version.
+   * The current version's script. A revision made after the audio lives in
+   * the owner-only meditation_drafts table until a render promotes it here.
    */
-  draft_script: string | null;
+  script: string | null;
   /** Short-lived signed URL, minted server-side at read time. Never persisted. */
   audio_url: string | null;
   /** Storage path within the meditation-audio bucket. This is what the DB holds. */

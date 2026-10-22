@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { mockGetUser, mockMeditation, mockUpdate, mockReserve, mockStart, mockServiceUpdate } =
+const { mockGetUser, mockMeditation, mockDraft, mockUpdate, mockReserve, mockStart, mockServiceUpdate } =
   vi.hoisted(() => ({
     mockGetUser: vi.fn(),
     mockMeditation: vi.fn(),
+    mockDraft: vi.fn(),
     mockUpdate: vi.fn(),
     mockReserve: vi.fn(),
     mockStart: vi.fn(),
@@ -13,15 +14,15 @@ const { mockGetUser, mockMeditation, mockUpdate, mockReserve, mockStart, mockSer
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     auth: { getUser: mockGetUser },
-    from: () => ({
-      select: () => ({ eq: () => ({ single: mockMeditation }) }),
+    from: (table: string) => ({
+      select: () => ({ eq: () => ({ single: mockMeditation, maybeSingle: mockDraft }) }),
       update: (values: unknown) => {
-        // Records the compare-and-set filters next to the values.
+        // Records the compare-and-set filters next to the table and values.
         const filters: Record<string, unknown> = {};
         const chain = {
           eq: (column: string, value: unknown) => ((filters[column] = value), chain),
           is: (column: string, value: unknown) => ((filters[column] = value), chain),
-          select: () => mockUpdate(values, filters),
+          select: () => mockUpdate(table, values, filters),
         };
         return chain;
       },
@@ -56,11 +57,18 @@ function meditation(overrides: Record<string, unknown>) {
       user_id: USER,
       status: "script_ready",
       settings: {},
-      draft_script: null,
       ...overrides,
     },
     error: null,
   };
+}
+
+/** A revision waiting in meditation_drafts, with its render's state. */
+function withDraft(renderStatus: "processing" | "failed" | null) {
+  mockDraft.mockResolvedValue({
+    data: { script: "A revision.", render_status: renderStatus },
+    error: null,
+  });
 }
 
 function post(body: unknown) {
@@ -76,6 +84,7 @@ function post(body: unknown) {
 beforeEach(() => {
   vi.clearAllMocks();
   mockGetUser.mockResolvedValue({ data: { user: { id: USER } } });
+  mockDraft.mockResolvedValue({ data: null, error: null });
   mockUpdate.mockResolvedValue({ data: [{ id: "med-1" }], error: null });
   mockServiceUpdate.mockResolvedValue({ error: null });
   mockReserve.mockResolvedValue({ ok: true, eventId: "evt-1" });
@@ -91,40 +100,40 @@ describe("POST /api/audio/generate", () => {
   });
 
   it("starts a draft render without moving a completed meditation out of completed", async () => {
-    mockMeditation.mockResolvedValue(
-      meditation({ status: "completed", draft_script: "A revision.", draft_status: null }),
-    );
+    mockMeditation.mockResolvedValue(meditation({ status: "completed" }));
+    withDraft(null);
     const res = await post({ meditationId: "med-1", voiceId: "voice-a" });
     expect(res.status).toBe(202);
     expect(mockReserve).toHaveBeenCalledOnce();
-    const [values, filters] = mockUpdate.mock.calls[0];
-    expect(values).toMatchObject({ draft_status: "processing" });
-    expect(values).not.toHaveProperty("status");
+    // Only the owner-only draft moves: nothing on the meditation row, which
+    // anon can read, says a render is under way.
+    expect(mockUpdate).toHaveBeenCalledOnce();
+    const [table, values, filters] = mockUpdate.mock.calls[0];
+    expect(table).toBe("meditation_drafts");
+    expect(values).toMatchObject({ render_status: "processing" });
     // Settings describe the current version until the draft is promoted.
     expect(values).not.toHaveProperty("settings");
-    expect(filters).toEqual({ id: "med-1", status: "completed", draft_status: null });
+    expect(filters).toEqual({ meditation_id: "med-1", render_status: null });
     expect(mockStart).toHaveBeenCalledOnce();
   });
 
   it("refuses a second draft render while one is processing, before reserving", async () => {
-    mockMeditation.mockResolvedValue(
-      meditation({ status: "completed", draft_script: "A revision.", draft_status: "processing" }),
-    );
+    mockMeditation.mockResolvedValue(meditation({ status: "completed" }));
+    withDraft("processing");
     const res = await post({ meditationId: "med-1", voiceId: "voice-a" });
     expect(res.status).toBe(409);
     expect(mockReserve).not.toHaveBeenCalled();
   });
 
   it("takes a free retry of a failed draft render and keeps the meditation completed", async () => {
-    mockMeditation.mockResolvedValue(
-      meditation({ status: "completed", draft_script: "A revision.", draft_status: "failed" }),
-    );
+    mockMeditation.mockResolvedValue(meditation({ status: "completed" }));
+    withDraft("failed");
     const res = await post({ meditationId: "med-1", retryOfEventId: "evt-0", voiceId: "voice-a" });
     expect(res.status).toBe(202);
-    const [values, filters] = mockUpdate.mock.calls[0];
-    expect(values).toMatchObject({ draft_status: "processing" });
-    expect(values).not.toHaveProperty("status");
-    expect(filters).toEqual({ id: "med-1", status: "completed", draft_status: "failed" });
+    const [table, values, filters] = mockUpdate.mock.calls[0];
+    expect(table).toBe("meditation_drafts");
+    expect(values).toMatchObject({ render_status: "processing" });
+    expect(filters).toEqual({ meditation_id: "med-1", render_status: "failed" });
   });
 
   it("refuses a completed meditation without a draft with 409, before reserving", async () => {
@@ -136,9 +145,8 @@ describe("POST /api/audio/generate", () => {
   });
 
   it("refuses a second click while the first render is processing", async () => {
-    mockMeditation.mockResolvedValue(
-      meditation({ status: "processing_audio", draft_script: "A revision." }),
-    );
+    mockMeditation.mockResolvedValue(meditation({ status: "processing_audio" }));
+    withDraft(null);
     const res = await post({ meditationId: "med-1", voiceId: "voice-a" });
     expect(res.status).toBe(409);
     expect(mockReserve).not.toHaveBeenCalled();
@@ -156,16 +164,15 @@ describe("POST /api/audio/generate", () => {
     expect(mockStart).not.toHaveBeenCalled();
   });
 
-  it("puts a draft render's draft_status back, and never touches status, when the start fails", async () => {
-    mockMeditation.mockResolvedValue(
-      meditation({ status: "completed", draft_script: "A revision.", draft_status: null }),
-    );
+  it("puts a draft render's render_status back, and never touches the meditation, when the start fails", async () => {
+    mockMeditation.mockResolvedValue(meditation({ status: "completed" }));
+    withDraft(null);
     mockStart.mockRejectedValue(new Error("HTTP 426"));
     const res = await post({ meditationId: "med-1", voiceId: "voice-a" });
     expect(res.status).toBe(503);
-    const [, reverted] = mockServiceUpdate.mock.calls.find(([table]) => table === "meditations")!;
-    expect(reverted).toMatchObject({ draft_status: null });
-    expect(reverted).not.toHaveProperty("status");
+    const [, reverted] = mockServiceUpdate.mock.calls.find(([table]) => table === "meditation_drafts")!;
+    expect(reverted).toMatchObject({ render_status: null });
+    expect(mockServiceUpdate).not.toHaveBeenCalledWith("meditations", expect.anything());
     expect(mockServiceUpdate).toHaveBeenCalledWith(
       "audio_generation_events",
       expect.objectContaining({ status: "failed" }),
@@ -173,9 +180,8 @@ describe("POST /api/audio/generate", () => {
   });
 
   it("only takes a retry from a failed render", async () => {
-    mockMeditation.mockResolvedValue(
-      meditation({ status: "completed", draft_script: "A revision.", draft_status: null }),
-    );
+    mockMeditation.mockResolvedValue(meditation({ status: "completed" }));
+    withDraft(null);
     const res = await post({ meditationId: "med-1", retryOfEventId: "evt-0" });
     expect(res.status).toBe(409);
   });

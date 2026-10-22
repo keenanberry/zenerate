@@ -155,35 +155,51 @@ export const studioTools = {
           .eq("id", ctx.chatId);
         if (linkError) throw new Error(`Linking the chat failed: ${linkError.message}`);
       } else {
-        const { data: current, error } = await ctx.supabase
-          .from("meditations")
-          .select("audio_path, status, draft_status, settings")
-          .eq("id", meditationId)
-          .single();
+        const [{ data: current, error }, { data: draft, error: draftError }] = await Promise.all([
+          ctx.supabase
+            .from("meditations")
+            .select("audio_path, status, settings")
+            .eq("id", meditationId)
+            .single(),
+          ctx.supabase
+            .from("meditation_drafts")
+            .select("render_status")
+            .eq("meditation_id", meditationId)
+            .maybeSingle(),
+        ]);
         if (error || !current) throw new Error("The meditation could not be found.");
-        if (current.status === "processing_audio" || current.draft_status === "processing") {
+        if (draftError) throw new Error(`Reading the draft failed: ${draftError.message}`);
+        if (current.status === "processing_audio" || draft?.render_status === "processing") {
           throw new Error(
             "Audio is being made from the current script right now. Tell the person to wait until it finishes, then revise.",
           );
         }
 
         // Once audio exists, the script describes that audio. A revision goes
-        // to draft_script until a new render promotes it.
+        // to meditation_drafts, which only the owner can read, until a new
+        // render promotes it. A failed render's state carries over to the new
+        // revision, so the free retry still applies.
         savedAs = current.audio_path ? "draft_script" : "script";
-        const update =
+        const now = new Date().toISOString();
+        const { error: writeError } =
           savedAs === "draft_script"
-            ? { draft_script: script }
-            : {
-                script,
-                settings: {
-                  ...((current.settings as MeditationSettings | null) ?? {}),
-                  duration: durationMinutes,
-                },
-              };
-        const { error: writeError } = await ctx.supabase
-          .from("meditations")
-          .update({ ...update, updated_at: new Date().toISOString() })
-          .eq("id", meditationId);
+            ? await ctx.supabase
+                .from("meditation_drafts")
+                .upsert(
+                  { meditation_id: meditationId, script, updated_at: now },
+                  { onConflict: "meditation_id" },
+                )
+            : await ctx.supabase
+                .from("meditations")
+                .update({
+                  script,
+                  settings: {
+                    ...((current.settings as MeditationSettings | null) ?? {}),
+                    duration: durationMinutes,
+                  },
+                  updated_at: now,
+                })
+                .eq("id", meditationId);
         if (writeError) throw new Error(`Saving the script failed: ${writeError.message}`);
       }
 

@@ -44,17 +44,18 @@ async function fetchAndParse(meditationId: string): Promise<MeditationData> {
   const supabase = serviceClient();
   const { data: meditation, error } = await supabase
     .from("meditations")
-    .select("user_id, script, draft_script, settings")
+    .select("user_id, script, settings")
     .eq("id", meditationId)
     .single();
 
   if (error || !meditation) {
     throw new FatalError(`Meditation not found: ${error?.message ?? "no data"}`);
   }
-  // A revision made after the audio lives in draft_script; render it in
+  // A revision made after the audio lives in meditation_drafts; render it in
   // place of the current script. writeScript refuses while a render is in
   // flight, so the draft cannot change under this run.
-  const script: string | null = meditation.draft_script ?? meditation.script;
+  const draft = await readDraft(supabase, meditationId);
+  const script: string | null = draft?.script ?? meditation.script;
   if (!script) {
     throw new FatalError("Meditation has no script to process");
   }
@@ -71,8 +72,24 @@ async function fetchAndParse(meditationId: string): Promise<MeditationData> {
     voiceId: settings.voice ?? DEFAULT_VOICE_ID,
     backgroundMusic: settings.music ?? null,
     musicVolume: settings.volume ?? 0.15,
-    renderedDraft: meditation.draft_script ?? null,
+    renderedDraft: draft?.script ?? null,
   };
+}
+
+type Draft = { script: string; render_status: "processing" | "failed" | null };
+
+/** The meditation's draft, or null when it has none. */
+async function readDraft(
+  supabase: ReturnType<typeof serviceClient>,
+  meditationId: string,
+): Promise<Draft | null> {
+  const { data, error } = await supabase
+    .from("meditation_drafts")
+    .select("script, render_status")
+    .eq("meditation_id", meditationId)
+    .maybeSingle();
+  if (error) throw new Error(`Reading the draft failed: ${error.message}`);
+  return (data as Draft | null) ?? null;
 }
 
 async function generateAndUpload(
@@ -138,15 +155,16 @@ async function generateAndUpload(
 generateAndUpload.maxRetries = 2;
 
 /**
- * Make a finished render of draft_script the current version: archive the
- * version it replaces into meditation_versions, then promote the draft, the
- * new audio and the voice it was narrated in. The old audio file stays, since
- * the archived row points at it; the chat's Replace (or the owner deleting the
- * version) removes both.
+ * Make a finished render of the draft the current version: archive the
+ * version it replaces into meditation_versions, promote the draft, the new
+ * audio and the voice it was narrated in, then delete the draft. The old
+ * audio file stays, since the archived row points at it; the chat's Replace
+ * (or the owner deleting the version) removes both.
  *
- * Safe to run twice, which a step retry can do: once the draft is promoted
- * there is nothing left to do, and the archive insert is skipped when the
- * outgoing audio is already archived.
+ * Safe to run twice, which a step retry can do, from any point: once the
+ * draft is gone there is nothing left to do; once the meditation carries this
+ * render's audio only the draft's deletion is left; and the archive insert is
+ * skipped when the outgoing audio is already archived.
  */
 async function promoteDraft(
   meditationId: string,
@@ -158,14 +176,44 @@ async function promoteDraft(
   const supabase = serviceClient();
   const { data: current, error } = await supabase
     .from("meditations")
-    .select("script, draft_script, audio_path, settings, generation_meta")
+    .select("script, audio_path, settings, generation_meta")
     .eq("id", meditationId)
     .single();
   if (error || !current) {
     throw new Error(`Meditation not found: ${error?.message ?? "no data"}`);
   }
-  if (current.draft_script !== renderedDraft) return;
+  const draft = await readDraft(supabase, meditationId);
+  if (draft?.script !== renderedDraft) return;
 
+  // audioPath is new on every render, so a meditation that already carries
+  // it was promoted by an earlier attempt that stopped before the delete.
+  if (current.audio_path !== audioPath) {
+    await archiveAndPromote(supabase, meditationId, current, renderedDraft, audioPath, meta, voiceId);
+  }
+
+  const { error: deleteError } = await supabase
+    .from("meditation_drafts")
+    .delete()
+    .eq("meditation_id", meditationId);
+  if (deleteError) {
+    throw new Error(`Clearing the promoted draft failed: ${deleteError.message}`);
+  }
+}
+
+async function archiveAndPromote(
+  supabase: ReturnType<typeof serviceClient>,
+  meditationId: string,
+  current: {
+    script: string | null;
+    audio_path: string | null;
+    settings: unknown;
+    generation_meta: unknown;
+  },
+  renderedDraft: string,
+  audioPath: string,
+  meta: GenerationMeta,
+  voiceId: string,
+): Promise<void> {
   const settings = (current.settings as MeditationSettings | null) ?? {};
   if (current.audio_path && current.script) {
     const { data: archived, error: archivedError } = await supabase
@@ -196,8 +244,6 @@ async function promoteDraft(
     .from("meditations")
     .update({
       script: renderedDraft,
-      draft_script: null,
-      draft_status: null,
       status: "completed",
       audio_path: audioPath,
       generation_meta: meta,
@@ -246,16 +292,12 @@ async function markFailed(
   // A draft render failed: the current version is still good, so the
   // meditation stays completed and only the draft render is marked. Anything
   // else has no audio to fall back on.
-  const { data: meditation } = await supabase
-    .from("meditations")
-    .select("draft_status")
-    .eq("id", meditationId)
-    .maybeSingle();
-  if (meditation?.draft_status === "processing") {
+  const draft = await readDraft(supabase, meditationId);
+  if (draft?.render_status === "processing") {
     const { error } = await supabase
-      .from("meditations")
-      .update({ draft_status: "failed", updated_at: new Date().toISOString() })
-      .eq("id", meditationId);
+      .from("meditation_drafts")
+      .update({ render_status: "failed", updated_at: new Date().toISOString() })
+      .eq("meditation_id", meditationId);
     if (error) throw new Error(`Status update failed: ${error.message}`);
   } else {
     await updateMeditationStatus(meditationId, "failed");
