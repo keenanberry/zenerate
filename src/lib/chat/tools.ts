@@ -65,10 +65,17 @@ export const setDetailsInput = z.object({
     .min(1)
     .max(300)
     .describe("One or two sentences on what the meditation is for."),
+  // About half of calls send one comma-separated string ("breathwork,inner-peace")
+  // instead of an array, and a validation failure costs the agent a retry step.
+  // Split it here; each value still has to be in the vocabulary.
   tags: z
-    .array(z.enum(TAGS))
-    .min(2)
-    .max(5)
+    .preprocess(
+      (value) =>
+        typeof value === "string"
+          ? [...new Set(value.split(",").map((tag) => tag.trim()).filter(Boolean))]
+          : value,
+      z.array(z.enum(TAGS)).min(2).max(5),
+    )
     .describe("2 to 5 tags from the vocabulary."),
   type: z.enum(MEDITATION_TYPES),
   durationMinutes: z.number().int().min(1).max(90),

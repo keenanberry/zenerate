@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type { ModelMessage } from "ai";
+import { z } from "zod";
 import {
   offerAudioInput,
   lengthToleranceSeconds,
@@ -290,6 +291,24 @@ describe("setDetails", () => {
       }).success,
     ).toBe(false);
     expect(setDetailsInput.safeParse(details).success).toBe(true);
+  });
+
+  it("splits tags sent as one comma-separated string", () => {
+    const result = setDetailsInput.safeParse({
+      ...details,
+      tags: "breathwork, inner-peace,breathwork,",
+    });
+    expect(result.success && result.data.tags).toEqual(["breathwork", "inner-peace"]);
+    expect(setDetailsInput.safeParse({ ...details, tags: "breathwork,python" }).success).toBe(false);
+    expect(setDetailsInput.safeParse({ ...details, tags: "breathwork" }).success).toBe(false);
+  });
+
+  it("still advertises tags as an array of the vocabulary", () => {
+    const schema = z.toJSONSchema(setDetailsInput, { io: "input" }) as {
+      properties: { tags: { type: string; items: { enum: string[] } } };
+    };
+    expect(schema.properties.tags.type).toBe("array");
+    expect(schema.properties.tags.items.enum).toContain("breathwork");
   });
 
   it("is the schema the tool exposes", () => {
