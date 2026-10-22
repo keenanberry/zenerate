@@ -1,5 +1,3 @@
-import { parseMeditationText } from "@/lib/meditation/parser";
-
 /** "1 meditation", "3 meditations". */
 export function countOf(n: number, singular: string, plural = `${singular}s`): string {
   return `${n} ${n === 1 ? singular : plural}`;
@@ -18,9 +16,3 @@ export function freeTierSummary(caps: { audio: number }): string {
   );
 }
 
-/** The first spoken passage of a script, for a preview; null if it has none. */
-export function firstPassage(script: string | null): string | null {
-  if (!script) return null;
-  const speech = parseMeditationText(script).find((s) => s.type === "speech");
-  return speech?.type === "speech" ? speech.content : null;
-}
