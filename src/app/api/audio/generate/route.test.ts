@@ -47,6 +47,7 @@ vi.mock("@/lib/voices/server", () => ({
 }));
 
 import { POST } from "./route";
+import { AMBIENCES } from "@/lib/meditation/ambience";
 
 const USER = "user-1";
 
@@ -97,6 +98,40 @@ describe("POST /api/audio/generate", () => {
     const res = await post({ meditationId: "med-1", voiceId: "voice-a" });
     expect(res.status).toBe(202);
     expect(mockStart).toHaveBeenCalledOnce();
+  });
+
+  it("saves a chosen ambience with its default volume and hands it to the workflow", async () => {
+    mockMeditation.mockResolvedValue(meditation({ settings: { duration: 10 } }));
+    const res = await post({ meditationId: "med-1", voiceId: "voice-a", ambience: "rain" });
+    expect(res.status).toBe(202);
+    const [, values] = mockUpdate.mock.calls[0];
+    expect(values).toMatchObject({
+      settings: { duration: 10, voice: "voice-a", music: "rain", volume: AMBIENCES.rain.volume },
+    });
+    expect(mockStart.mock.calls[0][1]).toEqual(["med-1", "voice-a", "evt-1", "rain"]);
+  });
+
+  it("saves None as a choice, so a re-render keeps it", async () => {
+    mockMeditation.mockResolvedValue(meditation({}));
+    await post({ meditationId: "med-1", voiceId: "voice-a", ambience: "none" });
+    const [, values] = mockUpdate.mock.calls[0];
+    expect(values).toMatchObject({ settings: { music: "none", volume: 0 } });
+  });
+
+  it("rejects an ambience that is not in the catalog, before reserving", async () => {
+    mockMeditation.mockResolvedValue(meditation({}));
+    const res = await post({ meditationId: "med-1", voiceId: "voice-a", ambience: "sounds/../x.mp3" });
+    expect(res.status).toBe(400);
+    expect(mockReserve).not.toHaveBeenCalled();
+  });
+
+  it("passes a draft render's ambience to the workflow without saving it yet", async () => {
+    mockMeditation.mockResolvedValue(meditation({ status: "completed" }));
+    withDraft(null);
+    await post({ meditationId: "med-1", voiceId: "voice-a", ambience: "forest" });
+    const [, values] = mockUpdate.mock.calls[0];
+    expect(values).not.toHaveProperty("settings");
+    expect(mockStart.mock.calls[0][1]).toEqual(["med-1", "voice-a", "evt-1", "forest"]);
   });
 
   it("starts a draft render without moving a completed meditation out of completed", async () => {

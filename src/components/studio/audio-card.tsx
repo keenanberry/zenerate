@@ -14,6 +14,8 @@ import { generateErrorMessage } from "@/lib/audio/generate-error";
 import { getMeditationStatus } from "@/lib/meditation/actions";
 import { DEFAULT_VOICE_ID } from "@/lib/voices/catalog";
 import { ReplaceOrKeep } from "@/components/studio/replace-or-keep";
+import { AmbiencePicker } from "@/components/studio/ambience-picker";
+import type { AmbienceId } from "@/lib/meditation/ambience";
 import type { StudioUIMessage } from "@/lib/chat/tools";
 
 type OfferAudioPart = Extract<StudioUIMessage["parts"][number], { type: "tool-offerAudio" }>;
@@ -46,6 +48,7 @@ export function AudioCard({ part, meditationId, addToolOutput }: AudioCardProps)
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [voiceId, setVoiceId] = useState<string | null>(null);
+  const [ambience, setAmbience] = useState<AmbienceId | null>(null);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Set when this card watched a draft render finish. Only then does it ask
@@ -108,7 +111,11 @@ export function AudioCard({ part, meditationId, addToolOutput }: AudioCardProps)
         addToolOutput({
           tool: "offerAudio",
           toolCallId: part.toolCallId,
-          output: { outcome: "started", voice: (body.voiceId as string) ?? undefined },
+          output: {
+            outcome: "started",
+            voice: (body.voiceId as string) ?? undefined,
+            ambience: (body.ambience as AmbienceId) ?? undefined,
+          },
         });
       }
     } catch (err) {
@@ -139,12 +146,14 @@ export function AudioCard({ part, meditationId, addToolOutput }: AudioCardProps)
     refresh();
   }, [refresh]);
 
-  // A free retry sends the voice the owner picked, so a retried revision is
-  // narrated in it rather than in the current version's saved voice.
-  const startedVoice =
-    part.state === "output-available" && part.output.outcome === "started"
-      ? part.output.voice
-      : undefined;
+  // A free retry sends the voice and bed the owner picked, so a retried
+  // revision is made with them rather than the current version's saved ones.
+  const started =
+    part.state === "output-available" && part.output.outcome === "started" ? part.output : undefined;
+  const startedVoice = started?.voice;
+  const startedAmbience = started?.ambience;
+  // The agent's preselection, when it made one.
+  const suggestedAmbience = part.input?.ambience;
 
   if (dismissed) {
     return (
@@ -217,6 +226,7 @@ export function AudioCard({ part, meditationId, addToolOutput }: AudioCardProps)
                   {
                     retryOfEventId: offer.freeRetryEventId,
                     ...(startedVoice && { voiceId: startedVoice }),
+                    ...(startedAmbience && { ambience: startedAmbience }),
                   },
                   false,
                 )
@@ -236,6 +246,10 @@ export function AudioCard({ part, meditationId, addToolOutput }: AudioCardProps)
   if (awaitingAnswer && offer.canRender) {
     const exhausted = !offer.quota.unlimited && offer.quota.remaining === 0;
     const selected = voiceId ?? offer.voice ?? DEFAULT_VOICE_ID;
+    // The person's pick, else the agent's suggestion for this render, else
+    // the bed the last render used, else None. The agent only suggests on a
+    // re-render when the person asked for a different background.
+    const selectedAmbience = ambience ?? suggestedAmbience ?? offer.ambience ?? "none";
 
     return (
       <Card>
@@ -245,11 +259,17 @@ export function AudioCard({ part, meditationId, addToolOutput }: AudioCardProps)
             <p className="text-sm text-muted-foreground">
               {offer.rendersDraft
                 ? "Narrates your latest revision. The current audio keeps playing until the new one is ready."
-                : "Pick a voice, then make the audio. It plays right here when it's ready."}
+                : "Pick a voice and a background, then make the audio. It plays right here when it's ready."}
             </p>
           </div>
 
           <VoicePicker selectedVoiceId={selected} onSelect={setVoiceId} />
+
+          <AmbiencePicker
+            selected={selectedAmbience}
+            suggested={suggestedAmbience}
+            onSelect={setAmbience}
+          />
 
           <p className="text-xs tabular-nums text-muted-foreground">
             Runs {formatLength(offer.estimatedSeconds)} · {rendersLeft(offer.quota)}
@@ -266,7 +286,7 @@ export function AudioCard({ part, meditationId, addToolOutput }: AudioCardProps)
               Not now
             </Button>
             <Button
-              onClick={() => start({ voiceId: selected }, true)}
+              onClick={() => start({ voiceId: selected, ambience: selectedAmbience }, true)}
               disabled={starting || exhausted}
               className="gap-2 sm:min-w-40"
             >

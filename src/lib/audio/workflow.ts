@@ -10,13 +10,16 @@ import type {
   MeditationSettings,
 } from "@/lib/meditation/types";
 import { DEFAULT_VOICE_ID } from "@/lib/voices/catalog";
+import { AMBIENCES, savedAmbience, type AmbienceId } from "@/lib/meditation/ambience";
 
 interface MeditationData {
   /** The owner, whose folder the audio is uploaded into. */
   userId: string;
   segments: MeditationSegment[];
   voiceId: string;
-  backgroundMusic: string | null;
+  /** The bed to mix under the narration; "none" for narration alone. */
+  ambience: AmbienceId;
+  /** Linear gain for the bed: the saved settings.volume, else the bed's default. */
   musicVolume: number;
   /**
    * The revision being rendered, when there is one. finalize promotes it to
@@ -70,10 +73,13 @@ async function fetchAndParse(meditationId: string): Promise<MeditationData> {
     userId: meditation.user_id,
     segments,
     voiceId: settings.voice ?? DEFAULT_VOICE_ID,
-    backgroundMusic: settings.music ?? null,
-    musicVolume: settings.volume ?? 0.15,
+    ...ambienceSettings(savedAmbience(settings.music) ?? "none", settings.volume),
     renderedDraft: draft?.script ?? null,
   };
+}
+
+function ambienceSettings(ambience: AmbienceId, volume?: number) {
+  return { ambience, musicVolume: volume ?? AMBIENCES[ambience].volume };
 }
 
 type Draft = { script: string; render_status: "processing" | "failed" | null };
@@ -114,7 +120,10 @@ async function generateAndUpload(
       segments: data.segments,
       voiceId: data.voiceId,
       elevenLabsApiKey: process.env.ELEVENLABS_API_KEY,
-      backgroundMusic: data.backgroundMusic,
+      // A path generate-audio.ts skips when the file is missing, so a bed
+      // chosen before the snapshot that carries it is built renders as
+      // narration alone rather than failing.
+      backgroundMusic: AMBIENCES[data.ambience].snapshotPath,
       musicVolume: data.musicVolume,
     });
 
@@ -172,6 +181,8 @@ async function promoteDraft(
   audioPath: string,
   meta: GenerationMeta,
   voiceId: string,
+  ambience: AmbienceId,
+  musicVolume: number,
 ): Promise<void> {
   const supabase = serviceClient();
   const { data: current, error } = await supabase
@@ -188,7 +199,11 @@ async function promoteDraft(
   // audioPath is new on every render, so a meditation that already carries
   // it was promoted by an earlier attempt that stopped before the delete.
   if (current.audio_path !== audioPath) {
-    await archiveAndPromote(supabase, meditationId, current, renderedDraft, audioPath, meta, voiceId);
+    await archiveAndPromote(supabase, meditationId, current, renderedDraft, audioPath, meta, {
+      voice: voiceId,
+      music: ambience,
+      volume: musicVolume,
+    });
   }
 
   const { error: deleteError } = await supabase
@@ -212,7 +227,7 @@ async function archiveAndPromote(
   renderedDraft: string,
   audioPath: string,
   meta: GenerationMeta,
-  voiceId: string,
+  rendered: Pick<MeditationSettings, "voice" | "music" | "volume">,
 ): Promise<void> {
   const settings = (current.settings as MeditationSettings | null) ?? {};
   if (current.audio_path && current.script) {
@@ -247,7 +262,7 @@ async function archiveAndPromote(
       status: "completed",
       audio_path: audioPath,
       generation_meta: meta,
-      settings: { ...settings, voice: voiceId },
+      settings: { ...settings, ...rendered },
       updated_at: new Date().toISOString(),
     })
     .eq("id", meditationId);
@@ -263,11 +278,13 @@ async function finalize(
   eventId: string | null,
   renderedDraft: string | null,
   voiceId: string,
+  ambience: AmbienceId,
+  musicVolume: number,
 ): Promise<void> {
   "use step";
 
   if (renderedDraft) {
-    await promoteDraft(meditationId, renderedDraft, audioPath, meta, voiceId);
+    await promoteDraft(meditationId, renderedDraft, audioPath, meta, voiceId, ambience, musicVolume);
   } else {
     await updateMeditationStatus(meditationId, "completed", audioPath, meta);
   }
@@ -314,6 +331,7 @@ export async function processAudioWorkflow(
   meditationId: string,
   voiceIdOverride: string | null = null,
   eventId: string | null = null,
+  ambienceOverride: AmbienceId | null = null,
 ) {
   "use workflow";
 
@@ -322,8 +340,22 @@ export async function processAudioWorkflow(
     if (voiceIdOverride) {
       data.voiceId = voiceIdOverride;
     }
+    // A draft render's choice is only saved when the draft is promoted, so it
+    // arrives here, like the voice, rather than through settings.
+    if (ambienceOverride) {
+      Object.assign(data, ambienceSettings(ambienceOverride));
+    }
     const { audioPath, meta } = await generateAndUpload(meditationId, data);
-    await finalize(meditationId, audioPath, meta, eventId, data.renderedDraft, data.voiceId);
+    await finalize(
+      meditationId,
+      audioPath,
+      meta,
+      eventId,
+      data.renderedDraft,
+      data.voiceId,
+      data.ambience,
+      data.musicVolume,
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     await markFailed(meditationId, message, eventId);

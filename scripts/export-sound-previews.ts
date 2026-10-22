@@ -8,6 +8,11 @@
  *
  *   FFMPEG=/path/to/ffmpeg npx tsx scripts/export-sound-previews.ts
  *
+ * With --ambient it only renders the synthesized ambient beds in
+ * scripts/ambient-beds.ts to public/sounds/ambient/, and needs no bucket. The
+ * recorded beds are committed there already: they are the source the
+ * snapshot build reads.
+ *
  * - Synthesized sounds are rendered locally from the same ffmpegArgs recipe
  *   the snapshot build runs. FFMPEG defaults to `ffmpeg` on PATH; the
  *   audio-pipeline skill says how to get one.
@@ -23,6 +28,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import { RECORDED_SOUNDS, SYNTHESIZED_SOUNDS, ffmpegArgs } from "./sound-effects";
+import { SYNTHESIZED_BEDS, bedArgs, bedFile } from "./ambient-beds";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 process.loadEnvFile(resolve(ROOT, ".env.local"));
@@ -31,7 +37,22 @@ const ffmpeg = process.env.FFMPEG ?? "ffmpeg";
 const outDir = join(ROOT, "public", "sounds");
 mkdirSync(outDir, { recursive: true });
 
+function renderAmbientBeds() {
+  const ambientDir = join(outDir, "ambient");
+  mkdirSync(ambientDir, { recursive: true });
+  for (const bed of SYNTHESIZED_BEDS) {
+    const out = join(ambientDir, bedFile(bed.id));
+    execFileSync(ffmpeg, ["-hide_banner", "-loglevel", "error", ...bedArgs(bed, out)]);
+    console.log(`rendered ambient/${bedFile(bed.id)}`);
+  }
+}
+
 async function main() {
+  if (process.argv.includes("--ambient")) {
+    renderAmbientBeds();
+    return;
+  }
+
   const url = process.env.SOUND_EFFECTS_SUPABASE_URL;
   const key = process.env.SOUND_EFFECTS_SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {

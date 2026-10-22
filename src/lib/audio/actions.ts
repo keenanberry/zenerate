@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getQuotaUsage, isFreeRetryAvailable } from "@/lib/audio/quota";
 import { estimateDuration } from "@/lib/meditation/duration";
 import type { MeditationSettings, MeditationStatus } from "@/lib/meditation/types";
+import { savedAmbience, type AmbienceId } from "@/lib/meditation/ambience";
 
 export type AudioOffer = {
   title: string;
@@ -23,6 +24,8 @@ export type AudioOffer = {
   /** Estimated length of the script the next render narrates. */
   estimatedSeconds: number;
   voice: string | null;
+  /** The bed the last render was made with (settings.music), or null before any choice. */
+  ambience: AmbienceId | null;
   quota: { remaining: number; limit: number; unlimited: boolean; resetsAt: string };
   /** The failed event a free retry would follow, when one is available. */
   freeRetryEventId: string | null;
@@ -90,6 +93,7 @@ export async function getAudioOffer(meditationId: string): Promise<AudioOffer> {
     canRender: status === "script_ready" || (status === "completed" && rendersDraft),
     estimatedSeconds: estimateDuration(script).totalSeconds,
     voice: (data.settings as MeditationSettings | null)?.voice ?? null,
+    ambience: savedAmbience((data.settings as MeditationSettings | null)?.music),
     quota: {
       remaining: usage.remaining,
       limit: usage.limit,

@@ -7,6 +7,7 @@ import { reserveAudioGeneration, getQuotaConfig } from "@/lib/audio/quota";
 import { startRunOrRevert } from "@/lib/audio/start-run";
 import { resolveVoiceId } from "@/lib/voices/catalog";
 import { getVoices } from "@/lib/voices/server";
+import { AMBIENCES, isAmbienceId } from "@/lib/meditation/ambience";
 
 export const maxDuration = 30;
 
@@ -24,6 +25,7 @@ export async function POST(req: Request) {
   const body = await req.json();
   const meditationId: unknown = body?.meditationId;
   const voiceId: unknown = body?.voiceId;
+  const ambience: unknown = body?.ambience ?? null;
   const retryOfEventId: unknown = body?.retryOfEventId ?? null;
 
   if (!meditationId || typeof meditationId !== "string") {
@@ -31,6 +33,10 @@ export async function POST(req: Request) {
       { error: "meditationId is required" },
       { status: 400 },
     );
+  }
+  // Optional, like the voice: a retry sends none and keeps the saved bed.
+  if (ambience !== null && !isAmbienceId(ambience)) {
+    return NextResponse.json({ error: "Unknown ambience" }, { status: 400 });
   }
   if (retryOfEventId !== null && typeof retryOfEventId !== "string") {
     return NextResponse.json(
@@ -135,8 +141,8 @@ export async function POST(req: Request) {
   // Compare-and-set on the state read above: of two requests that both
   // passed the check (a double click), only one flips the row, and the other
   // gives its reservation back. A draft render flips the draft, and the voice
-  // is saved when the draft is promoted, not now: until then settings
-  // describe the current version.
+  // and ambience are saved when the draft is promoted, not now: until then
+  // settings describe the current version.
   const now = new Date().toISOString();
   let flip;
   if (draftRender) {
@@ -151,9 +157,14 @@ export async function POST(req: Request) {
       .update({
         updated_at: now,
         status: "processing_audio",
-        // Saved so a free retry, which sends no voice, narrates in the same one.
-        ...(voice.voiceId && {
-          settings: { ...(meditation.settings ?? {}), voice: voice.voiceId },
+        // Saved so a free retry, which sends neither, narrates in the same
+        // voice over the same bed.
+        ...((voice.voiceId || ambience) && {
+          settings: {
+            ...(meditation.settings ?? {}),
+            ...(voice.voiceId && { voice: voice.voiceId }),
+            ...(ambience && { music: ambience, volume: AMBIENCES[ambience].volume }),
+          },
         }),
       })
       .eq("id", meditationId)
@@ -182,7 +193,7 @@ export async function POST(req: Request) {
   }
 
   const run = await startRunOrRevert({
-    start: () => start(processAudioWorkflow, [meditationId, voice.voiceId, reserve.eventId]),
+    start: () => start(processAudioWorkflow, [meditationId, voice.voiceId, reserve.eventId, ambience]),
     // No run exists, so the workflow's own failure path will never fire:
     // put the script back where it was and refund the reserved generation.
     revert: async () => {

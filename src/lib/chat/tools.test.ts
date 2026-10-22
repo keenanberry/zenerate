@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type { ModelMessage } from "ai";
 import {
+  offerAudioInput,
   lengthToleranceSeconds,
   studioTools,
   previewSoundsInput,
@@ -332,6 +333,13 @@ describe("setDetails", () => {
 describe("offerAudio", () => {
   it("is client-side: it has no execute", () => {
     expect(studioTools.offerAudio.execute).toBeUndefined();
+  });
+
+  it("takes an optional ambient bed to preselect, never None or an unknown one", () => {
+    expect(offerAudioInput.safeParse({}).success).toBe(true);
+    expect(offerAudioInput.safeParse({ ambience: "rain" }).success).toBe(true);
+    expect(offerAudioInput.safeParse({ ambience: "none" }).success).toBe(false);
+    expect(offerAudioInput.safeParse({ ambience: "whale-song" }).success).toBe(false);
   });
 });
 

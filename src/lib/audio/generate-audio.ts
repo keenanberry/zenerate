@@ -18,10 +18,11 @@ import { join } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
 import { narrationGainDb, parseIntegratedLoudness } from "./loudness";
+import { bedMixFilter, parseMediaSeconds } from "./mix";
 
 // ---------------------------------------------------------------------------
-// Types (self-contained — the only project import is ./loudness, which has no
-// dependencies and is bundled in by esbuild)
+// Types (self-contained — the only project imports are ./loudness and ./mix,
+// which have no dependencies and are bundled in by esbuild)
 // ---------------------------------------------------------------------------
 
 interface Segment {
@@ -215,22 +216,35 @@ function concatenateAudio(
 // Background music mixing with volume ducking
 // ---------------------------------------------------------------------------
 
-function mixBackgroundMusic(
+/** Length of an audio file, from ffmpeg's input header; null when unknown. */
+function mediaSeconds(path: string): Promise<number | null> {
+  return new Promise((resolve) => {
+    ffmpeg()
+      .input(path)
+      .outputOptions("-t", "0")
+      .format("null")
+      .output("-")
+      .on("end", (_stdout: string | null, stderr: string | null) =>
+        resolve(parseMediaSeconds(stderr ?? "")),
+      )
+      // Without a length the bed just stops with the narration, unfaded.
+      .on("error", () => resolve(null))
+      .run();
+  });
+}
+
+async function mixBackgroundMusic(
   voicePath: string,
   musicPath: string,
   outputPath: string,
   musicVolume: number = 0.15,
 ): Promise<void> {
+  const voiceSeconds = await mediaSeconds(voicePath);
   return new Promise((resolve, reject) => {
     ffmpeg()
       .input(voicePath)
       .input(musicPath)
-      .complexFilter([
-        "[1:a]aloop=loop=-1:size=2e+09[music]",
-        `[music]volume=${musicVolume}[musicvol]`,
-        `[musicvol][0:a]sidechaincompress=threshold=-30dB:ratio=4:attack=500:release=1500[ducked]`,
-        "[0:a][ducked]amix=inputs=2:duration=first:dropout_transition=2[out]",
-      ])
+      .complexFilter(bedMixFilter(musicVolume, voiceSeconds))
       .outputOptions("-map", "[out]")
       .audioCodec("libmp3lame")
       .audioBitrate("192k")
@@ -347,7 +361,11 @@ async function main(): Promise<void> {
   const voiceOnlyPath = join(TEMP_DIR, "voice-only.mp3");
   await concatenateAudio(audioFiles, voiceOnlyPath, speechIndices, narrationGain);
 
-  // Mix background music if provided
+  // Mix the ambient bed if one was chosen. A snapshot built before the bed
+  // existed has no file for it, and the narration goes out alone.
+  if (config.backgroundMusic && !(await fileExists(config.backgroundMusic))) {
+    console.log(`Ambient bed not found: ${config.backgroundMusic}, skipping it...`);
+  }
   if (config.backgroundMusic && (await fileExists(config.backgroundMusic))) {
     console.log("Mixing background music...");
     await mixBackgroundMusic(
