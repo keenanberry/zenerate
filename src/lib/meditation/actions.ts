@@ -5,6 +5,15 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { hydrateAudioUrl, hydrateAudioUrls } from "@/lib/audio/signed-url";
 import { TAGS } from "./tags";
+import {
+  POPULAR_MIN_SCORE,
+  ROW_SIZE,
+  fillRow,
+  rankByTagAffinity,
+  tagWeights,
+  toSearchArgs,
+  type DiscoverFilters,
+} from "./discover";
 import type {
   Meditation,
   MeditationWithMeta,
@@ -179,44 +188,174 @@ export async function getUserMeditations() {
   return hydrateAudioUrls(meditations);
 }
 
-export async function getPublicMeditations(search?: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+type ServerClient = Awaited<ReturnType<typeof createClient>>;
 
+/** Sets is_favorited for a signed-in listener. Signed out, favorites stay unread. */
+async function markFavorites(
+  supabase: ServerClient,
+  userId: string | undefined,
+  meditations: MeditationWithMeta[],
+) {
+  if (!userId || meditations.length === 0) return;
+  const { data: favs } = await supabase
+    .from("favorites")
+    .select("meditation_id")
+    .eq("user_id", userId);
+  const favSet = new Set((favs ?? []).map((f) => f.meditation_id));
+  meditations.forEach((m) => {
+    m.is_favorited = favSet.has(m.id);
+  });
+}
+
+/**
+ * Public, completed meditations for /discover, through `discover_meditations`
+ * (migration 20261022000036): full-text search over the `search` vector,
+ * ranked, plus the category, tag, type and duration filters. With no filters
+ * it is the newest first.
+ */
+export async function getPublicMeditations(filters: DiscoverFilters = {}) {
+  const supabase = await createClient();
+  const [
+    { data, error },
+    {
+      data: { user },
+    },
+  ] = await Promise.all([
+    supabase.rpc("discover_meditations", toSearchArgs(filters)),
+    supabase.auth.getUser(),
+  ]);
+  if (error) throw new Error(error.message);
+
+  const meditations = (data ?? []) as MeditationWithMeta[];
+  await markFavorites(supabase, user?.id, meditations);
+  return hydrateAudioUrls(meditations);
+}
+
+/** The house picks, newest first. The fallback for both Discover rows. */
+async function getFeaturedMeditations(supabase: ServerClient, excludeUserId?: string) {
   let query = supabase
     .from("meditations")
     .select("*")
     .eq("is_public", true)
     .eq("status", "completed")
+    .eq("is_featured", true)
     .order("created_at", { ascending: false })
-    .limit(50);
-
-  if (search) {
-    query = query.ilike("title", `%${search}%`);
-  }
-
+    .limit(ROW_SIZE * 2);
+  if (excludeUserId) query = query.neq("user_id", excludeUserId);
   const { data, error } = await query;
   if (error) throw new Error(error.message);
-
-  const meditations = (data ?? []) as MeditationWithMeta[];
-
-  if (user) {
-    const { data: favs } = await supabase
-      .from("favorites")
-      .select("meditation_id")
-      .eq("user_id", user.id);
-
-    const favSet = new Set((favs ?? []).map((f) => f.meditation_id));
-    meditations.forEach((m) => {
-      m.is_favorited = favSet.has(m.id);
-    });
-  }
-
-  return hydrateAudioUrls(meditations);
+  return (data ?? []) as MeditationWithMeta[];
 }
 
+/**
+ * Popular: favorites plus signed-in plays, through the security definer
+ * `popular_meditations`, which anon may call but which returns counts only.
+ * Meditations under POPULAR_MIN_SCORE do not lead the row; the house picks
+ * fill it, so it is never one lonely card.
+ */
+export async function getPopularMeditations() {
+  const supabase = await createClient();
+  const [
+    { data: ranked, error },
+    featured,
+    {
+      data: { user },
+    },
+  ] = await Promise.all([
+    supabase.rpc("popular_meditations", { row_limit: ROW_SIZE }),
+    getFeaturedMeditations(supabase),
+    supabase.auth.getUser(),
+  ]);
+  if (error) throw new Error(error.message);
+
+  const ids = ((ranked ?? []) as { meditation_id: string; score: number }[])
+    .filter((r) => r.score >= POPULAR_MIN_SCORE)
+    .map((r) => r.meditation_id);
+
+  let popular: MeditationWithMeta[] = [];
+  if (ids.length > 0) {
+    const { data, error: readError } = await supabase
+      .from("meditations")
+      .select("*")
+      .in("id", ids);
+    if (readError) throw new Error(readError.message);
+    const order = new Map(ids.map((id, i) => [id, i]));
+    popular = ((data ?? []) as MeditationWithMeta[]).sort(
+      (a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0),
+    );
+  }
+
+  const row = fillRow(popular, featured);
+  await markFavorites(supabase, user?.id, row);
+  return hydrateAudioUrls(row);
+}
+
+/**
+ * Picked for you. Signed in: public meditations that share tags with the
+ * listener's favorites and their own meditations, weighted by how often each
+ * tag appears there, never their own. Signed out, or with no tags to go on:
+ * the house picks.
+ */
+export async function getPickedForYou() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let picked: MeditationWithMeta[] = [];
+  if (user) {
+    const [{ data: own }, { data: favs }] = await Promise.all([
+      supabase.from("meditations").select("tags").eq("user_id", user.id),
+      supabase
+        .from("favorites")
+        .select("meditation:meditations(tags)")
+        .eq("user_id", user.id),
+    ]);
+    const favoriteTags = (favs ?? [])
+      .map((f) => (f as unknown as { meditation: { tags: string[] } | null }).meditation)
+      .filter((m): m is { tags: string[] } => !!m);
+    const weights = tagWeights([...(own ?? []), ...favoriteTags]);
+
+    if (weights.size > 0) {
+      const { data, error } = await supabase
+        .from("meditations")
+        .select("*")
+        .eq("is_public", true)
+        .eq("status", "completed")
+        .neq("user_id", user.id)
+        .overlaps("tags", [...weights.keys()])
+        .order("created_at", { ascending: false })
+        .limit(60);
+      if (error) throw new Error(error.message);
+      picked = rankByTagAffinity((data ?? []) as MeditationWithMeta[], weights);
+    }
+  }
+
+  const featured = await getFeaturedMeditations(supabase, user?.id);
+  const row = fillRow(picked, featured);
+  await markFavorites(supabase, user?.id, row);
+  return hydrateAudioUrls(row);
+}
+
+/**
+ * One meditation_plays row for a signed-in listener whose play passed the
+ * threshold (the player decides; see use-play-tracking.ts). Signed out it
+ * writes nothing. RLS limits the insert to the caller's own row on a
+ * meditation they can see. A failed count is never worth interrupting a
+ * meditation for, so errors are swallowed.
+ */
+export async function recordPlay(meditationId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { error } = await supabase
+    .from("meditation_plays")
+    .insert({ meditation_id: meditationId, user_id: user.id });
+  return !error;
+}
 
 export async function getMeditationStatus(id: string) {
   const supabase = await createClient();

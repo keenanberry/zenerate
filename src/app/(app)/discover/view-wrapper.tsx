@@ -5,35 +5,35 @@ import { ViewProvider, useView } from "@/components/view-context";
 import { ViewToggle } from "@/components/view-toggle";
 
 function Inner({
-  search,
+  summary,
   children,
 }: {
-  search: ReactNode;
+  summary: ReactNode;
   children: ReactNode;
 }) {
   const { view, setView } = useView();
 
   return (
-    <>
+    <div className="space-y-4">
       <div className="flex items-center justify-between gap-4">
-        {search}
+        <p className="text-sm text-muted-foreground">{summary}</p>
         <ViewToggle view={view} onViewChange={setView} />
       </div>
       {children}
-    </>
+    </div>
   );
 }
 
 export function DiscoverViewWrapper({
-  search,
+  summary,
   children,
 }: {
-  search: ReactNode;
+  summary: ReactNode;
   children: ReactNode;
 }) {
   return (
     <ViewProvider>
-      <Inner search={search}>{children}</Inner>
+      <Inner summary={summary}>{children}</Inner>
     </ViewProvider>
   );
 }

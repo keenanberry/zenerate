@@ -18,6 +18,8 @@ import {
   watchMediaElement,
 } from "@/components/use-media-session";
 import { useReportScriptPlayback } from "@/components/script-playback";
+import { usePlayTracking } from "@/components/use-play-tracking";
+import { recordPlay } from "@/lib/meditation/actions";
 
 interface AudioPlayerProps {
   audioUrl: string;
@@ -37,6 +39,11 @@ interface AudioPlayerProps {
    * sign-in prompt in the same spot; the route enforces this independently.
    */
   canDownload: boolean;
+  /**
+   * Count plays past 30 seconds toward Popular. Only for a signed-in
+   * listener: signed out, nothing is recorded or sent.
+   */
+  trackPlays?: boolean;
 }
 
 function formatTime(seconds: number): string {
@@ -92,6 +99,7 @@ export function AudioPlayer({
   title,
   meditationId,
   canDownload,
+  trackPlays = false,
 }: AudioPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
@@ -109,6 +117,11 @@ export function AudioPlayer({
   const volumeRef = useRef(volume);
 
   useMediaSession(media, title);
+
+  const record = useCallback(() => {
+    void recordPlay(meditationId).catch(() => {});
+  }, [meditationId]);
+  usePlayTracking(media, trackPlays ? record : null);
 
   const reportPlayback = useReportScriptPlayback();
   useEffect(() => {
