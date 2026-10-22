@@ -31,7 +31,7 @@
 > - **`/privacy`** must name Google and Apple as sign-in providers and say what they share.
 > - Recommendation: **Google first.** It's free and covers most people. Add Apple when iPhone
 >   users ask for it, or if a native app ever ships, since the App Store then requires it (or an
->   alongside other social logins.
+>   equivalent privacy-focused login) alongside other social logins.
 
 ## Why it matters
 Email/password works but adds friction. Social providers speed up signup and reduce password-reset support load. Apple Sign-In is nice-to-have for iOS users when we eventually have a mobile PWA.
