@@ -44,6 +44,8 @@ interface AudioPlayerProps {
    * listener: signed out, nothing is recorded or sent.
    */
   trackPlays?: boolean;
+  /** Where Download points. Defaults to the current version's audio. */
+  downloadHref?: string;
 }
 
 function formatTime(seconds: number): string {
@@ -100,6 +102,7 @@ export function AudioPlayer({
   meditationId,
   canDownload,
   trackPlays = false,
+  downloadHref = `/api/audio/${meditationId}/download`,
 }: AudioPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
@@ -285,7 +288,7 @@ export function AudioPlayer({
                   <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" asChild>
                     {canDownload ? (
                       <a
-                        href={`/api/audio/${meditationId}/download`}
+                        href={downloadHref}
                         aria-label="Download audio"
                       >
                         <Download className="h-4 w-4" />

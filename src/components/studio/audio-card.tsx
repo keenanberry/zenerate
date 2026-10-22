@@ -13,6 +13,7 @@ import { getAudioOffer, type AudioOffer } from "@/lib/audio/actions";
 import { generateErrorMessage } from "@/lib/audio/generate-error";
 import { getMeditationStatus } from "@/lib/meditation/actions";
 import { DEFAULT_VOICE_ID } from "@/lib/voices/catalog";
+import { ReplaceOrKeep } from "@/components/studio/replace-or-keep";
 import type { StudioUIMessage } from "@/lib/chat/tools";
 
 type OfferAudioPart = Extract<StudioUIMessage["parts"][number], { type: "tool-offerAudio" }>;
@@ -47,6 +48,10 @@ export function AudioCard({ part, meditationId, addToolOutput }: AudioCardProps)
   const [voiceId, setVoiceId] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Set when this card watched a draft render finish. Only then does it ask
+  // whether to keep the version that render replaced; on a later visit the
+  // owner deletes versions from the meditation page instead.
+  const [askKeep, setAskKeep] = useState(false);
   // State updates are async, so a second click in the same frame would still
   // see `starting` false. The ref closes that gap.
   const startingRef = useRef(false);
@@ -90,7 +95,15 @@ export function AudioCard({ part, meditationId, addToolOutput }: AudioCardProps)
         const data = await res.json().catch(() => ({}));
         throw new Error(generateErrorMessage(res.status, data));
       }
-      setOffer((current) => current && { ...current, status: "processing_audio" });
+      setOffer(
+        (current) =>
+          current && {
+            ...current,
+            status: "processing_audio",
+            draftRender:
+              current.draftRender || (current.status === "completed" && current.rendersDraft),
+          },
+      );
       if (answer) {
         addToolOutput({
           tool: "offerAudio",
@@ -120,6 +133,18 @@ export function AudioCard({ part, meditationId, addToolOutput }: AudioCardProps)
   const handleCompleted = useCallback(() => {
     refresh();
   }, [refresh]);
+
+  const handleDraftCompleted = useCallback(() => {
+    setAskKeep(true);
+    refresh();
+  }, [refresh]);
+
+  // A free retry sends the voice the owner picked, so a retried revision is
+  // narrated in it rather than in the current version's saved voice.
+  const startedVoice =
+    part.state === "output-available" && part.output.outcome === "started"
+      ? part.output.voice
+      : undefined;
 
   if (dismissed) {
     return (
@@ -159,7 +184,8 @@ export function AudioCard({ part, meditationId, addToolOutput }: AudioCardProps)
     return (
       <AudioProcessingStatus
         meditationId={meditationId}
-        onCompleted={handleCompleted}
+        draft={offer.draftRender}
+        onCompleted={offer.draftRender ? handleDraftCompleted : handleCompleted}
         onFailed={handleCompleted}
       />
     );
@@ -186,7 +212,15 @@ export function AudioCard({ part, meditationId, addToolOutput }: AudioCardProps)
               variant="outline"
               className="gap-2"
               disabled={starting}
-              onClick={() => start({ retryOfEventId: offer.freeRetryEventId }, false)}
+              onClick={() =>
+                start(
+                  {
+                    retryOfEventId: offer.freeRetryEventId,
+                    ...(startedVoice && { voiceId: startedVoice }),
+                  },
+                  false,
+                )
+              }
             >
               <RotateCcw className="h-4 w-4" />
               {starting ? "Retrying..." : "Retry — free"}
@@ -210,7 +244,7 @@ export function AudioCard({ part, meditationId, addToolOutput }: AudioCardProps)
             <h2 className="font-serif text-lg font-medium">Make the audio</h2>
             <p className="text-sm text-muted-foreground">
               {offer.rendersDraft
-                ? "Narrates your latest revision. Its audio replaces the current audio."
+                ? "Narrates your latest revision. The current audio keeps playing until the new one is ready."
                 : "Pick a voice, then make the audio. It plays right here when it's ready."}
             </p>
           </div>
@@ -270,6 +304,9 @@ export function AudioCard({ part, meditationId, addToolOutput }: AudioCardProps)
           Open the meditation page
           <ArrowUpRight className="h-3.5 w-3.5" />
         </Link>
+        {askKeep && offer.latestVersionId && (
+          <ReplaceOrKeep versionId={offer.latestVersionId} />
+        )}
       </div>
     );
   }

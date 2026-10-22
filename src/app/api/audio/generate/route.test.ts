@@ -15,9 +15,16 @@ vi.mock("@/lib/supabase/server", () => ({
     auth: { getUser: mockGetUser },
     from: () => ({
       select: () => ({ eq: () => ({ single: mockMeditation }) }),
-      update: (values: unknown) => ({
-        eq: () => ({ eq: () => ({ select: () => mockUpdate(values) }) }),
-      }),
+      update: (values: unknown) => {
+        // Records the compare-and-set filters next to the values.
+        const filters: Record<string, unknown> = {};
+        const chain = {
+          eq: (column: string, value: unknown) => ((filters[column] = value), chain),
+          is: (column: string, value: unknown) => ((filters[column] = value), chain),
+          select: () => mockUpdate(values, filters),
+        };
+        return chain;
+      },
     }),
   }),
 }));
@@ -83,17 +90,41 @@ describe("POST /api/audio/generate", () => {
     expect(mockStart).toHaveBeenCalledOnce();
   });
 
-  it("accepts a completed meditation that has a draft_script", async () => {
+  it("starts a draft render without moving a completed meditation out of completed", async () => {
     mockMeditation.mockResolvedValue(
-      meditation({ status: "completed", draft_script: "A revision." }),
+      meditation({ status: "completed", draft_script: "A revision.", draft_status: null }),
     );
     const res = await post({ meditationId: "med-1", voiceId: "voice-a" });
     expect(res.status).toBe(202);
     expect(mockReserve).toHaveBeenCalledOnce();
-    expect(mockUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ status: "processing_audio" }),
-    );
+    const [values, filters] = mockUpdate.mock.calls[0];
+    expect(values).toMatchObject({ draft_status: "processing" });
+    expect(values).not.toHaveProperty("status");
+    // Settings describe the current version until the draft is promoted.
+    expect(values).not.toHaveProperty("settings");
+    expect(filters).toEqual({ id: "med-1", status: "completed", draft_status: null });
     expect(mockStart).toHaveBeenCalledOnce();
+  });
+
+  it("refuses a second draft render while one is processing, before reserving", async () => {
+    mockMeditation.mockResolvedValue(
+      meditation({ status: "completed", draft_script: "A revision.", draft_status: "processing" }),
+    );
+    const res = await post({ meditationId: "med-1", voiceId: "voice-a" });
+    expect(res.status).toBe(409);
+    expect(mockReserve).not.toHaveBeenCalled();
+  });
+
+  it("takes a free retry of a failed draft render and keeps the meditation completed", async () => {
+    mockMeditation.mockResolvedValue(
+      meditation({ status: "completed", draft_script: "A revision.", draft_status: "failed" }),
+    );
+    const res = await post({ meditationId: "med-1", retryOfEventId: "evt-0", voiceId: "voice-a" });
+    expect(res.status).toBe(202);
+    const [values, filters] = mockUpdate.mock.calls[0];
+    expect(values).toMatchObject({ draft_status: "processing" });
+    expect(values).not.toHaveProperty("status");
+    expect(filters).toEqual({ id: "med-1", status: "completed", draft_status: "failed" });
   });
 
   it("refuses a completed meditation without a draft with 409, before reserving", async () => {
@@ -125,26 +156,25 @@ describe("POST /api/audio/generate", () => {
     expect(mockStart).not.toHaveBeenCalled();
   });
 
-  it("puts a draft render back to completed, not script_ready, when the start fails", async () => {
+  it("puts a draft render's draft_status back, and never touches status, when the start fails", async () => {
     mockMeditation.mockResolvedValue(
-      meditation({ status: "completed", draft_script: "A revision." }),
+      meditation({ status: "completed", draft_script: "A revision.", draft_status: null }),
     );
     mockStart.mockRejectedValue(new Error("HTTP 426"));
     const res = await post({ meditationId: "med-1", voiceId: "voice-a" });
     expect(res.status).toBe(503);
-    expect(mockServiceUpdate).toHaveBeenCalledWith(
-      "meditations",
-      expect.objectContaining({ status: "completed" }),
-    );
+    const [, reverted] = mockServiceUpdate.mock.calls.find(([table]) => table === "meditations")!;
+    expect(reverted).toMatchObject({ draft_status: null });
+    expect(reverted).not.toHaveProperty("status");
     expect(mockServiceUpdate).toHaveBeenCalledWith(
       "audio_generation_events",
       expect.objectContaining({ status: "failed" }),
     );
   });
 
-  it("only takes a retry from a failed meditation", async () => {
+  it("only takes a retry from a failed render", async () => {
     mockMeditation.mockResolvedValue(
-      meditation({ status: "completed", draft_script: "A revision." }),
+      meditation({ status: "completed", draft_script: "A revision.", draft_status: null }),
     );
     const res = await post({ meditationId: "med-1", retryOfEventId: "evt-0" });
     expect(res.status).toBe(409);

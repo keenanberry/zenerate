@@ -69,3 +69,20 @@ export async function listDraftChats(): Promise<Chat[]> {
   if (error) throw new Error(error.message);
   return (data ?? []) as Chat[];
 }
+
+/**
+ * The chat a meditation was made in, for "Continue in chat". Chats are
+ * owner-only under RLS, so anyone else (and a meditation with no chat) gets
+ * null.
+ */
+export async function getMeditationChatId(meditationId: string): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("chats")
+    .select("id")
+    .eq("meditation_id", meditationId)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return (data?.id as string | undefined) ?? null;
+}

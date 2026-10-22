@@ -41,7 +41,7 @@ export async function POST(req: Request) {
 
   const { data: meditation, error } = await supabase
     .from("meditations")
-    .select("id, user_id, status, settings, draft_script")
+    .select("id, user_id, status, settings, draft_script, draft_status")
     .eq("id", meditationId)
     .single();
 
@@ -55,16 +55,22 @@ export async function POST(req: Request) {
   // A retry follows a failed render. Otherwise there must be a script with no
   // audio yet, or a revision (draft_script) made after the audio, which the
   // workflow renders in place of the current script.
-  const hasDraft = meditation.draft_script !== null;
-  const allowedStatuses = retryOfEventId
-    ? ["failed"]
-    : hasDraft
-      ? ["script_ready", "completed"]
-      : ["script_ready"];
-  if (!allowedStatuses.includes(meditation.status)) {
+  //
+  // A revision of a meditation that has audio is a draft render: status stays
+  // completed for its whole life, so the current version keeps playing for
+  // everyone, and draft_status carries the render's own state instead.
+  const draftStatus = meditation.draft_status as "processing" | "failed" | null;
+  const draftRender = meditation.status === "completed" && meditation.draft_script !== null;
+  const allowed = retryOfEventId
+    ? meditation.status === "failed" || (draftRender && draftStatus === "failed")
+    : meditation.status === "script_ready" || (draftRender && draftStatus !== "processing");
+  if (!allowed) {
     return NextResponse.json(
       {
-        error: `Cannot generate audio: meditation status is "${meditation.status}", expected ${allowedStatuses.map((s) => `"${s}"`).join(" or ")}`,
+        error:
+          draftRender && draftStatus === "processing"
+            ? "Audio is already being made for this meditation."
+            : `Cannot generate audio: meditation status is "${meditation.status}"${retryOfEventId ? ", and only a failed render can be retried" : ""}`,
       },
       { status: 409 },
     );
@@ -116,22 +122,31 @@ export async function POST(req: Request) {
     );
   }
 
-  // Compare-and-set on the status read above: of two requests that both
-  // passed the status check (a double click), only one flips the row, and the
-  // other gives its reservation back.
-  const { data: flipped, error: updateError } = await supabase
+  // Compare-and-set on the state read above: of two requests that both
+  // passed the check (a double click), only one flips the row, and the other
+  // gives its reservation back.
+  let flip = supabase
     .from("meditations")
     .update({
-      status: "processing_audio",
       updated_at: new Date().toISOString(),
-      // Saved so a free retry, which sends no voice, narrates in the same one.
-      ...(voice.voiceId && {
-        settings: { ...(meditation.settings ?? {}), voice: voice.voiceId },
-      }),
+      ...(draftRender
+        ? // The voice is saved when the draft is promoted, not now: until
+          // then settings describe the current version.
+          { draft_status: "processing" }
+        : {
+            status: "processing_audio",
+            // Saved so a free retry, which sends no voice, narrates in the same one.
+            ...(voice.voiceId && {
+              settings: { ...(meditation.settings ?? {}), voice: voice.voiceId },
+            }),
+          }),
     })
     .eq("id", meditationId)
-    .eq("status", meditation.status)
-    .select("id");
+    .eq("status", meditation.status);
+  if (draftRender) {
+    flip = draftStatus === null ? flip.is("draft_status", null) : flip.eq("draft_status", draftStatus);
+  }
+  const { data: flipped, error: updateError } = await flip.select("id");
 
   if (updateError || !flipped || flipped.length === 0) {
     // Refund the reserved slot so the user isn't charged for our failure.
@@ -159,7 +174,10 @@ export async function POST(req: Request) {
       await Promise.all([
         serviceClient
           .from("meditations")
-          .update({ status: meditation.status, updated_at: new Date().toISOString() })
+          .update({
+            ...(draftRender ? { draft_status: draftStatus } : { status: meditation.status }),
+            updated_at: new Date().toISOString(),
+          })
           .eq("id", meditationId),
         serviceClient
           .from("audio_generation_events")
@@ -185,7 +203,8 @@ export async function POST(req: Request) {
       meditationId,
       runId: run.runId,
       eventId: reserve.eventId,
-      status: "processing_audio",
+      status: draftRender ? "completed" : "processing_audio",
+      draftStatus: draftRender ? "processing" : null,
     },
     { status: 202 },
   );

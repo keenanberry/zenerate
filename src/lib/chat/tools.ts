@@ -158,11 +158,11 @@ export const studioTools = {
       } else {
         const { data: current, error } = await ctx.supabase
           .from("meditations")
-          .select("audio_path, status, settings")
+          .select("audio_path, status, draft_status, settings")
           .eq("id", meditationId)
           .single();
         if (error || !current) throw new Error("The meditation could not be found.");
-        if (current.status === "processing_audio") {
+        if (current.status === "processing_audio" || current.draft_status === "processing") {
           throw new Error(
             "Audio is being made from the current script right now. Tell the person to wait until it finishes, then revise.",
           );

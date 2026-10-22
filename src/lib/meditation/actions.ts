@@ -14,8 +14,10 @@ import {
   toSearchArgs,
   type DiscoverFilters,
 } from "./discover";
+import { removeAudio, removeMeditationAudio } from "@/lib/audio/storage";
 import type {
   Meditation,
+  MeditationVersion,
   MeditationWithMeta,
   Collection,
   CollectionWithCount,
@@ -124,8 +126,39 @@ export async function updateMeditationDetails(
 
 export async function deleteMeditation(id: string) {
   const supabase = await createClient();
-  const { error } = await supabase.from("meditations").delete().eq("id", id);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  // Read the archived versions first: the delete cascades their rows away,
+  // and storage does not cascade at all.
+  const { data: versions } = await supabase
+    .from("meditation_versions")
+    .select("audio_path")
+    .eq("meditation_id", id);
+  const { data: deleted, error } = await supabase
+    .from("meditations")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .select("audio_path");
   if (error) throw new Error(error.message);
+
+  // Only once the row is really gone, and only the caller's own folder. The
+  // extra paths catch audio from before the per-user layout.
+  if (deleted && deleted.length > 0) {
+    try {
+      await removeMeditationAudio(user.id, id, [
+        deleted[0].audio_path,
+        ...(versions ?? []).map((v) => v.audio_path),
+      ]);
+    } catch (err) {
+      // The meditation is deleted either way. A file left behind sits in the
+      // owner's folder, where account deletion still finds it.
+      console.error(`Removing audio for deleted meditation ${id} failed:`, err);
+    }
+  }
   revalidatePath("/dashboard");
 }
 
@@ -144,6 +177,11 @@ export async function getMeditation(id: string) {
   if (error) throw new Error(error.message);
 
   const meditation = data as MeditationWithMeta;
+  // A revision in progress is the owner's. The page never shows it, but the
+  // row is serialized whole into the client payload, so drop it here.
+  if (user?.id !== meditation.user_id) {
+    meditation.draft_script = null;
+  }
 
   if (user) {
     const { data: fav } = await supabase
@@ -361,7 +399,7 @@ export async function getMeditationStatus(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("meditations")
-    .select("status, audio_path")
+    .select("status, draft_status, audio_path")
     .eq("id", id)
     .single();
 
@@ -369,8 +407,60 @@ export async function getMeditationStatus(id: string) {
   const { audio_url } = await hydrateAudioUrl(data);
   return {
     status: data.status as string,
+    /** A render of draft_script: null, "processing" or "failed". */
+    draft_status: data.draft_status as "processing" | "failed" | null,
     audio_url,
   };
+}
+
+// ── Versions ──
+
+/**
+ * A meditation's archived versions, newest first, with signed audio. The
+ * table is owner-only under RLS, so anyone else gets an empty list.
+ */
+export async function getMeditationVersions(meditationId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("meditation_versions")
+    .select("*")
+    .eq("meditation_id", meditationId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return hydrateAudioUrls((data ?? []) as MeditationVersion[]);
+}
+
+/** One archived version with signed audio, or null when it is not the caller's. */
+export async function getMeditationVersion(meditationId: string, versionId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("meditation_versions")
+    .select("*")
+    .eq("id", versionId)
+    .eq("meditation_id", meditationId)
+    .maybeSingle();
+
+  return data ? hydrateAudioUrl(data as MeditationVersion) : null;
+}
+
+/**
+ * Delete an archived version and its audio. RLS lets only the owner delete,
+ * so the returned row is what proves the object is theirs to remove.
+ */
+export async function deleteMeditationVersion(versionId: string) {
+  const supabase = await createClient();
+  const { data: deleted, error } = await supabase
+    .from("meditation_versions")
+    .delete()
+    .eq("id", versionId)
+    .select("meditation_id, audio_path");
+
+  if (error) throw new Error(error.message);
+  if (!deleted || deleted.length === 0) throw new Error("Version not found");
+
+  await removeAudio([deleted[0].audio_path]);
+  revalidatePath(`/meditation/${deleted[0].meditation_id}`);
 }
 
 // ── Favorites ──
