@@ -14,6 +14,7 @@ import { ScriptPlaybackProvider } from "@/components/script-playback";
 import { Clock } from "lucide-react";
 import { ParentLink } from "@/components/parent-link";
 import { MeditationCover } from "@/components/meditation-cover";
+import { MeditationDetails } from "@/components/meditation-details";
 import { getQuotaUsage, isFreeRetryAvailable } from "@/lib/audio/quota";
 import { meditationMetadata } from "@/lib/seo/metadata";
 
@@ -84,12 +85,15 @@ export default async function MeditationDetailPage({
             title={meditation.title}
             size={160}
           />
-          <div className="space-y-2 sm:mr-auto">
-            <h1 className="font-serif text-2xl font-medium tracking-tight text-balance">
-              {meditation.title}
-            </h1>
-            <p className="max-w-[60ch] text-muted-foreground">{meditation.prompt}</p>
-            <div className="flex items-center gap-3 pt-1">
+          <div className="min-w-0 flex-1 space-y-3">
+            <MeditationDetails
+              meditationId={meditation.id}
+              title={meditation.title}
+              description={meditation.description}
+              tags={meditation.tags ?? []}
+              editable={isOwner}
+            />
+            <div className="flex items-center gap-3">
               <Badge variant="secondary">{meditation.status.replace(/_/g, " ")}</Badge>
               <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />

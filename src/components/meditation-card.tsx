@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { FavoriteButton } from "@/components/favorite-button";
 import { InlinePlayButton } from "@/components/inline-play-button";
 import { MeditationCover } from "@/components/meditation-cover";
+import { TagPills } from "@/components/tag-pills";
 import type { MeditationWithMeta } from "@/lib/meditation/types";
 import { Globe, Clock } from "lucide-react";
 
@@ -71,11 +72,14 @@ export function MeditationCard({
             )}
           </div>
         </div>
-        <CardDescription className="line-clamp-2">
-          {meditation.prompt}
-        </CardDescription>
+        {meditation.description && (
+          <CardDescription className="line-clamp-2">
+            {meditation.description}
+          </CardDescription>
+        )}
       </CardHeader>
-      <CardContent className="mt-auto">
+      <CardContent className="mt-auto space-y-4">
+        <TagPills tags={meditation.tags ?? []} size="sm" />
         <div className="flex items-center gap-2.5">
           <Badge
             variant="secondary"
