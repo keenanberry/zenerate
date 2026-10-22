@@ -1,6 +1,6 @@
 # Landing Hero Sits Too Low
 
-**Status:** In review
+**Status:** In review (PR #75)
 **Priority:** Phase 6 (seed & open)
 **Phase:** 6
 **Depends on:** 45 (landing refresh)
