@@ -2,6 +2,20 @@
 
 Work that's out of scope for initial ship but tracked for the next cycle. No ordering — prioritize based on user feedback and usage data once the app is live.
 
+## Next up: scoped for a future session (2026-10-22)
+
+The operator's three candidates for after launch, each scoped with decisions to make. Nothing
+has started. **Pick the paid-tier decision up before opening signups**, because it sets the
+free tier.
+
+| Task | The question it answers |
+|---|---|
+| [Paid tier](./paid-tier.md) | Charge about $5/month? Includes a per-meditation cost model (about $0.35–0.50) and the free tier's real Anthropic exposure |
+| [User profiles](./user-profiles.md) | Let people who publish show who they are: name, a short bio, their public meditations; plus an `/account` page |
+| [Google / Apple sign-in](./google-apple-auth.md) | Yes, Supabase supports both. Google is free; Apple needs a $99/year developer account. Recommends Google first |
+
+## Everything else
+
 | Task | Summary |
 |---|---|
 | [User profiles](./user-profiles.md) | Public author surface for `/discover`; private settings/quota home |
