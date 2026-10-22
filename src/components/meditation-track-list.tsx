@@ -21,6 +21,8 @@ export function MeditationTrackList({
       {/* Header row */}
       <div className="flex items-center gap-3 border-b px-2 pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
         {showIndex && <span className="w-8 text-center">#</span>}
+        {/* The cover's column (MeditationCover at 48px). */}
+        <span className="w-12 shrink-0" />
         <span className="flex-1">Title</span>
         <span className="hidden w-28 sm:block">Type</span>
         <span className="hidden w-16 text-right md:block">Duration</span>

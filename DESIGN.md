@@ -19,6 +19,7 @@ colors:
   sage: "oklch(0.7321 0.0749 169.8670)"
   candle: "oklch(0.8540 0.0882 76.8292)"
   periwinkle: "oklch(0.7857 0.0645 258.0839)"
+  cover-ground: "oklch(0.1985 0.0200 293.6639)"
   # Light theme, the :root block. Checked, not designed in.
   paper: "oklch(0.9690 0.0150 300.0000)"
   paper-raised: "oklch(1 0 0)"
@@ -35,6 +36,7 @@ colors:
   candle-ink: "oklch(0.5200 0.0900 70.0000)"
   sage-ink: "oklch(0.5000 0.0700 170.0000)"
   periwinkle-ink: "oklch(0.5000 0.0800 258.0000)"
+  paper-cover: "oklch(0.9350 0.0200 300.0000)"
 typography:
   display:
     fontFamily: "Lora, Georgia, serif"
@@ -256,6 +258,7 @@ and `.dark` in `globals.css` and use it.
 Quartz in dark) appears on the play button and the played portion of the waveform. It
 appears nowhere else: not on CTAs, not on card headers, not on the hero. The halo behind
 the player is a radial glow in dark and a flat tint in light (`--player-halo`).
+Meditation covers are not an exception: they are flat tone fields (see Covers).
 
 **The Dark First Rule.** A surface is designed and reviewed in dark, then checked in
 light. Never the reverse. A light-mode fix that would change the dark design is the wrong
@@ -486,6 +489,33 @@ silences and sounds have exact lengths, and speech is scaled from its word count
 timeline ends where the audio does. Outside the meditation page (the studio canvas, the
 landing demo) there is no player, and the viewer stays evenly lit.
 
+### Covers
+Every meditation has a designed cover, `MeditationCover` in
+`src/components/meditation-cover.tsx`, until generated artwork ships
+(`tasks/post-ship/generated-cover-art.md`). It takes `{ id, tags, title, size }` and
+is square from 48px (track rows) to 320px; the library card shows it at 64px and the
+meditation page header at 160px.
+
+- **Derived, never stored.** The first tag's group picks two hues: themes Amethyst and
+  Periwinkle, practices Sage and Periwinkle, moments Candle and Amethyst; no tag, or a
+  tag outside the vocabulary, draws in Dusk alone. A 32-bit FNV-1a hash of the id picks
+  the motif (moon over horizon, ripples, three hills of dusk, the cropped lotus, an
+  orbit) and seeds its composition, so a meditation draws the same cover on every
+  render and device. The markup carries token classes, never colour values, so a theme
+  toggle recolours it.
+- **Flat tone fields, no gradient.** Shapes are filled or stroked in `currentColor` at
+  12 to 70% opacity over `--cover-ground` (Deep Night in dark, a step below Paper in
+  light), so a cover reads as a window set into the surface rather than a raised card.
+  Layering opacities gives the depth a gradient would; nothing glows.
+- **Shape:** 6px radius under 96px, 12px from 96px, with a Hairline border at 60%.
+  Strokes hold a steady on-screen weight (1.25px in rows, 2px in headers), and covers
+  under 96px drop their finest rings.
+- **Decorative by default.** A cover sits beside its title, so it is `aria-hidden`;
+  `decorative={false}` names it with the title where it stands alone.
+- **Not on the lock screen.** The Media Session artwork stays the brand icon: the OS
+  needs a raster URL, and a per-meditation cover would mean resolving the tokens and
+  rasterizing client-side for a surface only a phone can verify.
+
 ### Audio Player (signature)
 A card holding the waveform above a row of controls: a 48px round play/pause button, a
 tabular-figure time readout in Dusk, and download, mute and (from `sm`) volume controls
@@ -568,6 +598,8 @@ result; add-to-collection has real rollback.
 - **Do** express elevation as a lighter surface token with a Hairline border.
 - **Do** keep the gradient on the play button and the played waveform, and keep the halo
   behind the player a glow in dark and a flat tint in light.
+- **Do** give a meditation its `MeditationCover` wherever it is listed, and keep covers
+  flat tone fields in token hues.
 - **Do** verify at 390px wide, and wrap any new transition in `motion-safe:` or an
   equivalent `prefers-reduced-motion` guard.
 - **Do** check that any face a token names is loaded in `layout.tsx` and referenced by its
@@ -578,8 +610,8 @@ result; add-to-collection has real rollback.
   `text-emerald-600`) for anything a visitor sees.
 - **Don't** add a `shadow-*` class to new code, or reach for a shadow to lift a surface
   on dark.
-- **Don't** put the gradient on a CTA, a card header, a hero, or anything that is not the
-  player.
+- **Don't** put the gradient on a CTA, a card header, a hero, a cover, or anything that
+  is not the player.
 - **Don't** set Lora on `body`, or any serif on buttons, nav, labels or form controls.
 - **Don't** force dark on the landing page or anywhere else; `defaultTheme="system"`
   stays.
