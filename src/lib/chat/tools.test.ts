@@ -410,6 +410,14 @@ describe("prepareStudioStep", () => {
     }
   });
 
+  it("keeps every tool after \"Make the audio\" when narrowing is off", () => {
+    const messages: ModelMessage[] = [{ role: "user", content: "Make the audio" }];
+    expect(prepareStudioStep({ stepNumber: 0, messages }, { narrowTools: false })).toBeUndefined();
+    expect(
+      prepareStudioStep({ stepNumber: MAX_STEPS_PER_TURN - 1, messages }, { narrowTools: false }),
+    ).toEqual({ toolChoice: "none" });
+  });
+
   it("frees the tools again once the card is answered, and for any other message", () => {
     // The continuation after the card ends on its tool result, not the request.
     const continued: ModelMessage[] = [
