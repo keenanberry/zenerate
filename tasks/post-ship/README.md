@@ -12,6 +12,7 @@ Work that's out of scope for initial ship but tracked for the next cycle. No ord
 | [Analytics](./analytics.md) | Usage + conversion funnel tracking |
 | [Backup retention](./backup-retention.md) | Prune dumps past 30 days, as `/privacy` promises; re-apply deletions after a restore |
 | [Account deletion](./account-deletion.md) | Self-serve delete, including the audio files storage does not cascade |
+| [Chat deletion](./chat-deletion.md) | Let the owner delete a chat; today chats go only with the account |
 | [Error tracking](./error-tracking.md) | Sentry or similar for production visibility |
 | [AI gateway](./ai-gateway.md) | Route model calls through Vercel AI Gateway for token/cost/latency visibility |
 | [Agent user memory](./agent-user-memory.md) | Remember user preferences across generations. Unblocked by the chat agent (ship 29) |

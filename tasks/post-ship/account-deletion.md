@@ -4,10 +4,23 @@
 **Priority:** Post-ship
 
 ## Why it matters
-The Privacy Policy (`/privacy`, task 15) promises that deleting an account removes the
-account data, meditations, **generated audio**, collections and usage records. Today the
+The Privacy Policy (`/privacy`, tasks 15 and 38) promises that deleting an account
+removes the account data, meditations, **generated audio** (earlier versions included),
+conversations with the meditation agent, favorites, collections, plays and usage records. Today the
 only route is emailing `privacy@zeneratestudio.com`. GDPR's right to erasure is met by
 that email path, but a self-serve button is the expected UX.
+
+## What deletion must cover
+Task 38 checked each piece against `supabase/migrations/20261021000000_studio_schema.sql`:
+
+- **Chats and their messages:** `chats.user_id` cascades from `auth.users`, and
+  `chat_messages.chat_id` cascades from `chats`. Deleting the user is enough.
+- **Plays:** `meditation_plays.user_id` cascades from `auth.users` (the user's own
+  listening), and `meditation_plays.meditation_id` cascades from `meditations` (others'
+  plays of the user's meditations). Deleting the user is enough.
+- **Archived versions:** the `meditation_versions` rows cascade through `meditations`, but
+  their audio files do not. They sit in the same per-user folder as current audio, so the
+  prefix delete below removes them.
 
 ## The trap: storage does not cascade
 Deleting the `auth.users` row cascades every `public` table (`on delete cascade` on each

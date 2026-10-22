@@ -19,8 +19,6 @@ const studioContextSchema = z.object({
   ),
   userId: z.string(),
   chatId: z.string(),
-  /** The chat's first user message, stored as the meditation's `prompt`. */
-  prompt: z.string().nullable(),
 });
 
 export type StudioToolContext = z.infer<typeof studioContextSchema>;
@@ -139,7 +137,8 @@ export const studioTools = {
           .insert({
             user_id: ctx.userId,
             title: "Untitled meditation",
-            prompt: ctx.prompt,
+            // No prompt: the request lives only in the chat, which is
+            // owner-only even when the meditation goes public.
             script,
             status: "script_ready",
             is_public: false,
