@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import type { ModelMessage } from "ai";
 import {
+  lengthToleranceSeconds,
   studioTools,
   previewSoundsInput,
   setDetailsInput,
@@ -52,12 +54,37 @@ async function run<T>(
   name: "writeScript" | "setDetails",
   input: T,
   ctx: StudioToolContext,
+  messages: ModelMessage[] = [],
 ) {
   const execute = studioTools[name].execute as unknown as (
     input: T,
-    options: { toolCallId: string; messages: []; context: StudioToolContext },
+    options: { toolCallId: string; messages: ModelMessage[]; context: StudioToolContext },
   ) => Promise<Record<string, unknown>>;
-  return execute(input, { toolCallId: "call-1", messages: [], context: ctx });
+  return execute(input, { toolCallId: "call-1", messages, context: ctx });
+}
+
+/** A turn so far: the user's message, then each earlier writeScript and its result. */
+function turn(...results: Record<string, unknown>[]): ModelMessage[] {
+  return [
+    { role: "user", content: "Make it 20 minutes" },
+    ...results.flatMap((value, i): ModelMessage[] => [
+      {
+        role: "assistant",
+        content: [{ type: "tool-call", toolCallId: `w${i}`, toolName: "writeScript", input: {} }],
+      },
+      {
+        role: "tool",
+        content: [
+          {
+            type: "tool-result",
+            toolCallId: `w${i}`,
+            toolName: "writeScript",
+            output: { type: "json", value: value as never },
+          },
+        ],
+      },
+    ]),
+  ];
 }
 
 // 10 minutes: ~30 words of speech, 30s of pauses, 9 min of silence, two 7s bells.
@@ -174,6 +201,57 @@ describe("writeScript", () => {
     const result = await run("writeScript", { durationMinutes: 20, script: GOOD_SCRIPT }, context(db.client));
     expect(result.withinTarget).toBe(false);
     expect(result.issues).toEqual(expect.arrayContaining([expect.stringMatching(/short of/)]));
+  });
+
+  it("accepts 2 minutes or 15% either side of the target, whichever is larger", () => {
+    expect(lengthToleranceSeconds(5 * 60)).toBe(120);
+    expect(lengthToleranceSeconds(10 * 60)).toBe(120);
+    expect(lengthToleranceSeconds(20 * 60)).toBe(180);
+    expect(lengthToleranceSeconds(60 * 60)).toBe(540);
+  });
+
+  it("accepts a draft a little off the target as is", async () => {
+    // GOOD_SCRIPT runs about 10 min: 2 min long for an 8 min target.
+    const result = await run("writeScript", { durationMinutes: 8, script: GOOD_SCRIPT }, context(db.client));
+    expect(result.withinTarget).toBe(true);
+    expect(result.issues).toEqual([]);
+  });
+
+  it("asks for one length rewrite per turn, then accepts the next draft as written", async () => {
+    const first = await run("writeScript", { durationMinutes: 20, script: GOOD_SCRIPT }, context(db.client));
+    expect(first.withinTarget).toBe(false);
+
+    const second = await run(
+      "writeScript",
+      { durationMinutes: 20, script: GOOD_SCRIPT },
+      context(db.client),
+      turn(first),
+    );
+    expect(second.withinTarget).toBe(true);
+    expect(second.issues).toEqual([]);
+    expect(second.note).toMatch(/^Accepted at 10 min/);
+
+    const third = await run(
+      "writeScript",
+      { durationMinutes: 20, script: GOOD_SCRIPT },
+      context(db.client),
+      turn(first, second),
+    );
+    expect(third.issues).toEqual([]);
+  });
+
+  it("starts the count again with each new message", async () => {
+    const earlier = await run("writeScript", { durationMinutes: 20, script: GOOD_SCRIPT }, context(db.client));
+    const messages: ModelMessage[] = [...turn(earlier), { role: "user", content: "Try again" }];
+    const result = await run("writeScript", { durationMinutes: 20, script: GOOD_SCRIPT }, context(db.client), messages);
+    expect(result.withinTarget).toBe(false);
+  });
+
+  it("still reports malformed markers after the length rewrite", async () => {
+    const first = await run("writeScript", { durationMinutes: 20, script: GOOD_SCRIPT }, context(db.client));
+    const script = GOOD_SCRIPT.replace("*[PAUSE: 15 seconds]*", "*[PAUSE: fifteen seconds]*");
+    const result = await run("writeScript", { durationMinutes: 20, script }, context(db.client), turn(first));
+    expect(result.issues).toEqual([expect.stringMatching(/malformed/)]);
   });
 
   it("flags sounds outside the catalog", async () => {
