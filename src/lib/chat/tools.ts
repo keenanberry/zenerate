@@ -1,4 +1,10 @@
-import { tool, type InferUITools, type UIDataTypes, type UIMessage } from "ai";
+import {
+  tool,
+  type InferUITools,
+  type ModelMessage,
+  type UIDataTypes,
+  type UIMessage,
+} from "ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { findMalformedMarkers, parseMeditationText } from "@/lib/meditation/parser";
@@ -23,8 +29,18 @@ const studioContextSchema = z.object({
 
 export type StudioToolContext = z.infer<typeof studioContextSchema>;
 
-/** How far an estimate may sit from the target before the model is told to fix it. */
-const LENGTH_TOLERANCE = 0.1;
+/**
+ * How far an estimate may sit from the target before the model is told to
+ * rewrite: 2 minutes or 15%, whichever is larger. The one place this lives.
+ * Tight enough to catch the real misses (long sessions landing at 68-85% of
+ * target before task 16's prompt fix), loose enough that an ordinary draft,
+ * 91-106% after it, is never rewritten just for timing (task 41).
+ */
+export const LENGTH_TOLERANCE = { minutes: 2, ratio: 0.15 };
+
+export function lengthToleranceSeconds(targetSeconds: number): number {
+  return Math.max(LENGTH_TOLERANCE.minutes * 60, targetSeconds * LENGTH_TOLERANCE.ratio);
+}
 
 export const writeScriptInput = z.object({
   durationMinutes: z
@@ -75,7 +91,27 @@ async function linkedMeditationId(ctx: StudioToolContext): Promise<string | null
   return data.meditation_id as string | null;
 }
 
-function reviewScript(script: string, durationMinutes: number) {
+/**
+ * Whether an earlier writeScript in this turn was already sent back for its
+ * length. `messages` holds this turn's earlier steps, so everything after the
+ * last user message is this turn (a continuation adds no user message).
+ */
+function lengthRewriteAsked(messages: ModelMessage[]): boolean {
+  const lastUser = messages.findLastIndex((m) => m.role === "user");
+  return messages.slice(lastUser + 1).some(
+    (m) =>
+      m.role === "tool" &&
+      m.content.some(
+        (part) =>
+          part.type === "tool-result" &&
+          part.toolName === "writeScript" &&
+          part.output.type === "json" &&
+          (part.output.value as { withinTarget?: unknown } | null)?.withinTarget === false,
+      ),
+  );
+}
+
+function reviewScript(script: string, durationMinutes: number, rewriteAsked: boolean) {
   const parsed = parseMeditationText(script);
   const segments = { speech: 0, pause: 0, silence: 0, sound: 0 };
   for (const segment of parsed) segments[segment.type] += 1;
@@ -86,7 +122,9 @@ function reviewScript(script: string, durationMinutes: number) {
   );
   const estimatedSeconds = estimateDuration(script).totalSeconds;
   const targetSeconds = durationMinutes * 60;
-  const ratio = estimatedSeconds / targetSeconds;
+  const offBy = estimatedSeconds - targetSeconds;
+  const lengthOff = Math.abs(offBy) > lengthToleranceSeconds(targetSeconds);
+  const estimatedMinutes = Math.round(estimatedSeconds / 60);
 
   const issues: string[] = [];
   if (malformedLines.length > 0) {
@@ -98,12 +136,18 @@ function reviewScript(script: string, durationMinutes: number) {
   if (unknownSounds.length > 0) {
     issues.push(`Unknown sound file(s): ${unknownSounds.join(", ")}. Use only the listed sounds.`);
   }
-  if (Math.abs(ratio - 1) > LENGTH_TOLERANCE) {
-    const pct = Math.round(Math.abs(ratio - 1) * 100);
+  // One length rewrite per turn. A second miss is kept as written, and the
+  // person hears its real length instead of waiting through another rewrite.
+  let note: string | undefined;
+  if (lengthOff && !rewriteAsked) {
     issues.push(
-      `Runs ${Math.round(estimatedSeconds / 60)} min, ${pct}% ${ratio < 1 ? "short of" : "over"} ` +
-        `the ${durationMinutes} min target. Adjust the SILENCE blocks and write it again.`,
+      `Runs ${estimatedMinutes} min, ${offBy < 0 ? "well short of" : "well over"} the ` +
+        `${durationMinutes} min target. Adjust the SILENCE blocks and write it again, once.`,
     );
+  } else if (lengthOff) {
+    note =
+      `Accepted at ${estimatedMinutes} min. Do not write it again for length; ` +
+      `tell the person it runs about ${estimatedMinutes} minutes.`;
   }
 
   return {
@@ -113,8 +157,9 @@ function reviewScript(script: string, durationMinutes: number) {
     unknownSounds,
     estimatedSeconds,
     targetSeconds,
-    withinTarget: Math.abs(ratio - 1) <= LENGTH_TOLERANCE,
+    withinTarget: !lengthOff || rewriteAsked,
     issues,
+    ...(note && { note }),
   };
 }
 
@@ -124,8 +169,8 @@ export const studioTools = {
       "Write the whole meditation script into the canvas. Use it for the first draft and for every revision; a revision is a full rewrite. Returns the parsed segment counts, malformed markers and the estimated length against the target.",
     inputSchema: writeScriptInput,
     contextSchema: studioContextSchema,
-    execute: async ({ durationMinutes, script }, { context: ctx }) => {
-      const review = reviewScript(script, durationMinutes);
+    execute: async ({ durationMinutes, script }, { context: ctx, messages }) => {
+      const review = reviewScript(script, durationMinutes, lengthRewriteAsked(messages));
       let meditationId = await linkedMeditationId(ctx);
       let savedAs: "script" | "draft_script" = "script";
 
