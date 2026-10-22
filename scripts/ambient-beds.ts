@@ -107,14 +107,17 @@ export const SYNTHESIZED_BEDS: SynthesizedBed[] = [
     // A dark, open D chord (no third) of soft triangle-ish partials, each a
     // pair a fraction of a hertz apart, so it beats slowly and differently in
     // each ear; a faint high shimmer that surfaces now and then; and one
-    // distant swell a cycle. All of it through a long convolution reverb (a
-    // 9 s decaying-noise impulse), mostly wet.
+    // distant swell a cycle. All of it through long echo tails, mostly wet.
     //
     // Every frequency and envelope completes a whole number of cycles in
-    // 90 s, and the reverb is linear, so after its first 9 s the output is
-    // exactly periodic. The recipe renders a little over two periods and
-    // keeps the second (the reverb's end-of-stream flush falls after it),
-    // which loops as rendered with nothing to crossfade.
+    // 90 s, and the echoes are linear, so after the longest one the output
+    // is exactly periodic. The recipe renders a little over two periods and
+    // keeps the second, which loops as rendered with nothing to crossfade.
+    //
+    // The tails are feedback-free aecho taps rather than an afir convolution
+    // reverb: afir normalizes its impulse by a rule that changed in FFmpeg
+    // 6.1, so the snapshot's FFmpeg (7.x) rendered it 20 dB quieter than a
+    // local 6.0 did. aecho renders the same on both.
     id: "space",
     seconds: 90,
     periodic: true,
@@ -159,19 +162,24 @@ export const SYNTHESIZED_BEDS: SynthesizedBed[] = [
         ].join("+");
       };
 
+      // Echo taps at `delays` ms, each quieter by the same exponential decay.
+      const echoes = (delays: number[]) =>
+        `aecho=0:1:${delays.join("|")}:${delays.map((d) => (0.6 * Math.exp(-d / 1300)).toFixed(4)).join("|")}`;
+
       return [
         `aevalsrc='${voice(0)}|${voice(1)}':s=44100:d=${2 * P + 10},asplit=2[dry][wet]`,
-        // The impulse: two independent noise channels, decaying about 60 dB
-        // over 9 s, darkened so the tail is a wash rather than a hiss.
-        "anoisesrc=color=pink:seed=7301:amplitude=1:sample_rate=44100:duration=9[irl]",
-        "anoisesrc=color=pink:seed=7302:amplitude=1:sample_rate=44100:duration=9[irr]",
-        "[irl][irr]amerge=inputs=2,aeval=val(0)*exp(-t/1.3)|val(1)*exp(-t/1.3),lowpass=f=4000[ir]",
-        "[wet][ir]afir=gtype=gn[verb]",
+        // Sixteen taps an ear out to about 8 s, at different delays in each
+        // so the tail is wide, decaying about 60 dB over 9 s, then darkened
+        // so it is a wash rather than a ring.
+        "[wet]channelsplit=channel_layout=stereo[wl][wr]",
+        `[wl]${echoes([89, 197, 331, 487, 673, 911, 1193, 1531, 1949, 2441, 3019, 3701, 4493, 5419, 6491, 7727])}[el]`,
+        `[wr]${echoes([113, 227, 367, 541, 743, 997, 1301, 1667, 2111, 2633, 3251, 3967, 4813, 5791, 6917, 8221])}[er]`,
+        "[el][er]amerge=inputs=2,lowpass=f=4000[verb]",
         "[dry]volume=0.3[dry2]",
-        `[dry2][verb]amix=inputs=2:normalize=0,highpass=f=35,lowpass=f=7000,atrim=${P}:${2 * P},asetpts=PTS-STARTPTS[src]`,
+        `[dry2][verb]amix=inputs=2:normalize=0,bass=g=10:f=120,treble=g=-6.5:f=450,highpass=f=35,lowpass=f=7000,atrim=${P}:${2 * P},asetpts=PTS-STARTPTS[src]`,
       ].join(";");
     })(),
-    gainDb: -20.9,
+    gainDb: -12.6,
   },
 ];
 
@@ -208,6 +216,18 @@ export const RECORDED_BEDS: RecordedBed[] = [
     license: "CC0-1.0",
     processing:
       "HQ preview (48 kHz MP3), 26.5-70.5 s, resampled to 44.1 kHz, high-pass 80 Hz, +17 dB, acompressor threshold=0.03 ratio=3 attack=5 release=250 (tames the nearest bird calls), low-pass 10 kHz, loopFilter to 40 s, +4.50 dB to BED_LUFS, 128k MP3",
+  },
+  {
+    // Picked by the operator from four CC0 candidates (task 44).
+    id: "chant",
+    seconds: 30,
+    sha256: "27f2be605262ffc98495bc1c1d583e30c56eef177d0df6579b60f5e2252e6a5d",
+    source: "https://freesound.org/people/szegvari/sounds/545055/",
+    downloaded: "https://cdn.freesound.org/previews/545/545055_2282212-hq.mp3",
+    author: "szegvari",
+    license: "CC0-1.0",
+    processing:
+      "HQ preview (44.1 kHz MP3), 16-50 s (steadiest loudness), high-pass 80 Hz, low-pass 4 kHz (sets it back behind the voice), loopFilter to 30 s, -13.60 dB to BED_LUFS, 128k MP3",
   },
 ];
 

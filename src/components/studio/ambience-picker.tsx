@@ -34,6 +34,8 @@ function Tile({
     <div
       className={cn(
         "flex min-w-0 items-center gap-2 rounded-lg border bg-card p-2 hover:bg-card-hover motion-safe:transition-colors",
+        // None takes a row of its own, so the six beds fill the grid evenly.
+        !ambience.previewUrl && "col-span-full",
         "has-[:focus-visible]:border-ring has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring/50",
         selected && "border-primary bg-card-hover ring-1 ring-primary/30",
       )}

@@ -10,7 +10,15 @@
  * meditations.settings.music stores the id, not the path, so a bed can move
  * inside the snapshot without rewriting rows.
  */
-export const AMBIENCE_IDS = ["none", "rain", "ocean", "forest", "drone", "space"] as const;
+export const AMBIENCE_IDS = [
+  "none",
+  "rain",
+  "ocean",
+  "forest",
+  "drone",
+  "space",
+  "chant",
+] as const;
 
 export type AmbienceId = (typeof AMBIENCE_IDS)[number];
 
@@ -52,6 +60,7 @@ export const AMBIENCES: Record<AmbienceId, Ambience> = {
   forest: bed("forest", "Forest", 0.5),
   drone: bed("drone", "Soft drone", 0.5),
   space: bed("space", "Space", 0.5, "space.flac"),
+  chant: bed("chant", "Chant", 0.5),
 };
 
 export function isAmbienceId(value: unknown): value is AmbienceId {
