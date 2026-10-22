@@ -79,6 +79,12 @@
   --color-sage: var(--sage);
   --color-periwinkle: var(--periwinkle);
   --color-cover-ground: var(--cover-ground);
+  --color-cover-rose: var(--cover-rose);
+  --color-cover-clay: var(--cover-clay);
+  --color-cover-moss: var(--cover-moss);
+  --color-cover-tide: var(--cover-tide);
+  --color-cover-mist: var(--cover-mist);
+  --color-cover-heather: var(--cover-heather);
 }
 
 :root {
@@ -139,6 +145,14 @@
   /* The ground of a meditation cover (DESIGN.md, Covers): a step below the
      page so a cover reads as a window, not a raised card. */
   --cover-ground: oklch(0.9350 0.0200 300.0000);
+  /* Cover-only hues (DESIGN.md, Covers). They widen the covers' palette past
+     the state hues and appear nowhere else. Ink weight here, like --sage. */
+  --cover-rose: oklch(0.5300 0.0850 10.0000);
+  --cover-clay: oklch(0.5200 0.0850 45.0000);
+  --cover-moss: oklch(0.5000 0.0700 130.0000);
+  --cover-tide: oklch(0.5000 0.0700 205.0000);
+  --cover-mist: oklch(0.5400 0.0450 235.0000);
+  --cover-heather: oklch(0.5200 0.0850 335.0000);
   --font-sans: var(--font-geist-sans, sans-serif);
   --font-serif: var(--font-lora, Georgia, serif);
   --font-mono: var(--font-geist-mono, monospace);
@@ -210,6 +224,12 @@
   --sage: oklch(0.7321 0.0749 169.8670);
   --periwinkle: oklch(0.7857 0.0645 258.0839);
   --cover-ground: oklch(0.1985 0.0200 293.6639);
+  --cover-rose: oklch(0.7900 0.0650 10.0000);
+  --cover-clay: oklch(0.7600 0.0700 45.0000);
+  --cover-moss: oklch(0.7600 0.0650 130.0000);
+  --cover-tide: oklch(0.7600 0.0600 205.0000);
+  --cover-mist: oklch(0.8000 0.0350 235.0000);
+  --cover-heather: oklch(0.7400 0.0700 335.0000);
   --radius: 0.5rem;
   --font-sans: var(--font-geist-sans, sans-serif);
   --font-serif: var(--font-lora, Georgia, serif);

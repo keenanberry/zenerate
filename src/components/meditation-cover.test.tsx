@@ -1,7 +1,14 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { TAG_GROUPS } from "@/lib/meditation/tags";
-import { coverDesign, hashId, MeditationCover, tagGroupOf } from "./meditation-cover";
+import { TAG_GROUPS, TAGS } from "@/lib/meditation/tags";
+import {
+  coverDesign,
+  hashId,
+  MeditationCover,
+  MOTIFS,
+  ROUND_MOTIFS,
+  TAG_HUES,
+} from "./meditation-cover";
 
 const ID = "6f1c2a9e-3b7d-4e21-9a0c-5d8f7e6b1a24";
 
@@ -33,18 +40,46 @@ describe("MeditationCover", () => {
     expect(motifs.size).toBeGreaterThanOrEqual(4);
   });
 
-  it("takes its hues from the first tag's group", () => {
-    expect(tagGroupOf(TAG_GROUPS.themes[0])).toBe("themes");
-    expect(tagGroupOf(TAG_GROUPS.practices[0])).toBe("practices");
-    expect(tagGroupOf(TAG_GROUPS.moments[0])).toBe("moments");
-    expect(coverDesign(ID, ["breathwork", "sleep"]).group).toBe("practices");
-    expect(coverDesign(ID, ["sleep", "breathwork"]).group).toBe("themes");
+  it("gives every tag its own pair of hues, taken from the first tag", () => {
+    const pairs = TAGS.map((tag) => [...TAG_HUES[tag]].sort().join("+"));
+    expect(new Set(pairs).size).toBe(TAGS.length);
+    expect(TAG_HUES[TAG_GROUPS.themes[0]]).toBeDefined();
+    expect(coverDesign(ID, ["breathwork", "sleep"]).tag).toBe("breathwork");
+    expect(coverDesign(ID, ["retired-tag", "sleep"]).tag).toBe("sleep");
   });
 
   it("draws a quiet cover for untagged and unknown tags", () => {
-    expect(coverDesign(ID, []).group).toBe("none");
-    expect(coverDesign(ID, ["retired-tag"]).group).toBe("none");
+    expect(coverDesign(ID, []).tag).toBeNull();
+    expect(coverDesign(ID, ["retired-tag"]).tag).toBeNull();
     expect(render(ID, [])).toContain("text-muted-foreground");
+  });
+
+  it("draws mostly motifs that are not round, and every motif at some id", () => {
+    const tagSets = [["sleep", "bedtime"], ["focus", "breathwork"], ["gratitude", "morning"], []];
+    const motifs = Array.from({ length: 2000 }, (_, i) =>
+      coverDesign(`${ID.slice(0, -4)}${i}`, tagSets[i % tagSets.length]).motif,
+    );
+    expect(new Set(motifs).size).toBe(MOTIFS.length);
+    const round = motifs.filter((motif) => ROUND_MOTIFS.includes(motif)).length;
+    expect(round / motifs.length).toBeLessThan(0.4);
+  });
+
+  it("renders every motif at every size without the same markup twice", () => {
+    for (const size of [48, 96, 160, 320]) {
+      const seen = new Map<string, string>();
+      for (let i = 0; seen.size < MOTIFS.length * 2 && i < 5000; i++) {
+        const id = `${ID.slice(0, -4)}${i}`;
+        const { motif } = coverDesign(id, ["grounding"]);
+        const key = `${motif}:${seen.has(`${motif}:0`) ? 1 : 0}`;
+        if (seen.has(key)) continue;
+        const html = render(id, ["grounding"], size);
+        expect(html).toContain(`data-motif="${motif}"`);
+        expect(html).not.toContain("NaN");
+        seen.set(key, html);
+      }
+      expect(seen.size).toBe(MOTIFS.length * 2);
+      expect(new Set(seen.values()).size).toBe(seen.size);
+    }
   });
 
   it("paints only in tokens, with no gradient", () => {

@@ -20,6 +20,12 @@ colors:
   candle: "oklch(0.8540 0.0882 76.8292)"
   periwinkle: "oklch(0.7857 0.0645 258.0839)"
   cover-ground: "oklch(0.1985 0.0200 293.6639)"
+  cover-rose: "oklch(0.7900 0.0650 10.0000)"
+  cover-clay: "oklch(0.7600 0.0700 45.0000)"
+  cover-moss: "oklch(0.7600 0.0650 130.0000)"
+  cover-tide: "oklch(0.7600 0.0600 205.0000)"
+  cover-mist: "oklch(0.8000 0.0350 235.0000)"
+  cover-heather: "oklch(0.7400 0.0700 335.0000)"
   # Light theme, the :root block. Checked, not designed in.
   paper: "oklch(0.9690 0.0150 300.0000)"
   paper-raised: "oklch(1 0 0)"
@@ -37,6 +43,12 @@ colors:
   sage-ink: "oklch(0.5000 0.0700 170.0000)"
   periwinkle-ink: "oklch(0.5000 0.0800 258.0000)"
   paper-cover: "oklch(0.9350 0.0200 300.0000)"
+  cover-rose-ink: "oklch(0.5300 0.0850 10.0000)"
+  cover-clay-ink: "oklch(0.5200 0.0850 45.0000)"
+  cover-moss-ink: "oklch(0.5000 0.0700 130.0000)"
+  cover-tide-ink: "oklch(0.5000 0.0700 205.0000)"
+  cover-mist-ink: "oklch(0.5400 0.0450 235.0000)"
+  cover-heather-ink: "oklch(0.5200 0.0850 335.0000)"
 typography:
   display:
     fontFamily: "Lora, Georgia, serif"
@@ -496,20 +508,34 @@ Every meditation has a designed cover, `MeditationCover` in
 is square from 48px (track rows) to 320px; the library card shows it at 64px and the
 meditation page header at 160px.
 
-- **Derived, never stored.** The first tag's group picks two hues: themes Amethyst and
-  Periwinkle, practices Sage and Periwinkle, moments Candle and Amethyst; no tag, or a
-  tag outside the vocabulary, draws in Dusk alone. A 32-bit FNV-1a hash of the id picks
-  the motif (moon over horizon, ripples, three hills of dusk, the cropped lotus, an
-  orbit) and seeds its composition, so a meditation draws the same cover on every
-  render and device. The markup carries token classes, never colour values, so a theme
-  toggle recolours it.
+- **Derived, never stored.** The first tag in the vocabulary picks a pair of hues, and
+  no two tags share a pair (`TAG_HUES`); no tag, or only tags outside the vocabulary,
+  draws in Dusk alone. A 32-bit FNV-1a hash of the id picks which hue leads, whether the
+  picture is mirrored, and the motif, and seeds its composition (scale, position, layer
+  count, density), so a meditation draws the same cover on every render and device. The
+  markup carries token classes, never colour values, so a theme toggle recolours it.
+- **Ten hues.** Amethyst, Periwinkle, Sage and Candle from the state set, plus six
+  cover-only tokens that appear nowhere else: `--cover-rose`, `--cover-clay`,
+  `--cover-moss`, `--cover-tide`, `--cover-mist` and `--cover-heather`. Like the state
+  hues they are muted and nocturnal (chroma 0.035 to 0.07 at about 0.76 lightness in
+  dark) and drop to ink weight in light (about 0.52), so a cover never turns neon on
+  Deep Night or washes out on Paper.
+- **Fourteen motifs, most not round.** Moon, ripples, orbit and the cropped lotus are
+  drawn around a circle; the other ten are not: three hills of dusk, layered dunes, tide
+  lines, a mountain ridge, a starfield, rain over a pool, a frond of leaves, a cairn of
+  stones, aurora curtains as stepped columns of tone, and a doorway arch. Two times in
+  three the hash picks from motifs that suit one of the meditation's tags (sleep leans to
+  moon, starfield and orbit; grounding to stones, ridge and hills; breathwork to waves
+  and ripples), otherwise from all fourteen. Round motifs come to about a third of
+  covers.
 - **Flat tone fields, no gradient.** Shapes are filled or stroked in `currentColor` at
   12 to 70% opacity over `--cover-ground` (Deep Night in dark, a step below Paper in
   light), so a cover reads as a window set into the surface rather than a raised card.
   Layering opacities gives the depth a gradient would; nothing glows.
 - **Shape:** 6px radius under 96px, 12px from 96px, with a Hairline border at 60%.
   Strokes hold a steady on-screen weight (1.25px in rows, 2px in headers), and covers
-  under 96px drop their finest rings.
+  under 96px drop their finest detail: fewer rings, stars, drops, leaves and layers,
+  drawn larger.
 - **Decorative by default.** A cover sits beside its title, so it is `aria-hidden`;
   `decorative={false}` names it with the title where it stands alone.
 - **Not on the lock screen.** The Media Session artwork stays the brand icon: the OS
