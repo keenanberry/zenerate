@@ -90,7 +90,7 @@ vi.mock("@vercel/sandbox", () => ({
 }));
 
 import { processAudioWorkflow } from "./workflow";
-import { AMBIENCES } from "@/lib/meditation/ambience";
+import { AMBIENCES, savedAmbience } from "@/lib/meditation/ambience";
 
 const USER = "user-1";
 const CURRENT = "The current script, already narrated.";
@@ -230,6 +230,23 @@ describe("processAudioWorkflow", () => {
     await processAudioWorkflow("med-1", null, "evt-1");
 
     expect(sandboxConfig().backgroundMusic).toBeNull();
+  });
+
+  // Brown noise was a bed until task 44 replaced it with space. A meditation
+  // saved with it re-renders as narration alone instead of failing.
+  it("mixes nothing for a retired bed, brown-noise", async () => {
+    seed({
+      script: CURRENT,
+      audio_path: null,
+      status: "processing_audio",
+      settings: { voice: "voice-old", music: "brown-noise", volume: 0.5 },
+    });
+
+    await processAudioWorkflow("med-1", null, "evt-1");
+
+    expect(savedAmbience("brown-noise")).toBeNull();
+    expect(sandboxConfig().backgroundMusic).toBeNull();
+    expect(meditation().status).toBe("completed");
   });
 
   it("mixes a draft render's chosen bed and saves it only on promotion", async () => {

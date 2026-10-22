@@ -51,8 +51,10 @@ away from where they sounded right. Leave the levels alone unless you have liste
 Ambient beds follow the same split: `src/lib/meditation/ambience.ts` names them and sets
 their mix volume, `scripts/ambient-beds.ts` builds them into `/sounds/ambient`, and
 `ambience.test.ts` fails if they drift. The recorded beds are committed in
-`public/sounds/ambient/` (the card's previews) and the build reads them from there; after
-changing a synthesized recipe, run `scripts/export-sound-previews.ts --ambient`.
+`scripts/ambient/` and the build reads them from there. The card's previews in
+`public/sounds/ambient/` are every bed turned down to `AMBIENT_PREVIEW_LUFS`, the level
+it is heard at under narration; after changing a recipe or a recording, run
+`scripts/export-sound-previews.ts --ambient`.
 
 ## Local ffmpeg
 
