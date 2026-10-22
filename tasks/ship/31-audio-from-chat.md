@@ -1,6 +1,6 @@
 # Audio From the Chat
 
-**Status:** Done (PR #53); one real render on a deploy is the operator's
+**Status:** Done (PR #53). Exemption set and real renders verified in production by the operator, 2026-10-22
 **Priority:** Phase 4, Wave A. Seeding needs it.
 **Phase:** 4 (studio)
 **Depends on:** 28, 29. Builds cards against 30's `renderStudioPart`, so it can run beside 30.

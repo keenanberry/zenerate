@@ -7,6 +7,7 @@ AI-powered meditation script and audio generation platform.
 - **Next.js 16** — App Router, TypeScript, Tailwind CSS v4, shadcn/ui (amethyst-haze theme)
 - **Supabase** — Postgres, Auth (email/password), Storage
 - **AI SDK 7** — `@ai-sdk/anthropic` for the studio chat agent (streaming, tools)
+  The model is set by `STUDIO_MODEL` (`src/lib/chat/model.ts`); production runs `claude-sonnet-5-5`. Compare models with `scripts/measure-studio-rewrites.ts` before switching (task 47).
 - **Vercel Workflow** + **Vercel Sandbox** — durable orchestration and ephemeral FFmpeg compute
 - **ElevenLabs** — text-to-speech
 - **wavesurfer.js** — audio player with waveform

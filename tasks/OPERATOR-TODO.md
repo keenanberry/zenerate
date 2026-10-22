@@ -4,7 +4,7 @@ Everything left before signups open that only the operator can do: a phone, a da
 account, or a judgment call. Agents keep this file current. When you finish an item, tick it
 and add the date, or tell an agent and it will. Each item names the task file with the detail.
 
-Last updated: 2026-10-22.
+Last updated: 2026-10-22. Live sandbox snapshot: `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`.
 
 ## 1. Seed Discover (task 37)
 
@@ -31,6 +31,7 @@ Last updated: 2026-10-22.
 
 ## 3. Production checks
 
+- [ ] Revise a meditation that already has audio, re-render it, and choose keep or replace. Earlier versions should appear for you only (32).
 - [ ] Supabase → Auth → URL Configuration: `https://www.zeneratestudio.com/auth/callback**`
       is in Redirect URLs, then run a full password reset with your own account (11).
 - [ ] Signed out, `/discover` loads with categories and shelves (36), and the landing page's

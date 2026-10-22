@@ -83,13 +83,13 @@ and make the audio from cards in the chat. See the studio spec.
 | 28 | [Studio schema + operator wipe](./28-studio-schema.md) | Done | Migration `20261021000000_studio_schema.sql`; search vector by trigger; chats link only to the owner's meditation (PR #49). Applied by the Supabase GitHub integration on merge; [wipe runbook](../../docs/runbooks/operator-data-wipe.md) run by the operator 2026-10-21 |
 | 29 | [Chat agent route](./29-chat-agent.md) | Done* | `/api/chat` with `writeScript`/`setDetails`/`offerAudio`, 200-a-day ceiling, 8 Discover categories; four real-model prompt checks pass (PR #52). *Operator: remove the old script-quota env vars in Vercel |
 | 30 | [Studio UI: chat + canvas](./30-studio-ui.md) | Done* | One input + Recent drafts, two panes, phone sheet with a Script updated pill, canvas follows the stream; wizard and editor deleted (PR #54). *Operator: a real-phone keyboard check; judge the script measure |
-| 31 | [Audio from the chat](./31-audio-from-chat.md) | Done* | Audio card, draft renders, compare-and-set against double clicks, `QUOTA_EXEMPT_USER_IDS` (PR #53). *Operator: set the exemption in Vercel; one real render on a deploy |
+| 31 | [Audio from the chat](./31-audio-from-chat.md) | Done | Audio card, draft renders, compare-and-set against double clicks, `QUOTA_EXEMPT_USER_IDS` (PR #53). Exemption set; real renders verified in production 2026-10-22 |
 
 ## Phase 5 — Studio (Wave B) & Discover
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 32 | [Versions, replace-or-keep, continue in chat](./32-versions.md) | Done* | Audio at `<user_id>/<meditation_id>/<uuid>.mp3`, never overwritten, folder removed with the meditation; draft renders tracked in `draft_status` so public pages keep playing; archive on promotion, keep-or-replace in chat, owner-only switcher, Continue in chat; fixed draft text leaking into public HTML (PRs #60, #61). *Operator: one real render on a deploy |
+| 32 | [Versions, replace-or-keep, continue in chat](./32-versions.md) | Done* | Audio at `<user_id>/<meditation_id>/<uuid>.mp3`, never overwritten, folder removed with the meditation; draft renders tracked in `draft_status` so public pages keep playing; archive on promotion, keep-or-replace in chat, owner-only switcher, Continue in chat; fixed draft text leaking into public HTML (PRs #60, #61). *Operator: one revise → re-render → keep-or-replace on a deploy |
 | 33 | [Details editing + tag display](./33-details-and-tags-ui.md) | Done* | Inline title, description and tag editing for the owner; `TagPills` on the page, cards and rows (PR #57). *Operator: phone tap check on tag remove buttons |
 | 34 | [Sound previews in chat](./34-sound-previews.md) | Done* | `previewSounds` tool + card; six sounds in `public/sounds/` via `scripts/export-sound-previews.ts`; snapshot unchanged (PR #58). *Operator: iPhone playback |
 | 35 | [Designed cover system](./35-cover-system.md) | Done* | `MeditationCover`: flat tone fields, five motifs, colour from the first tag's group; `DESIGN.md` Covers rule, no gradient (PR #56). *Operator: real-phone look |
