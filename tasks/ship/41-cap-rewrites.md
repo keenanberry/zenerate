@@ -1,6 +1,6 @@
 # Cap Script Rewrites
 
-**Status:** Done (PR pending review)
+**Status:** Done (PR #67), awaiting review
 **Priority:** Phase 6. Speed and cost of every studio turn.
 **Phase:** 6 (seed & open)
 **Depends on:** 16 (duration prompt), 29 (chat agent)
