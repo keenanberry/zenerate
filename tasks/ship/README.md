@@ -42,7 +42,7 @@ the repo goes public in task 09.
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 11 | [Password reset flow](./11-password-reset.md) | Not started | 08 is done and Resend sends the reset email, but the `/forgot-password` and `/reset-password` pages and the login link don't exist yet |
+| 11 | [Password reset flow](./11-password-reset.md) | Done* | `/forgot-password`, `/reset-password` and the login link; local E2E through the test inbox; callback `next` now same-origin only (PR #51). *Operator: add `https://www.zeneratestudio.com/auth/callback**` to Supabase Redirect URLs, then the production E2E |
 | 12 | [Toast notifications](./12-toast-notifications.md) | Done | Success/error toasts on the mutation surface; add-to-collection gained real rollback. Theme verified in both modes |
 | 13 | [Download button](./13-download-button.md) | Done* | Streams via an authorized route, never `<a download>` on a signed URL. *iOS Safari check needs a real device |
 | 14 | [Error / not-found boundaries](./14-error-boundaries.md) | Done | Root 404 + root/`(app)` error boundaries + `global-error`. Lights up two existing `notFound()` call sites |
@@ -77,11 +77,11 @@ and make the audio from cards in the chat. See the studio spec.
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 27 | [AI SDK 7 upgrade](./27-ai-sdk-7.md) | Not started | Before any chat code. Lockfile with the project `.npmrc` |
-| 28 | [Studio schema + operator wipe](./28-studio-schema.md) | Not started | Final schema: chats, messages, versions, tags, description, plays, house picks. Wipe runbook, run before it reaches production |
-| 29 | [Chat agent route](./29-chat-agent.md) | Not started | `/api/chat`, tools, tag vocabulary, daily ceiling; retires `/api/generate` and the script quota (closes #5) |
-| 30 | [Studio UI: chat + canvas](./30-studio-ui.md) | Not started | `/create` is one input; the canvas follows the stream; the sheet on phones; wizard and editor deleted |
-| 31 | [Audio from the chat](./31-audio-from-chat.md) | Not started | Voice, Make audio (click only), progress, inline player; operator quota exemption |
+| 27 | [AI SDK 7 upgrade](./27-ai-sdk-7.md) | Done | `ai` 7.0.148, `@ai-sdk/react` 4, `@ai-sdk/anthropic` 4; the Outcome lists the v7 API names (PR #50) |
+| 28 | [Studio schema + operator wipe](./28-studio-schema.md) | Done | Migration `20261021000000_studio_schema.sql`; search vector by trigger; chats link only to the owner's meditation (PR #49). Applied by the Supabase GitHub integration on merge; [wipe runbook](../../docs/runbooks/operator-data-wipe.md) run by the operator 2026-10-21 |
+| 29 | [Chat agent route](./29-chat-agent.md) | Done* | `/api/chat` with `writeScript`/`setDetails`/`offerAudio`, 200-a-day ceiling, 8 Discover categories; four real-model prompt checks pass (PR #52). *Operator: remove the old script-quota env vars in Vercel |
+| 30 | [Studio UI: chat + canvas](./30-studio-ui.md) | Done* | One input + Recent drafts, two panes, phone sheet with a Script updated pill, canvas follows the stream; wizard and editor deleted (PR #54). *Operator: a real-phone keyboard check; judge the script measure |
+| 31 | [Audio from the chat](./31-audio-from-chat.md) | Done* | Audio card, draft renders, compare-and-set against double clicks, `QUOTA_EXEMPT_USER_IDS` (PR #53). *Operator: set the exemption in Vercel; one real render on a deploy |
 
 ## Phase 5 — Studio (Wave B) & Discover
 

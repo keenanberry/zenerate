@@ -1,6 +1,6 @@
 # Studio UI: Chat + Script Canvas
 
-**Status:** Done (PR open, awaiting review)
+**Status:** Done (PR #54); phone keyboard check is the operator's
 **Priority:** Phase 4, Wave A
 **Phase:** 4 (studio)
 **Depends on:** 29 (its Interfaces block; can start against those types once 29's

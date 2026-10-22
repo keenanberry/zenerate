@@ -1,6 +1,6 @@
 # Audio From the Chat
 
-**Status:** In review (one real render left as an operator check)
+**Status:** Done (PR #53); one real render on a deploy is the operator's
 **Priority:** Phase 4, Wave A. Seeding needs it.
 **Phase:** 4 (studio)
 **Depends on:** 28, 29. Builds cards against 30's `renderStudioPart`, so it can run beside 30.

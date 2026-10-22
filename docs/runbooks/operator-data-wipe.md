@@ -1,7 +1,7 @@
 # Runbook — Operator Data Wipe
 
-Before the studio schema (`supabase/migrations/20261021000000_studio_schema.sql`, task 28)
-reaches production, the operator deletes everything in their own account. Old meditations
+Once the studio schema (`supabase/migrations/20261021000000_studio_schema.sql`, task 28)
+is in production, and before seeding starts, the operator deletes everything in their own account. Old meditations
 get no chat and nothing migrates them (see the spec,
 `docs/superpowers/specs/2026-10-20-agentic-studio-design.md`), so the account starts empty
 and the 24 house meditations are made fresh through the studio.
@@ -13,8 +13,16 @@ not a reset.
 > `supabase/seed.sql`, which creates test accounts with a known password. Nothing in this
 > runbook needs it.
 
-**When:** once, after the studio PRs are merged and before `supabase db push` applies the
-studio migration. The account itself stays; only its content goes.
+**When:** once, after the studio PRs are merged and before the house meditations are made.
+Production migrations deploy through the **Supabase GitHub integration on every push to
+`main`** (see `tasks/ship/07-production-supabase.md`), so the migration is already applied
+by the time you read this. That is fine, because it only adds columns and tables. The
+account itself stays; only its content goes.
+
+Every step works from the dashboard: **Storage** for the files, the **SQL Editor** for the
+rows. While the operator is the only account (`select id, email from auth.users;`), the
+user-id filters below can be dropped, but keep step 3's order: empty the bucket before
+deleting rows.
 
 ---
 
@@ -157,7 +165,9 @@ where o.bucket_id = 'meditation-audio'
 While the operator is the only user, anything listed here is theirs to delete the same way
 as step 4.
 
-## 7. Then the migration
+## 7. No migration step
 
-Apply the studio migration with `supabase db push`. **Never pass `--include-seed`** against
-production; it would apply `supabase/seed.sql` and its known-password test accounts.
+The GitHub integration already applied the studio migration on merge. Confirm with
+`select count(*) from public.chats;`, which returns 0 rather than an error. If you ever do
+push migrations by hand, **never pass `--include-seed`** against production; it would
+apply `supabase/seed.sql` and its known-password test accounts.

@@ -34,7 +34,7 @@ supabase db reset             # applies migrations + seed data — LOCAL ONLY, d
 npm run dev
 ```
 
-> **Never run `supabase db reset` against a linked production project.** It drops all data and applies `supabase/seed.sql`, which creates test accounts with a known password. Production migrations go out with `supabase db push`, which applies migrations only by default — never pass `--include-seed` against a linked production project, or it will apply this same file.
+> **Never run `supabase db reset` against a linked production project.** It drops all data and applies `supabase/seed.sql`, which creates test accounts with a known password. Production migrations deploy through the **Supabase GitHub integration on every push to `main`**, so merging a migration applies it; there is no manual push step, and anything that must happen before a migration reaches production has to happen before its PR merges. If you ever run `supabase db push` by hand, never pass `--include-seed` against a linked production project, or it will apply this same file.
 
 Seeded test users: `alice@example.com` / `bob@example.com` — password `password123`.
 

@@ -1,6 +1,6 @@
 # Studio Schema + Operator Data Wipe
 
-**Status:** Done (PR open, awaiting review)
+**Status:** Done (PR #49). Applied to production by the Supabase GitHub integration on merge; the operator ran the wipe 2026-10-21
 **Priority:** Phase 4, Wave A. The schema is final from day one, because seeded rows are never migrated.
 **Phase:** 4 (studio)
 **Depends on:** nothing (can run beside 27)
@@ -133,8 +133,9 @@ transaction, script in the PR body)
 
 **For the operator**
 
-- Run `docs/runbooks/operator-data-wipe.md` **before** `supabase db push` takes this
-  migration to production. Note it corrects the plan above on one point: audio is **not**
+- Run `docs/runbooks/operator-data-wipe.md` before seeding. (Correction, 2026-10-21: production
+  migrations deploy through the Supabase GitHub integration on push to `main`, so there is no
+  `supabase db push` step. The migration only adds, so wiping after it applied is fine.) Note it corrects the plan above on one point: audio is **not**
   under a per-user prefix. Files are `<meditation_id>.mp3` at the bucket root, so the
   runbook lists them from the rows before anything is deleted, and deletes them through the
   Storage API or dashboard (SQL deletes on `storage.objects` are blocked by

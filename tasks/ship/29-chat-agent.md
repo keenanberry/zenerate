@@ -1,6 +1,6 @@
 # Chat Agent Route
 
-**Status:** Done (PR open, awaiting review)
+**Status:** Done (PR #52)
 **Priority:** Phase 4, Wave A. The core of the studio.
 **Phase:** 4 (studio)
 **Depends on:** 27, 28

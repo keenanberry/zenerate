@@ -30,6 +30,13 @@ keep it.
   current version.
 - **Continue in chat:** a link on the owner's meditation page to `/create/[chatId]`.
   Meditations with no chat (none after the wipe) hide it.
+- **Keep the public page on the current version during a draft render.** As of task 31,
+  `/api/audio/generate` sets `status = 'processing_audio'` for a draft render, and
+  `markFailed` sets `'failed'` when one fails. So a public meditation mid-revision shows
+  "processing" or "failed" instead of its existing audio. A draft render must leave the
+  public-facing state alone: track it separately (for example, a draft render status), or have
+  the page keep playing `audio_path` whenever one exists. On failure, restore the prior status.
+  The owner's chat card still shows progress and failure.
 - The public page never renders `draft_script`. Note: the column is readable through
   `anon`'s table grant on `meditations`. That is acceptable because the script is public
   anyway; say so in the Outcome rather than adding column grants.

@@ -14,8 +14,8 @@ of the studio.
 
 ## Scope
 
-- **Before Wave A's migration reaches production:** run
-  `docs/runbooks/operator-data-wipe.md`.
+- **Before seeding:** run `docs/runbooks/operator-data-wipe.md`. Done by the operator
+  2026-10-21; migrations deploy through the Supabase GitHub integration on merge.
 - **Exemption:** set `QUOTA_EXEMPT_USER_IDS` to the operator's user id in Vercel
   Production, and redeploy.
 - **Credits:** check the ElevenLabs balance. 24 × ~930 characters ≈ 22k credits, most of
