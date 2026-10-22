@@ -511,3 +511,63 @@ INSERT INTO public.favorites (user_id, meditation_id) VALUES
 ('22222222-2222-2222-2222-222222222222', 'aaaa0001-0000-0000-0000-000000000001'),
 ('22222222-2222-2222-2222-222222222222', 'aaaa0002-0000-0000-0000-000000000002'),
 ('22222222-2222-2222-2222-222222222222', 'aaaa0004-0000-0000-0000-000000000004');
+
+-- ── Discover: 24 tagged public meditations (task 36) ──
+--
+-- Three per DISCOVER_CATEGORIES card, so every card opens onto a real list,
+-- and eight house picks (is_featured) so Popular and Picked for you have
+-- something to show before there are real counts. No audio: local storage is
+-- empty after a reset, so these play nowhere, but they list, search and
+-- filter like real ones. Production gets the operator's real house set
+-- (task 37), never this file.
+
+INSERT INTO public.meditations (id, user_id, title, description, tags, script, status, is_public, is_featured, settings, created_at)
+SELECT
+  v.id::uuid,
+  v.user_id::uuid,
+  v.title,
+  v.description,
+  v.tags,
+  format(
+    E'*[SOUND: bell-tibetan.mp3]*\n\nWelcome. %s\n\n*[PAUSE: 5 seconds]*\n\nLet your breath find its own pace, and rest here for a while.\n\n*[SILENCE: 1 minute]*\n\nWhen you are ready, come back gently.',
+    v.description
+  ),
+  'completed',
+  true,
+  v.featured,
+  jsonb_build_object('type', v.type, 'duration', v.duration),
+  now() - (v.age || ' days')::interval
+FROM (VALUES
+  -- Sleep
+  ('dddd0001-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Drifting Off on the Tide', 'Ride a slow tide out until the shore of the day is far behind you.', ARRAY['sleep','bedtime','visualization'], 'sleep', 20, true, 1),
+  ('dddd0002-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222', 'Heavy Limbs, Soft Pillow', 'Tense and release each muscle group until the body feels too heavy to hold up.', ARRAY['progressive-relaxation','bedtime'], 'body-scan', 15, false, 2),
+  ('dddd0003-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111', 'The Lamp Goes Out', 'A short wind-down for the last minutes before lights out.', ARRAY['bedtime','letting-go'], 'guided', 10, false, 3),
+  -- Stress relief
+  ('dddd0004-0000-0000-0000-000000000004', '22222222-2222-2222-2222-222222222222', 'Ten Minutes of Unclenching', 'Find where the day is held in the jaw, the shoulders and the hands, and let it go.', ARRAY['stress-relief','body-scan'], 'body-scan', 10, true, 4),
+  ('dddd0005-0000-0000-0000-000000000005', '11111111-1111-1111-1111-111111111111', 'When the Chest Feels Tight', 'Slow, steady breathing for an anxious moment, with nothing to fix.', ARRAY['anxiety','breathwork'], 'breathwork', 5, false, 5),
+  ('dddd0006-0000-0000-0000-000000000006', '22222222-2222-2222-2222-222222222222', 'Closing the Laptop', 'Draw a line between work and the evening, and step over it.', ARRAY['after-work','rough-day','letting-go'], 'guided', 10, false, 6),
+  -- Focus
+  ('dddd0007-0000-0000-0000-000000000007', '11111111-1111-1111-1111-111111111111', 'One Thing at a Time', 'Gather a scattered mind onto a single point before deep work.', ARRAY['focus','midday-reset'], 'mindfulness', 10, true, 7),
+  ('dddd0008-0000-0000-0000-000000000008', '22222222-2222-2222-2222-222222222222', 'The Blank Page Garden', 'Walk an imagined garden where every path is an idea worth following.', ARRAY['creativity','visualization'], 'visualization', 15, false, 8),
+  ('dddd0009-0000-0000-0000-000000000009', '11111111-1111-1111-1111-111111111111', 'Three-Minute Reset', 'A pause between meetings: breathe, notice, begin again.', ARRAY['short-break','midday-reset','breathwork'], 'breathwork', 5, false, 9),
+  -- Morning
+  ('dddd0010-0000-0000-0000-000000000010', '22222222-2222-2222-2222-222222222222', 'First Light', 'Wake the body slowly and set one intention for the day ahead.', ARRAY['morning','gratitude'], 'guided', 10, true, 10),
+  ('dddd0011-0000-0000-0000-000000000011', '11111111-1111-1111-1111-111111111111', 'Bright Breath', 'Quick, lifting breaths to clear the fog before coffee.', ARRAY['energy','morning','breathwork'], 'breathwork', 5, false, 11),
+  ('dddd0012-0000-0000-0000-000000000012', '22222222-2222-2222-2222-222222222222', 'Sunrise Over the Ridge', 'Climb toward a sunrise and carry its warmth into the morning.', ARRAY['morning','visualization','energy'], 'visualization', 15, false, 12),
+  -- Kindness
+  ('dddd0013-0000-0000-0000-000000000013', '11111111-1111-1111-1111-111111111111', 'Speak to Yourself as a Friend', 'Meet the inner critic with the voice you would use for someone you love.', ARRAY['self-compassion','rough-day'], 'guided', 10, true, 13),
+  ('dddd0014-0000-0000-0000-000000000014', '22222222-2222-2222-2222-222222222222', 'Circles of Warmth', 'Send good wishes outward, from yourself to the people you have not met.', ARRAY['loving-kindness'], 'loving-kindness', 15, false, 14),
+  ('dddd0015-0000-0000-0000-000000000015', '11111111-1111-1111-1111-111111111111', 'Three Good Things', 'Look back over the day and find three small things worth thanking.', ARRAY['gratitude','bedtime'], 'guided', 5, false, 15),
+  -- Breath & body
+  ('dddd0016-0000-0000-0000-000000000016', '22222222-2222-2222-2222-222222222222', 'Box Breathing', 'Four counts in, four held, four out, four held, until the rhythm carries you.', ARRAY['breathwork','focus'], 'breathwork', 5, true, 16),
+  ('dddd0017-0000-0000-0000-000000000017', '11111111-1111-1111-1111-111111111111', 'Head to Toe', 'A slow, unhurried sweep of attention through the whole body.', ARRAY['body-scan','inner-peace'], 'body-scan', 20, false, 17),
+  ('dddd0018-0000-0000-0000-000000000018', '22222222-2222-2222-2222-222222222222', 'Feet on the Floor', 'Come back to the ground under you when everything moves too fast.', ARRAY['grounding','anxiety'], 'guided', 5, false, 18),
+  -- Confidence
+  ('dddd0019-0000-0000-0000-000000000019', '11111111-1111-1111-1111-111111111111', 'Before You Walk In', 'Steady the nerves before an interview, a talk or a hard conversation.', ARRAY['before-a-big-moment','confidence'], 'guided', 5, true, 19),
+  ('dddd0020-0000-0000-0000-000000000020', '22222222-2222-2222-2222-222222222222', 'I Am Enough', 'Simple affirmations, repeated slowly until they start to feel true.', ARRAY['affirmations','self-compassion'], 'manifestation', 10, false, 20),
+  ('dddd0021-0000-0000-0000-000000000021', '11111111-1111-1111-1111-111111111111', 'Standing Tall', 'Find strength in posture and breath, and let it reach the mind.', ARRAY['confidence','energy'], 'guided', 10, false, 21),
+  -- Letting go
+  ('dddd0022-0000-0000-0000-000000000022', '22222222-2222-2222-2222-222222222222', 'Leaves on a Stream', 'Set each thought on a leaf and watch the water carry it away.', ARRAY['letting-go','open-awareness'], 'visualization', 15, true, 22),
+  ('dddd0023-0000-0000-0000-000000000023', '11111111-1111-1111-1111-111111111111', 'Holding What Was Lost', 'A gentle space to sit with grief without needing it to change.', ARRAY['grief','self-compassion'], 'guided', 20, false, 23),
+  ('dddd0024-0000-0000-0000-000000000024', '22222222-2222-2222-2222-222222222222', 'So Hum', 'A quiet mantra on the breath: so on the inhale, hum on the exhale.', ARRAY['mantra','inner-peace'], 'mantra', 25, false, 24)
+) AS v(id, user_id, title, description, tags, type, duration, featured, age);

@@ -76,6 +76,7 @@ export function AudioSection({
         title={meditation.title}
         meditationId={meditation.id}
         canDownload={isSignedIn}
+        trackPlays={isSignedIn}
       />
     );
   }
