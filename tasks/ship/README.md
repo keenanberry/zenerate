@@ -78,7 +78,7 @@ and make the audio from cards in the chat. See the studio spec.
 | # | Task | Status | Notes |
 |---|---|---|---|
 | 27 | [AI SDK 7 upgrade](./27-ai-sdk-7.md) | Done | `ai` 7.0.148, `@ai-sdk/react` 4, `@ai-sdk/anthropic` 4; the Outcome lists the v7 API names (PR #50) |
-| 28 | [Studio schema + operator wipe](./28-studio-schema.md) | Done* | Migration `20261021000000_studio_schema.sql`; search vector by trigger; chats link only to the owner's meditation (PR #49). *Operator: run [the wipe runbook](../../docs/runbooks/operator-data-wipe.md) before `supabase db push` |
+| 28 | [Studio schema + operator wipe](./28-studio-schema.md) | Done | Migration `20261021000000_studio_schema.sql`; search vector by trigger; chats link only to the owner's meditation (PR #49). Applied by the Supabase GitHub integration on merge; [wipe runbook](../../docs/runbooks/operator-data-wipe.md) run by the operator 2026-10-21 |
 | 29 | [Chat agent route](./29-chat-agent.md) | Done* | `/api/chat` with `writeScript`/`setDetails`/`offerAudio`, 200-a-day ceiling, 8 Discover categories; four real-model prompt checks pass (PR #52). *Operator: remove the old script-quota env vars in Vercel |
 | 30 | [Studio UI: chat + canvas](./30-studio-ui.md) | Done* | One input + Recent drafts, two panes, phone sheet with a Script updated pill, canvas follows the stream; wizard and editor deleted (PR #54). *Operator: a real-phone keyboard check; judge the script measure |
 | 31 | [Audio from the chat](./31-audio-from-chat.md) | Done* | Audio card, draft renders, compare-and-set against double clicks, `QUOTA_EXEMPT_USER_IDS` (PR #53). *Operator: set the exemption in Vercel; one real render on a deploy |
