@@ -63,10 +63,12 @@ habits that derived and explicit preferences don't capture.
 
 ### Decisions to make
 
-- Should the card **preselect** last time's choice, or only **suggest** it? Preselect is
-  faster; suggest is more deliberate.
-- How often should the agent mention preferences? The pick: once, when it offers the
-  audio, never on every turn.
+- ~~Preselect or suggest?~~ **Decided 2026-10-22 (operator): preselect.** The card already
+  preselects the first voice in the list, so last-used is the same behavior with a better
+  default. Show a "same as last time" hint. First-time users get the agent's suggestion,
+  or the first voice.
+- ~~How often should the agent mention it?~~ **Decided 2026-10-22 (operator): once, when it
+  offers the audio.** Never on every turn.
 - Privacy: derived preferences come from the person's own data and are never shown to
   anyone else. If an explicit preferences table ships, add it to `/privacy` and to account
   deletion.
