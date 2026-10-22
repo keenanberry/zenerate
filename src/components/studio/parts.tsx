@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { AudioCard } from "./audio-card";
+import { SoundPreviewCard } from "./sound-preview-card";
 import type { StudioPart } from "./drafts";
 import { useStudio } from "./studio-context";
 
@@ -22,6 +23,8 @@ export function renderStudioPart(part: StudioPart): ReactNode | null {
   switch (part.type) {
     case "tool-offerAudio":
       return <AudioCardSlot part={part} />;
+    case "tool-previewSounds":
+      return <SoundPreviewCard part={part} />;
     default:
       return null;
   }
