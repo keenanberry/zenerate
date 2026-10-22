@@ -271,6 +271,9 @@ Quartz in dark) appears on the play button and the played portion of the wavefor
 appears nowhere else: not on CTAs, not on card headers, not on the hero. The halo behind
 the player is a radial glow in dark and a flat tint in light (`--player-halo`).
 Meditation covers are not an exception: they are flat tone fields (see Covers).
+A transparency mask is not a gradient in this sense: a `mask-image` ramp from `transparent`
+to `black` sets only alpha, so it shows the surface's own token colours fading out and adds
+no hue. The landing demo's script window fades its scrolled-away lines this way.
 
 **The Dark First Rule.** A surface is designed and reviewed in dark, then checked in
 light. Never the reverse. A light-mode fix that would change the dark design is the wrong
@@ -572,9 +575,14 @@ in, the agent's one-line reply in plain Body text below a Hairline rule. Under t
 a row of chips names the six examples (`src/lib/landing/examples.ts`). Chips are pills
 in UI type at 12px with a Hairline border; the live one takes the Secondary fill, as the
 active nav item does, and a tap streams that example from its first word. The loop walks
-the six in order. Every request, script and reply is rendered invisibly in its own grid
-cell, so the card holds the tallest of each and never shifts. Under reduced motion the
-chosen script and its reply show whole and chips swap them.
+the six in order. The script sits in a window of fixed height (13rem at every width),
+followed to its newest line as it streams, the way the studio canvas is, with lines
+fading out under its top edge through an alpha mask (see The One Gradient Rule); the
+window keeps the hero, headline to CTAs to card, inside a 1280x800 screen. Requests and
+replies are short, so every one is rendered invisibly in its own grid cell and the card
+holds the longest of each and never shifts. Under reduced motion the window shows the
+start of the chosen script, fading out under its bottom edge instead, with its reply,
+and chips swap them.
 
 ### Studio
 The chat and its canvas (`src/components/studio/`), the way Claude builds an artifact:

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ScriptViewer } from "@/components/script-viewer";
+import { useFollowScroll } from "@/components/studio/use-follow-scroll";
 import { nextExample, type DemoExample } from "@/lib/landing/examples";
 import { countWords, revealWords } from "@/lib/landing/stream";
 import { cn } from "@/lib/utils";
@@ -24,15 +25,20 @@ interface ScriptStreamDemoProps {
  * reply once it is in. Looped through the examples while it is on screen,
  * with a row of chips that name them and jump between them.
  *
- * It never blocks first paint and never shifts layout: the server renders
- * every finished script as an invisible sizer in one grid cell, so the card
- * has the height of the tallest before any JavaScript runs, and the streamed
- * copy is laid over it in the same cell. Under prefers-reduced-motion the CSS
- * shows the chosen example's sizer instead, the effect never starts a timer,
- * and the chips swap the script whole.
+ * It never blocks first paint and never shifts layout. The script sits in a
+ * window of fixed height that follows the newest line as it streams, the way
+ * the studio canvas does, with earlier lines fading out under the top edge,
+ * so the card stays short enough for the hero to fit the first screen. The
+ * request and the closing line are short, so every one of them is rendered
+ * invisibly in one grid cell and the card takes the longest before any
+ * JavaScript runs. Under prefers-reduced-motion the CSS shows the start of
+ * the chosen script instead, fading out under the bottom edge, the effect
+ * never starts a timer, and the chips swap the script whole.
  */
 export function ScriptStreamDemo({ examples }: ScriptStreamDemoProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
   const [words, setWords] = useState(0);
   const [fading, setFading] = useState(false);
@@ -43,6 +49,15 @@ export function ScriptStreamDemo({ examples }: ScriptStreamDemoProps) {
   const example = examples[index];
   const total = countWords(example.script);
   const done = words >= total;
+  const started = words > 0;
+
+  // Off until a script starts streaming, so under reduced motion the window
+  // stays on the opening lines. Each new script is followed from its first
+  // word, even if the visitor scrolled up in the one before.
+  const { scrollToEnd } = useFollowScroll(scrollRef, contentRef, false);
+  useEffect(() => {
+    if (started) scrollToEnd();
+  }, [index, started, scrollToEnd]);
 
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -105,7 +120,7 @@ export function ScriptStreamDemo({ examples }: ScriptStreamDemoProps) {
     indexRef.current = i;
     setIndex(i);
     // Under reduced motion this is the no-op left by the effect, and the
-    // sizer for the chosen example simply becomes the visible one.
+    // window simply shows the chosen script from its start.
     restartRef.current();
   }
 
@@ -129,7 +144,7 @@ export function ScriptStreamDemo({ examples }: ScriptStreamDemoProps) {
             </p>
           ))}
         </div>
-        <div className="mt-6 mb-6 flex items-center justify-between gap-4 text-xs font-medium tracking-[0.06em] uppercase">
+        <div className="mt-5 flex items-center justify-between gap-4 text-xs font-medium tracking-[0.06em] uppercase">
           <p className="text-muted-foreground">Draft 1</p>
           {/* Under reduced motion the script is shown whole, so it reads Ready. */}
           <p aria-hidden className="shrink-0">
@@ -139,29 +154,38 @@ export function ScriptStreamDemo({ examples }: ScriptStreamDemoProps) {
             <span className="hidden text-sage motion-reduce:inline">Ready</span>
           </p>
         </div>
-        <div className="grid" aria-hidden>
-          {examples.map((e, i) => (
-            <div
-              key={e.chip}
-              className={cn("invisible [grid-area:1/1]", i === index && "motion-reduce:visible")}
-            >
-              <ScriptViewer script={e.script} />
-            </div>
-          ))}
+        {/* A fixed window, so the card is one height whatever the script.
+            The mask is an alpha ramp, not a colour: the One Gradient Rule
+            is about the player's purple-to-rose and does not cover it. */}
+        <div
+          ref={scrollRef}
+          aria-hidden
+          className={cn(
+            "mt-3 h-52 overflow-y-auto overscroll-auto [scrollbar-width:none]",
+            "[mask-image:linear-gradient(to_bottom,transparent,black_2rem)]",
+            "motion-reduce:[mask-image:linear-gradient(to_top,transparent,black_2rem)]",
+          )}
+        >
+          {/* Padded by the fade's depth, so a script's first line starts
+              below it rather than under it. */}
           <div
+            ref={contentRef}
             className={cn(
-              "[grid-area:1/1] motion-reduce:hidden",
+              "pt-8 motion-reduce:hidden",
               "motion-safe:transition-opacity motion-safe:duration-700",
               fading && "opacity-0",
             )}
           >
             {streamed && <ScriptViewer script={streamed} />}
           </div>
+          <div className="hidden pb-8 motion-reduce:block">
+            <ScriptViewer script={example.script} />
+          </div>
         </div>
         {/* The agent's closing line, plain text as in the studio, once the
             draft is in. Its space is held from the start, sized to the
             longest reply, so its arrival shifts nothing. */}
-        <div className="mt-6 grid border-t pt-5">
+        <div className="mt-4 grid border-t pt-5">
           {examples.map((e, i) => (
             <p
               key={e.chip}

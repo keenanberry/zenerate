@@ -64,7 +64,7 @@ export default async function LandingPage() {
       <Nav isSignedIn={!!user} />
 
       <main className="flex-1">
-        <section className="mx-auto grid max-w-5xl grid-cols-1 gap-12 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,27rem)] lg:items-center lg:gap-16">
+        <section className="mx-auto grid max-w-5xl grid-cols-1 gap-12 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,27rem)] lg:items-start lg:gap-16 lg:py-14">
           <div className="space-y-6">
             <h1 className="font-serif text-[clamp(2rem,5vw,3rem)] leading-[1.15] font-medium tracking-[-0.01em] text-balance">
               Meditations composed for you, not picked from a catalogue.
