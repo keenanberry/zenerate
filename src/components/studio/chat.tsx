@@ -5,10 +5,12 @@ import { ArrowUp, FileText, Loader2, RotateCcw, Square, TriangleAlert } from "lu
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MAX_MESSAGE_CHARS } from "@/lib/ai/quota";
+import { MAKE_AUDIO_REPLY } from "@/lib/chat/replies";
 import type { StudioUIMessage } from "@/lib/chat/tools";
 import { cn } from "@/lib/utils";
-import { minutesLabel, type Draft, type StudioPart } from "./drafts";
+import { minutesLabel, showsQuickReplies, type Draft, type StudioPart } from "./drafts";
 import { renderStudioPart } from "./parts";
+import { QuickReplies } from "./quick-replies";
 import { useStudio } from "./studio-context";
 import { useFollowScroll } from "./use-follow-scroll";
 
@@ -161,6 +163,7 @@ export function Chat({
 }: ChatProps) {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const { scrollToEnd } = useFollowScroll(scrollRef, contentRef);
   const byId = new Map(drafts.map((d) => [d.toolCallId, d]));
@@ -195,6 +198,15 @@ export function Chat({
           {messages.map((message) => (
             <Message key={message.id} message={message} drafts={byId} live={live} />
           ))}
+          {showsQuickReplies(messages, live) && (
+            <QuickReplies
+              onMakeAudio={() => {
+                onSend(MAKE_AUDIO_REPLY);
+                scrollToEnd();
+              }}
+              onChange={() => inputRef.current?.focus()}
+            />
+          )}
           {thinking && <Thinking />}
           {unanswered && !live && !error && (
             <div className="space-y-3 rounded-xl border bg-card px-5 py-4 text-sm">
@@ -231,6 +243,7 @@ export function Chat({
           </label>
           <Textarea
             id="studio-message"
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}

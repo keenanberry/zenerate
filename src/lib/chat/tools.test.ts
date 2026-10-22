@@ -4,6 +4,8 @@ import { z } from "zod";
 import {
   offerAudioInput,
   lengthToleranceSeconds,
+  MAX_STEPS_PER_TURN,
+  prepareStudioStep,
   studioTools,
   previewSoundsInput,
   setDetailsInput,
@@ -383,5 +385,53 @@ describe("previewSounds", () => {
     expect(previewSoundsInput.safeParse({ sounds: ["rain.mp3"] }).success).toBe(false);
     expect(previewSoundsInput.safeParse({ sounds: [] }).success).toBe(false);
     expect(previewSoundsInput.safeParse({ sounds: ["chime-soft.mp3"] }).success).toBe(true);
+  });
+});
+
+describe("prepareStudioStep", () => {
+  const draftTurn: ModelMessage[] = [{ role: "user", content: "10 minutes to unwind" }];
+
+  it("leaves every tool open on the turn's early steps", () => {
+    expect(prepareStudioStep({ stepNumber: 0, messages: draftTurn })).toBeUndefined();
+    expect(prepareStudioStep({ stepNumber: MAX_STEPS_PER_TURN - 2, messages: draftTurn })).toBeUndefined();
+  });
+
+  it("keeps the last step for the closing line", () => {
+    expect(prepareStudioStep({ stepNumber: MAX_STEPS_PER_TURN - 1, messages: draftTurn })).toEqual({
+      toolChoice: "none",
+    });
+  });
+
+  it("lets the first step after \"Make the audio\" only offer the audio card", () => {
+    const asString: ModelMessage[] = [{ role: "user", content: "Make the audio" }];
+    const asParts: ModelMessage[] = [{ role: "user", content: [{ type: "text", text: "Make the audio" }] }];
+    for (const messages of [asString, asParts]) {
+      expect(prepareStudioStep({ stepNumber: 0, messages })).toEqual({ activeTools: ["offerAudio"] });
+    }
+  });
+
+  it("frees the tools again once the card is answered, and for any other message", () => {
+    // The continuation after the card ends on its tool result, not the request.
+    const continued: ModelMessage[] = [
+      { role: "user", content: "Make the audio" },
+      {
+        role: "assistant",
+        content: [{ type: "tool-call", toolCallId: "o1", toolName: "offerAudio", input: {} }],
+      },
+      {
+        role: "tool",
+        content: [
+          {
+            type: "tool-result",
+            toolCallId: "o1",
+            toolName: "offerAudio",
+            output: { type: "json", value: { outcome: "started" } },
+          },
+        ],
+      },
+    ];
+    expect(prepareStudioStep({ stepNumber: 0, messages: continued })).toBeUndefined();
+    const other: ModelMessage[] = [{ role: "user", content: "Make the audio, but softer first" }];
+    expect(prepareStudioStep({ stepNumber: 0, messages: other })).toBeUndefined();
   });
 });

@@ -5,6 +5,7 @@ import {
   describeChatError,
   latestDetails,
   minutesLabel,
+  showsQuickReplies,
   trimPartialLine,
 } from "./drafts";
 
@@ -124,5 +125,52 @@ describe("describeChatError", () => {
       message: "Try sending that again.",
       rateLimited: false,
     });
+  });
+});
+
+describe("showsQuickReplies", () => {
+  const draft = {
+    type: "tool-writeScript",
+    toolCallId: "t1",
+    state: "output-available",
+    input: { durationMinutes: 10, script: "One." },
+    output,
+  } as const;
+  const reply = { type: "text", text: "It runs about 9 minutes. Any changes?" } as const;
+  const request: StudioUIMessage = { id: "u", role: "user", parts: [{ type: "text", text: "calm" }] };
+
+  it("shows after a saved draft with no audio card", () => {
+    expect(showsQuickReplies([request, assistant([draft, reply])], false)).toBe(true);
+  });
+
+  it("hides while the turn is still running", () => {
+    expect(showsQuickReplies([request, assistant([draft, reply])], true)).toBe(false);
+  });
+
+  it("hides once the person sends anything", () => {
+    expect(showsQuickReplies([request, assistant([draft, reply]), request], false)).toBe(false);
+  });
+
+  it("hides when the turn already offered the audio card", () => {
+    const card = {
+      type: "tool-offerAudio",
+      toolCallId: "o1",
+      state: "input-available",
+      input: {},
+    } as const;
+    expect(showsQuickReplies([request, assistant([draft, reply, card])], false)).toBe(false);
+  });
+
+  it("hides when the latest reply wrote no draft, or the draft did not save", () => {
+    expect(showsQuickReplies([request, assistant([reply])], false)).toBe(false);
+    const refused = { ...draft, state: "output-error", output: undefined, errorText: "busy" } as const;
+    expect(showsQuickReplies([request, assistant([refused, reply])], false)).toBe(false);
+    const stopped = { type: "tool-writeScript", toolCallId: "t2", state: "input-streaming", input: undefined } as const;
+    expect(showsQuickReplies([request, assistant([stopped])], false)).toBe(false);
+  });
+
+  it("only looks at the latest reply", () => {
+    expect(showsQuickReplies([request, assistant([draft, reply]), assistant([reply])], false)).toBe(false);
+    expect(showsQuickReplies([], false)).toBe(false);
   });
 });
