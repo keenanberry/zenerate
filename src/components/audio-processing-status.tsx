@@ -11,12 +11,18 @@ interface AudioProcessingStatusProps {
   meditationId: string;
   onCompleted: () => void;
   onFailed: () => void;
+  /**
+   * Watch a draft render instead: the meditation stays completed throughout,
+   * so its progress is draft_status, which clears when the draft is promoted.
+   */
+  draft?: boolean;
 }
 
 export function AudioProcessingStatus({
   meditationId,
   onCompleted,
   onFailed,
+  draft = false,
 }: AudioProcessingStatusProps) {
   const router = useRouter();
   const [failed, setFailed] = useState(false);
@@ -32,11 +38,16 @@ export function AudioProcessingStatus({
     intervalRef.current = setInterval(async () => {
       try {
         const result = await getMeditationStatus(meditationId);
+        const status = draft
+          ? result.draft_status === "processing"
+            ? "processing_audio"
+            : (result.draft_status ?? "completed")
+          : result.status;
 
-        if (result.status === "completed") {
+        if (status === "completed") {
           onCompleted();
           router.refresh();
-        } else if (result.status === "failed") {
+        } else if (status === "failed") {
           setFailed(true);
           onFailed();
         }
@@ -49,7 +60,7 @@ export function AudioProcessingStatus({
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [meditationId, router, onFailed]);
+  }, [meditationId, router, onFailed, draft]);
 
   function formatTime(seconds: number) {
     const m = Math.floor(seconds / 60);

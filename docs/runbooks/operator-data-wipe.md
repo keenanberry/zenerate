@@ -72,25 +72,30 @@ union all select 'favorites', count(*) from public.favorites where user_id = '<o
 union all select 'audio_generation_events', count(*) from public.audio_generation_events where user_id = '<operator id>'
 union all select 'script_generation_events', count(*) from public.script_generation_events where user_id = '<operator id>'
 union all select 'storage objects', count(*) from storage.objects o
-  join public.meditations m on o.name in (m.audio_path, m.id::text || '.mp3')
-  where o.bucket_id = 'meditation-audio' and m.user_id = '<operator id>';
+  where o.bucket_id = 'meditation-audio'
+    and (o.name like '<operator id>/%'
+         or exists (select 1 from public.meditations m
+                    where m.user_id = '<operator id>' and o.name = m.id::text || '.mp3'));
 ```
 
 Keep this output. Step 6 compares against it.
 
 ## 3. List the audio objects, before any row is deleted
 
-Audio files are **not** under a per-user prefix. `uploadAudio` names each one
-`<meditation_id>.mp3` at the root of the `meditation-audio` bucket, and the only link from
-a file to its owner is the meditation row. Once the rows are gone, nothing says which files
-were the operator's. So list them first:
+Since task 32, audio lives in one folder per user: `uploadAudio` writes
+`<user_id>/<meditation_id>/<render_id>.mp3`, so the operator's files are everything under
+the `<operator id>/` prefix, archived versions included, and the prefix still says whose
+they are after the rows are gone. Audio rendered before task 32 sat at the bucket root as
+`<meditation_id>.mp3`, and the only link from such a file to its owner is the meditation
+row, so list first, while the rows exist:
 
 ```sql
 select o.name
 from storage.objects o
-join public.meditations m on o.name in (m.audio_path, m.id::text || '.mp3')
 where o.bucket_id = 'meditation-audio'
-  and m.user_id = '<operator id>'
+  and (o.name like '<operator id>/%'
+       or exists (select 1 from public.meditations m
+                  where m.user_id = '<operator id>' and o.name = m.id::text || '.mp3'))
 order by o.name;
 ```
 
@@ -103,7 +108,8 @@ Storage does not cascade from Postgres, and Supabase blocks deleting from
 this before the rows means a failure leaves rows that still say what to delete, never files
 nobody can trace.
 
-**Dashboard:** **Storage → meditation-audio**, select the files from step 3, **Delete**.
+**Dashboard:** **Storage → meditation-audio**, delete the `<operator id>` folder, then any
+root-level files from step 3.
 
 **Or the API**, with the names from step 3 (it accepts many per call):
 
@@ -115,8 +121,10 @@ curl -sS -X DELETE "$SUPABASE_URL/storage/v1/object/meditation-audio" \
   -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
   -H "apikey: $SERVICE_ROLE_KEY" \
   -H 'Content-Type: application/json' \
-  -d '{"prefixes": ["<meditation id>.mp3", "<meditation id>.mp3"]}'
+  -d '{"prefixes": ["<operator id>/<meditation id>/<render id>.mp3", "<meditation id>.mp3"]}'
 ```
+
+The delete takes full object names, not folders; paste the names from step 3.
 
 Re-run the step 3 query. It must return no rows.
 
@@ -159,6 +167,9 @@ where o.bucket_id = 'meditation-audio'
   and not exists (
     select 1 from public.meditations m
     where o.name in (m.audio_path, m.id::text || '.mp3')
+  )
+  and not exists (
+    select 1 from public.meditation_versions v where v.audio_path = o.name
   );
 ```
 

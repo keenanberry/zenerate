@@ -17,6 +17,8 @@ import { MeditationCover } from "@/components/meditation-cover";
 import { MeditationDetails } from "@/components/meditation-details";
 import { getQuotaUsage, isFreeRetryAvailable } from "@/lib/audio/quota";
 import { meditationMetadata } from "@/lib/seo/metadata";
+import { ContinueInChat } from "@/components/continue-in-chat";
+import { MeditationVersions } from "@/components/meditation-versions";
 
 // One read per request, shared by generateMetadata and the page. React's
 // cache is scoped to this request's render and keeps nothing between viewers;
@@ -101,7 +103,8 @@ export default async function MeditationDetailPage({
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {isOwner && <ContinueInChat meditationId={meditation.id} />}
             {isOwner && meditation.status === "completed" && (
               <VisibilityToggle
                 meditationId={meditation.id}
@@ -146,6 +149,8 @@ export default async function MeditationDetailPage({
           )}
         </div>
       </ScriptPlaybackProvider>
+
+      {isOwner && <MeditationVersions meditationId={meditation.id} title={meditation.title} />}
     </div>
   );
 }

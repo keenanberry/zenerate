@@ -140,6 +140,22 @@ describe("writeScript", () => {
     expect(db.writes).toHaveLength(0);
   });
 
+  it("refuses while a revision is rendering, though the meditation stays completed", async () => {
+    db = fakeSupabase({
+      chats: { meditation_id: "med-1" },
+      meditations: {
+        audio_path: "u/med-1/a.mp3",
+        status: "completed",
+        draft_status: "processing",
+        settings: {},
+      },
+    });
+    await expect(
+      run("writeScript", { durationMinutes: 10, script: GOOD_SCRIPT }, context(db.client)),
+    ).rejects.toThrow(/Audio is being made/);
+    expect(db.writes).toHaveLength(0);
+  });
+
   it("reports malformed markers", async () => {
     const script = GOOD_SCRIPT.replace("*[PAUSE: 15 seconds]*", "*[PAUSE: fifteen seconds]*");
     const result = await run("writeScript", { durationMinutes: 10, script }, context(db.client));

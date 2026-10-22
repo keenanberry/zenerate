@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getMeditation } from "@/lib/meditation/actions";
+import { getMeditation, getMeditationVersion } from "@/lib/meditation/actions";
 import { toDownloadFilename } from "@/lib/meditation/filename";
 
 /**
@@ -47,7 +47,7 @@ import { toDownloadFilename } from "@/lib/meditation/filename";
 export const dynamic = "force-dynamic";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
@@ -70,13 +70,20 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (!meditation?.audio_url) {
+  // `?version=<id>` downloads an archived version instead. Same rule: the
+  // version comes back only through the owner-only, RLS-bound fetch.
+  const versionId = new URL(request.url).searchParams.get("version");
+  const audioUrl = versionId
+    ? (await getMeditationVersion(id, versionId))?.audio_url
+    : meditation?.audio_url;
+
+  if (!audioUrl) {
     // Either audio was never generated, or signing failed. Both mean there is
     // nothing to download; neither is an error worth alarming the user with.
     return NextResponse.json({ error: "No audio available" }, { status: 404 });
   }
 
-  const upstream = await fetch(meditation.audio_url);
+  const upstream = await fetch(audioUrl);
   if (!upstream.ok || !upstream.body) {
     console.error(
       `Download failed for meditation ${id}: storage responded ${upstream.status}`,

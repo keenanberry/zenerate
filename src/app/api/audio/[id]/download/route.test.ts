@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { mockGetUser, mockGetMeditation, mockFetch } = vi.hoisted(() => ({
+const { mockGetUser, mockGetMeditation, mockGetVersion, mockFetch } = vi.hoisted(() => ({
   mockGetUser: vi.fn(),
   mockGetMeditation: vi.fn(),
+  mockGetVersion: vi.fn(),
   mockFetch: vi.fn(),
 }));
 
@@ -12,6 +13,7 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("@/lib/meditation/actions", () => ({
   getMeditation: mockGetMeditation,
+  getMeditationVersion: mockGetVersion,
 }));
 
 import { GET } from "./route";
@@ -161,6 +163,27 @@ describe("GET /api/audio/[id]/download", () => {
       const res = await GET(req(), ctx());
 
       expect(res.status).toBe(502);
+    });
+  });
+
+  describe("an archived version", () => {
+    const VERSION_URL = "https://example.supabase.co/storage/v1/object/sign/old?token=z";
+
+    it("streams the version's audio through the owner-only fetch", async () => {
+      mockGetVersion.mockResolvedValue({ id: "v1", audio_url: VERSION_URL });
+      const res = await GET(new Request("http://localhost/api/audio/abc/download?version=v1"), ctx());
+
+      expect(res.status).toBe(200);
+      expect(mockGetVersion).toHaveBeenCalledWith("abc", "v1");
+      expect(mockFetch).toHaveBeenCalledWith(VERSION_URL);
+    });
+
+    it("404s when the version is not the caller's", async () => {
+      mockGetVersion.mockResolvedValue(null);
+      const res = await GET(new Request("http://localhost/api/audio/abc/download?version=v1"), ctx());
+
+      expect(res.status).toBe(404);
+      expect(mockFetch).not.toHaveBeenCalled();
     });
   });
 });
