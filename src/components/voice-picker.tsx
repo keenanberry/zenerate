@@ -80,7 +80,9 @@ export function VoicePicker({ selectedVoiceId, onSelect }: VoicePickerProps) {
   }
 
   return (
-    <div className="space-y-4">
+    // Columns follow the picker's own width, not the viewport's: the chat
+    // column is narrow on any screen, and two cards there crush each other.
+    <div className="@container space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium">Choose a voice</h3>
         {selectedVoiceId && (
@@ -89,7 +91,7 @@ export function VoicePicker({ selectedVoiceId, onSelect }: VoicePickerProps) {
           </Badge>
         )}
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 @xl:grid-cols-2">
         {voices.map((voice) => {
           const isSelected = selectedVoiceId === voice.voiceId;
           const isPlaying = playingId === voice.voiceId;
@@ -115,7 +117,7 @@ export function VoicePicker({ selectedVoiceId, onSelect }: VoicePickerProps) {
                   <User className="h-4 w-4" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                     <span className="text-sm font-medium">{voice.name}</span>
                     <Badge variant="outline" className="capitalize">
                       {voice.gender}

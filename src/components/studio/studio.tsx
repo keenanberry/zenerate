@@ -11,6 +11,7 @@ import { Chat } from "./chat";
 import { collectDrafts, describeChatError, latestDetails } from "./drafts";
 import { ScriptCanvas } from "./script-canvas";
 import { firstMessageKey, StudioProvider, type StudioContextValue } from "./studio-context";
+import { useVisualViewport } from "./use-visual-viewport";
 
 /**
  * Resend on its own only once the owner has answered the audio card. The
@@ -54,6 +55,8 @@ export function Studio({ chatId, initialMessages, initialMeditationId }: StudioP
       transport,
       sendAutomaticallyWhen: answeredAudioCard,
     });
+
+  useVisualViewport();
 
   const live = status === "submitted" || status === "streaming";
   const drafts = useMemo(() => collectDrafts(messages), [messages]);
@@ -137,9 +140,13 @@ export function Studio({ chatId, initialMessages, initialMeditationId }: StudioP
 
   return (
     <StudioProvider value={studio}>
-      {/* Fills the viewport under the nav, less the shell's own padding, so
-          the composer sits at the bottom and each pane scrolls on its own. */}
-      <div className="grid h-[calc(100dvh-9rem)] gap-6 sm:h-[calc(100dvh-11rem)] md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]">
+      {/* data-studio pins the shell to the visible viewport (see the (app)
+          layout), and this fills what the nav and the shell's padding leave,
+          so the composer sits at the bottom and each pane scrolls on its own. */}
+      <div
+        data-studio
+        className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] gap-6 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]"
+      >
         <Chat
           messages={messages}
           drafts={drafts}

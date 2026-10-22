@@ -80,7 +80,9 @@ export default async function MeditationDetailPage({
           {isOwner ? "Library" : "Discover"}
         </ParentLink>
 
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+        {/* The actions are a row under the details, not a third column: a
+            third column keeps its full width and leaves the details the rest. */}
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
           <MeditationCover
             id={meditation.id}
             tags={meditation.tags ?? []}
@@ -102,25 +104,25 @@ export default async function MeditationDetailPage({
                 {new Date(meditation.created_at).toLocaleDateString()}
               </span>
             </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {isOwner && <ContinueInChat meditationId={meditation.id} />}
-            {isOwner && meditation.status === "completed" && (
-              <VisibilityToggle
-                meditationId={meditation.id}
-                isPublic={meditation.is_public}
-              />
-            )}
-            {user && (
-              <>
-                <FavoriteButton
+            <div className="flex flex-wrap items-center gap-2 empty:hidden">
+              {isOwner && <ContinueInChat meditationId={meditation.id} />}
+              {isOwner && meditation.status === "completed" && (
+                <VisibilityToggle
                   meditationId={meditation.id}
-                  isFavorited={meditation.is_favorited ?? false}
-                  size="default"
+                  isPublic={meditation.is_public}
                 />
-                <AddToCollectionDialog meditationId={meditation.id} />
-              </>
-            )}
+              )}
+              {user && (
+                <>
+                  <FavoriteButton
+                    meditationId={meditation.id}
+                    isFavorited={meditation.is_favorited ?? false}
+                    size="default"
+                  />
+                  <AddToCollectionDialog meditationId={meditation.id} />
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
