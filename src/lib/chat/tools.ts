@@ -14,6 +14,7 @@ import { SOUND_NAMES, soundPreview } from "@/lib/meditation/sound-previews";
 import { MEDITATION_TYPES, TAGS } from "@/lib/meditation/tags";
 import { AMBIENCE_IDS } from "@/lib/meditation/ambience";
 import type { MeditationSettings } from "@/lib/meditation/types";
+import { MAKE_AUDIO_REPLY } from "./replies";
 
 /**
  * What the route hands each server tool. The client is the caller's
@@ -339,6 +340,41 @@ export const studioTools = {
     }),
   }),
 };
+
+/**
+ * Model calls per turn. Enough for write → fix → details → retry → reply;
+ * caps a runaway loop.
+ */
+export const MAX_STEPS_PER_TURN = 5;
+
+function lastUserText(messages: ModelMessage[]): string | null {
+  const last = messages.at(-1);
+  if (last?.role !== "user") return null;
+  return typeof last.content === "string"
+    ? last.content
+    : last.content.flatMap((p) => (p.type === "text" ? [p.text] : [])).join("");
+}
+
+/**
+ * For `streamText`'s `prepareStep` (task 43). After "Make the audio" the
+ * first step can only offer the audio card, so the reply never rewrites the
+ * script the person just accepted. The turn's last step may not call a tool,
+ * so a turn that spends its budget on tools still ends with the line asking
+ * for changes or the audio, not on a tool call.
+ */
+export function prepareStudioStep({
+  stepNumber,
+  messages,
+}: {
+  stepNumber: number;
+  messages: ModelMessage[];
+}) {
+  if (stepNumber === 0 && lastUserText(messages)?.trim() === MAKE_AUDIO_REPLY) {
+    return { activeTools: ["offerAudio" as const] };
+  }
+  if (stepNumber >= MAX_STEPS_PER_TURN - 1) return { toolChoice: "none" as const };
+  return undefined;
+}
 
 export type StudioUITools = InferUITools<typeof studioTools>;
 

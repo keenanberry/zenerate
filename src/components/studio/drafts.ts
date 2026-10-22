@@ -87,6 +87,21 @@ export function latestDetails(messages: StudioUIMessage[]): Details | null {
   return null;
 }
 
+/**
+ * Whether the "Make the audio" and "Change something" replies sit under the
+ * latest message: it is the agent's finished reply, it saved a draft, and it
+ * did not already bring up the audio card. Anything the person sends after
+ * it makes it no longer the latest, which takes the replies away.
+ */
+export function showsQuickReplies(messages: StudioUIMessage[], live: boolean): boolean {
+  const last = messages.at(-1);
+  if (live || last?.role !== "assistant") return false;
+  return (
+    last.parts.some((p) => isWriteScript(p) && p.state === "output-available") &&
+    !last.parts.some((p) => p.type === "tool-offerAudio")
+  );
+}
+
 /** "10 min", or "1 h 5 min" past an hour. Estimates round to the minute. */
 export function minutesLabel(seconds: number): string {
   const minutes = Math.max(1, Math.round(seconds / 60));

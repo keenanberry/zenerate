@@ -18,14 +18,17 @@ import {
 } from "@/lib/ai/quota";
 import { createClient } from "@/lib/supabase/server";
 import { loadChat, loadMessages, messageText, saveMessages, touchChat } from "@/lib/chat/store";
-import { studioTools, type StudioToolContext, type StudioUIMessage } from "@/lib/chat/tools";
+import {
+  prepareStudioStep,
+  MAX_STEPS_PER_TURN,
+  studioTools,
+  type StudioToolContext,
+  type StudioUIMessage,
+} from "@/lib/chat/tools";
 
 // A turn can be several model calls (write, check, rewrite, set details), and
 // a long script with thinking takes a while to stream.
 export const maxDuration = 300;
-
-/** Model calls per turn. Enough for write → fix → details → offer; caps a runaway loop. */
-const MAX_STEPS_PER_TURN = 5;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -142,6 +145,7 @@ export async function POST(req: Request) {
     tools: studioTools,
     toolsContext: { writeScript: toolContext, setDetails: toolContext },
     stopWhen: isStepCount(MAX_STEPS_PER_TURN),
+    prepareStep: prepareStudioStep,
     maxOutputTokens: 8000,
     providerOptions: {
       anthropic: {
