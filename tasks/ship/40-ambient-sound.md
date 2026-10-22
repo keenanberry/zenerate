@@ -1,6 +1,6 @@
 # Ambient Background Sound
 
-**Status:** In review (PR open). Mixed audio needs a snapshot rebuild by the operator; until
+**Status:** In review (PR #68). Mixed audio needs a snapshot rebuild by the operator; until
 then a chosen bed renders as narration alone.
 **Priority:** Phase 6
 **Phase:** 6 (seed & open)
