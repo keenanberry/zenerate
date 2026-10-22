@@ -109,6 +109,8 @@ and make the audio from cards in the chat. See the studio spec.
 | 43 | [Next step after every draft](./43-next-step-after-draft.md) | Done* | Every script turn ends with a length-and-choice line; Make the audio / Change something chips; Make the audio only offers the card (10/10 each) (PR #70). *Operator: phone check of the chips |
 | 44 | [Space + Chant ambience](./44-space-ambience.md) | Done | Brown noise removed; synthesized Space and CC0 Chant (Temple monks, #545055) added; previews at the in-mix level (-37 LUFS); snapshot `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8` live in Production and Preview, verified by the operator 2026-10-22 (PR #72) |
 | 45 | [Landing refresh](./45-landing-refresh.md) | Done* | Demo shows a typed request and the agent's closing line, no "focus" wording; steps mention ambience and revising; "Hear one first" is 3 covered meditations, house picks once 3 exist, else newest (PR #73). *Operator: production checks in the PR |
+| 46 | [Landing hero height](./46-landing-hero-height.md) | Done* | Fixed-height demo window that follows the stream; headline at 121px instead of 426px (PR #75). *Operator: swipe over the demo card on a phone |
+| 47 | [Model comparison](./47-model-comparison.md) | Done | Sonnet 5 vs 5.5 vs Haiku 5.5 on real studio turns; fixed a tools-changed history 400 on the newer models; `STUDIO_MODEL` setting (PR #77, closes #19). **Production on `claude-sonnet-5-5` since 2026-10-22**: about half the cost per meditation |
 
 ### Running Phases 4–5 with Orca
 

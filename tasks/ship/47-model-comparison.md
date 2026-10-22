@@ -1,6 +1,6 @@
 # Model Comparison for the Studio Agent: Sonnet 5, Sonnet 5.5, Haiku 5.5
 
-**Status:** Done, in review. Production stays on `claude-sonnet-5` until the operator decides.
+**Status:** Done (PR #77). Production switched to `claude-sonnet-5-5` on 2026-10-22 by the operator's choice
 **Priority:** Phase 6. Decide before signups open; the free tier's cost depends on it.
 **Phase:** 6 (seed & open)
 **Depends on:** 29 (chat agent), 41 (cap rewrites), 43 (next step after draft)

@@ -65,6 +65,7 @@ Last updated: 2026-10-22.
 
 ## Done
 
+- 2026-10-22: studio agent switched to `claude-sonnet-5-5` (`STUDIO_MODEL` in Vercel Production and Preview), after reading the comparison scripts (47).
 - 2026-10-22: ambience snapshot live and verified by ear in production (40, 44).
 - 2026-10-21: operator data wiped (28); `QUOTA_EXEMPT_USER_IDS` set (31);
   `NEXT_PUBLIC_SITE_URL` set (09); auth email templates pasted (08); Mac Now Playing (25).
