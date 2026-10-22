@@ -1,6 +1,6 @@
 # Space and Chant Beds, Previews at the In-Mix Level
 
-**Status:** Done (PR pending review). Live once the operator sets `AUDIO_SANDBOX_SNAPSHOT_ID=snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`
+**Status:** Done (PR #72); snapshot live 2026-10-22
 **Priority:** Phase 6
 **Phase:** 6 (seed & open)
 **Depends on:** 40 (ambient sound)
