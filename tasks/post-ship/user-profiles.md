@@ -1,7 +1,22 @@
 # User Profiles
 
-**Status:** Not started
-**Priority:** Post-ship
+**Status:** Not started. Scoped for a future session (refreshed 2026-10-22)
+**Priority:** Post-ship. One of the three "next up" candidates in the README.
+
+> **What changed since this was written (2026-10-22).**
+> - Discover was rebuilt (ship 36), and meditation cards and rows carry designed covers and tag
+>   pills (35, 42, 33). The author line belongs beside those, in `meditation-card.tsx`,
+>   `track-row.tsx` and the meditation page header (now laid out by ship 39).
+> - Every house meditation belongs to the operator's account, so the operator's own profile
+>   is the first one people will see. Consider letting a profile show as "Zenerate" for house
+>   picks.
+> - The account page gains new data to manage: conversations (`chats`), earlier versions,
+>   plays. Account deletion has to cover all of them (`tasks/post-ship/account-deletion.md`),
+>   and a "delete this conversation" control is filed as `chat-deletion.md`.
+> - The operator's ask: "people who publish meditations can show themselves if they want":
+>   a name, a short description of who they are and what they do. That favours
+>   **default-private, opt-in public profiles**, as the decisions below lean.
+> - Public reads need an `anon` GRANT as well as RLS (see `CLAUDE.md`, Conventions).
 
 ## Why it matters
 

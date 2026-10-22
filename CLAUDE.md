@@ -89,4 +89,4 @@ replace the create wizard and script editor with a chat studio, rebuild `/discov
 it, then open signups; their spec is
 `docs/superpowers/specs/2026-10-20-agentic-studio-design.md`. Signups stay closed until
 Phase 6 is done.
-Post-ship ideas live in `tasks/post-ship/`.
+Post-ship ideas live in `tasks/post-ship/`. Anything only the operator can do (a phone, a dashboard, an account) goes in `tasks/OPERATOR-TODO.md`. Keep it current when a task leaves an operator item.

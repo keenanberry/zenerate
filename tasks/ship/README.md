@@ -7,6 +7,8 @@ for Phases 0–3, and **`docs/superpowers/specs/2026-10-20-agentic-studio-design
 Phases 4–6 (the chat studio, Discover, seeding and launch). Read the one for your phase
 first. This folder is the operational tracking.
 
+**Operator to-dos live in [`tasks/OPERATOR-TODO.md`](../OPERATOR-TODO.md)**: one checklist for everything only the operator can do.
+
 **Signups stay closed until Phase 6 is done.** There is no launch date: Zenerate opens
 when the list below is finished, not before.
 
