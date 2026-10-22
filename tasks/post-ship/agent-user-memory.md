@@ -1,7 +1,7 @@
 # Agent User Memory
 
-**Status:** Not started
-**Priority:** Post-ship
+**Status:** Not started. Scoped for a future session (refreshed 2026-10-22)
+**Priority:** Post-ship. One of the "next up" candidates in the post-ship README.
 **Related:** `tasks/ship/29-chat-agent.md` (the agent loop this builds on). See *The coupling* below.
 
 ## Why it matters
@@ -19,6 +19,57 @@ each time and one that gets to know you.
 > blocked. The wizard is gone too, so "prefill the create wizard" below now means
 > "inject into the chat agent's prompt." Both shapes stay post-ship: get the studio in
 > front of real users first, then see what they repeat.
+
+## The operator's ask (2026-10-22)
+
+> "Saving user preferences and incorporating them in the chat context. That way the agent
+> can say, *you want to go with Brittney again for a voice, or want to change it up?* Users
+> might get bored picking the same stuff again and again."
+
+Since the studio shipped, the repeated choices sit at the audio step: **voice and ambience**
+on the Make audio card (ship 31 and 40), plus habits in the request itself (length,
+practice, sounds). The design below starts there.
+
+### A cheap first slice, with no new table
+
+Most of this can be **derived** from what's already stored, before building any memory:
+- Each meditation's `settings` already records the `voice`, the ambience (`music`) and
+  `volume` it was rendered with, plus `duration` and `type`. "Last used" and "most used" are
+  a query over the user's own completed meditations (RLS-bound client, owner only).
+- **The audio card preselects** the last-used voice and bed, with a quiet "same as last time"
+  hint. Picking something else is one tap, as today.
+- **The agent gets a short, stable summary** in its context at the start of a chat. For
+  example: "Recent choices: voice Brittney (4 of the last 5), ambience Rain (3 of 5),
+  usually 10 minutes, often breathwork." The agent can then say "Brittney again, or
+  something new?" when it offers the audio. A few words a turn is a negligible cost.
+  - Put it in a **mid-conversation system message** after the first user message, not in
+    the cached system prompt. Per-user text in the system prompt would break prompt caching
+    for everyone (see the `claude-api` skill → prompt caching). Sonnet 5.5 supports
+    mid-conversation system messages; check the AI SDK path for sending one.
+  - Keep it append-only. Editing earlier turns breaks preserved thinking on Sonnet 5.5
+    (task 47).
+- **"Change it up":** the agent can suggest a voice or bed the person hasn't tried that fits
+  the meditation. The catalogs are `src/lib/voices/` and `src/lib/meditation/ambience.ts`.
+
+That slice is the 80% of the value, with no schema and no settings UI.
+
+### Then: explicit preferences (Shape A below)
+
+A `user_preferences` row (preferred voice, bed, default length, "no bells", free-text
+always/never notes) with a small settings section on `/account`
+(`tasks/post-ship/user-profiles.md`). Explicit settings override derived ones. Shape B, a
+memory tool the agent writes to itself, still comes last, and only if real use shows
+habits that derived and explicit preferences don't capture.
+
+### Decisions to make
+
+- Should the card **preselect** last time's choice, or only **suggest** it? Preselect is
+  faster; suggest is more deliberate.
+- How often should the agent mention preferences? The pick: once, when it offers the
+  audio, never on every turn.
+- Privacy: derived preferences come from the person's own data and are never shown to
+  anyone else. If an explicit preferences table ships, add it to `/privacy` and to account
+  deletion.
 
 ## The coupling worth understanding first
 
