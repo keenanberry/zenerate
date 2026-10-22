@@ -361,15 +361,23 @@ function lastUserText(messages: ModelMessage[]): string | null {
  * script the person just accepted. The turn's last step may not call a tool,
  * so a turn that spends its budget on tools still ends with the line asking
  * for changes or the audio, not on a tool call.
+ *
+ * `narrowTools: false` keeps every tool on that first step and leaves it to
+ * the prompt. Models that tie a thinking block to the `tools` list it was
+ * made with (Sonnet 5.5, Haiku 5.5) reject or drop every earlier block when
+ * the list shrinks; tool choice is not part of that check (task 47).
  */
-export function prepareStudioStep({
-  stepNumber,
-  messages,
-}: {
-  stepNumber: number;
-  messages: ModelMessage[];
-}) {
-  if (stepNumber === 0 && lastUserText(messages)?.trim() === MAKE_AUDIO_REPLY) {
+export function prepareStudioStep(
+  {
+    stepNumber,
+    messages,
+  }: {
+    stepNumber: number;
+    messages: ModelMessage[];
+  },
+  { narrowTools = true }: { narrowTools?: boolean } = {},
+) {
+  if (narrowTools && stepNumber === 0 && lastUserText(messages)?.trim() === MAKE_AUDIO_REPLY) {
     return { activeTools: ["offerAudio" as const] };
   }
   if (stepNumber >= MAX_STEPS_PER_TURN - 1) return { toolChoice: "none" as const };

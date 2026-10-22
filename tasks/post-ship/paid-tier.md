@@ -1,6 +1,6 @@
 # Paid Tier
 
-**Status:** Not started. Scoped for a future session (rewritten 2026-10-22 with real cost numbers)
+**Status:** Not started. Scoped for a future session (rewritten 2026-10-22; Anthropic costs measured in ship 47)
 **Priority:** Post-ship, but **decide the free tier before opening signups.** See "Before
 signups" below.
 
@@ -18,16 +18,25 @@ Measured or configured in the repo:
   scripts). On Starter ($6 for 30k credits), that's roughly **$0.19 per render**; on Creator
   ($22 for about 121k), roughly **$0.17**. Longer meditations cost proportionally more, and so
   does every re-render of a revision.
-- **Anthropic:** the studio runs `claude-sonnet-5` at $2 / $10 per MTok (input / output), with
-  low-effort thinking, up to 8k output tokens and 5 steps per turn. The tools and system prompt
-  are prompt-cached. A turn that writes a 10-minute script is roughly 2–4k output tokens plus
-  a few thousand input tokens, so about **$0.03–0.06 per writing turn**. A typical meditation
-  (a draft, a revision or two, "Make the audio") is **3–6 turns, so about $0.15–0.30.**
-  Verify this against the Anthropic console before pricing: per-request token counts are on
-  each `chat_messages` turn if usage metadata gets logged, and they aren't today.
-- **Total: about $0.35–0.50 per finished meditation.** Stripe takes 2.9% + $0.30 per charge,
-  so **a $5/month plan nets about $4.55, which covers roughly 9–13 meditations a month** before
-  fixed costs.
+- **Anthropic (measured, ship 47):** the studio runs `claude-sonnet-5` at $2 / $10 per MTok
+  (input / output), with low-effort thinking and the tools and system prompt prompt-cached.
+  Real usage from `scripts/measure-studio-rewrites.ts`, median per turn, warm cache:
+
+  | Turn | Sonnet 5 (today) | Sonnet 5.5 | Haiku 5.5 |
+  |---|---|---|---|
+  | First draft | $0.018 | $0.021 | $0.0015 |
+  | Revision | $0.037 | $0.023 | $0.0014 |
+  | "Make the audio", then the card's continuation | $0.008 | $0.009 | $0.0007 |
+  | A decline (off-topic request) | $0.0014 | $0.0014 | $0.0001 |
+  | **Meditation: draft, two revisions, audio** | **about $0.10** | **about $0.08** | **about $0.005** |
+
+  The first turn after five idle minutes also writes the cache, about 4.4k tokens: +$0.011 on
+  Sonnet, +$0.0005 on Haiku. The route now logs a `[chat] usage` line per turn (tokens and
+  dollars), so production numbers can replace these.
+- **Total: about $0.25–0.30 per finished meditation** on Sonnet, nearly all of it ElevenLabs.
+  Stripe takes 2.9% + $0.30 per charge, so **a $5/month plan nets about $4.55, which covers
+  roughly 15 meditations a month** before fixed costs. On Haiku 5.5 the Anthropic share drops to
+  half a cent, so a free tier costs about what its renders cost.
 
 Fixed costs that change when you charge money:
 - **Vercel Hobby prohibits commercial use.** Charging means **Vercel Pro, $20/month**
@@ -44,9 +53,10 @@ It doesn't cover the fixed costs until there are about 10 paying users.
 
 Independent of whether you charge, check these before task 38 enables signups:
 - **The daily chat ceiling is 200 messages per user** (`PER_USER_DAILY_CHAT_MESSAGES`, ship 29).
-  At about $0.05 per writing turn, one determined free user could spend around **$10 a day**
-  of Anthropic. A free-tier ceiling of about 30 a day still allows several meditations.
-  Consider a lower free value, or a per-user monthly token budget.
+  At about $0.02–0.04 per writing turn on Sonnet (measured, ship 47), one determined free
+  user could spend around **$4–7 a day** of Anthropic; on Haiku 5.5, about $0.30. A free-tier
+  ceiling of about 30 a day still allows several meditations. Consider a lower free value,
+  or a per-user monthly token budget.
 - **Free renders are 3 a month per user**, with the global cap of 25 as the backstop. When
   the cap is hit, everyone waits until next month, which is safe but frustrating. That's
   fine at hobby scale.
@@ -84,8 +94,7 @@ Independent of whether you charge, check these before task 38 enables signups:
 
 ## Implementation notes
 
-- Measure first. Add token usage to `generation_meta` or a small usage table per chat turn
-  (`streamText`'s usage on finish), so the pricing decision rests on your real numbers, not
-  these estimates. `generation_meta.tts_characters` already records ElevenLabs usage per
-  render.
+- Measure first. The route logs `[chat] usage` per turn (ship 47); for per-user budgets, store
+  the same numbers in a small usage table per chat turn. `generation_meta.tts_characters`
+  already records ElevenLabs usage per render.
 - Webhook endpoints verify signatures. The plan lives in a server-written column.

@@ -25,6 +25,7 @@ import {
   type StudioToolContext,
   type StudioUIMessage,
 } from "@/lib/chat/tools";
+import { narrowsToolsForAudio, studioModel, studioProviderOptions, usageLogLine } from "@/lib/chat/model";
 
 // A turn can be several model calls (write, check, rewrite, set details), and
 // a long script with thinking takes a while to stream.
@@ -127,8 +128,9 @@ export async function POST(req: Request) {
     chatId,
   };
 
+  const model = studioModel();
   const result = streamText({
-    model: anthropic("claude-sonnet-5"),
+    model: anthropic(model),
     // A cache breakpoint on the system prompt caches tools + prompt (~3k
     // tokens), which every step of every turn re-sends.
     instructions: {
@@ -145,20 +147,12 @@ export async function POST(req: Request) {
     tools: studioTools,
     toolsContext: { writeScript: toolContext, setDetails: toolContext },
     stopWhen: isStepCount(MAX_STEPS_PER_TURN),
-    prepareStep: prepareStudioStep,
+    prepareStep: (step) => prepareStudioStep(step, { narrowTools: narrowsToolsForAudio(model) }),
     maxOutputTokens: 8000,
-    providerOptions: {
-      anthropic: {
-        // Carried over from the one-shot route. Omitting `thinking` on Sonnet
-        // 5 runs adaptive thinking anyway, so it is set on purpose; low effort
-        // keeps the structural planning a script needs (arc, silence budget)
-        // without a long pause before the canvas starts filling.
-        thinking: { type: "adaptive" },
-        effort: "low",
-        // One tool per step. In parallel, setDetails can run before the
-        // writeScript that creates the meditation it writes to.
-        disableParallelToolUse: true,
-      },
+    providerOptions: studioProviderOptions(model),
+    // Real cost per turn, for pricing (task 47): sum these over a chat.
+    onEnd: ({ totalUsage, steps }) => {
+      console.info("[chat] usage", JSON.stringify(usageLogLine(model, totalUsage, steps.length)));
     },
   });
 
