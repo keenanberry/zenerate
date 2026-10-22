@@ -1,6 +1,6 @@
 # Cover Variety and setDetails Tag Leniency
 
-**Status:** Done (PR #69), awaiting review
+**Status:** Done (PR #69)
 **Priority:** Phase 6. Discover is the first thing a new visitor sees.
 **Phase:** 6 (seed & open)
 **Depends on:** 35 (cover system), 41 (found the tag strings)

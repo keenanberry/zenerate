@@ -1,6 +1,6 @@
 # Studio Mobile Fixes
 
-**Status:** In review (PR open). The real-iPhone keyboard check is the operator's.
+**Status:** Done (PR #66). The real-iPhone keyboard check is the operator's.
 **Priority:** Phase 6. The studio is the product, and the operator found both on a phone.
 **Phase:** 6 (seed & open)
 **Depends on:** 30 (studio UI), 31 (audio from chat), 24 (install)

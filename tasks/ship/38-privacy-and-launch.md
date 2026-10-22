@@ -1,6 +1,6 @@
 # Privacy Update + Open Signups
 
-**Status:** In progress: code half in review (PR open); the operator review and the launch checklist remain
+**Status:** In progress: code half done (PR #63); the operator's launch checklist remains
 **Priority:** Phase 6. The launch gate.
 **Phase:** 6 (seed & open)
 **Depends on:** 37, and every earlier phase's open items (10, 11, 15's forwarder, the 23/26 share cards)
