@@ -6,6 +6,7 @@ import { FavoriteButton } from "@/components/favorite-button";
 import { TrackPlayButton } from "@/components/track-play-button";
 import { MeditationCover } from "@/components/meditation-cover";
 import { Badge } from "@/components/ui/badge";
+import { TagPills } from "@/components/tag-pills";
 import type { MeditationWithMeta } from "@/lib/meditation/types";
 import { Clock, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -95,9 +96,8 @@ export function TrackRow({
             <Globe className="h-3 w-3 shrink-0 text-muted-foreground" />
           )}
         </span>
-        <span className="hidden truncate text-xs text-muted-foreground sm:block">
-          {m.prompt?.split("\n")[0]}
-        </span>
+        {/* One line of whole pills: a pill that would wrap is hidden, never cut. */}
+        <TagPills tags={m.tags ?? []} size="sm" className="mt-1.5 max-h-[18px] overflow-hidden" />
       </Link>
 
       <span className="hidden w-28 sm:block">

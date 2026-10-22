@@ -2,7 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { hydrateAudioUrl, hydrateAudioUrls } from "@/lib/audio/signed-url";
+import { TAGS } from "./tags";
 import type {
   Meditation,
   MeditationWithMeta,
@@ -57,6 +59,57 @@ export async function updateMeditation(
 
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard");
+  revalidatePath(`/meditation/${id}`);
+}
+
+// The owner's hand-edit of what the studio agent set through setDetails.
+// Tags come only from the vocabulary; 0 is allowed here, unlike the agent's 2.
+const detailsInput = z.object({
+  title: z.string().trim().min(1).max(80).optional(),
+  description: z.string().trim().max(300).optional(),
+  tags: z
+    .array(z.enum(TAGS))
+    .max(5)
+    .refine((tags) => new Set(tags).size === tags.length, "Tags must not repeat.")
+    .optional(),
+});
+
+export async function updateMeditationDetails(
+  id: string,
+  details: { title?: string; description?: string | null; tags?: string[] }
+) {
+  const parsed = detailsInput.safeParse({
+    ...details,
+    description: details.description ?? undefined,
+  });
+  if (!parsed.success) throw new Error("Those details are not valid.");
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { title, description, tags } = parsed.data;
+  const values: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (title !== undefined) values.title = title;
+  if (details.description !== undefined) values.description = description || null;
+  if (tags !== undefined) values.tags = tags;
+
+  // RLS already limits updates to the owner; the user_id filter makes the
+  // intent explicit, and an empty result is how someone else's row shows up.
+  const { data, error } = await supabase
+    .from("meditations")
+    .update(values)
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .select("id");
+
+  if (error) throw new Error(error.message);
+  if (!data?.length) throw new Error("Meditation not found");
+
+  revalidatePath("/dashboard");
+  revalidatePath("/discover");
   revalidatePath(`/meditation/${id}`);
 }
 
