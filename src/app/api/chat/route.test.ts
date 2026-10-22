@@ -169,7 +169,7 @@ describe("POST /api/chat", () => {
     await drain(res);
     const call = (model.current as MockLanguageModelV4).doStreamCalls[0];
     expect(call.prompt[0]).toMatchObject({ role: "system", content: STUDIO_SYSTEM_PROMPT });
-    expect(call.tools?.map((t) => t.name).sort()).toEqual(["offerAudio", "setDetails", "writeScript"]);
+    expect(call.tools?.map((t) => t.name).sort()).toEqual(["offerAudio", "previewSounds", "setDetails", "writeScript"]);
     expect(call.maxOutputTokens).toBeGreaterThan(0);
     // setDetails must not run before the writeScript that creates the meditation.
     expect(call.providerOptions?.anthropic).toMatchObject({ disableParallelToolUse: true });

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { findMalformedMarkers, parseMeditationText } from "@/lib/meditation/parser";
 import { estimateDuration } from "@/lib/meditation/duration";
 import { SOUND_EFFECTS } from "@/lib/meditation/sounds";
+import { SOUND_NAMES, soundPreview } from "@/lib/meditation/sound-previews";
 import { MEDITATION_TYPES, TAGS } from "@/lib/meditation/tags";
 import type { MeditationSettings } from "@/lib/meditation/types";
 
@@ -56,6 +57,14 @@ export const setDetailsInput = z.object({
     .describe("2 to 5 tags from the vocabulary."),
   type: z.enum(MEDITATION_TYPES),
   durationMinutes: z.number().int().min(1).max(90),
+});
+
+export const previewSoundsInput = z.object({
+  sounds: z
+    .array(z.enum(SOUND_NAMES))
+    .min(1)
+    .max(SOUND_NAMES.length)
+    .describe("The sound files to play, by file name. Every sound when they ask what is available."),
 });
 
 async function linkedMeditationId(ctx: StudioToolContext): Promise<string | null> {
@@ -221,6 +230,16 @@ export const studioTools = {
 
       return { meditationId, title, tags: uniqueTags };
     },
+  }),
+
+  // Reads nothing and writes nothing: the files are static, under public/sounds/.
+  previewSounds: tool({
+    description:
+      "Show a card with a play button for each named sound, so the person can hear them. Use it when they ask what the sounds are or sound like, or seem unsure which to pick. Not after every script.",
+    inputSchema: previewSoundsInput,
+    execute: async ({ sounds }) => ({
+      sounds: [...new Set(sounds)].map(soundPreview),
+    }),
   }),
 
   // Client-side: no execute. The chat renders it as the voice and make-audio

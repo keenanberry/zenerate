@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { studioTools, setDetailsInput, writeScriptInput, type StudioToolContext } from "./tools";
+import {
+  studioTools,
+  previewSoundsInput,
+  setDetailsInput,
+  writeScriptInput,
+  type StudioToolContext,
+} from "./tools";
 
 type Row = Record<string, unknown>;
 type Write = { table: string; op: "insert" | "update"; values: Row };
@@ -227,5 +233,29 @@ describe("setDetails", () => {
 describe("offerAudio", () => {
   it("is client-side: it has no execute", () => {
     expect(studioTools.offerAudio.execute).toBeUndefined();
+  });
+});
+
+describe("previewSounds", () => {
+  const execute = studioTools.previewSounds.execute as unknown as (
+    input: { sounds: string[] },
+    options: { toolCallId: string; messages: [] },
+  ) => Promise<{ sounds: { name: string; label: string; url: string; seconds: number }[] }>;
+
+  it("returns each sound's label, URL and length, once each", async () => {
+    const result = await execute(
+      { sounds: ["bell-tibetan.mp3", "gong-deep.mp3", "bell-tibetan.mp3"] },
+      { toolCallId: "call-1", messages: [] },
+    );
+    expect(result.sounds).toEqual([
+      { name: "bell-tibetan.mp3", label: "Tibetan bell", url: "/sounds/bell-tibetan.mp3", seconds: 7 },
+      { name: "gong-deep.mp3", label: "Deep gong", url: "/sounds/gong-deep.mp3", seconds: 12 },
+    ]);
+  });
+
+  it("accepts only catalog sounds, and at least one", () => {
+    expect(previewSoundsInput.safeParse({ sounds: ["rain.mp3"] }).success).toBe(false);
+    expect(previewSoundsInput.safeParse({ sounds: [] }).success).toBe(false);
+    expect(previewSoundsInput.safeParse({ sounds: ["chime-soft.mp3"] }).success).toBe(true);
   });
 });
