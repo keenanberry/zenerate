@@ -65,7 +65,6 @@ type Turn = {
   closing: string;
   /** finishReason of each step; "tool-calls" last means the step limit cut the turn. */
   finish: string[];
-  reasoning: string[];
   seconds: number;
 };
 
@@ -116,7 +115,6 @@ async function runTurn(history: ModelMessage[], prompt: string, ctx: StudioToolC
     text: await result.text,
     closing: steps.at(-1)?.text.trim() ?? "",
     finish: steps.map((s) => s.finishReason),
-    reasoning: steps.map((s) => s.reasoningText ?? ""),
     seconds: Math.round((Date.now() - started) / 100) / 10,
   };
 }
