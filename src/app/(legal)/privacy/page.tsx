@@ -14,7 +14,7 @@ export default function PrivacyPage() {
   return (
     <>
       <h1>Privacy Policy</h1>
-      <p className="text-muted-foreground">Last updated: October 8, 2026</p>
+      <p className="text-muted-foreground">Last updated: October 21, 2026</p>
 
       <p>
         Zenerate is operated by Keenan Berry, an individual based in Missouri,
@@ -33,13 +33,26 @@ export default function PrivacyPage() {
           provider; I never see it.
         </li>
         <li>
-          <strong>Your content:</strong> the prompts you write, the meditation
-          scripts and audio generated from them, titles, settings, whether
-          each meditation is public, and your favorites and collections.
+          <strong>Your content:</strong> the meditations you make, with their
+          scripts, audio, titles, descriptions, tags and settings, the earlier
+          versions you keep, whether each meditation is public, and your
+          favorites and collections.
         </li>
         <li>
-          <strong>Usage records:</strong> a log of when you generate scripts
-          and audio, used to enforce usage limits.
+          <strong>Conversations:</strong> your conversations with the
+          meditation agent, the chat where you make and revise meditations.
+          The messages you send and the agent&rsquo;s replies are stored so
+          you can pick a conversation up again.
+        </li>
+        <li>
+          <strong>Plays:</strong> when you are signed in and listen to a
+          meditation for 30 seconds, I record which meditation you played and
+          when. Signed out, no plays are recorded.
+        </li>
+        <li>
+          <strong>Usage records:</strong> a log of when you generate audio,
+          used to enforce usage limits. The daily limit on messages to the
+          agent is counted from your stored conversations.
         </li>
         <li>
           <strong>Technical data:</strong> like any website, the servers that
@@ -65,6 +78,12 @@ export default function PrivacyPage() {
           operating a secure, fair service.
         </li>
         <li>
+          To rank the Popular row on Discover, from the plays and favorites of
+          signed-in listeners. Your own plays and favorites never count toward
+          your own meditations, and no one else can see what you played. This
+          is my legitimate interest in helping people find meditations.
+        </li>
+        <li>
           To contact you about your account, such as confirming your email
           address or telling you about material changes to these policies.
         </li>
@@ -79,8 +98,8 @@ export default function PrivacyPage() {
       <ul>
         <li>
           <strong>Supabase</strong>: database, authentication and file
-          storage. Holds your account data, your content, generated audio and
-          usage records. (
+          storage. Holds your account data, your content, your conversations,
+          generated audio, plays and usage records. (
           <a href="https://supabase.com/privacy">Supabase privacy policy</a>)
         </li>
         <li>
@@ -101,8 +120,9 @@ export default function PrivacyPage() {
           )
         </li>
         <li>
-          <strong>Anthropic</strong>: the AI model that writes meditation
-          scripts. Receives the prompt and settings you submit. (
+          <strong>Anthropic</strong>: the AI model behind the meditation
+          agent. Receives your conversation with the agent, including the
+          scripts it has written, each time it generates a reply. (
           <a href="https://www.anthropic.com/legal/privacy">
             Anthropic privacy policy
           </a>
@@ -121,7 +141,7 @@ export default function PrivacyPage() {
         Your email address and password are never sent to Anthropic or
         ElevenLabs. Even so, please do not include sensitive personal
         information, such as health details or other people&rsquo;s private
-        information, in your prompts.
+        information, in your messages to the agent.
       </p>
       <p>
         I may also disclose data if required by law, or to protect the rights
@@ -130,12 +150,34 @@ export default function PrivacyPage() {
 
       <h2>Public meditations</h2>
       <p>
-        Meditations are private by default. If you make one public, its
-        title, prompt, script and audio can be seen and played by anyone,
-        including people without an account, and may be indexed by search
-        engines. Your email address is never shown. You can make a meditation
-        private again at any time, though copies others made or that search
-        engines cached while it was public are outside my control.
+        Meditations are private by default. If you make one public, anyone,
+        including people without an account, can see and play its title,
+        description, tags, script and audio, along with the settings it was
+        made with, such as its length, and a cover drawn from those details.
+        It may be indexed by search engines. Your conversation with the agent
+        and your earlier versions stay visible only to you, and a revision
+        still in progress is never shown on the meditation&rsquo;s page. Your
+        email address is never shown. You can make a meditation private again
+        at any time, though copies others made or that search engines cached
+        while it was public are outside my control.
+      </p>
+
+      <h2>Your conversations with the agent</h2>
+      <p>
+        Only you can see your conversations, even when the meditation one
+        made is public. The request you start a conversation with stays in
+        the conversation; it is not published with the meditation. Each
+        conversation is sent to Anthropic to generate the agent&rsquo;s
+        replies, as described above.
+      </p>
+      <p>
+        A conversation is kept until you delete your account. Deleting a
+        meditation keeps the conversation it was made in, so you can make it
+        again. To have a conversation deleted sooner, email{" "}
+        <a href="mailto:privacy@zeneratestudio.com">
+          privacy@zeneratestudio.com
+        </a>
+        .
       </p>
 
       <h2>Cookies and local storage</h2>
@@ -157,16 +199,22 @@ export default function PrivacyPage() {
       <h2>How long I keep data</h2>
       <ul>
         <li>
-          Account data, content and usage records are kept while your account
-          exists.
+          Account data, content, conversations, plays and usage records are
+          kept while your account exists.
         </li>
         <li>
           A meditation you delete is removed from the live database right
-          away.
+          away, together with its audio, its earlier versions and the plays
+          it received. Its conversation is kept, as described above.
+        </li>
+        <li>
+          An earlier version you keep is stored until you replace or delete
+          it, or delete the meditation.
         </li>
         <li>
           When your account is deleted, your account data, meditations,
-          generated audio, collections and usage records are deleted.
+          generated audio (earlier versions included), conversations,
+          favorites, collections, plays and usage records are deleted.
         </li>
         <li>
           Backups may contain deleted data for up to 30 days before they are
@@ -192,7 +240,8 @@ export default function PrivacyPage() {
           privacy@zeneratestudio.com
         </a>{" "}
         from the address on your account. I will respond within 30 days. You
-        can delete individual meditations yourself at any time.
+        can delete individual meditations and earlier versions yourself at any
+        time.
       </p>
 
       <h2>International transfers</h2>

@@ -122,7 +122,6 @@ export async function POST(req: Request) {
     supabase,
     userId: user.id,
     chatId,
-    prompt: firstRequest,
   };
 
   const result = streamText({

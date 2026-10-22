@@ -177,10 +177,12 @@ export async function getMeditation(id: string) {
   if (error) throw new Error(error.message);
 
   const meditation = data as MeditationWithMeta;
-  // A revision in progress is the owner's. The page never shows it, but the
-  // row is serialized whole into the client payload, so drop it here.
+  // A revision in progress and the request a meditation was made from are
+  // the owner's. The page never shows them, but the row is serialized whole
+  // into the client payload, so drop them here.
   if (user?.id !== meditation.user_id) {
     meditation.draft_script = null;
+    meditation.prompt = null;
   }
 
   if (user) {

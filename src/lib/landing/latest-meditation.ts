@@ -3,7 +3,7 @@ import type { Meditation } from "@/lib/meditation/types";
 
 export type LatestMeditation = Pick<
   Meditation,
-  "id" | "title" | "prompt" | "script" | "settings"
+  "id" | "title" | "script" | "settings"
 >;
 
 /**
@@ -18,7 +18,7 @@ export async function getLatestPublicMeditation(
 ): Promise<LatestMeditation | null> {
   const { data, error } = await supabase
     .from("meditations")
-    .select("id, title, prompt, script, settings")
+    .select("id, title, script, settings")
     .eq("is_public", true)
     .eq("status", "completed")
     .order("created_at", { ascending: false })

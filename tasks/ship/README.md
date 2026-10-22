@@ -98,7 +98,8 @@ and make the audio from cards in the chat. See the studio spec.
 | # | Task | Status | Notes |
 |---|---|---|---|
 | 37 | [House meditations](./37-house-meditations.md) | Not started | Operator makes 24 through the chat, 3 per category; 6–8 featured. Needs Wave A only |
-| 38 | [Privacy update + open signups](./38-privacy-and-launch.md) | Not started | `/privacy` covers chats and plays; the launch checklist ends with enabling signups |
+| 38 | [Privacy update + open signups](./38-privacy-and-launch.md) | In progress | `/privacy` covers chats and plays; the launch checklist ends with enabling signups |
+| 38b | [Drafts owner-only](./38b-drafts-owner-only.md) | Not started | **Blocks signups.** `draft_script` / `draft_status` sit on `meditations`, which `anon` can read on public rows, so an in-progress revision is reachable through the API. Move them to an owner-only table; prove no draft text reaches `anon` |
 
 ### Running Phases 4–5 with Orca
 

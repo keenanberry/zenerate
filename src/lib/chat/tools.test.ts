@@ -39,7 +39,7 @@ function fakeSupabase(tables: { chats: Row; meditations?: Row }) {
 }
 
 function context(supabase: StudioToolContext["supabase"]): StudioToolContext {
-  return { supabase, userId: "user-1", chatId: "chat-1", prompt: "10 minutes to unwind" };
+  return { supabase, userId: "user-1", chatId: "chat-1" };
 }
 
 async function run<T>(
@@ -80,12 +80,13 @@ describe("writeScript", () => {
       op: "insert",
       values: {
         user_id: "user-1",
-        prompt: "10 minutes to unwind",
         script: GOOD_SCRIPT,
         status: "script_ready",
         is_public: false,
       },
     });
+    // The request stays in the owner-only chat, never on the meditation row.
+    expect(db.writes[0].values).not.toHaveProperty("prompt");
     expect(db.writes[1]).toMatchObject({ table: "chats", op: "update", values: { meditation_id: "med-new" } });
     expect(result).toMatchObject({
       meditationId: "med-new",
