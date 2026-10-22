@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { MeditationCover } from "@/components/meditation-cover";
+import { TagPills } from "@/components/tag-pills";
 import type { MeditationWithMeta } from "@/lib/meditation/types";
-import { CoverSlot, TagPillsSlot } from "./placeholders";
 
 function meta(m: MeditationWithMeta) {
   const minutes = m.settings?.duration;
@@ -41,12 +42,13 @@ export function DiscoverRow({
               href={`/meditation/${m.id}`}
               className="group block space-y-3 rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
-              <CoverSlot
+              {/* Drawn at the desktop width and scaled down to the phone's. */}
+              <MeditationCover
                 id={m.id}
                 tags={m.tags ?? []}
                 title={m.title}
                 size={176}
-                className="group-hover:bg-card-hover motion-safe:transition-colors"
+                className="h-auto w-full"
               />
               <div className="space-y-2">
                 <p className="line-clamp-2 font-serif text-base font-medium leading-snug group-hover:text-accent-foreground">
@@ -55,7 +57,7 @@ export function DiscoverRow({
                 {meta(m) && (
                   <p className="text-xs text-muted-foreground">{meta(m)}</p>
                 )}
-                <TagPillsSlot tags={(m.tags ?? []).slice(0, 2)} />
+                <TagPills tags={(m.tags ?? []).slice(0, 2)} size="sm" />
               </div>
             </Link>
           </li>
