@@ -1,6 +1,6 @@
 # Discover Rebuild
 
-**Status:** In review (PR open; production `curl` waits for deploy)
+**Status:** Done (PR #59); the production signed-out `curl` is the operator's after deploy
 **Priority:** Phase 5, Wave B. The public face at launch.
 **Phase:** 5 (Discover)
 **Depends on:** 28; `tags.ts` from 29; 35 (start with a placeholder cover slot)

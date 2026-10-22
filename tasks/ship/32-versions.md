@@ -1,6 +1,6 @@
 # Versions, Replace-or-Keep, Continue in Chat
 
-**Status:** In review
+**Status:** Done (PRs #60, #61); one real render on a deploy is the operator's
 **Priority:** Phase 5, Wave B. Rarely used, so keep it simple.
 **Phase:** 5 (studio, second wave)
 **Depends on:** 30, 31

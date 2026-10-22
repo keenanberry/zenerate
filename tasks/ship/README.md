@@ -87,11 +87,11 @@ and make the audio from cards in the chat. See the studio spec.
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 32 | [Versions, replace-or-keep, continue in chat](./32-versions.md) | Not started | Draft promotion in `workflow.ts` (not the snapshot); switcher for the owner only |
-| 33 | [Details editing + tag display](./33-details-and-tags-ui.md) | Not started | The only hand-edit left: title, description, tags |
-| 34 | [Sound previews in chat](./34-sound-previews.md) | Not started | Browser copies of the effects; snapshot unchanged |
-| 35 | [Designed cover system](./35-cover-system.md) | Not started | Deterministic covers; amends `DESIGN.md` (One Gradient Rule) |
-| 36 | [Discover rebuild](./36-discover-rebuild.md) | Not started | Search, filters, 8 category cards, Popular, Picked for you, play tracking |
+| 32 | [Versions, replace-or-keep, continue in chat](./32-versions.md) | Done* | Audio at `<user_id>/<meditation_id>/<uuid>.mp3`, never overwritten, folder removed with the meditation; draft renders tracked in `draft_status` so public pages keep playing; archive on promotion, keep-or-replace in chat, owner-only switcher, Continue in chat; fixed draft text leaking into public HTML (PRs #60, #61). *Operator: one real render on a deploy |
+| 33 | [Details editing + tag display](./33-details-and-tags-ui.md) | Done* | Inline title, description and tag editing for the owner; `TagPills` on the page, cards and rows (PR #57). *Operator: phone tap check on tag remove buttons |
+| 34 | [Sound previews in chat](./34-sound-previews.md) | Done* | `previewSounds` tool + card; six sounds in `public/sounds/` via `scripts/export-sound-previews.ts`; snapshot unchanged (PR #58). *Operator: iPhone playback |
+| 35 | [Designed cover system](./35-cover-system.md) | Done* | `MeditationCover`: flat tone fields, five motifs, colour from the first tag's group; `DESIGN.md` Covers rule, no gradient (PR #56). *Operator: real-phone look |
+| 36 | [Discover rebuild](./36-discover-rebuild.md) | Done* | Search + filters, 8 category cards, Popular (favorites + signed-in plays, owner excluded) and Picked for you, both falling back to `is_featured`; `discover_meditations` / `popular_meditations` granted to `anon` (PR #59). *Operator: mark house picks `is_featured` (task 37), production signed-out `curl` |
 
 ## Phase 6 — Seed & open
 

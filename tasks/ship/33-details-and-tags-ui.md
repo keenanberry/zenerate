@@ -1,6 +1,6 @@
 # Details Editing + Tag Display
 
-**Status:** Done (PR open)
+**Status:** Done (PR #57)
 **Priority:** Phase 5, Wave B
 **Phase:** 5
 **Depends on:** 28; `tags.ts` from 29
