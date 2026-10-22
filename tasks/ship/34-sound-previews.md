@@ -1,6 +1,6 @@
 # Sound Previews in Chat
 
-**Status:** Done (PR open)
+**Status:** Done (PR #58)
 **Priority:** Phase 5, Wave B
 **Phase:** 5
 **Depends on:** 29, 30

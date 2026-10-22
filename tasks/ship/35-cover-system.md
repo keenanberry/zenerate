@@ -1,6 +1,6 @@
 # Designed Cover System
 
-**Status:** In review
+**Status:** Done (PR #56)
 **Priority:** Phase 5, Wave B
 **Phase:** 5 (Discover)
 **Depends on:** 28 (tags)
