@@ -68,7 +68,9 @@ function MessagePart({
 }): ReactNode {
   switch (part.type) {
     case "text":
-      return part.text.trim() ? <p className="whitespace-pre-wrap">{part.text}</p> : null;
+      return part.text.trim() ? (
+        <p className="wrap-break-word whitespace-pre-wrap">{part.text}</p>
+      ) : null;
     case "tool-writeScript":
       return <DraftChip draft={drafts.get(part.toolCallId)} live={live} />;
     case "tool-setDetails":
@@ -94,7 +96,7 @@ function Message({
   if (message.role === "user") {
     const text = message.parts.flatMap((p) => (p.type === "text" ? [p.text] : [])).join("\n");
     return (
-      <div className="ml-auto max-w-[85%] rounded-xl bg-secondary px-4 py-2.5 whitespace-pre-wrap text-secondary-foreground">
+      <div className="ml-auto max-w-[85%] rounded-xl bg-secondary px-4 py-2.5 wrap-break-word whitespace-pre-wrap text-secondary-foreground">
         {text}
       </div>
     );
@@ -180,7 +182,15 @@ export function Chat({
 
   return (
     <div className={cn("flex min-h-0 flex-col", className)}>
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      {/* Scrolls one way only. Overflow on one axis makes the other `auto`
+          too, so the player's halo, which spills past its card by design,
+          used to scroll the chat sideways. The 16px bleed into the gutter
+          gives the halo and focus rings room before the clip, and the halo
+          spills no further sideways than that, so the clip leaves no edge. */}
+      <div
+        ref={scrollRef}
+        className="-mx-4 min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-4 [&_.player-halo]:-inset-x-4!"
+      >
         <div ref={contentRef} className="space-y-6 pb-6">
           {messages.map((message) => (
             <Message key={message.id} message={message} drafts={byId} live={live} />
