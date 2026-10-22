@@ -564,14 +564,17 @@ Media Session binding (`use-media-session.ts`, task 25) sits outside the markup 
 unaffected by the styling.
 
 ### Landing Demo
-The hero's product surface (`src/components/script-stream-demo.tsx`): a card with a
-Label-style "Focus" line and a Writing/Ready state, the script streaming into the real
-Script Viewer, and under it a row of chips naming the six examples
-(`src/lib/landing/examples.ts`). Chips are pills in UI type at 12px with a Hairline
-border; the live one takes the Secondary fill, as the active nav item does, and a tap
-streams that example from its first word. The loop walks the six in order. Every
-script is rendered as an invisible sizer in one grid cell, so the card holds the tallest
-and never shifts. Under reduced motion the chosen script shows whole and chips swap it.
+The hero's product surface (`src/components/script-stream-demo.tsx`): a card that reads as
+a moment in the studio. The person's request sits at its top as a Secondary-fill bubble
+at 85% width on the right, as in the chat; below it a Label-type "Draft 1" with a
+Writing/Ready state, the script streaming into the real Script Viewer, and, once it is
+in, the agent's one-line reply in plain Body text below a Hairline rule. Under the card
+a row of chips names the six examples (`src/lib/landing/examples.ts`). Chips are pills
+in UI type at 12px with a Hairline border; the live one takes the Secondary fill, as the
+active nav item does, and a tap streams that example from its first word. The loop walks
+the six in order. Every request, script and reply is rendered invisibly in its own grid
+cell, so the card holds the tallest of each and never shifts. Under reduced motion the
+chosen script and its reply show whole and chips swap them.
 
 ### Studio
 The chat and its canvas (`src/components/studio/`), the way Claude builds an artifact:

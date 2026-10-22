@@ -19,9 +19,10 @@ interface ScriptStreamDemoProps {
 }
 
 /**
- * The landing page's product surface: a script streaming into the real
- * ScriptViewer, looped through the examples while it is on screen, with a
- * row of chips that name them and jump between them.
+ * The landing page's product surface: a request in a chat bubble, the script
+ * streaming into the real ScriptViewer beneath it, and the agent's one-line
+ * reply once it is in. Looped through the examples while it is on screen,
+ * with a row of chips that name them and jump between them.
  *
  * It never blocks first paint and never shifts layout: the server renders
  * every finished script as an invisible sizer in one grid cell, so the card
@@ -113,13 +114,25 @@ export function ScriptStreamDemo({ examples }: ScriptStreamDemoProps) {
   return (
     <figure ref={ref} className="space-y-3">
       <div className="rounded-xl border bg-card px-6 py-6 text-card-foreground sm:px-8 sm:py-8">
-        <div className="mb-6 flex items-center justify-between gap-4 text-xs font-medium">
-          <p className="min-w-0 truncate text-muted-foreground">
-            <span className="tracking-[0.06em] uppercase">Focus</span>{" "}
-            <span className="text-foreground">{example.focus}</span>
-          </p>
+        {/* The person's message, as the studio shows it. Every request sits in
+            one cell so the bubble's height never changes between examples. */}
+        <div className="grid">
+          {examples.map((e, i) => (
+            <p
+              key={e.chip}
+              className={cn(
+                "max-w-[85%] self-start justify-self-end rounded-xl bg-secondary px-4 py-2.5 text-sm text-secondary-foreground [grid-area:1/1]",
+                i !== index && "invisible",
+              )}
+            >
+              {e.request}
+            </p>
+          ))}
+        </div>
+        <div className="mt-6 mb-6 flex items-center justify-between gap-4 text-xs font-medium tracking-[0.06em] uppercase">
+          <p className="text-muted-foreground">Draft 1</p>
           {/* Under reduced motion the script is shown whole, so it reads Ready. */}
-          <p aria-hidden className="shrink-0 tracking-[0.06em] uppercase">
+          <p aria-hidden className="shrink-0">
             <span className={cn("motion-reduce:hidden", done ? "text-sage" : "text-candle")}>
               {done ? "Ready" : "Writing"}
             </span>
@@ -145,8 +158,26 @@ export function ScriptStreamDemo({ examples }: ScriptStreamDemoProps) {
             {streamed && <ScriptViewer script={streamed} />}
           </div>
         </div>
+        {/* The agent's closing line, plain text as in the studio, once the
+            draft is in. Its space is held from the start, sized to the
+            longest reply, so its arrival shifts nothing. */}
+        <div className="mt-6 grid border-t pt-5">
+          {examples.map((e, i) => (
+            <p
+              key={e.chip}
+              className={cn(
+                "text-sm text-pretty [grid-area:1/1]",
+                "motion-safe:transition-opacity motion-safe:duration-700",
+                i === index && done ? fading && "opacity-0" : "invisible opacity-0",
+                i === index && "motion-reduce:visible motion-reduce:opacity-100",
+              )}
+            >
+              {e.reply}
+            </p>
+          ))}
+        </div>
       </div>
-      <div role="group" aria-label="Example focuses" className="flex flex-wrap gap-2 px-1">
+      <div role="group" aria-label="Example requests" className="flex flex-wrap gap-2 px-1">
         {examples.map((e, i) => (
           <button
             key={e.chip}
@@ -166,9 +197,10 @@ export function ScriptStreamDemo({ examples }: ScriptStreamDemoProps) {
         ))}
       </div>
       <figcaption className="px-1 text-sm text-muted-foreground">
-        An example of a script arriving, as it does on the create page. Pauses,
-        silences and sounds are written into it for the narration. Choose a
-        focus to see another.
+        An example from the studio, shortened to its opening: a request, the
+        script arriving as it is written, and the reply. Pauses, silences and
+        sounds are written in for the narration. Choose another request to see
+        it.
       </figcaption>
     </figure>
   );

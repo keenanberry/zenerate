@@ -1,16 +1,14 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { MeditationCover } from "@/components/meditation-cover";
 import { Nav } from "@/components/nav";
 import { ScriptStreamDemo } from "@/components/script-stream-demo";
 import { SiteFooter } from "@/components/site-footer";
+import { TagPills } from "@/components/tag-pills";
 import { Button } from "@/components/ui/button";
 import { getQuotaConfig } from "@/lib/audio/quota";
-import { countOf, firstPassage, freeTierSummary } from "@/lib/landing/copy";
+import { countOf, freeTierSummary } from "@/lib/landing/copy";
 import { DEMO_EXAMPLES } from "@/lib/landing/examples";
-import {
-  getLatestPublicMeditation,
-  type LatestMeditation,
-} from "@/lib/landing/latest-meditation";
+import { getLandingRow, type LandingRow } from "@/lib/landing/featured";
 import { pageMetadata } from "@/lib/seo/metadata";
 import { createClient } from "@/lib/supabase/server";
 
@@ -25,8 +23,9 @@ export const metadata = pageMetadata({
 // ScriptViewer. An example, and labelled as one on the page.
 // The four things the app does, in the order a visitor does them. Each is
 // checked against the code: the studio chat and its canvas
-// (src/components/studio/), the voice picker, the sound effects (sounds.ts),
-// download, favourites, collections and the visibility toggle.
+// (src/components/studio/), the voice and ambience pickers (ambience.ts), the
+// sound effects (sounds.ts), drafts and archived versions (task 32), download,
+// favourites, collections and the visibility toggle.
 const steps = [
   {
     title: "Describe it",
@@ -38,11 +37,11 @@ const steps = [
   },
   {
     title: "Hear it",
-    body: "Pick a narrator. In about a minute the passages are voiced, the bells, gongs and singing bowls are placed, and it all becomes one audio file.",
+    body: "Pick a narrator and a background: rain, ocean, forest, a soft drone, space, chanting, or none. In about a minute the passages are voiced, the bells and bowls are placed, and it all becomes one audio file.",
   },
   {
     title: "Keep it",
-    body: "Listen here or download the file. Favourite it, file it into collections, or publish it for anyone to hear on Discover.",
+    body: "Listen here or download the file, then come back and ask for a change: keep the earlier version or replace it. Favourite it, file it into collections, or publish it on Discover.",
   },
 ];
 
@@ -52,11 +51,8 @@ export default async function LandingPage() {
     {
       data: { user },
     },
-    latest,
-  ] = await Promise.all([
-    supabase.auth.getUser(),
-    getLatestPublicMeditation(supabase),
-  ]);
+    row,
+  ] = await Promise.all([supabase.auth.getUser(), getLandingRow(supabase)]);
 
   // Read from the same config the quota check enforces, so the page cannot
   // drift from the cap when the environment changes it.
@@ -117,8 +113,8 @@ export default async function LandingPage() {
 
         <section className="border-t">
           <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-20">
-            {latest ? (
-              <LatestOnDiscover meditation={latest} />
+            {row ? (
+              <HearOneFirst row={row} />
             ) : (
               <div className="max-w-3xl space-y-3">
                 <h2 className="font-serif text-2xl leading-tight font-medium">
@@ -174,40 +170,50 @@ export default async function LandingPage() {
   );
 }
 
-function LatestOnDiscover({ meditation }: { meditation: LatestMeditation }) {
-  const passage = firstPassage(meditation.script);
-  const { type, duration } = meditation.settings ?? {};
-  const meta = [
-    duration ? `${duration} min` : null,
-    type ? type.replace(/-/g, " ") : null,
-  ].filter(Boolean);
-
+/**
+ * Three meditations to listen to, each with its cover and tags: the house
+ * picks, or the newest on Discover until there are three picks. A stacked list
+ * on a phone, so nothing scrolls sideways; three columns from `sm`.
+ */
+function HearOneFirst({ row }: { row: LandingRow }) {
   return (
-    <div className="max-w-3xl space-y-6">
-      <h2 className="font-serif text-2xl leading-tight font-medium">
-        Hear one first
-      </h2>
-      <Link
-        href={`/meditation/${meditation.id}`}
-        className="group block space-y-4 rounded-xl border bg-card px-6 py-6 text-card-foreground outline-none hover:bg-card-hover focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-safe:transition-colors sm:px-8 sm:py-8"
-      >
-        <p className="text-xs font-medium tracking-[0.06em] text-muted-foreground uppercase">
-          Newest on Discover
-          {meta.length > 0 && <span className="normal-case tracking-normal"> · {meta.join(" · ")}</span>}
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h2 className="font-serif text-2xl leading-tight font-medium">Hear one first</h2>
+        <p className="text-sm text-muted-foreground">
+          {row.source === "featured" ? "Picked from Discover." : "The newest on Discover."}
         </p>
-        <h3 className="font-serif text-xl leading-snug font-medium text-balance">
-          {meditation.title}
-        </h3>
-        {passage && (
-          <p className="line-clamp-4 max-w-[60ch] font-serif text-lg leading-[1.9] text-foreground/80">
-            {passage}
-          </p>
-        )}
-        <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
-          Open and listen
-          <ArrowRight className="size-4 motion-safe:transition-transform motion-safe:group-hover:translate-x-0.5" aria-hidden />
-        </span>
-      </Link>
+      </div>
+      <ul className="grid max-w-3xl gap-4 sm:grid-cols-3 sm:gap-6">
+        {row.meditations.map((m) => {
+          const minutes = m.settings?.duration;
+          return (
+            <li key={m.id}>
+              <Link
+                href={`/meditation/${m.id}`}
+                className="group flex items-center gap-4 rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:flex-col sm:items-stretch sm:gap-3"
+              >
+                <MeditationCover id={m.id} tags={m.tags ?? []} title={m.title} size={72} className="sm:hidden" />
+                {/* Drawn at the column's widest and scaled to fit it. */}
+                <MeditationCover
+                  id={m.id}
+                  tags={m.tags ?? []}
+                  title={m.title}
+                  size={240}
+                  className="hidden h-auto w-full sm:block"
+                />
+                <div className="min-w-0 space-y-2">
+                  <p className="line-clamp-2 font-serif text-base leading-snug font-medium group-hover:text-accent-foreground">
+                    {m.title}
+                  </p>
+                  {minutes && <p className="text-xs text-muted-foreground">{minutes} min</p>}
+                  <TagPills tags={(m.tags ?? []).slice(0, 2)} size="sm" />
+                </div>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
       <p className="text-sm text-muted-foreground">
         More on{" "}
         <Link href="/discover" className="text-primary underline underline-offset-4">
