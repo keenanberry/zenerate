@@ -14,6 +14,14 @@ two bugs:
 2. The composer sat low, below the content, so they could not type while seeing the
    conversation, least of all with the keyboard open.
 
+The coordinator added two more layout bugs to this task during the run:
+
+3. On desktop, the voice picker in the studio's audio card crushed its cards. The name,
+   play button and gender badge overlapped, the badge spilled past the card, and the
+   descriptions cut to 3–4 letters.
+4. On the meditation page at desktop width, the header crushed the details column to about
+   120px. The title wrapped one word per line and each tag sat on its own line.
+
 ## Root causes
 
 **1. Sideways scroll.** The player's halo (`player-halo` in `audio-player.tsx`) is an
@@ -38,6 +46,19 @@ gets worse with the keyboard open. The keyboard covers the page without changing
 the layout viewport, and Safari scrolls the page to show the focused field. The studio keeps
 its full height, the conversation goes off screen, and the footer comes into view.
 
+**3. Voice picker.** The grid was `sm:grid-cols-2`, a *viewport* breakpoint. Any window 640px
+or wider got two columns, including the chat column, which is 20–24rem on any screen. That
+left each card about 150px for a 36px icon, the name, the badge, the description and a 32px
+play button. The name row did not wrap, so the badge overlapped the button and ran past the
+card's edge. It is the same kind of cause as bug 1: layout keyed to something other than
+the container the content sits in.
+
+**4. Meditation page header.** The cover, the details and the actions were three items in one
+flex row. The details column was `flex-1` (a 0% basis), and the actions group kept
+`flex: 0 1 auto` with its max-content width (four buttons in a line) as the basis. Inside the
+768px column the actions took their full width first, and the details got what was left: an
+h1 72px wide at both 1440 and 1024.
+
 ## Fix
 
 - **Chat list** (`chat.tsx`): it scrolls on one axis only (`overflow-x-hidden`). It bleeds
@@ -59,6 +80,14 @@ its full height, the conversation goes off screen, and the footer comes into vie
   skips updates while pinch-zoomed. Without the variables (no JS yet, or no
   `visualViewport`) the shell falls back to `100dvh`.
 
+- **Voice picker** (`voice-picker.tsx`): the picker is an `@container`, and the grid goes
+  two-up at `@xl` (its own width ≥ 36rem). That is one column in the chat at every screen
+  size, and two in the meditation page's Generate Audio panel. The name row is
+  `flex-wrap`, so the badge drops under a long name instead of colliding with it.
+- **Meditation header** (`meditation/[id]/page.tsx`): two columns, the cover and the
+  details, with the actions as their own wrapping row under the status line. The row is
+  `empty:hidden`, so signed out (no actions at all) leaves no gap.
+
 `audio-player.tsx` and `audio-card.tsx` are unchanged (38b edits the card's logic).
 
 ## Acceptance criteria
@@ -76,6 +105,17 @@ its full height, the conversation goes off screen, and the footer comes into vie
   pill stays in flow above the composer (unchanged markup).
 - [x] Desktop two-pane layout unchanged: at 1280×800 the grid spans 121px to 744px, as the
   old `calc(100dvh-11rem)` did.
+- [x] Voice picker: one column in the chat at 1280 (318px cards), 375 and 390; two columns
+  (345px cards) in the meditation page panel. In every card the name ends before the play
+  button, no descendant reaches past the card, and the description reads in full
+  ("Relaxing, Calm and Meditative"). Checked in dark and light; before and after
+  screenshots are in `39-studio-mobile-fixes/`.
+- [x] Meditation header: the title is on one line (254px) at 1440, 1024 and 390, in dark and
+  light. Checked the owner (Continue in chat, Private, favourite, Add to collection), a
+  signed-in non-owner (favourite and Add to collection only), signed out (no actions row;
+  checked in a `credentialless` iframe so the shared login was never touched), and the
+  editing state (the 588px title field at desktop, 358px at 390). No horizontal overflow
+  anywhere.
 - [ ] Real iPhone keyboard check (operator, after deploy; see Outcome).
 - [x] Lint (0 errors), `tsc --noEmit`, `npm test` (376 passed) and `npm run build` pass.
 
@@ -108,3 +148,11 @@ in the installed PWA.
    the nav.
 5. Tap "Script updated" (or a draft chip). The sheet opens over the chat, and closing it
    leaves the composer where it was.
+6. On a chat still offering audio, the voice list is one card per row with names, badges and
+   descriptions readable.
+7. On a meditation page, the title, description and tags read at full width, with the
+   buttons in a row underneath.
+
+Local test data, left in the shared DB (private, owned by alice): meditations
+`39390000-…-000000000039` (completed, retitled "Steady Before the Stage") and `…040`
+(script_ready), with chats `…00c1` and `…00c2`. Delete them whenever you like.
