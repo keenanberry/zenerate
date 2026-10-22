@@ -51,7 +51,7 @@ Vercel Workflow (orchestrator)
        │       <user_id>/<meditation_id>/<render_id>.mp3 (never upserted)
        │
        ├── 6. Update meditation status → completed, or for a rendered
-       │       draft_script, archive the current version and promote the draft
+       │       draft, archive the current version and promote the draft
        │
        └── 7. Destroy sandbox
 ```
@@ -66,7 +66,7 @@ its own. The only other callers of the route are the meditation page's generate 
 its free retry (`audio-section.tsx`).
 
 The route accepts a meditation in `script_ready`, or in `completed` when it has a
-`draft_script` (a revision the agent made after the audio existed). The second is a
+row in `meditation_drafts` (a revision the agent made after the audio existed). The second is a
 **draft render**, described next.
 
 ## Draft Renders and Archived Versions
@@ -74,19 +74,25 @@ The route accepts a meditation in `script_ready`, or in `completed` when it has 
 A meditation row always describes its **current version**: `script`, `audio_path`,
 `settings.voice` and `generation_meta`. Older versions live in `meditation_versions`,
 which is owner-only under RLS. A revision made after the audio exists goes to
-`draft_script` (`writeScript` decides this by whether `audio_path` is set).
+`meditation_drafts.script` (`writeScript` decides this by whether `audio_path` is set). One
+row per meditation; no row means no draft.
 
-A draft render never touches `status`. The meditation stays `completed` the whole time, so
-the public page and Discover keep playing the current version. The render's own state is
-`meditations.draft_status`:
+`meditation_drafts` is owner-only under RLS and has **no `anon` grant**, so a draft is
+unreachable to anyone else by REST, RPC or page payload, even on a public meditation. Never
+put draft text or draft state back on `meditations`: `anon` may read every column of a
+public row there, and `discover_meditations` returns `m.*`.
 
-| `draft_status` | Meaning |
+A draft render never touches `meditations` at all until promotion. The meditation stays
+`completed` the whole time, so the public page and Discover keep playing the current
+version. The render's own state is `meditation_drafts.render_status`:
+
+| `render_status` | Meaning |
 |---|---|
-| `null` | No draft render in flight, or the last one was promoted |
-| `processing` | Set by `/api/audio/generate` with a compare-and-set on `(status, draft_status)`, so a double click starts one run |
+| `null` | No render of this draft in flight |
+| `processing` | Set by `/api/audio/generate` with a compare-and-set on `render_status`, so a double click starts one run |
 | `failed` | Set by the workflow's `markFailed`. The draft, the current version and `status` are untouched; the free retry applies |
 
-`writeScript` refuses while `draft_status = 'processing'`, so the draft cannot change under
+`writeScript` refuses while `render_status = 'processing'`, so the draft cannot change under
 a run. The voice the owner picked is not saved to `settings` at the start (settings belong
 to the current version); the workflow carries it and writes it at promotion. The card's
 free retry resends it.
@@ -96,9 +102,11 @@ free retry resends it.
 1. Archive the current version into `meditation_versions`: its script, `audio_path`,
    `settings.voice` and `generation_meta`. Skipped when that `audio_path` is already
    archived, so a retried step archives once.
-2. Promote: `script = draft`, `draft_script = null`, `draft_status = null`, the new
-   `audio_path`, `generation_meta` and voice, `status = completed`. A retried step finds
-   `draft_script` no longer matching and does nothing.
+2. Promote: `script = draft`, the new `audio_path`, `generation_meta` and voice,
+   `status = completed`. Skipped when the meditation already carries this render's
+   `audio_path`, so a step retried after this point does not archive the new version.
+3. Delete the `meditation_drafts` row. A retried step finds no draft (or one that no
+   longer matches) and does nothing.
 
 The archived version's audio file stays where it was. Every render writes a new file, so
 nothing is overwritten. The owner then decides:
@@ -114,10 +122,8 @@ nothing is overwritten. The owner then decides:
   read is owner-only under RLS. The page also links the owner to **Continue in chat**
   (`/create/[chatId]`) when the meditation has a chat.
 
-`getMeditation` blanks `draft_script` for anyone but the owner, because the page serializes
-the whole row into its client payload. The column is still readable through `anon`'s table
-grant on `meditations`; that is accepted, since a revision of a public script is no more
-private than the script.
+`getMeditation` blanks `prompt` for anyone but the owner, because the page serializes the
+whole row into its client payload. Drafts need no such step: they are not on the row.
 
 ## Audio Storage Layout
 
@@ -346,8 +352,8 @@ generating_script → script_ready → processing_audio → completed
 
 `src/components/audio-section.tsx` switches on `status` to render the generate panel, processing status, audio player, or retry state. The studio's audio card does the same inside the chat.
 
-A draft render does not move `status`: `draft_script` and `draft_status` can be set
-alongside `completed`, and the meditation stays `completed` from start to promotion or
-failure. The owner's chat card folds `draft_status` into what it shows (`getAudioOffer`
+A draft render does not move `status`: a `meditation_drafts` row and its `render_status`
+can be set alongside `completed`, and the meditation stays `completed` from start to
+promotion or failure. The owner's chat card folds `render_status` into what it shows (`getAudioOffer`
 reports `processing` as `processing_audio` and `failed` as `failed`), so it still shows
 progress and failure. See Draft Renders and Archived Versions above.

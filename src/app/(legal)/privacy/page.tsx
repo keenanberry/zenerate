@@ -154,10 +154,9 @@ export default function PrivacyPage() {
         including people without an account, can see and play its title,
         description, tags, script and audio, along with the settings it was
         made with, such as its length, and a cover drawn from those details.
-        It may be indexed by search engines. Your conversation with the agent
-        and your earlier versions stay visible only to you, and a revision
-        still in progress is never shown on the meditation&rsquo;s page. Your
-        email address is never shown. You can make a meditation private again
+        It may be indexed by search engines. Your conversation with the agent,
+        your earlier versions and any revision still in progress stay visible
+        only to you. Your email address is never shown. You can make a meditation private again
         at any time, though copies others made or that search engines cached
         while it was public are outside my control.
       </p>

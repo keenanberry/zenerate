@@ -177,11 +177,11 @@ export async function getMeditation(id: string) {
   if (error) throw new Error(error.message);
 
   const meditation = data as MeditationWithMeta;
-  // A revision in progress and the request a meditation was made from are
-  // the owner's. The page never shows them, but the row is serialized whole
-  // into the client payload, so drop them here.
+  // The request a meditation was made from is the owner's. The page never
+  // shows it, but the row is serialized whole into the client payload, so
+  // drop it here. (A revision in progress is not on this row at all: it
+  // lives in the owner-only meditation_drafts.)
   if (user?.id !== meditation.user_id) {
-    meditation.draft_script = null;
     meditation.prompt = null;
   }
 
@@ -399,18 +399,19 @@ export async function recordPlay(meditationId: string): Promise<boolean> {
 
 export async function getMeditationStatus(id: string) {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("meditations")
-    .select("status, draft_status, audio_path")
-    .eq("id", id)
-    .single();
+  // The draft is owner-only under RLS, so anyone else reads no draft and a
+  // null draft_status.
+  const [{ data, error }, { data: draft }] = await Promise.all([
+    supabase.from("meditations").select("status, audio_path").eq("id", id).single(),
+    supabase.from("meditation_drafts").select("render_status").eq("meditation_id", id).maybeSingle(),
+  ]);
 
   if (error) throw new Error(error.message);
   const { audio_url } = await hydrateAudioUrl(data);
   return {
     status: data.status as string,
-    /** A render of draft_script: null, "processing" or "failed". */
-    draft_status: data.draft_status as "processing" | "failed" | null,
+    /** The render of the owner's draft: null, "processing" or "failed". */
+    draft_status: (draft?.render_status ?? null) as "processing" | "failed" | null,
     audio_url,
   };
 }

@@ -8,20 +8,26 @@ import {
 } from "./tools";
 
 type Row = Record<string, unknown>;
-type Write = { table: string; op: "insert" | "update"; values: Row };
+type Write = { table: string; op: "insert" | "update" | "upsert"; values: Row };
 
 /**
- * Just enough of the Supabase query builder for the tools: select().eq().single(),
- * insert().select().single() and update().eq(). Writes are recorded, not applied.
+ * Just enough of the Supabase query builder for the tools: select().eq().single()
+ * or .maybeSingle(), insert().select().single(), update().eq() and upsert().
+ * Writes are recorded, not applied.
  */
-function fakeSupabase(tables: { chats: Row; meditations?: Row }) {
+function fakeSupabase(tables: { chats: Row; meditations?: Row; meditation_drafts?: Row }) {
   const writes: Write[] = [];
   const from = (table: string) => {
-    const row = () => (table === "chats" ? tables.chats : tables.meditations);
+    const row = () => tables[table as keyof typeof tables];
     const chain = {
       select: () => chain,
       eq: () => chain,
       single: async () => ({ data: row() ?? null, error: row() ? null : { message: "none" } }),
+      maybeSingle: async () => ({ data: row() ?? null, error: null }),
+      upsert: async (values: Row) => {
+        writes.push({ table, op: "upsert", values });
+        return { error: null };
+      },
       insert: (values: Row) => {
         writes.push({ table, op: "insert", values });
         return {
@@ -111,10 +117,10 @@ describe("writeScript", () => {
       script: GOOD_SCRIPT,
       settings: { type: "guided", duration: 10 },
     });
-    expect(db.writes[0].values).not.toHaveProperty("draft_script");
+    expect(db.writes[0].table).toBe("meditations");
   });
 
-  it("writes draft_script on a meditation with audio, leaving script and audio_path alone", async () => {
+  it("writes a revision to the owner-only drafts table once there is audio, leaving the meditation alone", async () => {
     db = fakeSupabase({
       chats: { meditation_id: "med-1" },
       meditations: { audio_path: "user-1/med-1.mp3", status: "completed", settings: { duration: 10 } },
@@ -122,12 +128,14 @@ describe("writeScript", () => {
     const result = await run("writeScript", { durationMinutes: 10, script: GOOD_SCRIPT }, context(db.client));
 
     expect(result.savedAs).toBe("draft_script");
-    expect(db.writes).toHaveLength(1);
-    const values = db.writes[0].values;
-    expect(values.draft_script).toBe(GOOD_SCRIPT);
-    expect(values).not.toHaveProperty("script");
-    expect(values).not.toHaveProperty("audio_path");
-    expect(values).not.toHaveProperty("settings");
+    // One write, and not to meditations: anon can read that row.
+    expect(db.writes).toEqual([
+      {
+        table: "meditation_drafts",
+        op: "upsert",
+        values: { meditation_id: "med-1", script: GOOD_SCRIPT, updated_at: expect.any(String) },
+      },
+    ]);
   });
 
   it("refuses while audio is rendering", async () => {
@@ -144,12 +152,8 @@ describe("writeScript", () => {
   it("refuses while a revision is rendering, though the meditation stays completed", async () => {
     db = fakeSupabase({
       chats: { meditation_id: "med-1" },
-      meditations: {
-        audio_path: "u/med-1/a.mp3",
-        status: "completed",
-        draft_status: "processing",
-        settings: {},
-      },
+      meditations: { audio_path: "u/med-1/a.mp3", status: "completed", settings: {} },
+      meditation_drafts: { script: "The revision being rendered.", render_status: "processing" },
     });
     await expect(
       run("writeScript", { durationMinutes: 10, script: GOOD_SCRIPT }, context(db.client)),

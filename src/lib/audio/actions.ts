@@ -10,13 +10,13 @@ export type AudioOffer = {
   /**
    * The render's status as the owner's card sees it. A draft render leaves
    * the meditation completed for everyone else, so its processing and failed
-   * states come from draft_status and are reported here as
+   * states come from the draft's render_status and are reported here as
    * processing_audio and failed.
    */
   status: MeditationStatus;
-  /** True when the next render narrates a revision (draft_script). */
+  /** True when the next render narrates a revision (a meditation_drafts row). */
   rendersDraft: boolean;
-  /** True while a draft render is in flight or has failed (draft_status is set). */
+  /** True while a draft render is in flight or has failed (render_status is set). */
   draftRender: boolean;
   /** Whether Make audio can start a render from here. */
   canRender: boolean;
@@ -42,21 +42,30 @@ export async function getAudioOffer(meditationId: string): Promise<AudioOffer> {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  const { data, error } = await supabase
-    .from("meditations")
-    .select("title, status, draft_status, script, draft_script, settings")
-    .eq("id", meditationId)
-    .single();
+  const [{ data, error }, { data: draft, error: draftError }] = await Promise.all([
+    supabase
+      .from("meditations")
+      .select("title, status, script, settings")
+      .eq("id", meditationId)
+      .single(),
+    supabase
+      .from("meditation_drafts")
+      .select("script, render_status")
+      .eq("meditation_id", meditationId)
+      .maybeSingle(),
+  ]);
   if (error || !data) throw new Error("Meditation not found");
+  if (draftError) throw new Error("The draft could not be read");
 
+  const renderStatus = (draft?.render_status ?? null) as "processing" | "failed" | null;
   const status: MeditationStatus =
-    data.draft_status === "processing"
+    renderStatus === "processing"
       ? "processing_audio"
-      : data.draft_status === "failed"
+      : renderStatus === "failed"
         ? "failed"
         : (data.status as MeditationStatus);
-  const rendersDraft = data.draft_script !== null;
-  const script = (data.draft_script ?? data.script ?? "") as string;
+  const rendersDraft = draft !== null;
+  const script = (draft?.script ?? data.script ?? "") as string;
   const [usage, retry, latestVersion] = await Promise.all([
     getQuotaUsage(user.id, supabase),
     status === "failed"
@@ -75,8 +84,8 @@ export async function getAudioOffer(meditationId: string): Promise<AudioOffer> {
     title: data.title as string,
     status,
     rendersDraft,
-    draftRender: data.draft_status !== null,
-    // status already folds in draft_status, so a draft render in flight reads
+    draftRender: renderStatus !== null,
+    // status already folds in render_status, so a draft render in flight reads
     // as processing_audio here and cannot be started twice.
     canRender: status === "script_ready" || (status === "completed" && rendersDraft),
     estimatedSeconds: estimateDuration(script).totalSeconds,
