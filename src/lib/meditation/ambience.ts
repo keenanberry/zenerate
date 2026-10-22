@@ -10,7 +10,15 @@
  * meditations.settings.music stores the id, not the path, so a bed can move
  * inside the snapshot without rewriting rows.
  */
-export const AMBIENCE_IDS = ["none", "rain", "ocean", "forest", "drone", "brown-noise"] as const;
+export const AMBIENCE_IDS = [
+  "none",
+  "rain",
+  "ocean",
+  "forest",
+  "drone",
+  "space",
+  "chant",
+] as const;
 
 export type AmbienceId = (typeof AMBIENCE_IDS)[number];
 
@@ -29,11 +37,17 @@ export interface Ambience {
   volume: number;
 }
 
-function bed(id: Exclude<AmbienceId, "none">, label: string, volume: number): Ambience {
+/** `file` is its name in the snapshot: an MP3, except where ambient-beds.ts renders it lossless. */
+function bed(
+  id: Exclude<AmbienceId, "none">,
+  label: string,
+  volume: number,
+  file = `${id}.mp3`,
+): Ambience {
   return {
     id,
     label,
-    snapshotPath: `sounds/ambient/${id}.mp3`,
+    snapshotPath: `sounds/ambient/${file}`,
     previewUrl: `/sounds/ambient/${id}.mp3`,
     volume,
   };
@@ -45,14 +59,19 @@ export const AMBIENCES: Record<AmbienceId, Ambience> = {
   ocean: bed("ocean", "Ocean", 0.5),
   forest: bed("forest", "Forest", 0.5),
   drone: bed("drone", "Soft drone", 0.5),
-  "brown-noise": bed("brown-noise", "Brown noise", 0.5),
+  space: bed("space", "Space", 0.5, "space.flac"),
+  chant: bed("chant", "Chant", 0.5),
 };
 
 export function isAmbienceId(value: unknown): value is AmbienceId {
   return typeof value === "string" && (AMBIENCE_IDS as readonly string[]).includes(value);
 }
 
-/** The bed saved in settings.music, or null when there is none or it is not one we know. */
+/**
+ * The bed saved in settings.music, or null when there is none or it is not
+ * one we know, such as a bed since retired: the meditation then renders with
+ * narration alone and the card offers its default.
+ */
 export function savedAmbience(music: string | null | undefined): AmbienceId | null {
   return isAmbienceId(music) ? music : null;
 }

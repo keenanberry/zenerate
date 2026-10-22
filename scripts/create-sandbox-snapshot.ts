@@ -8,7 +8,7 @@
  *     from the production `sound-effects` bucket and checksum-verified
  *   - The ambient beds in scripts/ambient-beds.ts, in /sounds/ambient:
  *     synthesized ones rendered here, recorded ones read from
- *     public/sounds/ambient/ and checksum-verified
+ *     scripts/ambient/ and checksum-verified
  *
  * Prerequisites:
  *   1. Run `vercel link` to connect to a Vercel project
@@ -41,7 +41,14 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { Writable } from "node:stream";
 import { RECORDED_SOUNDS, SYNTHESIZED_SOUNDS, ffmpegArgs } from "./sound-effects";
-import { RECORDED_BEDS, SYNTHESIZED_BEDS, bedArgs, bedFile } from "./ambient-beds";
+import {
+  RECORDED_BEDS,
+  RECORDED_BED_DIR,
+  SYNTHESIZED_BEDS,
+  bedArgs,
+  previewFile,
+  snapshotFile,
+} from "./ambient-beds";
 
 function log(msg: string) {
   console.log(`[snapshot] ${msg}`);
@@ -102,13 +109,13 @@ async function fetchRecordedSounds(): Promise<{ path: string; content: Buffer }[
 /** The committed recorded beds, verified like the bucket's sounds. */
 function readRecordedBeds(): { path: string; content: Buffer }[] {
   return RECORDED_BEDS.map((bed) => {
-    const content = readFileSync(resolve(ROOT, "public/sounds/ambient", bedFile(bed.id)));
+    const content = readFileSync(resolve(ROOT, RECORDED_BED_DIR, previewFile(bed.id)));
     const sha256 = createHash("sha256").update(content).digest("hex");
     if (sha256 !== bed.sha256) {
       throw new Error(`Checksum mismatch for ambient ${bed.id}: got ${sha256}`);
     }
-    log(`  ambient/${bedFile(bed.id)} verified (${(content.length / 1024).toFixed(0)} KB)`);
-    return { path: `sounds/ambient/${bedFile(bed.id)}`, content };
+    log(`  ambient/${snapshotFile(bed)} verified (${(content.length / 1024).toFixed(0)} KB)`);
+    return { path: `sounds/ambient/${snapshotFile(bed)}`, content };
   });
 }
 
@@ -193,14 +200,14 @@ async function main() {
   for (const bed of SYNTHESIZED_BEDS) {
     const render = await sandbox.runCommand({
       cmd: "ffmpeg",
-      args: ["-hide_banner", "-loglevel", "error", ...bedArgs(bed, `sounds/ambient/${bedFile(bed.id)}`)],
+      args: ["-hide_banner", "-loglevel", "error", ...bedArgs(bed, `sounds/ambient/${snapshotFile(bed)}`)],
       stdout: out,
       stderr: out,
     });
     if (render.exitCode !== 0) {
       throw new Error(`Rendering ambient ${bed.id} failed with exit code ${render.exitCode}`);
     }
-    log(`  ambient/${bedFile(bed.id)} rendered`);
+    log(`  ambient/${snapshotFile(bed)} rendered`);
   }
   const listing = await sandbox.runCommand("ls", ["-lR", "sounds"]);
   log(`  /sounds:\n${await listing.stdout()}`);

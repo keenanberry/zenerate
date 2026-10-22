@@ -13,6 +13,12 @@
  *
  * Usage:
  *   npx tsx scripts/test-audio-generation.ts
+ *   npx tsx scripts/test-audio-generation.ts --ambience space
+ *
+ * With --ambience <id> it mixes that bed from src/lib/meditation/ambience.ts
+ * at its catalog volume, lengthens the silence so the bed can be heard on its
+ * own, fails if the snapshot lacks the bed, and writes
+ * test-output/test-meditation-<id>.mp3.
  */
 
 import { resolve, dirname } from "node:path";
@@ -25,6 +31,7 @@ process.loadEnvFile(envPath);
 import { Sandbox } from "@vercel/sandbox";
 import { mkdir, writeFile } from "node:fs/promises";
 import { Writable } from "node:stream";
+import { AMBIENCES, isAmbienceId } from "../src/lib/meditation/ambience";
 
 const ROOT = resolve(dirname(__filename), "..");
 const OUTPUT_DIR = resolve(ROOT, "test-output");
@@ -53,18 +60,27 @@ async function main() {
     throw new Error("ELEVENLABS_API_KEY not set in environment");
   }
 
+  const flag = process.argv.indexOf("--ambience");
+  const ambience = flag === -1 ? null : process.argv[flag + 1];
+  if (ambience !== null && !isAmbienceId(ambience)) {
+    throw new Error(`Unknown ambience "${ambience}"`);
+  }
+  const bed = ambience ? AMBIENCES[ambience] : null;
+
   const config = {
     segments: [
       { type: "sound", file: "bell-tibetan.mp3" },
       { type: "speech", content: "Welcome. Take a deep breath." },
       { type: "pause", duration: 2 },
       { type: "speech", content: "Now slowly exhale." },
-      { type: "silence", duration: 5 },
+      { type: "silence", duration: bed ? 12 : 5 },
       { type: "sound", file: "gong-gentle.mp3" },
       { type: "speech", content: "When you are ready, open your eyes." },
     ],
     voiceId: "EXAVITQu4vr4xnSDxMaL",
     elevenLabsApiKey,
+    backgroundMusic: bed?.snapshotPath ?? null,
+    musicVolume: bed?.volume,
   };
 
   log("Creating sandbox from snapshot...");
@@ -109,6 +125,12 @@ async function main() {
       throw new Error("Narration loudness was not measured");
     }
     log("All sound effects found; narration loudness normalized");
+    if (bed) {
+      if (!stdout.includes("Mixing background music")) {
+        throw new Error(`The snapshot has no ${bed.snapshotPath}`);
+      }
+      log(`Mixed ${bed.snapshotPath} at ${bed.volume}`);
+    }
 
     // Validate output.mp3
     log("Reading output.mp3...");
@@ -143,7 +165,7 @@ async function main() {
 
     // Save MP3 locally for manual listening
     await mkdir(OUTPUT_DIR, { recursive: true });
-    const outputPath = resolve(OUTPUT_DIR, "test-meditation.mp3");
+    const outputPath = resolve(OUTPUT_DIR, ambience ? `test-meditation-${ambience}.mp3` : "test-meditation.mp3");
     await writeFile(outputPath, audioBuffer);
     log(`Saved MP3 to ${outputPath}`);
 

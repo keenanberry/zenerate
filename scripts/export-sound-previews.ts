@@ -8,10 +8,11 @@
  *
  *   FFMPEG=/path/to/ffmpeg npx tsx scripts/export-sound-previews.ts
  *
- * With --ambient it only renders the synthesized ambient beds in
- * scripts/ambient-beds.ts to public/sounds/ambient/, and needs no bucket. The
- * recorded beds are committed there already: they are the source the
- * snapshot build reads.
+ * With --ambient it only writes the ambient bed previews to
+ * public/sounds/ambient/, and needs no bucket: every bed in
+ * scripts/ambient-beds.ts, synthesized ones rendered and recorded ones read
+ * from scripts/ambient/, turned down to AMBIENT_PREVIEW_LUFS, the level a bed
+ * is heard at in a meditation.
  *
  * - Synthesized sounds are rendered locally from the same ffmpegArgs recipe
  *   the snapshot build runs. FFMPEG defaults to `ffmpeg` on PATH; the
@@ -28,7 +29,15 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import { RECORDED_SOUNDS, SYNTHESIZED_SOUNDS, ffmpegArgs } from "./sound-effects";
-import { SYNTHESIZED_BEDS, bedArgs, bedFile } from "./ambient-beds";
+import {
+  PREVIEW_GAIN_DB,
+  RECORDED_BEDS,
+  RECORDED_BED_DIR,
+  SYNTHESIZED_BEDS,
+  bedArgs,
+  previewFile,
+  recordingPreviewArgs,
+} from "./ambient-beds";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 process.loadEnvFile(resolve(ROOT, ".env.local"));
@@ -41,9 +50,15 @@ function renderAmbientBeds() {
   const ambientDir = join(outDir, "ambient");
   mkdirSync(ambientDir, { recursive: true });
   for (const bed of SYNTHESIZED_BEDS) {
-    const out = join(ambientDir, bedFile(bed.id));
-    execFileSync(ffmpeg, ["-hide_banner", "-loglevel", "error", ...bedArgs(bed, out)]);
-    console.log(`rendered ambient/${bedFile(bed.id)}`);
+    const out = join(ambientDir, previewFile(bed.id));
+    execFileSync(ffmpeg, ["-hide_banner", "-loglevel", "error", ...bedArgs(bed, out, PREVIEW_GAIN_DB)]);
+    console.log(`rendered ambient/${previewFile(bed.id)}`);
+  }
+  for (const bed of RECORDED_BEDS) {
+    const source = join(ROOT, RECORDED_BED_DIR, previewFile(bed.id));
+    const out = join(ambientDir, previewFile(bed.id));
+    execFileSync(ffmpeg, ["-hide_banner", "-loglevel", "error", ...recordingPreviewArgs(source, out)]);
+    console.log(`wrote ambient/${previewFile(bed.id)}`);
   }
 }
 
