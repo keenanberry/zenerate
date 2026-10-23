@@ -8,6 +8,7 @@ import {
   TrackPlayButton,
   useTrackAudio,
 } from "@/components/track-play-button";
+import { AudioStatusIcon } from "@/components/audio-status-icon";
 import { MeditationCover } from "@/components/meditation-cover";
 import { metaLine } from "@/lib/meditation/meta";
 import type { MeditationWithMeta } from "@/lib/meditation/types";
@@ -85,9 +86,10 @@ export function TrackRow({
               />
             )}
           </span>
-          {meta && (
-            <span className="truncate text-sm text-muted-foreground tabular-nums">
-              {meta}
+          {(meta || m.status !== "completed") && (
+            <span className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground tabular-nums">
+              <AudioStatusIcon status={m.status} />
+              <span className="truncate">{meta}</span>
             </span>
           )}
         </Link>

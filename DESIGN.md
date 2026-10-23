@@ -435,11 +435,16 @@ texture in the interface and it stays unadorned.
 ### Badges
 - **Style:** fully round, 8px horizontal padding, Label type, Violet Shadow fill with
   Moonlit text (`secondary`).
-- **State:** meditation status badges on cards take a 10% fill and text of a token:
-  Generating is Candle, Script Ready Periwinkle, Processing Audio Amethyst (`--primary`),
-  Completed Sage, Failed Ember (`--destructive`).
+- **No status badges (task 54).** A meditation with audio is the normal case and says
+  nothing. The exceptions get one 14px icon (`AudioStatusIcon`) before the meta line, named
+  for screen readers and in a tooltip: a script with no audio yet (file, Dusk), audio or a
+  script being made (spinner, Amethyst, `motion-safe:`), audio that failed (alert, Ember).
+  The meditation page has no badge at all; its audio section already says the state.
 - **Tags are not listed.** Tag pills (`TagPills`) appear only where a tag is edited or
-  filtered: the meditation page, the studio canvas and Discover's filters. A list, a shelf
+  filtered: the meditation page's edit form, the studio canvas and Discover's filters. Read
+  only, the meditation page sets its tags as Dusk links into Discover on one line with
+  the length and date, each `·` ending the item before it so a wrap never opens a line
+  with one (task 54). A list, a shelf
   or a card names a meditation's first tag in its meta line instead (task 48); two or more
   filled pills per row outweighed the title and read as a to-do app.
 
@@ -457,6 +462,16 @@ as a music app draws a track (task 48):
   Below `sm` there is no index column; the cover is the play target, and while playing a
   28px round Amethyst Glow pause button sits on it. The row's title turns Primary.
 - Every icon-only control in a row has an accessible name naming the meditation.
+
+### Collections
+A collection is drawn as a playlist (task 54), not a card: square artwork, then the name
+in Lora and a Dusk line of the count and description, with the menu beside the name.
+`CollectionArtwork` is built from the first covers so it reads as a set: two side by
+side, three as a half and two quarters, four or more as a 2x2 mosaic, each cropped to its
+cell (`crop` on `MeditationCover`). One shows its cover whole; an empty collection draws a
+quiet cover of its own. The Library grid is
+two columns on a phone, three from `sm`, four from `lg`; the collection page header sets
+the artwork at 160px beside the name, as the meditation page does.
 
 ### Cards / Containers
 - **Corner Style:** 12px.

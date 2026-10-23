@@ -74,7 +74,7 @@ async function Collections() {
   }
 
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-4">
       {collections.map((c) => (
         <CollectionCard key={c.id} collection={c} />
       ))}

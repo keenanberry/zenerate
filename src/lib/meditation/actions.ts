@@ -20,6 +20,7 @@ import type {
   MeditationVersion,
   MeditationWithMeta,
   Collection,
+  CollectionCover,
   CollectionWithCount,
 } from "./types";
 
@@ -585,25 +586,29 @@ export async function getUserCollections() {
   } = await supabase.auth.getUser();
   if (!user) return [];
 
+  // One query: each collection with its items' meditations, for the count and
+  // the first four covers its artwork is built from (task 54).
   const { data: collections, error } = await supabase
     .from("collections")
-    .select("*")
+    .select("*, collection_items(position, meditations(id, title, tags))")
     .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .order("position", { referencedTable: "collection_items" });
 
   if (error) throw new Error(error.message);
 
-  const result: CollectionWithCount[] = [];
-  for (const col of collections ?? []) {
-    const { count } = await supabase
-      .from("collection_items")
-      .select("*", { count: "exact", head: true })
-      .eq("collection_id", col.id);
-
-    result.push({ ...col, item_count: count ?? 0 });
-  }
-
-  return result;
+  return (collections ?? []).map(({ collection_items, ...col }): CollectionWithCount => {
+    const items = (collection_items ?? []) as {
+      meditations: CollectionCover | CollectionCover[] | null;
+    }[];
+    return {
+      ...col,
+      item_count: items.length,
+      covers: items
+        .flatMap((item) => item.meditations ?? [])
+        .slice(0, 4),
+    };
+  });
 }
 
 export async function getCollectionWithItems(id: string) {

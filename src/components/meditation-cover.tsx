@@ -221,6 +221,11 @@ type MeditationCoverProps = {
    * false where the cover stands alone and should be named by the title.
    */
   decorative?: boolean;
+  /**
+   * Fill a box that is not square, cropping the picture to it (a half of a
+   * collection's artwork). Off, the cover keeps its square.
+   */
+  crop?: boolean;
 };
 
 export function MeditationCover({
@@ -230,6 +235,7 @@ export function MeditationCover({
   size,
   className,
   decorative = true,
+  crop = false,
 }: MeditationCoverProps) {
   const { motif, hues, field, mirrored, seed } = coverDesign(id, tags);
   const [lead, second] = hues;
@@ -247,6 +253,7 @@ export function MeditationCover({
       viewBox="0 0 100 100"
       width={size}
       height={size}
+      preserveAspectRatio={crop ? "xMidYMid slice" : undefined}
       role={decorative ? undefined : "img"}
       aria-hidden={decorative ? true : undefined}
       aria-label={decorative ? undefined : title}

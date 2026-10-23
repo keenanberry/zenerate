@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getCollectionWithItems } from "@/lib/meditation/actions";
 import { MeditationTrackList } from "@/components/meditation-track-list";
+import { CollectionArtwork } from "@/components/collection-artwork";
 import { ParentLink } from "@/components/parent-link";
 import type { MeditationWithMeta } from "@/lib/meditation/types";
 import { RemoveFromCollectionButton } from "./remove-button";
@@ -39,15 +40,28 @@ export default async function CollectionDetailPage({
       <div className="space-y-3">
         <ParentLink href="/dashboard?tab=collections">Collections</ParentLink>
 
-        <div className="space-y-2">
-          <h1 className="font-serif text-2xl font-medium tracking-tight">{collection.name}</h1>
-          {collection.description && (
-            <p className="max-w-[60ch] text-muted-foreground">{collection.description}</p>
-          )}
-          <p className="text-sm text-muted-foreground">
-            {meditations.length}{" "}
-            {meditations.length === 1 ? "meditation" : "meditations"}
-          </p>
+        {/* Laid out as the meditation page is: artwork, then the details. */}
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end">
+          <CollectionArtwork
+            id={collection.id}
+            covers={(meditations as MeditationWithMeta[]).slice(0, 4)}
+            size={160}
+            className="w-40 shrink-0"
+          />
+          <div className="min-w-0 space-y-2">
+            <h1 className="font-serif text-2xl font-medium tracking-tight">
+              {collection.name}
+            </h1>
+            {collection.description && (
+              <p className="max-w-[60ch] text-muted-foreground">
+                {collection.description}
+              </p>
+            )}
+            <p className="text-sm text-muted-foreground">
+              {meditations.length}{" "}
+              {meditations.length === 1 ? "meditation" : "meditations"}
+            </p>
+          </div>
         </div>
       </div>
 

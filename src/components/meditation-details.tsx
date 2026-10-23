@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { TagPill, TagPills } from "@/components/tag-pills";
+import Link from "next/link";
+import { TagPill } from "@/components/tag-pills";
+import { discoverHref } from "@/lib/meditation/discover";
 import { updateMeditationDetails } from "@/lib/meditation/actions";
 import { TAG_GROUPS, TAG_LABELS, isTag, type Tag, type TagGroup } from "@/lib/meditation/tags";
 
@@ -26,6 +28,8 @@ interface MeditationDetailsProps {
   tags: string[];
   /** Only the owner gets the edit control; everyone else sees the same text read-only. */
   editable: boolean;
+  /** Length and date, after the tags on the one meta line, e.g. "20 min · Oct 20, 2026". */
+  meta?: string;
 }
 
 /**
@@ -39,6 +43,7 @@ export function MeditationDetails({
   description,
   tags,
   editable,
+  meta,
 }: MeditationDetailsProps) {
   // What the page shows. Seeded from the server and replaced on a save, so a
   // save reads as done before the revalidated page arrives.
@@ -79,8 +84,36 @@ export function MeditationDetails({
       {saved.description && (
         <p className="max-w-[60ch] text-muted-foreground">{saved.description}</p>
       )}
-      <TagPills tags={saved.tags} className="pt-1" />
+      <MetaLine tags={saved.tags} meta={meta} />
     </div>
+  );
+}
+
+/**
+ * The tags as quiet links into Discover, then the length and date, on one
+ * Dusk line (task 54). Pills stay for editing; read-only they outweighed the
+ * title, as they did in the lists (task 48).
+ */
+function MetaLine({ tags, meta }: { tags: string[]; meta?: string }) {
+  const known = tags.filter(isTag);
+  if (known.length === 0 && !meta) return null;
+
+  return (
+    <p className="flex flex-wrap items-center gap-x-1.5 pt-1 text-sm text-muted-foreground tabular-nums">
+      {/* Each separator ends the item before it, so a wrap never starts a line with one. */}
+      {known.map((tag, i) => (
+        <span key={tag}>
+          <Link
+            href={discoverHref({}, { tag })}
+            className="underline-offset-4 hover:text-foreground hover:underline"
+          >
+            {TAG_LABELS[tag]}
+          </Link>
+          {(i < known.length - 1 || meta) && <span aria-hidden> ·</span>}
+        </span>
+      ))}
+      {meta && <span>{meta}</span>}
+    </p>
   );
 }
 

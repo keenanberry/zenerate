@@ -2,12 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { CollectionArtwork } from "@/components/collection-artwork";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { deleteCollection, updateCollection } from "@/lib/meditation/actions";
-import { FolderOpen, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import type { CollectionWithCount } from "@/lib/meditation/types";
 
 interface CollectionCardProps {
@@ -65,78 +60,76 @@ export function CollectionCard({ collection }: CollectionCardProps) {
 
   return (
     <>
-      <Card className="group relative gap-5 hover:bg-card-hover motion-safe:transition-colors">
+      {/* A playlist, not a dashboard card: artwork, then the name and count (task 54). */}
+      <div className="group relative space-y-3">
         <Link
           href={`/collections/${collection.id}`}
-          className="absolute inset-0 z-0"
+          tabIndex={-1}
+          aria-hidden
+          className="block motion-safe:transition-opacity hover:opacity-90"
         >
-          <span className="sr-only">View {collection.name}</span>
+          <CollectionArtwork
+            id={collection.id}
+            covers={collection.covers ?? []}
+            size={240}
+          />
         </Link>
-
-        <CardHeader>
-          <div className="flex items-center gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-              <FolderOpen className="h-5 w-5 text-primary" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <CardTitle className="truncate font-serif text-lg leading-snug font-medium">
-                {collection.name}
-              </CardTitle>
-              {collection.description && (
-                <p className="mt-1 text-sm text-muted-foreground line-clamp-1">
-                  {collection.description}
-                </p>
-              )}
-            </div>
-            <DropdownMenu
-              onOpenChange={(open) => {
-                if (!open) setConfirmDelete(false);
-              }}
-            >
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="relative z-10 h-8 w-8 shrink-0 motion-safe:transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 sm:data-[state=open]:opacity-100"
-                  onClick={(e) => e.preventDefault()}
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onSelect={() => {
-                    setName(collection.name);
-                    setDescription(collection.description ?? "");
-                    setEditOpen(true);
-                  }}
-                >
-                  <Pencil className="h-4 w-4" />
-                  Edit collection
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  variant="destructive"
-                  disabled={isPending}
-                  onSelect={(e) => {
-                    e.preventDefault();
-                    handleDelete();
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  {confirmDelete ? "Confirm delete" : "Delete collection"}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            {collection.item_count}{" "}
-            {collection.item_count === 1 ? "meditation" : "meditations"}
-          </p>
-        </CardContent>
-      </Card>
+        <div className="flex items-start gap-2">
+          <Link
+            href={`/collections/${collection.id}`}
+            className="min-w-0 flex-1 space-y-1 rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          >
+            <p className="truncate font-serif text-base leading-snug font-medium group-hover:text-accent-foreground">
+              {collection.name}
+            </p>
+            <p className="truncate text-sm text-muted-foreground tabular-nums">
+              {collection.item_count}{" "}
+              {collection.item_count === 1 ? "meditation" : "meditations"}
+              {collection.description && ` · ${collection.description}`}
+            </p>
+          </Link>
+          <DropdownMenu
+            onOpenChange={(open) => {
+              if (!open) setConfirmDelete(false);
+            }}
+          >
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`More for ${collection.name}`}
+                className="-mt-1 -mr-2 h-8 w-8 shrink-0 text-muted-foreground motion-safe:transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 sm:data-[state=open]:opacity-100"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onSelect={() => {
+                  setName(collection.name);
+                  setDescription(collection.description ?? "");
+                  setEditOpen(true);
+                }}
+              >
+                <Pencil className="h-4 w-4" />
+                Edit collection
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                disabled={isPending}
+                onSelect={(e) => {
+                  e.preventDefault();
+                  handleDelete();
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+                {confirmDelete ? "Confirm delete" : "Delete collection"}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="max-w-sm">
