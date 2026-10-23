@@ -1,7 +1,7 @@
 # Enforce 30-Day Backup Retention
 
 **Status:** Not started
-**Priority:** Post-ship
+**Priority:** Pre-launch. Promoted to ship task 52 on 2026-10-23
 
 ## Why it matters
 `/privacy` (task 15) promises that backups may contain deleted data **for up to 30 days**

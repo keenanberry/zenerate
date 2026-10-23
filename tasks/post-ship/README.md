@@ -23,12 +23,12 @@ free tier.
 | [Paid tier](./paid-tier.md) | Stripe integration, tiered quotas, custom voice upload |
 | [Google / Apple auth](./google-apple-auth.md) | OAuth providers via Supabase |
 | [Admin dashboard](./admin-dashboard.md) | User + usage + cost visibility for the operator |
-| [Public content moderation](./public-content-moderation.md) | Report, review, flag for `/discover` |
+| [Public content moderation](./public-content-moderation.md) | Report, review, flag for `/discover`. **A minimal Report link moved to ship 53** (2026-10-23); the queue stays here |
 | [Analytics](./analytics.md) | Usage + conversion funnel tracking |
-| [Backup retention](./backup-retention.md) | Prune dumps past 30 days, as `/privacy` promises; re-apply deletions after a restore |
+| [Backup retention](./backup-retention.md) | **Moved to ship 52** (2026-10-23). Prune dumps past 30 days, as `/privacy` promises; re-apply deletions after a restore |
 | [Account deletion](./account-deletion.md) | Self-serve delete, including the audio files storage does not cascade |
 | [Chat deletion](./chat-deletion.md) | Let the owner delete a chat; today chats go only with the account |
-| [Error tracking](./error-tracking.md) | Sentry or similar for production visibility |
+| [Error tracking](./error-tracking.md) | **Moved to ship 51** (2026-10-23). Sentry or similar for production visibility |
 | [AI gateway](./ai-gateway.md) | Route model calls through Vercel AI Gateway for token/cost/latency visibility |
 | [Agent user memory](./agent-user-memory.md) | Remember user preferences across generations. Unblocked by the chat agent (ship 29) |
 | [Generated cover art](./generated-cover-art.md) | Per-meditation artwork replacing the designed covers from ship task 35 |

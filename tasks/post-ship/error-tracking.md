@@ -1,7 +1,7 @@
 # Error Tracking
 
 **Status:** Not started
-**Priority:** Post-ship
+**Priority:** Pre-launch. Promoted to ship task 51 on 2026-10-23
 
 > **Update `/privacy` in the same PR.** The policy states that Zenerate uses no
 > analytics or tracking tools and lists every service provider by name. Adding an error tracker (which receives request data)

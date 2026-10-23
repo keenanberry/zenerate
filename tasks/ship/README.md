@@ -111,6 +111,12 @@ and make the audio from cards in the chat. See the studio spec.
 | 45 | [Landing refresh](./45-landing-refresh.md) | Done* | Demo shows a typed request and the agent's closing line, no "focus" wording; steps mention ambience and revising; "Hear one first" is 3 covered meditations, house picks once 3 exist, else newest (PR #73). *Operator: production checks in the PR |
 | 46 | [Landing hero height](./46-landing-hero-height.md) | Done* | Fixed-height demo window that follows the stream; headline at 121px instead of 426px (PR #75). *Operator: swipe over the demo card on a phone |
 | 47 | [Model comparison](./47-model-comparison.md) | Done | Sonnet 5 vs 5.5 vs Haiku 5.5 on real studio turns; fixed a tools-changed history 400 on the newer models; `STUDIO_MODEL` setting (PR #77, closes #19). **Production on `claude-sonnet-5-5` since 2026-10-22**: about half the cost per meditation |
+| 48 | [Quiet list](./48-quiet-list.md) | In progress | Rows become cover, title and one Dusk meta line with inset dividers; no pills, no phone header or play column; ellipsis and accessible-name fixes. Direction A of the 2026-10-23 critique |
+| 49 | [Album covers + Discover tiles](./49-album-covers.md) | Not started | Covers fill with the lead hue and one bold shape; Discover's tiles join the cover system. Direction B. *Operator: phone look (replaces the 35/42 checks) |
+| 50 | [Studio chat polish](./50-studio-chat-polish.md) | Not started | Quiet user message, draft chip with its cover, a real Make the audio button, no Sparkles, a hint line. *Operator: phone check of the buttons (replaces 43's) |
+| 51 | [Error tracking](../post-ship/error-tracking.md) | Not started | Promoted from post-ship 2026-10-23: no real user should hit a failure the operator can't see. Update `/privacy` in the same PR |
+| 52 | [Backup retention](../post-ship/backup-retention.md) | Not started | Promoted 2026-10-23: `/privacy` already promises 30 days. The prune step at least, ideally automated |
+| 53 | [Report a public meditation](../post-ship/public-content-moderation.md) | Not started | Promoted 2026-10-23, the minimal slice only: a Report link (mailto `privacy@`) on public meditation pages; the operator unlists by hand. The review queue stays post-ship |
 
 ### Running Phases 4–5 with Orca
 
