@@ -466,8 +466,10 @@ as a music app draws a track (task 48):
 ### Collections
 A collection is drawn as a playlist (task 54), not a card: square artwork, then the name
 in Lora and a Dusk line of the count and description, with the menu beside the name.
-`CollectionArtwork` is a 2x2 mosaic of the first four meditations' covers, the first cover
-whole when there are fewer, and a quiet cover of its own when empty. The Library grid is
+`CollectionArtwork` is built from the first covers so it reads as a set: two side by
+side, three as a half and two quarters, four or more as a 2x2 mosaic, each cropped to its
+cell (`crop` on `MeditationCover`). One shows its cover whole; an empty collection draws a
+quiet cover of its own. The Library grid is
 two columns on a phone, three from `sm`, four from `lg`; the collection page header sets
 the artwork at 160px beside the name, as the meditation page does.
 

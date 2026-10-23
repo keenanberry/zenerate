@@ -15,8 +15,9 @@ be exception to not have audio and just a script."
 
 ## Decisions (approved by the operator 2026-10-23)
 
-- **Collections are playlists.** Artwork from the first four covers (a 2x2 mosaic, the
-  first cover whole below four, a quiet cover when empty), the name in Lora, a Dusk line
+- **Collections are playlists.** Artwork from the first covers: two side by side, three as
+  a half and two quarters, a 2x2 mosaic from four (the operator expected a two-meditation
+  collection to show both), one cover whole, a quiet cover when empty, the name in Lora, a Dusk line
   of count and description. The collection page header carries the artwork too.
 - **No status badges.** Completed shows nothing. Script only, being made and failed each
   get a 14px icon before the meta line, in the grid card and the track row.
