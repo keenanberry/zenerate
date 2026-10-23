@@ -473,6 +473,20 @@ quiet cover of its own. The Library grid is
 two columns on a phone, three from `sm`, four from `lg`; the collection page header sets
 the artwork at 160px beside the name, as the meditation page does.
 
+### Menus
+Every dropdown, select and picker shares one look (the Discover filters, the collection
+menu, Add to collection, the tag picker):
+
+- **Surface:** `--popover` with a Hairline border, 6px radius and 4px of padding; its
+  shadow is the floating-layer exception under Elevation.
+- **Items:** 14px Body type in Foreground, 6px horizontal and 6px vertical padding, 4px
+  radius, inset from the edge. The highlighted item (hover or keyboard) takes
+  `--menu-hover`, a step that shows on the popover in both themes, and keeps its text
+  colour. Never `--accent`, which turned the text rose and belongs to ghost buttons.
+- **Group headings:** Label type in capitals (12px, 500, 0.06em, Dusk) with 12px above,
+  and a Hairline separator before each group, so a long list reads as sections.
+  `SelectLabel` and `DropdownMenuLabel` both carry it.
+
 ### Cards / Containers
 - **Corner Style:** 12px.
 - **Background:** Raised Night in dark, white in light; Moonlit / Ink text.

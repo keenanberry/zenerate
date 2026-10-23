@@ -78,6 +78,7 @@
   --color-candle: var(--candle);
   --color-sage: var(--sage);
   --color-periwinkle: var(--periwinkle);
+  --color-menu-hover: var(--menu-hover);
   --color-cover-ground: var(--cover-ground);
   --color-cover-rose: var(--cover-rose);
   --color-cover-clay: var(--cover-clay);
@@ -137,6 +138,9 @@
   /* A raised surface under the pointer: one step lighter than --card in dark,
      a breath of tint over white in light. */
   --card-hover: oklch(0.9860 0.0080 300.0000);
+  /* The highlighted item in any dropdown, select or picker: a step that
+     shows on the popover surface in both themes (DESIGN.md, Menus). */
+  --menu-hover: oklch(0.9400 0.0150 300.0000);
   /* The unfilled part of anything that fills: the unplayed waveform, the
      volume slider. Quieter than text, louder than a hairline. */
   --track: oklch(0.8447 0.0226 300.1421);
@@ -234,6 +238,7 @@
   --sidebar-ring: oklch(0.7058 0.0777 302.0489);
   --destructive-foreground: oklch(0.2166 0.0215 292.8474);
   --card-hover: oklch(0.2847 0.0346 291.2726);
+  --menu-hover: oklch(0.3063 0.0359 293.3367);
   --track: oklch(0.4604 0.0472 295.5578);
   --gradient-start: oklch(0.7058 0.0777 302.0489);
   --gradient-end: oklch(0.8391 0.0692 2.6681);
