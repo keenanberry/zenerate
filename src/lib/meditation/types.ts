@@ -93,8 +93,17 @@ export interface Collection {
   updated_at: string;
 }
 
+/** Enough of a meditation to draw its cover. */
+export interface CollectionCover {
+  id: string;
+  title: string;
+  tags: string[] | null;
+}
+
 export interface CollectionWithCount extends Collection {
   item_count: number;
+  /** The first four items' covers, in order, for the collection's artwork. */
+  covers?: CollectionCover[];
 }
 
 export interface CollectionItem {

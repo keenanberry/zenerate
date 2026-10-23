@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { AudioStatusIcon } from "@/components/audio-status-icon";
 import { FavoriteButton } from "@/components/favorite-button";
 import { InlinePlayButton } from "@/components/inline-play-button";
 import { MeditationCover } from "@/components/meditation-cover";
@@ -19,24 +19,6 @@ interface MeditationCardProps {
   showFavorite?: boolean;
   showVisibility?: boolean;
 }
-
-// Tertiary hues as tokens (DESIGN.md, The Token Rule): in progress is
-// Candle, waiting on you is Periwinkle, working is Amethyst, done is Sage.
-const statusColors: Record<string, string> = {
-  generating_script: "bg-candle/10 text-candle",
-  script_ready: "bg-periwinkle/10 text-periwinkle",
-  processing_audio: "bg-primary/10 text-primary",
-  completed: "bg-sage/10 text-sage",
-  failed: "bg-destructive/10 text-destructive",
-};
-
-const statusLabels: Record<string, string> = {
-  generating_script: "Generating",
-  script_ready: "Script Ready",
-  processing_audio: "Processing Audio",
-  completed: "Completed",
-  failed: "Failed",
-};
 
 export function MeditationCard({
   meditation,
@@ -80,17 +62,12 @@ export function MeditationCard({
       </CardHeader>
       <CardContent className="mt-auto">
         <div className="flex items-center gap-2.5">
-          <Badge
-            variant="secondary"
-            className={statusColors[meditation.status] ?? ""}
-          >
-            {statusLabels[meditation.status] ?? meditation.status}
-          </Badge>
+          <AudioStatusIcon status={meditation.status} />
           {showVisibility && meditation.is_public && (
             <Globe aria-label="Public" className="h-3 w-3 shrink-0 text-muted-foreground" />
           )}
           {/* One quiet line, no pills (task 48). */}
-          <span className="ml-auto min-w-0 truncate text-xs text-muted-foreground tabular-nums">
+          <span className="min-w-0 truncate text-xs text-muted-foreground tabular-nums">
             {metaLine(meditation)}
           </span>
         </div>

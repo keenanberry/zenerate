@@ -1,6 +1,6 @@
 # Album-Style Covers and Discover Tiles
 
-**Status:** In progress. Code done and verified locally
+**Status:** Done (PR #86); the iPhone check is the operator's
 **Priority:** Phase 6 (seed & open)
 **Phase:** 6
 **Depends on:** 48 (quiet list), 35 and 42 (cover system and variety)

@@ -8,10 +8,8 @@ import { AudioSection } from "@/components/audio-section";
 import { FavoriteButton } from "@/components/favorite-button";
 import { VisibilityToggle } from "@/components/visibility-toggle";
 import { AddToCollectionDialog } from "@/components/add-to-collection-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScriptPlaybackProvider } from "@/components/script-playback";
-import { Clock } from "lucide-react";
 import { ParentLink } from "@/components/parent-link";
 import { MeditationCover } from "@/components/meditation-cover";
 import { MeditationDetails } from "@/components/meditation-details";
@@ -96,14 +94,19 @@ export default async function MeditationDetailPage({
               description={meditation.description}
               tags={meditation.tags ?? []}
               editable={isOwner}
+              meta={[
+                meditation.settings?.duration && `${meditation.settings.duration} min`,
+                new Date(meditation.created_at).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                }),
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             />
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary">{meditation.status.replace(/_/g, " ")}</Badge>
-              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Clock className="h-3 w-3" />
-                {new Date(meditation.created_at).toLocaleDateString()}
-              </span>
-            </div>
+            {/* No status badge: in the studio era a meditation's state is its
+                audio, and the audio section below already says it (task 54). */}
             <div className="flex flex-wrap items-center gap-2 empty:hidden">
               {isOwner && <ContinueInChat meditationId={meditation.id} />}
               {isOwner && meditation.status === "completed" && (
