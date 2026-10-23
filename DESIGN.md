@@ -532,7 +532,7 @@ meditation page header at 160px.
 
 - **Derived, never stored.** The first tag in the vocabulary picks a pair of hues, and
   no two tags share a pair (`TAG_HUES`); no tag, or only tags outside the vocabulary,
-  draws in Dusk alone. A 32-bit FNV-1a hash of the id picks which hue leads, whether the
+  draws in Dusk alone on a quiet field. A 32-bit FNV-1a hash of the id picks which hue leads, whether the
   picture is mirrored, and the motif, and seeds its composition (scale, position, layer
   count, density), so a meditation draws the same cover on every render and device. The
   markup carries token classes, never colour values, so a theme toggle recolours it.
@@ -550,14 +550,23 @@ meditation page header at 160px.
   moon, starfield and orbit; grounding to stones, ridge and hills; breathwork to waves
   and ripples), otherwise from all fourteen. Round motifs come to about a third of
   covers.
-- **Flat tone fields, no gradient.** Shapes are filled or stroked in `currentColor` at
-  12 to 70% opacity over `--cover-ground` (Deep Night in dark, a step below Paper in
-  light), so a cover reads as a window set into the surface rather than a raised card.
+- **The lead hue fills the frame (task 49).** A cover is album art, not a window onto
+  the page's dark: a flat field of the lead hue covers the whole square
+  (`--cover-field-<hue>`, about L 0.40 / C 0.055 in dark and a pale L 0.89 / C 0.035 in
+  light, plus a quiet field for untagged covers), and the motif draws boldly on it.
+  Before task 49 the motif sat in faint lines on Deep Night, and at 48px most covers
+  read as a dark square with a squiggle.
+- **Flat tone planes, no gradient.** Shapes are filled or stroked in `currentColor`, with
+  each motif's opacities scaled by 2.4 for the field and capped at 95% (`boost`).
   Layering opacities gives the depth a gradient would; nothing glows.
-- **Shape:** 6px radius under 96px, 12px from 96px, with a Hairline border at 60%.
-  Strokes hold a steady on-screen weight (1.25px in rows, 2px in headers), and covers
-  under 96px drop their finest detail: fewer rings, stars, drops, leaves and layers,
-  drawn larger.
+- **Shape:** 6px radius under 96px, 12px from 96px, no border: the field is the edge.
+  Strokes hold a bold, steady on-screen weight (2px in rows, 2.5px up to 160px, 3px
+  above), and covers under 96px drop their finest detail: fewer rings, stars, drops,
+  leaves and layers, drawn larger.
+- **Discover's category tiles are covers too.** Each tile is its category's field, with
+  a cover for the category (id `category:<slug>`, its first tag) cropped into the right
+  edge and faded in through an alpha mask, and the label in Lora on plain field
+  (`category-grid.tsx`). No icons.
 - **Decorative by default.** A cover sits beside its title, so it is `aria-hidden`;
   `decorative={false}` names it with the title where it stands alone.
 - **Not on the lock screen.** The Media Session artwork stays the brand icon: the OS

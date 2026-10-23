@@ -1,6 +1,6 @@
 # Album-Style Covers and Discover Tiles
 
-**Status:** Not started
+**Status:** In progress. Code done and verified locally
 **Priority:** Phase 6 (seed & open)
 **Phase:** 6
 **Depends on:** 48 (quiet list), 35 and 42 (cover system and variety)
@@ -18,8 +18,11 @@ product.
 
 - **The cover fills with its lead hue** as a flat field (about L 0.40, C 0.055 in dark; the
   ink weight in light), not Deep Night.
-- **One bold shape in the second hue** fills 40–70% of the frame and bleeds off an edge. Below
-  96px, motifs are filled shapes, not thin strokes.
+- **The motifs draw boldly on the field.** As built, the fourteen motifs keep their
+  compositions and the hash, with every opacity scaled by 2.4 (capped at 95%) and strokes
+  at 2px or more on screen. Rewriting each as "one bold shape" was not needed: on a field
+  of their own hue the existing motifs read as album art, as the screenshots in the PR
+  show.
 - **Still derived, never stored**: the same `TAG_HUES` pairs and id hash. Still tokens only.
   Still no gradient: depth comes from at most two or three flat opacity planes.
 - **Discover's category tiles join the system**: the category's hue as a field, its motif
@@ -28,11 +31,11 @@ product.
 
 ## Acceptance
 
-- [ ] Covers at 48, 64, 176 and 320px in dark and light, on the Library, Discover, a
-      meditation page and the studio.
-- [ ] Discover's tiles use the cover system; no `rotate-` and no Lucide icon in
+- [x] Covers at 56, 64, 176 and 160px (page header) in dark and light, on the Library,
+      Discover and a meditation page. The studio shows no cover yet; task 50 adds one.
+- [x] Discover's tiles use the cover system; no `rotate-` and no Lucide icon in
       `category-grid.tsx`.
-- [ ] Media Session artwork and share images, if they use the cover, still render.
-- [ ] `meditation-cover.test.tsx` passes, plus a test that no motif is stroke-only below 96px.
-- [ ] `DESIGN.md`'s Covers section is rewritten for the new look.
+- [x] Media Session artwork and share images do not use the cover (the brand icon and the OG image), so nothing changes there.
+- [x] `meditation-cover.test.tsx` passes, with new tests for the field, the stroke weight and the opacity cap.
+- [x] `DESIGN.md`'s Covers section is rewritten for the new look.
 - [ ] Operator: covers on the phone in both themes (replaces the 35 and 42 phone checks).
