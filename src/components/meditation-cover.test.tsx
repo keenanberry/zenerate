@@ -82,6 +82,36 @@ describe("MeditationCover", () => {
     }
   });
 
+  it("fills the frame with the lead hue's field, or a quiet one", () => {
+    const tagged = coverDesign(ID, ["breathwork"]);
+    expect(TAG_HUES.breathwork).toContain(tagged.fieldKey);
+    expect(render(ID, ["breathwork"])).toContain(
+      `<rect class="text-cover-field-${tagged.fieldKey}" fill="currentColor" width="100" height="100">`,
+    );
+    expect(coverDesign(ID, []).fieldKey).toBe("quiet");
+  });
+
+  it("draws strokes at least 2px on screen at every size", () => {
+    for (const size of [48, 64, 96, 160, 320]) {
+      for (let i = 0; i < 200; i++) {
+        const html = render(`${ID.slice(0, -4)}${i}`, ["breathwork"], size);
+        for (const [, width] of html.matchAll(/stroke-width="([\d.]+)"/g)) {
+          // The constellation line is drawn at 0.6 of the stroke, on purpose.
+          expect(Number(width) * size / 100).toBeGreaterThanOrEqual(1.2);
+        }
+      }
+    }
+  });
+
+  it("scales every opacity up for the field, never past 0.95", () => {
+    for (let i = 0; i < 200; i++) {
+      const html = render(`${ID.slice(0, -4)}${i}`, ["grounding"], 160);
+      for (const [, value] of html.matchAll(/(?:fill|stroke)-opacity="([\d.]+)"/g)) {
+        expect(Number(value)).toBeLessThanOrEqual(0.95);
+      }
+    }
+  });
+
   it("paints only in tokens, with no gradient", () => {
     const html = render(ID, ["morning"], 320);
     expect(html).not.toMatch(/Gradient|gradient/);

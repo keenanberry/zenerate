@@ -5,7 +5,9 @@ import { cn } from "@/lib/utils";
 /**
  * A designed cover for a meditation, until generated artwork ships
  * (tasks/post-ship/generated-cover-art.md). DESIGN.md's Covers section is the
- * rule: flat tone fields in theme tokens, no gradient, no glow.
+ * rule: flat tone fields in theme tokens, no gradient, no glow. Since task 49
+ * the lead hue fills the frame as a field and the motif draws boldly on it,
+ * as album art does, rather than as faint lines on the page's dark.
  *
  * Everything is derived from the data: the first tag picks a pair of hues,
  * and a hash of the id picks the motif (leaning toward one that suits one of
@@ -28,6 +30,28 @@ const HUES = {
   heather: "text-cover-heather",
 } as const;
 export type CoverHue = keyof typeof HUES;
+
+/** The field each hue paints the whole frame with (`--cover-field-*`). */
+const FIELDS: Record<CoverHue | "quiet", string> = {
+  amethyst: "text-cover-field-amethyst",
+  periwinkle: "text-cover-field-periwinkle",
+  sage: "text-cover-field-sage",
+  candle: "text-cover-field-candle",
+  rose: "text-cover-field-rose",
+  clay: "text-cover-field-clay",
+  moss: "text-cover-field-moss",
+  tide: "text-cover-field-tide",
+  mist: "text-cover-field-mist",
+  heather: "text-cover-field-heather",
+  quiet: "text-cover-field-quiet",
+};
+
+/**
+ * The motifs were drawn for a dark ground at 12–60% opacity. On a field of
+ * their own hue they need more weight to read, so every opacity is scaled.
+ */
+const BOOST = 2.4;
+const boost = (opacity: number) => r1(Math.min(0.95, opacity * BOOST) * 100) / 100;
 
 /** Each tag's pair, lead first. No two tags share a pair, in either order. */
 export const TAG_HUES: Record<Tag, readonly [CoverHue, CoverHue]> = {
@@ -149,6 +173,10 @@ export type CoverDesign = {
   /** The tag that picked the hues, or null when no tag is in the vocabulary. */
   tag: Tag | null;
   hues: readonly [string, string];
+  /** The field under the motif: the lead hue's, or a quiet one. */
+  field: string;
+  /** The field's token, `var(--cover-field-<key>)`, for a surface around a cover. */
+  fieldKey: CoverHue | "quiet";
   /** Drawn left-to-right reversed, so one motif faces both ways. */
   mirrored: boolean;
   seed: number;
@@ -160,7 +188,9 @@ export function coverDesign(id: string, tags: readonly string[]): CoverDesign {
   const pick = sequence(seed ^ 0x9e3779b9);
   const known = tags.filter(isTag);
   const tag = known[0] ?? null;
-  const [a, b] = tag ? TAG_HUES[tag].map((hue) => HUES[hue]) : QUIET;
+  const pair = tag ? TAG_HUES[tag] : null;
+  const [a, b] = pair ? pair.map((hue) => HUES[hue]) : QUIET;
+  const swapped = ((seed >>> 8) & 1) === 1;
   // The motif leans toward one of the tags, not always the first, so the
   // pictures do not simply follow the palette.
   const leaning = known.length ? TAG_MOTIFS[known[Math.floor(pick() * known.length)]] : undefined;
@@ -171,7 +201,9 @@ export function coverDesign(id: string, tags: readonly string[]): CoverDesign {
     motif,
     tag,
     // Which of the pair leads is the hash's call too.
-    hues: (seed >>> 8) & 1 ? [b, a] : [a, b],
+    hues: swapped ? [b, a] : [a, b],
+    field: FIELDS[pair ? pair[swapped ? 1 : 0] : "quiet"],
+    fieldKey: pair ? pair[swapped ? 1 : 0] : "quiet",
     mirrored: ((seed >>> 9) & 1) === 1,
     seed,
   };
@@ -199,14 +231,14 @@ export function MeditationCover({
   className,
   decorative = true,
 }: MeditationCoverProps) {
-  const { motif, hues, mirrored, seed } = coverDesign(id, tags);
+  const { motif, hues, field, mirrored, seed } = coverDesign(id, tags);
   const [lead, second] = hues;
-  // Strokes hold a steady weight on screen: about 1.25px in a row, 2px in a
+  // Strokes hold a steady, bold weight on screen: 2px in a row, 3px in a
   // header, whatever the scale of the 100-unit box.
-  const stroke = r1(((size <= 64 ? 1.25 : size <= 160 ? 1.5 : 2) * 100) / size);
+  const stroke = r1(((size <= 64 ? 2 : size <= 160 ? 2.5 : 3) * 100) / size);
   // Small covers drop the finest detail so the lines never close up.
   const small = size < 96;
-  const props = { seed, lead, second, stroke, small };
+  const props = { seed, lead, second, stroke, small, o: boost };
   const Motif = MOTIF_COMPONENTS[motif];
 
   return (
@@ -220,11 +252,12 @@ export function MeditationCover({
       aria-label={decorative ? undefined : title}
       data-motif={motif}
       className={cn(
-        "shrink-0 overflow-hidden border border-border/60 bg-cover-ground",
+        "shrink-0 overflow-hidden",
         size < 96 ? "rounded-md" : "rounded-xl",
         className,
       )}
     >
+      <rect className={field} fill="currentColor" width={100} height={100} />
       <g transform={mirrored ? "matrix(-1 0 0 1 100 0)" : undefined}>
         <Motif {...props} />
       </g>
@@ -235,11 +268,11 @@ export function MeditationCover({
 // Each motif seeds its own sequence: a shared one would be consumed twice
 // when React renders a component twice (Strict Mode), and the server and
 // client markup would disagree.
-type MotifProps = { seed: number; lead: string; second: string };
+type MotifProps = { seed: number; lead: string; second: string; o: (opacity: number) => number };
 type StrokedProps = MotifProps & { stroke: number; small: boolean };
 
 /** A low moon over two bands of horizon. */
-function Moon({ seed, lead, second }: MotifProps) {
+function Moon({ seed, o, lead, second }: MotifProps) {
   const rand = sequence(seed);
   const horizon = r1(58 + rand() * 16);
   const cx = r1(22 + rand() * 56);
@@ -248,12 +281,12 @@ function Moon({ seed, lead, second }: MotifProps) {
   const swell = r1(4 + rand() * 8);
   return (
     <>
-      <circle className={second} fill="currentColor" fillOpacity={0.55} cx={cx} cy={cy} r={radius} />
+      <circle className={second} fill="currentColor" fillOpacity={o(0.55)} cx={cx} cy={cy} r={radius} />
       <g className={lead} fill="currentColor">
-        <rect y={horizon} width={100} height={100 - horizon} fillOpacity={0.18} />
+        <rect y={horizon} width={100} height={100 - horizon} fillOpacity={o(0.18)} />
         <path
           d={`M0 ${r1(horizon + 14)} Q50 ${r1(horizon + 14 - swell)} 100 ${r1(horizon + 10)} V100 H0 Z`}
-          fillOpacity={0.24}
+          fillOpacity={o(0.24)}
         />
       </g>
     </>
@@ -261,7 +294,7 @@ function Moon({ seed, lead, second }: MotifProps) {
 }
 
 /** Rings spreading from a point near one edge, as on still water. */
-function Ripples({ seed, lead, second, stroke, small }: StrokedProps) {
+function Ripples({ seed, o, lead, second, stroke, small }: StrokedProps) {
   const rand = sequence(seed);
   const cx = r1(15 + rand() * 70);
   const cy = r1(rand() < 0.5 ? 20 + rand() * 20 : 60 + rand() * 20);
@@ -276,17 +309,17 @@ function Ripples({ seed, lead, second, stroke, small }: StrokedProps) {
             cx={cx}
             cy={cy}
             r={r1(step * (i + 1))}
-            strokeOpacity={r1(0.6 - (i * 0.45) / count)}
+            strokeOpacity={o(r1(0.6 - (i * 0.45) / count))}
           />
         ))}
       </g>
-      <circle className={second} fill="currentColor" fillOpacity={0.6} cx={cx} cy={cy} r={r1(step * 0.4)} />
+      <circle className={second} fill="currentColor" fillOpacity={o(0.6)} cx={cx} cy={cy} r={r1(step * 0.4)} />
     </>
   );
 }
 
 /** Three hills of dusk, deepening toward the foreground, under a small star. */
-function Strata({ seed, lead, second }: MotifProps) {
+function Strata({ seed, o, lead, second }: MotifProps) {
   const rand = sequence(seed);
   const layers = [0.12, 0.18, 0.26].map((opacity, i) => {
     const base = 46 + i * 16 + rand() * 6;
@@ -299,14 +332,14 @@ function Strata({ seed, lead, second }: MotifProps) {
       <circle
         className={second}
         fill="currentColor"
-        fillOpacity={0.6}
+        fillOpacity={o(0.6)}
         cx={r1(18 + rand() * 64)}
         cy={r1(16 + rand() * 14)}
         r={r1(3 + rand() * 3)}
       />
       <g className={lead} fill="currentColor">
         {layers.map((layer) => (
-          <path key={layer.d} d={layer.d} fillOpacity={layer.opacity} />
+          <path key={layer.d} d={layer.d} fillOpacity={o(layer.opacity)} />
         ))}
       </g>
     </>
@@ -314,7 +347,7 @@ function Strata({ seed, lead, second }: MotifProps) {
 }
 
 /** The lotus mark, large and cropped, in the lead hue over a quiet ground. */
-function Lotus({ seed, lead, second, stroke }: StrokedProps) {
+function Lotus({ seed, o, lead, second, stroke }: StrokedProps) {
   const rand = sequence(seed);
   const { petals, base } = BRAND_MARK_GEOMETRY;
   const scale = r1(1.15 + rand() * 0.35);
@@ -322,12 +355,12 @@ function Lotus({ seed, lead, second, stroke }: StrokedProps) {
   const dy = r1(100 - 86 * scale + rand() * 10);
   return (
     <>
-      <rect className={second} fill="currentColor" fillOpacity={0.12} y={r1(dy + 74 * scale)} width={100} height={100} />
+      <rect className={second} fill="currentColor" fillOpacity={o(0.12)} y={r1(dy + 74 * scale)} width={100} height={100} />
       <g
         className={lead}
         fill="none"
         stroke="currentColor"
-        strokeOpacity={0.55}
+        strokeOpacity={o(0.55)}
         strokeWidth={r1(stroke / scale)}
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -343,7 +376,7 @@ function Lotus({ seed, lead, second, stroke }: StrokedProps) {
 }
 
 /** A large body half out of frame, crossed by a moon's path. */
-function Orbit({ seed, lead, second, stroke, small }: StrokedProps) {
+function Orbit({ seed, o, lead, second, stroke, small }: StrokedProps) {
   const rand = sequence(seed);
   const left = rand() < 0.5;
   const cx = r1(left ? -10 + rand() * 20 : 90 + rand() * 20);
@@ -355,18 +388,18 @@ function Orbit({ seed, lead, second, stroke, small }: StrokedProps) {
   const my = r1(cy + orbit * Math.sin((angle * Math.PI) / 180));
   return (
     <>
-      <circle className={lead} fill="currentColor" fillOpacity={0.24} cx={cx} cy={cy} r={radius} />
-      <g className={second} fill="none" stroke="currentColor" strokeWidth={stroke} strokeOpacity={0.4}>
+      <circle className={lead} fill="currentColor" fillOpacity={o(0.24)} cx={cx} cy={cy} r={radius} />
+      <g className={second} fill="none" stroke="currentColor" strokeWidth={stroke} strokeOpacity={o(0.4)}>
         <circle cx={cx} cy={cy} r={orbit} />
-        {!small && <circle cx={cx} cy={cy} r={r1(orbit + 12)} strokeOpacity={0.2} />}
+        {!small && <circle cx={cx} cy={cy} r={r1(orbit + 12)} strokeOpacity={o(0.2)} />}
       </g>
-      <circle className={second} fill="currentColor" fillOpacity={0.7} cx={mx} cy={my} r={small ? 5 : 4} />
+      <circle className={second} fill="currentColor" fillOpacity={o(0.7)} cx={mx} cy={my} r={small ? 5 : 4} />
     </>
   );
 }
 
 /** Dunes in layers, each crest a sharp lee edge, deepening toward the front. */
-function Dunes({ seed, lead, second, small }: StrokedProps) {
+function Dunes({ seed, o, lead, second, small }: StrokedProps) {
   const rand = sequence(seed);
   const count = small ? 3 : 4 + Math.floor(rand() * 3);
   const top = 30 + rand() * 16;
@@ -387,7 +420,7 @@ function Dunes({ seed, lead, second, small }: StrokedProps) {
           key={i}
           className={i % 2 && !layer.front ? second : lead}
           fill="currentColor"
-          fillOpacity={layer.opacity}
+          fillOpacity={o(layer.opacity)}
           d={layer.d}
         />
       ))}
@@ -396,7 +429,7 @@ function Dunes({ seed, lead, second, small }: StrokedProps) {
 }
 
 /** Tide lines across the lower water, closer and stronger toward the shore. */
-function Waves({ seed, lead, second, stroke, small }: StrokedProps) {
+function Waves({ seed, o, lead, second, stroke, small }: StrokedProps) {
   const rand = sequence(seed);
   const count = small ? 4 : 6 + Math.floor(rand() * 4);
   const top = 22 + rand() * 24;
@@ -413,13 +446,13 @@ function Waves({ seed, lead, second, stroke, small }: StrokedProps) {
   });
   return (
     <>
-      <rect className={second} fill="currentColor" fillOpacity={0.1} y={r1(top)} width={100} height={100} />
+      <rect className={second} fill="currentColor" fillOpacity={o(0.1)} y={r1(top)} width={100} height={100} />
       <g fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round">
         {lines.map((line, i) => (
           <path
             key={i}
             className={line.accent ? second : lead}
-            strokeOpacity={line.opacity}
+            strokeOpacity={o(line.opacity)}
             d={line.d}
           />
         ))}
@@ -429,7 +462,7 @@ function Waves({ seed, lead, second, stroke, small }: StrokedProps) {
 }
 
 /** Mountain ridges, a pale far range behind a darker near one. */
-function Ridge({ seed, lead, second, small }: StrokedProps) {
+function Ridge({ seed, o, lead, second, small }: StrokedProps) {
   const rand = sequence(seed);
   const count = small ? 2 : 2 + Math.floor(rand() * 2);
   const ranges = Array.from({ length: count }, (_, j) => {
@@ -449,7 +482,7 @@ function Ridge({ seed, lead, second, small }: StrokedProps) {
           key={i}
           className={range.front ? lead : second}
           fill="currentColor"
-          fillOpacity={range.opacity}
+          fillOpacity={o(range.opacity)}
           strokeLinejoin="round"
           d={range.d}
         />
@@ -459,7 +492,7 @@ function Ridge({ seed, lead, second, small }: StrokedProps) {
 }
 
 /** A field of stars over a low horizon, a few joined into a constellation. */
-function Starfield({ seed, lead, second, stroke, small }: StrokedProps) {
+function Starfield({ seed, o, lead, second, stroke, small }: StrokedProps) {
   const rand = sequence(seed);
   const horizon = r1(78 + rand() * 12);
   const count = small ? 10 + Math.floor(rand() * 5) : 26 + Math.floor(rand() * 28);
@@ -474,14 +507,14 @@ function Starfield({ seed, lead, second, stroke, small }: StrokedProps) {
   const bright = stars.filter((star) => star.bright).slice(0, 4);
   return (
     <>
-      <rect className={lead} fill="currentColor" fillOpacity={0.2} y={horizon} width={100} height={100} />
+      <rect className={lead} fill="currentColor" fillOpacity={o(0.2)} y={horizon} width={100} height={100} />
       {!small && bright.length > 2 && (
         <polyline
           className={second}
           fill="none"
           stroke="currentColor"
           strokeWidth={r1(stroke * 0.6)}
-          strokeOpacity={0.3}
+          strokeOpacity={o(0.3)}
           points={bright.map((star) => `${star.cx},${star.cy}`).join(" ")}
         />
       )}
@@ -490,7 +523,7 @@ function Starfield({ seed, lead, second, stroke, small }: StrokedProps) {
           key={star.key}
           className={star.bright ? second : lead}
           fill="currentColor"
-          fillOpacity={star.bright ? 0.75 : star.opacity}
+          fillOpacity={o(star.bright ? 0.75 : star.opacity)}
           cx={star.cx}
           cy={star.cy}
           r={star.bright ? r1(star.r + 0.6) : star.r}
@@ -501,7 +534,7 @@ function Starfield({ seed, lead, second, stroke, small }: StrokedProps) {
 }
 
 /** Rain in slanted strokes over a still pool. */
-function Rain({ seed, lead, second, stroke, small }: StrokedProps) {
+function Rain({ seed, o, lead, second, stroke, small }: StrokedProps) {
   const rand = sequence(seed);
   const pool = r1(82 + rand() * 8);
   const slant = r1((rand() - 0.5) * 28);
@@ -517,7 +550,7 @@ function Rain({ seed, lead, second, stroke, small }: StrokedProps) {
   }).flat();
   return (
     <>
-      <rect className={second} fill="currentColor" fillOpacity={0.18} y={pool} width={100} height={100} />
+      <rect className={second} fill="currentColor" fillOpacity={o(0.18)} y={pool} width={100} height={100} />
       <g
         fill="none"
         stroke="currentColor"
@@ -531,7 +564,7 @@ function Rain({ seed, lead, second, stroke, small }: StrokedProps) {
             <line
               key={i}
               className={drop.accent ? second : lead}
-              strokeOpacity={drop.accent ? 0.6 : 0.4}
+              strokeOpacity={o(drop.accent ? 0.6 : 0.4)}
               x1={drop.x}
               y1={drop.y}
               x2={drop.x}
@@ -544,7 +577,7 @@ function Rain({ seed, lead, second, stroke, small }: StrokedProps) {
 }
 
 /** A frond rising from the lower edge, its leaves alternating side to side. */
-function Leaves({ seed, lead, second, stroke, small }: StrokedProps) {
+function Leaves({ seed, o, lead, second, stroke, small }: StrokedProps) {
   const rand = sequence(seed);
   const fronds = small || rand() < 0.5 ? 1 : 2;
   return (
@@ -570,11 +603,11 @@ function Leaves({ seed, lead, second, stroke, small }: StrokedProps) {
           return { x: r1(x), y: r1(y), angle, length: r1(length), width: r1(length * 0.42) };
         });
         return (
-          <g key={f} className={back ? second : lead} fill="currentColor" fillOpacity={back ? 0.18 : 0.32}>
+          <g key={f} className={back ? second : lead} fill="currentColor" fillOpacity={o(back ? 0.18 : 0.32)}>
             <path
               fill="none"
               stroke="currentColor"
-              strokeOpacity={back ? 0.25 : 0.45}
+              strokeOpacity={o(back ? 0.25 : 0.45)}
               strokeWidth={stroke}
               strokeLinecap="round"
               d={`M${r1(x0)} 105 Q${r1(bend.x)} ${r1(bend.y)} ${r1(tip.x)} ${r1(tip.y)}`}
@@ -595,7 +628,7 @@ function Leaves({ seed, lead, second, stroke, small }: StrokedProps) {
 }
 
 /** A cairn of flat stones on level ground. */
-function Stones({ seed, lead, second, small }: StrokedProps) {
+function Stones({ seed, o, lead, second, small }: StrokedProps) {
   const rand = sequence(seed);
   const ground = r1(82 + rand() * 8);
   const count = small ? 3 : 3 + Math.floor(rand() * 3);
@@ -615,13 +648,13 @@ function Stones({ seed, lead, second, small }: StrokedProps) {
   }
   return (
     <>
-      <rect className={lead} fill="currentColor" fillOpacity={0.14} y={ground} width={100} height={100} />
+      <rect className={lead} fill="currentColor" fillOpacity={o(0.14)} y={ground} width={100} height={100} />
       {stones.map((stone, i) => (
         <ellipse
           key={i}
           className={i === count - 1 ? second : lead}
           fill="currentColor"
-          fillOpacity={i === count - 1 ? 0.5 : r1(0.22 + (i % 2) * 0.12)}
+          fillOpacity={o(i === count - 1 ? 0.5 : r1(0.22 + (i % 2) * 0.12))}
           {...stone}
         />
       ))}
@@ -630,7 +663,7 @@ function Stones({ seed, lead, second, small }: StrokedProps) {
 }
 
 /** Aurora curtains as stepped columns of flat tone over a dark horizon. */
-function Aurora({ seed, lead, second, small }: StrokedProps) {
+function Aurora({ seed, o, lead, second, small }: StrokedProps) {
   const rand = sequence(seed);
   const count = small ? 2 : 3 + Math.floor(rand() * 2);
   const horizon = r1(80 + rand() * 10);
@@ -655,17 +688,17 @@ function Aurora({ seed, lead, second, small }: StrokedProps) {
           key={j}
           className={j % 2 ? second : lead}
           fill="currentColor"
-          fillOpacity={curtain.opacity}
+          fillOpacity={o(curtain.opacity)}
           d={curtain.d}
         />
       ))}
-      <rect className={lead} fill="currentColor" fillOpacity={0.24} y={horizon} width={100} height={100} />
+      <rect className={lead} fill="currentColor" fillOpacity={o(0.24)} y={horizon} width={100} height={100} />
     </>
   );
 }
 
 /** A doorway with its arch traced inward, on a floor of tone. */
-function Arch({ seed, lead, second, stroke, small }: StrokedProps) {
+function Arch({ seed, o, lead, second, stroke, small }: StrokedProps) {
   const rand = sequence(seed);
   const floor = r1(80 + rand() * 10);
   const width = small ? 44 + rand() * 12 : 30 + rand() * 24;
@@ -680,11 +713,11 @@ function Arch({ seed, lead, second, stroke, small }: StrokedProps) {
   };
   return (
     <>
-      <path className={second} fill="currentColor" fillOpacity={0.16} d={`${door(0)} Z`} />
-      <rect className={lead} fill="currentColor" fillOpacity={0.22} y={floor} width={100} height={100} />
+      <path className={second} fill="currentColor" fillOpacity={o(0.16)} d={`${door(0)} Z`} />
+      <rect className={lead} fill="currentColor" fillOpacity={o(0.22)} y={floor} width={100} height={100} />
       <g className={lead} fill="none" stroke="currentColor" strokeWidth={stroke}>
         {Array.from({ length: rings }, (_, i) => (
-          <path key={i} strokeOpacity={r1(0.5 - i * 0.12)} d={door(i + 1)} />
+          <path key={i} strokeOpacity={o(r1(0.5 - i * 0.12))} d={door(i + 1)} />
         ))}
       </g>
     </>

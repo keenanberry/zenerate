@@ -85,6 +85,17 @@
   --color-cover-tide: var(--cover-tide);
   --color-cover-mist: var(--cover-mist);
   --color-cover-heather: var(--cover-heather);
+  --color-cover-field-amethyst: var(--cover-field-amethyst);
+  --color-cover-field-periwinkle: var(--cover-field-periwinkle);
+  --color-cover-field-sage: var(--cover-field-sage);
+  --color-cover-field-candle: var(--cover-field-candle);
+  --color-cover-field-rose: var(--cover-field-rose);
+  --color-cover-field-clay: var(--cover-field-clay);
+  --color-cover-field-moss: var(--cover-field-moss);
+  --color-cover-field-tide: var(--cover-field-tide);
+  --color-cover-field-mist: var(--cover-field-mist);
+  --color-cover-field-heather: var(--cover-field-heather);
+  --color-cover-field-quiet: var(--cover-field-quiet);
 }
 
 :root {
@@ -153,6 +164,20 @@
   --cover-tide: oklch(0.5000 0.0700 205.0000);
   --cover-mist: oklch(0.5400 0.0450 235.0000);
   --cover-heather: oklch(0.5200 0.0850 335.0000);
+  /* A cover's field (DESIGN.md, Covers, task 49): the lead hue as a flat
+     ground that fills the frame. Pale in light, so the ink-weight hues draw
+     on it. */
+  --cover-field-amethyst: oklch(0.8900 0.0350 302.0000);
+  --cover-field-periwinkle: oklch(0.8900 0.0350 258.0000);
+  --cover-field-sage: oklch(0.8900 0.0350 170.0000);
+  --cover-field-candle: oklch(0.8900 0.0350 77.0000);
+  --cover-field-rose: oklch(0.8900 0.0350 10.0000);
+  --cover-field-clay: oklch(0.8900 0.0350 45.0000);
+  --cover-field-moss: oklch(0.8900 0.0350 130.0000);
+  --cover-field-tide: oklch(0.8900 0.0350 205.0000);
+  --cover-field-mist: oklch(0.8900 0.0250 235.0000);
+  --cover-field-heather: oklch(0.8900 0.0350 335.0000);
+  --cover-field-quiet: oklch(0.9200 0.0120 300.0000);
   --font-sans: var(--font-geist-sans, sans-serif);
   --font-serif: var(--font-lora, Georgia, serif);
   --font-mono: var(--font-geist-mono, monospace);
@@ -230,6 +255,17 @@
   --cover-tide: oklch(0.7600 0.0600 205.0000);
   --cover-mist: oklch(0.8000 0.0350 235.0000);
   --cover-heather: oklch(0.7400 0.0700 335.0000);
+  --cover-field-amethyst: oklch(0.4000 0.0550 302.0000);
+  --cover-field-periwinkle: oklch(0.4000 0.0550 258.0000);
+  --cover-field-sage: oklch(0.4000 0.0550 170.0000);
+  --cover-field-candle: oklch(0.4000 0.0550 77.0000);
+  --cover-field-rose: oklch(0.4000 0.0550 10.0000);
+  --cover-field-clay: oklch(0.4000 0.0550 45.0000);
+  --cover-field-moss: oklch(0.4000 0.0550 130.0000);
+  --cover-field-tide: oklch(0.4000 0.0550 205.0000);
+  --cover-field-mist: oklch(0.4000 0.0350 235.0000);
+  --cover-field-heather: oklch(0.4000 0.0550 335.0000);
+  --cover-field-quiet: oklch(0.3000 0.0200 293.0000);
   --radius: 0.5rem;
   --font-sans: var(--font-geist-sans, sans-serif);
   --font-serif: var(--font-lora, Georgia, serif);
