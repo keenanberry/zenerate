@@ -1,7 +1,7 @@
 # Public Content Moderation
 
 **Status:** Not started
-**Priority:** Post-ship
+**Priority:** Post-ship. A minimal Report link was promoted to ship task 53 on 2026-10-23
 
 ## Why it matters
 `/discover` shows any user's meditation marked `is_public`. Right now there's no way to report abusive/inappropriate content, no way for the operator to review it, and no automated filter. Fine at zero users, problematic once there are any.
