@@ -10,6 +10,7 @@ import {
   SelectGroup,
   SelectItem,
   SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -156,6 +157,8 @@ export function DiscoverSearch({ filters }: { filters: DiscoverFilters }) {
         <FilterSelect label="Tag" value={filters.tag} onChange={(tag) => go({ tag })}>
           {(Object.keys(TAG_GROUPS) as (keyof typeof TAG_GROUPS)[]).map((group) => (
             <SelectGroup key={group}>
+              {/* A rule and a Label-type heading, so the groups read as groups. */}
+              <SelectSeparator className="mt-1" />
               <SelectLabel>{GROUP_LABELS[group]}</SelectLabel>
               {TAG_GROUPS[group].map((tag) => (
                 <SelectItem key={tag} value={tag}>

@@ -159,16 +159,16 @@ export function AddToCollectionDialog({
       </PopoverTrigger>
       <PopoverContent align="end" className="w-64 p-0">
         <div className="border-b px-3 py-2">
-          <p className="text-sm font-medium">Collections</p>
+          <p className="text-xs font-medium tracking-[0.06em] text-muted-foreground uppercase">Collections</p>
         </div>
 
-        <div className="max-h-56 overflow-y-auto">
+        <div className="max-h-56 overflow-y-auto p-1">
           {loading ? (
             <div className="flex items-center justify-center py-6">
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             </div>
           ) : collections.length === 0 && !showNew ? (
-            <p className="px-3 py-4 text-center text-sm text-muted-foreground">
+            <p className="px-2 py-3 text-center text-sm text-muted-foreground">
               No collections yet
             </p>
           ) : (
@@ -179,7 +179,7 @@ export function AddToCollectionDialog({
                   key={col.id}
                   onClick={() => handleToggle(col.id)}
                   disabled={isPending}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted disabled:opacity-50"
+                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition-colors outline-none hover:bg-menu-hover focus-visible:bg-menu-hover disabled:opacity-50"
                 >
                   <span
                     className={cn(
@@ -201,7 +201,7 @@ export function AddToCollectionDialog({
           )}
         </div>
 
-        <div className="border-t p-2">
+        <div className="border-t p-1">
           {showNew ? (
             <div className="flex gap-1.5">
               <Input
@@ -224,7 +224,7 @@ export function AddToCollectionDialog({
           ) : (
             <button
               onClick={() => setShowNew(true)}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-muted-foreground transition-colors outline-none hover:bg-menu-hover hover:text-foreground focus-visible:bg-menu-hover"
             >
               <Plus className="h-4 w-4" />
               New collection

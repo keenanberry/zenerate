@@ -284,7 +284,7 @@ function AddTagPopover({
           if (remaining.length === 0) return null;
           return (
             <div key={group} className="space-y-2">
-              <p className="text-xs font-medium tracking-[0.06em] text-muted-foreground">
+              <p className="text-xs font-medium tracking-[0.06em] text-muted-foreground uppercase">
                 {GROUP_LABELS[group]}
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -297,7 +297,7 @@ function AddTagPopover({
                       // Close at the cap; otherwise stay open for the next pick.
                       if (selected.length + 1 >= MAX_TAGS) setOpen(false);
                     }}
-                    className="rounded-full border border-border px-2.5 py-1 text-xs leading-none font-medium tracking-[0.06em] outline-none hover:bg-card-hover focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-safe:transition-colors"
+                    className="rounded-full border border-border px-2.5 py-1 text-xs leading-none font-medium tracking-[0.06em] outline-none hover:bg-menu-hover focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-safe:transition-colors"
                   >
                     {TAG_LABELS[tag]}
                   </button>
