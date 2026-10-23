@@ -1,6 +1,6 @@
 # Quiet List: Rows Without Chips
 
-**Status:** In progress. Code done and verified locally; PR not opened yet
+**Status:** Done (PR #84); the iPhone check is the operator's
 **Priority:** Phase 6 (seed & open)
 **Phase:** 6
 **Depends on:** 33 (tag display), 35 (covers)
