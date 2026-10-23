@@ -135,7 +135,7 @@ export function DiscoverSearch({ filters }: { filters: DiscoverFilters }) {
           type="search"
           enterKeyHint="search"
           aria-label="Search meditations"
-          placeholder="What do you want to feel?"
+          placeholder="Search meditations…"
           value={query}
           onChange={(e) => handleQuery(e.target.value)}
           className="h-12 rounded-xl pr-11 pl-11 text-base md:text-base [&::-webkit-search-cancel-button]:hidden"

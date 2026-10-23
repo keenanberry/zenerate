@@ -114,7 +114,8 @@ export default async function DashboardPage({
         <Link href="/create" className="shrink-0">
           <Button className="gap-2">
             <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">New Meditation</span>
+            <span className="sm:hidden">New</span>
+            <span className="hidden sm:inline">New meditation</span>
           </Button>
         </Link>
       </div>

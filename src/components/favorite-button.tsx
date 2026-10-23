@@ -11,12 +11,15 @@ interface FavoriteButtonProps {
   meditationId: string;
   isFavorited: boolean;
   size?: "sm" | "default";
+  /** The meditation's title, for the button's accessible name. */
+  title?: string;
 }
 
 export function FavoriteButton({
   meditationId,
   isFavorited: initialFavorited,
   size = "sm",
+  title,
 }: FavoriteButtonProps) {
   const [isFavorited, setIsFavorited] = useState(initialFavorited);
   const [isPending, startTransition] = useTransition();
@@ -42,7 +45,15 @@ export function FavoriteButton({
       size={size === "sm" ? "icon" : "default"}
       onClick={handleToggle}
       disabled={isPending}
-      className={cn(size === "sm" && "h-8 w-8")}
+      aria-pressed={isFavorited}
+      aria-label={
+        title
+          ? `${isFavorited ? "Remove" : "Add"} ${title} ${isFavorited ? "from" : "to"} favorites`
+          : isFavorited
+            ? "Remove from favorites"
+            : "Add to favorites"
+      }
+      className={cn(size === "sm" && "h-10 w-10 sm:h-8 sm:w-8")}
     >
       <Heart
         className={cn(

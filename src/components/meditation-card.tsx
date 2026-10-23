@@ -10,9 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { FavoriteButton } from "@/components/favorite-button";
 import { InlinePlayButton } from "@/components/inline-play-button";
 import { MeditationCover } from "@/components/meditation-cover";
-import { TagPills } from "@/components/tag-pills";
+import { metaLine } from "@/lib/meditation/meta";
 import type { MeditationWithMeta } from "@/lib/meditation/types";
-import { Globe, Clock } from "lucide-react";
+import { Globe } from "lucide-react";
 
 interface MeditationCardProps {
   meditation: MeditationWithMeta;
@@ -78,8 +78,7 @@ export function MeditationCard({
           </CardDescription>
         )}
       </CardHeader>
-      <CardContent className="mt-auto space-y-4">
-        <TagPills tags={meditation.tags ?? []} size="sm" />
+      <CardContent className="mt-auto">
         <div className="flex items-center gap-2.5">
           <Badge
             variant="secondary"
@@ -88,11 +87,11 @@ export function MeditationCard({
             {statusLabels[meditation.status] ?? meditation.status}
           </Badge>
           {showVisibility && meditation.is_public && (
-            <Globe className="h-3 w-3 text-muted-foreground" />
+            <Globe aria-label="Public" className="h-3 w-3 shrink-0 text-muted-foreground" />
           )}
-          <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" />
-            {new Date(meditation.created_at).toLocaleDateString()}
+          {/* One quiet line, no pills (task 48). */}
+          <span className="ml-auto min-w-0 truncate text-xs text-muted-foreground tabular-nums">
+            {metaLine(meditation)}
           </span>
         </div>
       </CardContent>
