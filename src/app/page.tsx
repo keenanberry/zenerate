@@ -3,7 +3,7 @@ import { MeditationCover } from "@/components/meditation-cover";
 import { Nav } from "@/components/nav";
 import { ScriptStreamDemo } from "@/components/script-stream-demo";
 import { SiteFooter } from "@/components/site-footer";
-import { TagPills } from "@/components/tag-pills";
+import { metaLine } from "@/lib/meditation/meta";
 import { Button } from "@/components/ui/button";
 import { getQuotaConfig } from "@/lib/audio/quota";
 import { countOf, freeTierSummary } from "@/lib/landing/copy";
@@ -186,7 +186,7 @@ function HearOneFirst({ row }: { row: LandingRow }) {
       </div>
       <ul className="grid max-w-3xl gap-4 sm:grid-cols-3 sm:gap-6">
         {row.meditations.map((m) => {
-          const minutes = m.settings?.duration;
+          const meta = metaLine({ tags: m.tags, settings: m.settings });
           return (
             <li key={m.id}>
               <Link
@@ -202,12 +202,11 @@ function HearOneFirst({ row }: { row: LandingRow }) {
                   size={240}
                   className="hidden h-auto w-full sm:block"
                 />
-                <div className="min-w-0 space-y-2">
+                <div className="min-w-0 space-y-1">
                   <p className="line-clamp-2 font-serif text-base leading-snug font-medium group-hover:text-accent-foreground">
                     {m.title}
                   </p>
-                  {minutes && <p className="text-xs text-muted-foreground">{minutes} min</p>}
-                  <TagPills tags={(m.tags ?? []).slice(0, 2)} size="sm" />
+                  {meta && <p className="truncate text-xs text-muted-foreground tabular-nums">{meta}</p>}
                 </div>
               </Link>
             </li>

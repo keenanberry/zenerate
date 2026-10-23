@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ViewToggle } from "@/components/view-toggle";
 import { ViewProvider, useView } from "@/components/view-context";
-import { Library, Heart, FolderOpen } from "lucide-react";
 
 const VALID_TABS = ["meditations", "favorites", "collections"] as const;
 type Tab = (typeof VALID_TABS)[number];
@@ -51,18 +50,16 @@ function TabsInner({
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
       <div className="flex items-center justify-between gap-3">
-        <TabsList>
-          <TabsTrigger value="meditations" className="gap-1.5">
-            <Library className="h-4 w-4" />
-            <span className="hidden sm:inline">My Meditations</span>
+        {/* Text tabs at every width: three unlabelled glyphs said nothing on a phone (task 48). */}
+        <TabsList variant="line" className="h-auto gap-5 p-0">
+          <TabsTrigger value="meditations" className="flex-none px-0">
+            Meditations
           </TabsTrigger>
-          <TabsTrigger value="favorites" className="gap-1.5">
-            <Heart className="h-4 w-4" />
-            <span className="hidden sm:inline">Favorites</span>
+          <TabsTrigger value="favorites" className="flex-none px-0">
+            Favorites
           </TabsTrigger>
-          <TabsTrigger value="collections" className="gap-1.5">
-            <FolderOpen className="h-4 w-4" />
-            <span className="hidden sm:inline">Collections</span>
+          <TabsTrigger value="collections" className="flex-none px-0">
+            Collections
           </TabsTrigger>
         </TabsList>
 

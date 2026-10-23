@@ -16,7 +16,7 @@ export default async function CreatePage() {
       <div className="space-y-6">
         <div className="space-y-2">
           <h1 className="font-serif text-[clamp(2rem,5vw,3rem)] leading-[1.15] font-medium tracking-[-0.01em] text-balance">
-            What would you like to sit with?
+            What meditation would you like?
           </h1>
           <p className="max-w-[60ch] text-muted-foreground">
             Say it in a sentence: what it is for, and how long. The script is

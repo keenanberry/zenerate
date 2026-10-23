@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { MeditationCover } from "@/components/meditation-cover";
-import { TagPills } from "@/components/tag-pills";
+import { metaLine } from "@/lib/meditation/meta";
 import type { MeditationWithMeta } from "@/lib/meditation/types";
 
+/** The tag and the length; a shelf is not about when it was made. */
 function meta(m: MeditationWithMeta) {
-  const minutes = m.settings?.duration;
-  return minutes ? `${minutes} min` : null;
+  return metaLine({ tags: m.tags, settings: m.settings });
 }
 
 /**
@@ -50,14 +50,13 @@ export function DiscoverRow({
                 size={176}
                 className="h-auto w-full"
               />
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <p className="line-clamp-2 font-serif text-base font-medium leading-snug group-hover:text-accent-foreground">
                   {m.title}
                 </p>
                 {meta(m) && (
-                  <p className="text-xs text-muted-foreground">{meta(m)}</p>
+                  <p className="truncate text-xs text-muted-foreground tabular-nums">{meta(m)}</p>
                 )}
-                <TagPills tags={(m.tags ?? []).slice(0, 2)} size="sm" />
               </div>
             </Link>
           </li>

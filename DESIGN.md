@@ -359,7 +359,7 @@ Vertical rhythm, as settled in task 21:
 | Card padding | 24px on a phone, 32px from `sm` (`py-6 sm:py-8`, `px-6 sm:px-8`) |
 | Inside a card, between blocks | 24px (`gap-6` / `space-y-6`) |
 | Grid gutters | 24px (`gap-6`) |
-| Track list rows | 14px vertical (`py-3.5`) |
+| Track list rows | at least 72px tall, 12px vertical inside the text (`py-3`), Hairline inset dividers |
 | Between script passages and markers | 24px (`space-y-6`) |
 | Empty states | 64px vertical (`py-16`) |
 | Footer | 40px (`py-10`) |
@@ -438,6 +438,25 @@ texture in the interface and it stays unadorned.
 - **State:** meditation status badges on cards take a 10% fill and text of a token:
   Generating is Candle, Script Ready Periwinkle, Processing Audio Amethyst (`--primary`),
   Completed Sage, Failed Ember (`--destructive`).
+- **Tags are not listed.** Tag pills (`TagPills`) appear only where a tag is edited or
+  filtered: the meditation page, the studio canvas and Discover's filters. A list, a shelf
+  or a card names a meditation's first tag in its meta line instead (task 48); two or more
+  filled pills per row outweighed the title and read as a to-do app.
+
+### Track Rows
+A meditation in a list (`TrackRow`, in the Library, Favorites and a collection) is drawn
+as a music app draws a track (task 48):
+
+- The 56px cover, then the title in Body type (16px, 500, Foreground, one line ending in
+  "…"), and under it one meta line in Dusk at 14px (`text-sm`) with tabular figures: first tag ·
+  length · date (`metaLine` in `src/lib/meditation/meta.ts`). Shelf cards and the landing
+  page's cards use the same line without the date. No header row, no Type column.
+- **Inset dividers:** a Hairline rule above every row but the first, starting where the
+  text starts, so the covers keep a clean column (the Apple Music pattern).
+- **Playing:** from `sm`, an index column shows the number and a play icon on row hover.
+  Below `sm` there is no index column; the cover is the play target, and while playing a
+  28px round Amethyst Glow pause button sits on it. The row's title turns Primary.
+- Every icon-only control in a row has an accessible name naming the meditation.
 
 ### Cards / Containers
 - **Corner Style:** 12px.

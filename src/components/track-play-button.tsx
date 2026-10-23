@@ -12,19 +12,27 @@ import { cn } from "@/lib/utils";
 let activeAudio: HTMLAudioElement | null = null;
 let activeCleanup: (() => void) | null = null;
 
-interface TrackPlayButtonProps {
-  index: number;
-  audioUrl: string | null;
+export interface TrackAudio {
+  canPlay: boolean;
+  playing: boolean;
   status: string;
-  onPlayingChange?: (playing: boolean) => void;
+  toggle: (e: React.MouseEvent) => void;
 }
 
-export function TrackPlayButton({
-  index,
+/**
+ * A row's audio: one element per row, and one row playing at a time across
+ * the page. A row has two triggers that share it, the index column from `sm`
+ * and the cover on a phone (task 48).
+ */
+export function useTrackAudio({
   audioUrl,
   status,
   onPlayingChange,
-}: TrackPlayButtonProps) {
+}: {
+  audioUrl: string | null;
+  status: string;
+  onPlayingChange?: (playing: boolean) => void;
+}): TrackAudio {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
 
@@ -50,7 +58,7 @@ export function TrackPlayButton({
     };
   }, [stop]);
 
-  function handleClick(e: React.MouseEvent) {
+  function toggle(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
 
@@ -81,55 +89,117 @@ export function TrackPlayButton({
     onPlayingChange?.(true);
   }
 
-  const tooltipMessage =
-    status === "processing_audio"
-      ? "Audio is being generated…"
-      : status === "failed"
-        ? "Audio generation failed"
-        : "Generate audio first";
+  return { canPlay, playing, status, toggle };
+}
 
-  if (!canPlay) {
+function unplayableMessage(status: string) {
+  return status === "processing_audio"
+    ? "Audio is being generated…"
+    : status === "failed"
+      ? "Audio generation failed"
+      : "Generate audio first";
+}
+
+/** The index column from `sm`: the number, a play icon on row hover. */
+export function TrackPlayButton({
+  audio,
+  index,
+  title,
+  className,
+}: {
+  audio: TrackAudio;
+  index: number;
+  title: string;
+  className?: string;
+}) {
+  if (!audio.canPlay) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
           <span
             role="button"
             tabIndex={0}
-            className="relative z-10 flex w-8 cursor-not-allowed items-center justify-center text-sm text-muted-foreground/40"
+            aria-disabled
+            aria-label={`${title}: ${unplayableMessage(audio.status)}`}
+            className={cn(
+              "relative z-10 w-8 cursor-not-allowed items-center justify-center text-sm text-muted-foreground/40 tabular-nums",
+              className,
+            )}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
             }}
           >
-            <span className="hidden sm:inline sm:group-hover:hidden">{index}</span>
-            <Play className="h-3.5 w-3.5 fill-current sm:hidden sm:group-hover:block" />
+            <span className="group-hover:hidden">{index}</span>
+            <Play className="hidden h-3.5 w-3.5 fill-current group-hover:block" />
           </span>
         </TooltipTrigger>
         <TooltipContent side="top">
-          <p>{tooltipMessage}</p>
+          <p>{unplayableMessage(audio.status)}</p>
         </TooltipContent>
       </Tooltip>
     );
   }
 
-  if (playing) {
-    return (
-      <button
-        onClick={handleClick}
-        className="relative z-10 flex w-8 cursor-pointer items-center justify-center text-primary"
-      >
+  return (
+    <button
+      type="button"
+      onClick={audio.toggle}
+      aria-label={audio.playing ? `Pause ${title}` : `Play ${title}`}
+      className={cn(
+        "relative z-10 w-8 cursor-pointer items-center justify-center text-sm tabular-nums",
+        audio.playing ? "text-primary" : "text-muted-foreground hover:text-foreground",
+        className,
+      )}
+    >
+      {audio.playing ? (
         <Pause className="h-3.5 w-3.5 fill-current" />
-      </button>
-    );
+      ) : (
+        <>
+          <span className="group-hover:hidden">{index}</span>
+          <Play className="hidden h-3.5 w-3.5 fill-current group-hover:block" />
+        </>
+      )}
+    </button>
+  );
+}
+
+/**
+ * The cover as a play target. It is the only one below `sm`, where there is
+ * no index column. Idle, it is the cover alone; playing, a round pause
+ * button sits on it there (from `sm` the index column shows the pause).
+ */
+export function CoverPlayButton({
+  audio,
+  title,
+  children,
+  className,
+}: {
+  audio: TrackAudio;
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  if (!audio.canPlay) {
+    return <div className={cn("relative shrink-0", className)}>{children}</div>;
   }
 
   return (
     <button
-      onClick={handleClick}
-      className="relative z-10 flex w-8 cursor-pointer items-center justify-center text-sm text-muted-foreground hover:text-foreground"
+      type="button"
+      onClick={audio.toggle}
+      aria-label={audio.playing ? `Pause ${title}` : `Play ${title}`}
+      className={cn(
+        "relative z-10 shrink-0 rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+        className,
+      )}
     >
-      <span className="hidden sm:inline sm:group-hover:hidden">{index}</span>
-      <Play className="h-3.5 w-3.5 fill-current sm:hidden sm:group-hover:block" />
+      {children}
+      {audio.playing && (
+        <span className="absolute inset-0 m-auto flex size-7 sm:hidden items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <Pause className="size-3 fill-current" />
+        </span>
+      )}
     </button>
   );
 }

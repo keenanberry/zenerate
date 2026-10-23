@@ -3,42 +3,16 @@
 import { useState } from "react";
 import Link from "next/link";
 import { FavoriteButton } from "@/components/favorite-button";
-import { TrackPlayButton } from "@/components/track-play-button";
+import {
+  CoverPlayButton,
+  TrackPlayButton,
+  useTrackAudio,
+} from "@/components/track-play-button";
 import { MeditationCover } from "@/components/meditation-cover";
-import { Badge } from "@/components/ui/badge";
-import { TagPills } from "@/components/tag-pills";
+import { metaLine } from "@/lib/meditation/meta";
 import type { MeditationWithMeta } from "@/lib/meditation/types";
-import { Clock, Globe } from "lucide-react";
+import { Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const typeLabels: Record<string, string> = {
-  guided: "Guided",
-  "body-scan": "Body Scan",
-  breathwork: "Breathwork",
-  "loving-kindness": "Loving Kindness",
-  visualization: "Visualization",
-  mindfulness: "Mindfulness",
-  sleep: "Sleep",
-  manifestation: "Manifestation",
-  mantra: "Mantra",
-};
-
-function formatDuration(minutes?: number) {
-  if (!minutes) return null;
-  return `${minutes} min`;
-}
-
-function formatDate(dateStr: string) {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-  if (days === 0) return "Today";
-  if (days === 1) return "Yesterday";
-  if (days < 7) return `${days}d ago`;
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
 
 interface TrackRowProps {
   meditation: MeditationWithMeta;
@@ -49,6 +23,11 @@ interface TrackRowProps {
   actions?: React.ReactNode;
 }
 
+/**
+ * One meditation in a list, as a music app draws a track (task 48): the
+ * cover, the title, and one quiet line under it. A Hairline rule between
+ * rows starts where the text starts, so the covers keep a clean column.
+ */
 export function TrackRow({
   meditation: m,
   index,
@@ -58,79 +37,73 @@ export function TrackRow({
   actions,
 }: TrackRowProps) {
   const [playing, setPlaying] = useState(false);
-
-  const settings = m.settings ?? {};
-  const type = typeLabels[settings.type ?? ""] ?? settings.type;
-  const duration = formatDuration(settings.duration);
+  const audio = useTrackAudio({
+    audioUrl: m.audio_url,
+    status: m.status,
+    onPlayingChange: setPlaying,
+  });
+  const meta = metaLine(m);
 
   return (
     <div
       className={cn(
-        "group flex items-center gap-3 rounded-md px-2 py-3.5 hover:bg-muted/50 motion-safe:transition-colors",
-        playing && "bg-primary/5",
+        "group flex items-center gap-4 rounded-md sm:px-2 sm:hover:bg-muted/50 motion-safe:transition-colors",
+        playing && "sm:bg-primary/5",
       )}
     >
       {showIndex && (
         <TrackPlayButton
+          audio={audio}
           index={index}
-          audioUrl={m.audio_url}
-          status={m.status}
-          onPlayingChange={setPlaying}
+          title={m.title}
+          className="hidden sm:flex"
         />
       )}
 
-      <MeditationCover id={m.id} tags={m.tags ?? []} title={m.title} size={48} />
+      <CoverPlayButton audio={audio} title={m.title}>
+        <MeditationCover id={m.id} tags={m.tags ?? []} title={m.title} size={56} />
+      </CoverPlayButton>
 
-      <Link
-        href={`/meditation/${m.id}`}
-        className="flex min-w-0 flex-1 flex-col"
-      >
-        <span
-          className={cn(
-            "flex items-center gap-2 truncate text-sm font-medium",
-            playing && "text-primary",
-          )}
+      <div className="flex min-h-[4.5rem] min-w-0 flex-1 items-center gap-2 self-stretch border-t group-first:border-t-0">
+        <Link
+          href={`/meditation/${m.id}`}
+          className="flex min-w-0 flex-1 flex-col gap-0.5 py-3"
         >
-          {m.title}
-          {showVisibility && m.is_public && (
-            <Globe className="h-3 w-3 shrink-0 text-muted-foreground" />
+          <span className="flex min-w-0 items-center gap-2">
+            <span
+              className={cn(
+                "truncate text-base font-medium",
+                playing && "text-primary",
+              )}
+            >
+              {m.title}
+            </span>
+            {showVisibility && m.is_public && (
+              <Globe
+                aria-label="Public"
+                className="h-3 w-3 shrink-0 text-muted-foreground"
+              />
+            )}
+          </span>
+          {meta && (
+            <span className="truncate text-sm text-muted-foreground tabular-nums">
+              {meta}
+            </span>
           )}
-        </span>
-        {/* One line of whole pills: a pill that would wrap is hidden, never cut. */}
-        <TagPills tags={m.tags ?? []} size="sm" className="mt-1.5 max-h-[18px] overflow-hidden" />
-      </Link>
+        </Link>
 
-      <span className="hidden w-28 sm:block">
-        {type && (
-          <Badge variant="secondary" className="text-xs font-normal">
-            {type}
-          </Badge>
-        )}
-      </span>
-
-      <span className="hidden w-16 text-right text-xs text-muted-foreground md:block">
-        {duration && (
-          <span className="flex items-center justify-end gap-1">
-            <Clock className="h-3 w-3" />
-            {duration}
+        {showFavorite && (
+          <span className="relative z-10">
+            <FavoriteButton
+              meditationId={m.id}
+              isFavorited={m.is_favorited ?? false}
+              title={m.title}
+            />
           </span>
         )}
-      </span>
 
-      <span className="hidden w-20 text-right text-xs text-muted-foreground sm:block">
-        {formatDate(m.created_at)}
-      </span>
-
-      {showFavorite && (
-        <span className="relative z-10 w-8">
-          <FavoriteButton
-            meditationId={m.id}
-            isFavorited={m.is_favorited ?? false}
-          />
-        </span>
-      )}
-
-      {actions && <span className="relative z-10 w-8">{actions}</span>}
+        {actions && <span className="relative z-10">{actions}</span>}
+      </div>
     </div>
   );
 }
