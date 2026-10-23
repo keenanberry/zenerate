@@ -462,6 +462,24 @@ When you are ready, open your eyes. Welcome back.
   now() - interval '5 days'
 );
 
+-- ── Tags and descriptions for the meditations above ──
+-- These seven predate the tag vocabulary (task 28), and the collections and
+-- favorites below point at them, so without tags they drew grey covers and
+-- grey collection artwork. Tagged as the studio agent would tag them.
+
+UPDATE public.meditations AS m
+SET tags = v.tags, description = v.description
+FROM (VALUES
+  ('aaaa0001-0000-0000-0000-000000000001', ARRAY['gratitude','morning'], 'Start the day by noticing what is already good.'),
+  ('aaaa0002-0000-0000-0000-000000000002', ARRAY['stress-relief','body-scan'], 'Move slowly through the body and loosen what the day has tightened.'),
+  ('aaaa0003-0000-0000-0000-000000000003', ARRAY['energy','breathwork','morning'], 'A few brisk, bright breaths to wake the body up.'),
+  ('aaaa0004-0000-0000-0000-000000000004', ARRAY['sleep','letting-go','bedtime'], 'Set down what you are carrying and let sleep come.'),
+  ('bbbb0001-0000-0000-0000-000000000001', ARRAY['self-compassion','loving-kindness'], 'Offer yourself the kindness you would give a friend.'),
+  ('bbbb0002-0000-0000-0000-000000000002', ARRAY['focus','midday-reset'], 'Clear the noise and settle into one task.'),
+  ('bbbb0003-0000-0000-0000-000000000003', ARRAY['visualization','inner-peace'], 'Walk up to a quiet mountain cabin and rest there awhile.')
+) AS v(id, tags, description)
+WHERE m.id = v.id::uuid;
+
 -- ── Alice's collections ──
 
 INSERT INTO public.collections (id, user_id, name, description) VALUES
