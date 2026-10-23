@@ -3,7 +3,6 @@
 import { useEffect, useRef, type ReactNode, type Ref } from "react";
 import { ArrowDown, Loader2, TriangleAlert } from "lucide-react";
 import { ScriptViewer } from "@/components/script-viewer";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TAG_LABELS } from "@/lib/meditation/tags";
 import { cn } from "@/lib/utils";
@@ -107,13 +106,12 @@ export function ScriptCanvas({ draft, details, live, action, className, ref }: S
             <h2 className="font-serif text-xl leading-tight font-medium text-balance">
               {details.title}
             </h2>
-            <div className="flex flex-wrap gap-1.5">
-              {details.tags.map((tag) => (
-                <Badge key={tag} variant="secondary">
-                  {TAG_LABELS[tag]}
-                </Badge>
-              ))}
-            </div>
+            {/* One Dusk line, as on the meditation page (task 54). */}
+            {details.tags.length > 0 && (
+              <p className="text-sm text-muted-foreground">
+                {details.tags.map((tag) => TAG_LABELS[tag]).join(" · ")}
+              </p>
+            )}
           </div>
         )}
       </header>

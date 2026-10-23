@@ -631,19 +631,26 @@ and chips swap them.
 The chat and its canvas (`src/components/studio/`), the way Claude builds an artifact:
 the conversation on the left, the script on the right.
 
-- **Chat:** the person's messages are Secondary-fill bubbles at 85% width on the right;
-  the agent's replies are plain Body text on the ground, with no bubble. Each
-  `writeScript` is a chip, not the script: a 6px-radius Card-surface button with a 16px
-  Amethyst Glow file icon, "Draft 2" in UI type and the length in Dusk, hover
-  `--card-hover`, and tapping it brings the canvas forward. While the draft streams the
-  icon is a spinner and the label "Writing draft 2". `setDetails` is one Dusk line naming
-  the title in Lora. Cards from other tools render through `renderStudioPart`.
+- **Chat (task 50):** the person's messages sit at 85% width on the right on the Card
+  surface with a Hairline border, in Foreground: quiet, never the brightest thing on
+  screen. The agent's replies are plain Body text on the ground, with no bubble. Each
+  `writeScript` is a chip, not the script: a Card-surface button holding the 40px cover,
+  the title in Lora once `setDetails` has named it, and "Draft 2 · 5 min" in Dusk below;
+  hover `--card-hover`, and tapping it brings the canvas forward. While the draft streams
+  a spinner sits on the cover and the label reads "Writing draft 2". `setDetails` is one
+  Dusk line naming the title in Lora. Under a fresh draft the next step is two real
+  buttons, a primary "Make the audio" with a waveform icon and an outline "Change
+  something", with a Dusk hint line after the first draft. No Sparkles icon anywhere.
+  Cards from other tools render through `renderStudioPart`.
+- **Starting a render:** the Make audio button stays at full strength with a spinner and
+  "Starting…" while the request runs (`aria-busy`, no pointer events); `disabled` would
+  fade it to half opacity, which read as a stuck overlay on a phone.
 - **Canvas:** a Card that fills its column, header and body split by a Hairline rule. The
   header has a Label-type "Draft N" and the status on the right: "Writing" with a spinner,
   "About 10 min", or, more than 10% off target, the estimate and the target in Candle
   with a warning icon. A draft the turn never saved says "Not saved" in Candle, so a
   half-streamed script is never shown as saved. Below that sit the title in Lora at
-  1.25rem and the tags as Secondary badges. The body is the Script Viewer, followed to its
+  1.25rem and the tags as one Dusk line. The body is the Script Viewer, followed to its
   newest line while it streams until the reader scrolls up; a "Follow the writing" outline
   button then sits at the foot of the canvas until they return to the bottom. A script
   opened on a reload starts at its top.

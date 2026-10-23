@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { VoicePicker } from "@/components/voice-picker";
-import { Loader2, Sparkles } from "lucide-react";
+import { AudioLines, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { DEFAULT_VOICE_ID } from "@/lib/voices/catalog";
 import { generateErrorMessage } from "@/lib/audio/generate-error";
@@ -76,6 +77,9 @@ export function GenerateAudioPanel({
   }
 
   function handlePrimaryClick() {
+    // The button stays enabled while starting (no faded state), so a second
+    // press, by keyboard too, is stopped here.
+    if (generating) return;
     if (isLast && !confirming) {
       setConfirming(true);
       return;
@@ -145,20 +149,23 @@ export function GenerateAudioPanel({
             </Button>
           </div>
         ) : (
+          // Full strength while starting, as in the studio's audio card (task 50).
           <Button
             onClick={handlePrimaryClick}
-            disabled={generating || exhausted}
-            className="w-full gap-2"
+            disabled={exhausted}
+            aria-disabled={generating || undefined}
+            aria-busy={generating || undefined}
+            className={cn("w-full gap-2", generating && "pointer-events-none")}
             size="lg"
           >
             {generating ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Starting generation...
+                <Loader2 className="h-4 w-4 motion-safe:animate-spin" />
+                Starting…
               </>
             ) : (
               <>
-                <Sparkles className="h-4 w-4" />
+                <AudioLines className="h-4 w-4" />
                 Generate Audio
               </>
             )}

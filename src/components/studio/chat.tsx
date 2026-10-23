@@ -1,22 +1,42 @@
 "use client";
 
 import { useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
-import { ArrowUp, FileText, Loader2, RotateCcw, Square, TriangleAlert } from "lucide-react";
+import { ArrowUp, Loader2, RotateCcw, Square, TriangleAlert } from "lucide-react";
+import { MeditationCover } from "@/components/meditation-cover";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MAX_MESSAGE_CHARS } from "@/lib/ai/quota";
 import { MAKE_AUDIO_REPLY } from "@/lib/chat/replies";
 import type { StudioUIMessage } from "@/lib/chat/tools";
 import { cn } from "@/lib/utils";
-import { minutesLabel, showsQuickReplies, type Draft, type StudioPart } from "./drafts";
+import {
+  latestDetails,
+  minutesLabel,
+  showsQuickReplies,
+  type Details,
+  type Draft,
+  type StudioPart,
+} from "./drafts";
 import { renderStudioPart } from "./parts";
 import { QuickReplies } from "./quick-replies";
 import { useStudio } from "./studio-context";
 import { useFollowScroll } from "./use-follow-scroll";
 
-/** Compact stand-in for a script in the chat; the script itself lives in the canvas. */
-function DraftChip({ draft, live }: { draft: Draft | undefined; live: boolean }) {
-  const { openCanvas } = useStudio();
+/**
+ * Compact stand-in for a script in the chat; the script itself lives in the
+ * canvas. It carries the meditation's cover and title, so it reads as the
+ * thing being made rather than as a file (task 50).
+ */
+function DraftChip({
+  draft,
+  details,
+  live,
+}: {
+  draft: Draft | undefined;
+  details: Details | null;
+  live: boolean;
+}) {
+  const { openCanvas, meditationId } = useStudio();
 
   if (!draft) {
     // A writeScript the server refused. The agent says why in its reply.
@@ -34,27 +54,48 @@ function DraftChip({ draft, live }: { draft: Draft | undefined; live: boolean })
     : draft.durationMinutes
       ? `${draft.durationMinutes} min`
       : null;
+  const label = writing ? `Writing draft ${draft.number}` : `Draft ${draft.number}`;
 
   return (
     <button
       type="button"
       onClick={openCanvas}
       className={cn(
-        "inline-flex items-center gap-2.5 rounded-md border bg-card px-3 py-2 text-sm font-medium",
+        "inline-flex max-w-full items-center gap-3 rounded-lg border bg-card p-2 pr-4 text-left",
         "hover:bg-card-hover focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none",
         "motion-safe:transition-colors",
       )}
     >
-      {writing ? (
-        <Loader2 className="size-4 text-primary motion-safe:animate-spin" aria-hidden />
-      ) : (
-        <FileText className="size-4 text-primary" aria-hidden />
-      )}
-      <span>
-        {writing ? `Writing draft ${draft.number}` : `Draft ${draft.number}`}
-        {length && <span className="text-muted-foreground tabular-nums"> · {length}</span>}
+      <span className="relative shrink-0">
+        <MeditationCover
+          id={meditationId ?? draft.toolCallId}
+          tags={details?.tags ?? []}
+          title={details?.title ?? label}
+          size={40}
+        />
+        {writing && (
+          <span className="absolute inset-0 flex items-center justify-center">
+            <Loader2 className="size-4 text-foreground motion-safe:animate-spin" aria-hidden />
+          </span>
+        )}
       </span>
-      {!draft.saved && !live && <span className="text-candle">Not saved</span>}
+      <span className="min-w-0">
+        {details && (
+          <span className="block truncate font-serif text-base leading-snug font-medium">
+            {details.title}
+          </span>
+        )}
+        <span
+          className={cn(
+            "block text-sm tabular-nums",
+            details ? "text-muted-foreground" : "font-medium",
+          )}
+        >
+          {label}
+          {length && <span className="text-muted-foreground"> · {length}</span>}
+          {!draft.saved && !live && <span className="text-candle"> · Not saved</span>}
+        </span>
+      </span>
     </button>
   );
 }
@@ -62,10 +103,12 @@ function DraftChip({ draft, live }: { draft: Draft | undefined; live: boolean })
 function MessagePart({
   part,
   drafts,
+  details,
   live,
 }: {
   part: StudioPart;
   drafts: Map<string, Draft>;
+  details: Details | null;
   live: boolean;
 }): ReactNode {
   switch (part.type) {
@@ -74,7 +117,7 @@ function MessagePart({
         <p className="wrap-break-word whitespace-pre-wrap">{part.text}</p>
       ) : null;
     case "tool-writeScript":
-      return <DraftChip draft={drafts.get(part.toolCallId)} live={live} />;
+      return <DraftChip draft={drafts.get(part.toolCallId)} details={details} live={live} />;
     case "tool-setDetails":
       return part.state === "output-available" ? (
         <p className="text-sm text-muted-foreground">
@@ -89,16 +132,20 @@ function MessagePart({
 function Message({
   message,
   drafts,
+  details,
   live,
 }: {
   message: StudioUIMessage;
   drafts: Map<string, Draft>;
+  details: Details | null;
   live: boolean;
 }) {
   if (message.role === "user") {
     const text = message.parts.flatMap((p) => (p.type === "text" ? [p.text] : [])).join("\n");
     return (
-      <div className="ml-auto max-w-[85%] rounded-xl bg-secondary px-4 py-2.5 wrap-break-word whitespace-pre-wrap text-secondary-foreground">
+      // A quiet Card surface, not a Secondary slab: the person's words should
+      // not be the brightest thing on screen (task 50).
+      <div className="ml-auto max-w-[85%] rounded-xl border bg-card px-4 py-2.5 wrap-break-word whitespace-pre-wrap text-foreground">
         {text}
       </div>
     );
@@ -107,7 +154,7 @@ function Message({
   return (
     <div className="space-y-3">
       {message.parts.map((part, i) => {
-        const rendered = <MessagePart part={part} drafts={drafts} live={live} />;
+        const rendered = <MessagePart part={part} drafts={drafts} details={details} live={live} />;
         return rendered ? <div key={i}>{rendered}</div> : null;
       })}
     </div>
@@ -167,6 +214,7 @@ export function Chat({
   const contentRef = useRef<HTMLDivElement>(null);
   const { scrollToEnd } = useFollowScroll(scrollRef, contentRef);
   const byId = new Map(drafts.map((d) => [d.toolCallId, d]));
+  const details = latestDetails(messages);
 
   function submit(e?: FormEvent) {
     e?.preventDefault();
@@ -196,10 +244,11 @@ export function Chat({
       >
         <div ref={contentRef} className="space-y-6 pb-6">
           {messages.map((message) => (
-            <Message key={message.id} message={message} drafts={byId} live={live} />
+            <Message key={message.id} message={message} drafts={byId} details={details} live={live} />
           ))}
           {showsQuickReplies(messages, live) && (
             <QuickReplies
+              firstDraft={drafts.filter((d) => d.saved).length === 1}
               onMakeAudio={() => {
                 onSend(MAKE_AUDIO_REPLY);
                 scrollToEnd();
