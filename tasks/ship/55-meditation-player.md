@@ -1,6 +1,6 @@
 # Meditation Detail Page and Session Player
 
-**Status:** In review (PR #93). Built to the approved mockup; the iPhone check is in `tasks/OPERATOR-TODO.md`
+**Status:** Done* (PR #93). Built to the approved mockup; the iPhone check is in `tasks/OPERATOR-TODO.md`
 **Priority:** Phase 6 (seed & open)
 **Phase:** 6
 **Depends on:** 49 (album covers), 54 (page meta)
