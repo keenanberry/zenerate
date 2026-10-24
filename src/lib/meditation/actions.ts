@@ -601,12 +601,14 @@ export async function getUserCollections() {
     const items = (collection_items ?? []) as {
       meditations: CollectionCover | CollectionCover[] | null;
     }[];
+    // RLS hides a meditation its owner has since made private, leaving its
+    // item with no meditation. Count only the ones the caller can see, as the
+    // collection page does.
+    const visible = items.flatMap((item) => item.meditations ?? []);
     return {
       ...col,
-      item_count: items.length,
-      covers: items
-        .flatMap((item) => item.meditations ?? [])
-        .slice(0, 4),
+      item_count: visible.length,
+      covers: visible.slice(0, 4),
     };
   });
 }
