@@ -476,10 +476,16 @@ function Ridge({ seed, o, lead, second, small }: StrokedProps) {
     const base = 52 + j * (small ? 18 : 14) + rand() * 6;
     const step = small ? 20 + rand() * 6 : 13 + rand() * 9;
     let d = `M-5 ${r1(base)}`;
+    let last = { x: -5, y: base };
     for (let x = -5 + step, i = 0; x < 110; x += step, i++) {
       const height = i % 2 === 0 ? 6 + rand() * (j === 0 ? 24 : 14) : rand() * 8;
+      last = { x, y: base - height };
       d += ` L${r1(x)} ${r1(base - height)}`;
     }
+    // The last peak can land short of the right edge (as early as x 88),
+    // which left a bare strip there, or on the left of a mirrored cover. Carry
+    // it level past the edge; no extra rand(), so every other cover is as it was.
+    if (last.x < 105) d += ` L105 ${r1(last.y)}`;
     return { d: `${d} V100 H-5 Z`, front: j === count - 1, opacity: r1(0.16 + j * 0.1) };
   });
   return (
