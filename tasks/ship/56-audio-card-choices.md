@@ -3,7 +3,7 @@
 **Status:** Not started. Mockup up for the operator's review
 **Priority:** Phase 6 (seed & open)
 **Phase:** 6
-**Depends on:** 50 (studio chat polish). Independent of 55.
+**Depends on:** 50 (studio chat polish), 55 (merged in #93; it left the audio card and the Generate Audio panel alone).
 
 ## Why
 
@@ -28,8 +28,11 @@ Mockup: https://claude.ai/artifact/FC4927G3Vz6HHrEY23JDaM
   **Listen** button, **Change**) and the chosen background (name, Change), then the length
   and renders left, then Not now and Make audio. It fits on one phone screen.
 - **Change opens a compact list in place.** One row per voice: a check for the chosen one,
-  the name, gender and description on one line, and its own Listen button that becomes
-  Stop while playing. Tapping a row chooses it; Done folds the list. Backgrounds use the
+  the name with the gender beside it ("Serena · Female"), the description underneath, and
+  its own Listen button that becomes Stop while playing. The description **wraps to a
+  second line rather than truncating** (operator, 2026-10-24: the ElevenLabs descriptions
+  are short but should be read in full), capped at two lines as a guard; the mockup's
+  one-line truncation is superseded. Tapping a row chooses it; Done folds the list. Backgrounds use the
   same rows, with None first ("Silence under the voice").
 - **Preselect last time.** The voice and bed come from the person's most recent completed
   meditation's `settings` (owner-only, RLS-bound, no new table), marked "Same as last
@@ -40,7 +43,8 @@ Mockup: https://claude.ai/artifact/FC4927G3Vz6HHrEY23JDaM
   the prompt; the agent-context slice in `agent-user-memory.md` stays post-ship and may not
   be needed.
 - The meditation page's Generate Audio panel takes the same compact picker, so the two
-  never drift apart. (Task 55 may reshape that page; whichever lands second adapts.)
+  never drift apart. Task 55 (#93) reshaped that page but left `generate-audio-panel.tsx`
+  alone, so this is a straight swap of its picker.
 
 ## Acceptance
 
