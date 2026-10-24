@@ -48,13 +48,19 @@ While seeding:
 
 After the redesign merges (these replace the old 35, 42 and 43 checks):
 
-- [ ] Library rows (48, merged): tap a cover to play and pause; long titles end in "…". Say
-      if tapping the cover to play is hard to discover.
+- [ ] Library rows (48, 55): tapping anywhere on a row, cover included, opens the
+      meditation's page; long titles end in "…".
 - [ ] Library and Discover rows, covers and category tiles, in both themes (48, 49).
 - [ ] The Collections tab artwork, a collection page and a meditation page's tag line;
       a dropdown (the Discover tag filter) shows its groups clearly (54, #89).
 - [ ] Studio: "Make the audio" and "Change something", whether "Change something"
       raises the keyboard, and Make audio staying at full strength while it starts (50).
+- [ ] Meditation page and session player (55), in Safari and the installed app: Play opens
+      the full-screen session; play, pause, both 15s skips and dragging along the waveform
+      work; the chevron minimizes while the audio plays on, and Play ("Playing · … left")
+      reopens it at the right place. Lock the phone with the session open: the lock screen
+      shows the title, artwork and controls, and they work. "Show script" in the session's
+      "…" opens the script on the page, following the audio.
 
 ## 5. Production checks (after seeding)
 

@@ -183,8 +183,9 @@ A quiet room after dark. The ground is a deep amethyst night, the text is a pale
 that reads like moonlight on paper, and the one source of light in the room is the
 player: a soft purple-to-rose glow where the sound comes from. Everything else recedes.
 Meditation scripts are set in a serif at a reading measure, because the script is read
-before it is heard and again after; the interface around it is a quiet sans that stays out
-of the way.
+in the studio before it is heard; the interface around it is a quiet sans that stays out
+of the way. Once a meditation exists it is listened to: its page leads with one Play, and
+the session it opens is the darkest, quietest view in the app.
 
 Dark is the design target, not a mode. It matches when people actually meditate and it is
 where the amethyst-haze palette has character; the light theme is the same room with the
@@ -326,8 +327,10 @@ every other content type narrows itself inside the shell:
 
 - Grids and tabular lists of meditations or collections (`/dashboard`, `/discover`,
   `/collections/[id]`): the full 64rem.
-- A meditation (`/meditation/[id]`): 48rem (`max-w-3xl`), which holds the player and a
-  card whose script runs at 65ch.
+- A meditation (`/meditation/[id]`): 48rem (`max-w-3xl`). On a phone the cover runs the
+  full width, then the meta line, the title with the heart and "…", one full-width Play,
+  the description, and "Show script" (task 55). From `sm` the cover sits at 160px beside
+  the rest and Play takes its own width. The script, when shown, runs at 65ch.
 - The studio's front door (`/create`): 42rem (`max-w-2xl`), one large input with the
   Recent drafts below it as a ruled list.
 - The studio (`/create/[chatId]`): the full 64rem, as two panes from `md`. The chat column
@@ -458,9 +461,11 @@ as a music app draws a track (task 48):
   page's cards use the same line without the date. No header row, no Type column.
 - **Inset dividers:** a Hairline rule above every row but the first, starting where the
   text starts, so the covers keep a clean column (the Apple Music pattern).
-- **Playing:** from `sm`, an index column shows the number and a play icon on row hover.
-  Below `sm` there is no index column; the cover is the play target, and while playing a
-  28px round Amethyst Glow pause button sits on it. The row's title turns Primary.
+- **Playing:** from `sm`, an index column shows the number and a play icon on row hover,
+  and the row's title turns Primary while it plays. Below `sm` there is no index column
+  and nothing plays in place: the whole row, cover included, opens the meditation's
+  page, as Insight Timer does (task 55). A meditation is chosen and committed to, so
+  Play lives on its page.
 - Every icon-only control in a row has an accessible name naming the meditation.
 
 ### Collections
@@ -475,7 +480,8 @@ the artwork at 160px beside the name, as the meditation page does.
 
 ### Menus
 Every dropdown, select and picker shares one look (the Discover filters, the collection
-menu, Add to collection, the tag picker):
+menu, the meditation page's "…" and the session view's, Add to collection, the tag
+picker):
 
 - **Surface:** `--popover` with a Hairline border, 6px radius and 4px of padding; its
   shadow is the floating-layer exception under Elevation.
@@ -542,8 +548,10 @@ sound by name, "tibetan bell"), and a Hairline rule running to the edge. They re
 annotations on the script, not as part of it: the eye skips them when reading and finds
 them when scanning. Pause is Candle, silence Periwinkle, sound Sage.
 
-On the meditation page the viewer follows the player (`ScriptPlaybackProvider` in
-`script-playback.tsx`). Until playback first starts every passage is Moonlit. Once it has,
+On the meditation page the script is closed behind "Show script" (`ScriptDisclosure` in
+`meditation-page.tsx`, task 55): a Dusk UI-type row on a Hairline rule with a chevron,
+and the session view's "…" can open it. Shown, the viewer follows the player
+(`ScriptPlaybackProvider` in `script-playback.tsx`). Until playback first starts every passage is Moonlit. Once it has,
 the passage being spoken is Moonlit with a 2px Amethyst Glow bar in the card's left
 padding, upcoming passages sit at 80%, and passed ones dim to Dusk; passed markers drop
 to 60% opacity. The fade is 700ms under `motion-safe:` and instant otherwise. Where a
@@ -596,6 +604,8 @@ meditation page header at 160px.
   a cover for the category (id `category:<slug>`, its first tag) cropped into the right
   edge and faded in through an alpha mask, and the label in Lora on plain field
   (`category-grid.tsx`). No icons.
+- **The session view's ground.** The session player draws the cover at 600 (strokes
+  hold 3px at that scale) cropped across the top of the view, fading to `--night`.
 - **Decorative by default.** A cover sits beside its title, so it is `aria-hidden`;
   `decorative={false}` names it with the title where it stands alone.
 - **Not on the lock screen.** The Media Session artwork stays the brand icon: the OS
@@ -617,11 +627,45 @@ waveform's full width, so the rose arrives as the session ends. Unplayed bars ar
 still shows progress. Behind the card sits the halo (see Elevation); in dark the card is
 at 90% so the glow reads through its edge.
 
-Colours are read from the CSS variables (`waveformColors` in `audio-player.tsx`) at
-creation and again whenever `<html>`'s class or the waveform's width changes, so a theme
-toggle recolours the player without recreating it or losing the playback position. The
-Media Session binding (`use-media-session.ts`, task 25) sits outside the markup and is
-unaffected by the styling.
+Colours are read from the CSS variables on the waveform's own element
+(`waveformColors` in `use-waveform-player.ts`) at creation and again whenever `<html>`'s
+class or the waveform's width changes, so a theme toggle recolours the player without
+recreating it or losing the playback position. The Media Session binding
+(`use-media-session.ts`, task 25) sits outside the markup and is unaffected by the
+styling.
+
+This card is the player in the studio and for earlier versions. The meditation page uses
+the session player below; both are skins over `useWaveformPlayer`, which owns the
+wavesurfer instance and everything bound to its `<audio>`.
+
+### Session Player (signature)
+The meditation page's player (`session-player.tsx`, task 55, after Insight Timer). The
+page shows one Play: a 48px solid Primary button, full width on a phone, never the
+gradient. Once started it reads "Playing · 13:52 left" or "Resume · 13:52 left", and it
+reopens the session.
+
+- **One element.** The session view is an overlay on the page, never a route, and it
+  stays mounted while minimized (`invisible` and `inert`, not removed). One wavesurfer
+  and one `<audio>` serve the page for its whole life, so the lock screen, play counts,
+  downloads and the script sync never rebind, and minimizing never stops the audio.
+- **Always dark.** A lights-down mode for eyes closed: the view carries the `dark` class
+  in either theme, and its menu, portalled out, carries it too. It is the one surface
+  that ignores the theme; the page under it still follows it.
+- **Layout.** Full screen on a phone; from `sm`, a 28rem panel at 90% of the viewport's
+  height (52rem at most) over the page dimmed to 80% `--night` with a backdrop blur. The
+  meditation's cover fills the top 72% (`crop`) and fades into `--night` (Deep Night)
+  through an alpha mask. Round 40px buttons at the top: a down chevron that minimizes
+  and "…" (download, favourite, Show script).
+- **Transport.** The gradient play/pause at 84px with the halo behind it, and 15-second
+  skips either side (`SEEK_OFFSET_SECONDS`, the lock screen's interval): a circular arrow
+  with the seconds set inside.
+- **Time.** The remaining time is the large number, Lora at 3.75rem with tabular
+  figures. Under it a slim 28px waveform is the progress bar, because it shows where the
+  silences are; it seeks by tap and drag, and as a `slider` by arrow keys. Elapsed and
+  remaining sit under it in Dusk, then the title in Lora and the meta line.
+- **Keys and focus.** Opening focuses the chevron and keeps Tab inside; Escape
+  minimizes and hands focus back to Play; Space plays and pauses. The page does not
+  scroll behind it. The fade and the panel's rise are `motion-safe:` only.
 
 ### Landing Demo
 The hero's product surface (`src/components/script-stream-demo.tsx`): a card that reads as
@@ -715,5 +759,5 @@ result; add-to-collection has real rollback.
   is not the player.
 - **Don't** set Lora on `body`, or any serif on buttons, nav, labels or form controls.
 - **Don't** force dark on the landing page or anywhere else; `defaultTheme="system"`
-  stays.
+  stays. The session view is the one exception: a lights-down mode, dark by design.
 - **Don't** fix light mode in a way that changes the dark design.

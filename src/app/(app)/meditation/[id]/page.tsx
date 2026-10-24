@@ -3,19 +3,19 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMeditation } from "@/lib/meditation/actions";
-import { ScriptViewer } from "@/components/script-viewer";
 import { AudioSection } from "@/components/audio-section";
-import { FavoriteButton } from "@/components/favorite-button";
-import { VisibilityToggle } from "@/components/visibility-toggle";
-import { AddToCollectionDialog } from "@/components/add-to-collection-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScriptPlaybackProvider } from "@/components/script-playback";
+import {
+  MeditationPageProvider,
+  ScriptDisclosure,
+} from "@/components/meditation-page";
 import { ParentLink } from "@/components/parent-link";
 import { MeditationCover } from "@/components/meditation-cover";
 import { MeditationDetails } from "@/components/meditation-details";
 import { getQuotaUsage, isFreeRetryAvailable } from "@/lib/audio/quota";
 import { meditationMetadata } from "@/lib/seo/metadata";
-import { ContinueInChat } from "@/components/continue-in-chat";
+import { getMeditationChatId } from "@/lib/chat/actions";
+import { metaLine } from "@/lib/meditation/meta";
 import { MeditationVersions } from "@/components/meditation-versions";
 
 // One read per request, shared by generateMetadata and the page. React's
@@ -67,93 +67,73 @@ export default async function MeditationDetailPage({
       ? await isFreeRetryAvailable(meditation.id, user.id, supabase)
       : { available: false, eventId: null };
 
-  return (
-    // The player and a 65ch script set the width; the shell's grid width
-    // would leave the script floating in a wide card.
-    <div className="mx-auto max-w-3xl space-y-10">
-      <div className="space-y-3">
-        {/* The owner came from their library; everyone else, including a
-            signed-in visitor on a shared link, belongs to Discover. */}
-        <ParentLink href={isOwner ? "/dashboard" : "/discover"}>
-          {isOwner ? "Library" : "Discover"}
-        </ParentLink>
+  const chatId = isOwner ? await getMeditationChatId(meditation.id) : null;
+  const hasAudio = meditation.status === "completed" && !!meditation.audio_url;
+  const length = meditation.settings?.duration
+    ? `${meditation.settings.duration} min`
+    : undefined;
 
-        {/* The actions are a row under the details, not a third column: a
-            third column keeps its full width and leaves the details the rest. */}
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-          <MeditationCover
-            id={meditation.id}
-            tags={meditation.tags ?? []}
-            title={meditation.title}
-            size={160}
-          />
-          <div className="min-w-0 flex-1 space-y-3">
-            <MeditationDetails
-              meditationId={meditation.id}
-              title={meditation.title}
-              description={meditation.description}
-              tags={meditation.tags ?? []}
-              editable={isOwner}
-              meta={[
-                meditation.settings?.duration && `${meditation.settings.duration} min`,
-                new Date(meditation.created_at).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                }),
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            />
-            {/* No status badge: in the studio era a meditation's state is its
-                audio, and the audio section below already says it (task 54). */}
-            <div className="flex flex-wrap items-center gap-2 empty:hidden">
-              {isOwner && <ContinueInChat meditationId={meditation.id} />}
-              {isOwner && meditation.status === "completed" && (
-                <VisibilityToggle
+  return (
+    // A 48rem column: the header beside a 160px cover from `sm`, and a 65ch
+    // script under it. The shell's grid width would leave both adrift.
+    <div className="mx-auto max-w-3xl space-y-8">
+      <MeditationPageProvider
+        meditationId={meditation.id}
+        isFavorited={meditation.is_favorited ?? false}
+      >
+        <ScriptPlaybackProvider>
+          <div className="space-y-3">
+            {/* The owner came from their library; everyone else, including a
+                signed-in visitor on a shared link, belongs to Discover. */}
+            <ParentLink href={isOwner ? "/dashboard" : "/discover"}>
+              {isOwner ? "Library" : "Discover"}
+            </ParentLink>
+
+            {/* The cover runs full width on a phone, as album art does; from
+                `sm` it sits at 160px beside the details. */}
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-8">
+              <MeditationCover
+                id={meditation.id}
+                tags={meditation.tags ?? []}
+                title={meditation.title}
+                size={320}
+                className="h-auto w-full sm:size-40"
+              />
+              <div className="min-w-0 flex-1">
+                <MeditationDetails
                   meditationId={meditation.id}
-                  isPublic={meditation.is_public}
-                />
-              )}
-              {user && (
-                <>
-                  <FavoriteButton
-                    meditationId={meditation.id}
-                    isFavorited={meditation.is_favorited ?? false}
-                    size="default"
+                  title={meditation.title}
+                  description={meditation.description}
+                  tags={meditation.tags ?? []}
+                  meta={length}
+                  isPublic={isOwner && hasAudio ? meditation.is_public : null}
+                  menu={{
+                    meditationId: meditation.id,
+                    title: meditation.title,
+                    isSignedIn: !!user,
+                    isOwner,
+                    chatId,
+                    hasAudio,
+                  }}
+                >
+                  {/* No status badge: a meditation's state is its audio, and
+                      this says it, Play or otherwise (task 54). */}
+                  <AudioSection
+                    meditation={meditation}
+                    isOwner={isOwner}
+                    isSignedIn={!!user}
+                    quota={quota}
+                    freeRetryEventId={freeRetry.eventId}
+                    meta={metaLine({ tags: meditation.tags, settings: meditation.settings })}
                   />
-                  <AddToCollectionDialog meditationId={meditation.id} />
-                </>
-              )}
+                </MeditationDetails>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <ScriptPlaybackProvider>
-        <div className="space-y-10">
-          <AudioSection
-            meditation={meditation}
-            isOwner={isOwner}
-            isSignedIn={!!user}
-            quota={quota}
-            freeRetryEventId={freeRetry.eventId}
-          />
-
-          {meditation.script && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-serif text-xl font-medium">
-                  Meditation Script
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScriptViewer script={meditation.script} />
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </ScriptPlaybackProvider>
+          {meditation.script && <ScriptDisclosure script={meditation.script} />}
+        </ScriptPlaybackProvider>
+      </MeditationPageProvider>
 
       {isOwner && <MeditationVersions meditationId={meditation.id} title={meditation.title} />}
     </div>

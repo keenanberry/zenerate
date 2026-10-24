@@ -103,8 +103,10 @@ and the default meta description (task 26). Change it in all three or in none.
 2. **Honest at hobby scale.** State the cap, the AI, the single operator. No fake proof.
 3. **Built for eyes closed.** Audio that survives a locked screen outranks any on-screen
    feature.
-4. **Reading is part of the practice.** The script is read before and after it is heard.
-   It is a reading surface, not a form.
+4. **Read in the studio, heard after.** The script is read where it is made: the studio
+   is a reading surface, not a form, and a script is reviewed there before a render. Once
+   a meditation exists it is listened to, not read; its page leads with Play and keeps the
+   script behind "Show script" (task 55).
 5. **One operator's cost line.** Anything that raises the monthly floor needs a reason.
 
 ## Accessibility & Inclusion

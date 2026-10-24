@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Pencil, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import Link from "next/link";
 import { TagPill } from "@/components/tag-pills";
 import { discoverHref } from "@/lib/meditation/discover";
-import { updateMeditationDetails } from "@/lib/meditation/actions";
+import { updateMeditation, updateMeditationDetails } from "@/lib/meditation/actions";
+import { FavoriteButton } from "@/components/favorite-button";
+import { useMeditationPage } from "@/components/meditation-page";
+import { MeditationMenu, type MeditationMenuProps } from "@/components/meditation-menu";
 import { TAG_GROUPS, TAG_LABELS, isTag, type Tag, type TagGroup } from "@/lib/meditation/tags";
 
 const MAX_TAGS = 5;
@@ -26,93 +29,139 @@ interface MeditationDetailsProps {
   title: string;
   description: string | null;
   tags: string[];
-  /** Only the owner gets the edit control; everyone else sees the same text read-only. */
-  editable: boolean;
-  /** Length and date, after the tags on the one meta line, e.g. "20 min · Oct 20, 2026". */
+  /** The length after the tag on the meta line, e.g. "20 min". */
   meta?: string;
+  /** Owner only, once the audio exists; null otherwise. */
+  isPublic: boolean | null;
+  menu: MeditationMenuProps;
+  /** Play, or the audio's generate, processing or failed state. */
+  children: React.ReactNode;
 }
 
 /**
- * The title, description and tags at the top of a meditation's page. The
- * studio agent sets them; the owner corrects them here, and this hand-edit is
- * the only one that survives (the script itself changes through the chat).
+ * The head of a meditation's page (task 55): the meta line, the title with
+ * the heart and "…" beside it, then Play, then the description. The studio
+ * agent sets the details; the owner corrects them here ("Edit details" in
+ * the menu), and this hand-edit is the only one that survives (the script
+ * itself changes through the chat).
  */
 export function MeditationDetails({
   meditationId,
   title,
   description,
   tags,
-  editable,
   meta,
+  isPublic,
+  menu,
+  children,
 }: MeditationDetailsProps) {
   // What the page shows. Seeded from the server and replaced on a save, so a
   // save reads as done before the revalidated page arrives.
   const [saved, setSaved] = useState({ title, description, tags });
   const [editing, setEditing] = useState(false);
-
-  if (editing) {
-    return (
-      <DetailsForm
-        meditationId={meditationId}
-        initial={saved}
-        onDone={(next) => {
-          if (next) setSaved(next);
-          setEditing(false);
-        }}
-      />
-    );
-  }
+  const visibility = useVisibility(meditationId, isPublic);
+  const page = useMeditationPage();
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-start gap-2">
-        <h1 className="font-serif text-2xl font-medium tracking-tight text-balance">
-          {saved.title}
-        </h1>
-        {editable && (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="-my-0.5 shrink-0 text-muted-foreground"
-            onClick={() => setEditing(true)}
-            aria-label="Edit title, description and tags"
-          >
-            <Pencil />
-          </Button>
-        )}
-      </div>
-      {saved.description && (
+    <div className="space-y-6">
+      {editing ? (
+        <DetailsForm
+          meditationId={meditationId}
+          initial={saved}
+          onDone={(next) => {
+            if (next) setSaved(next);
+            setEditing(false);
+          }}
+        />
+      ) : (
+        <div className="space-y-1.5">
+          <MetaLine
+            tags={saved.tags}
+            meta={meta}
+            visibility={visibility && (visibility.isPublic ? "Public" : "Private")}
+          />
+          <div className="flex items-start gap-1">
+            <h1 className="mr-auto font-serif text-2xl font-medium tracking-tight text-balance">
+              {saved.title}
+            </h1>
+            {menu.isSignedIn && page && (
+              <FavoriteButton
+                meditationId={meditationId}
+                isFavorited={page.favorite.isFavorited}
+                state={page.favorite}
+                title={saved.title}
+                className="shrink-0 text-muted-foreground"
+              />
+            )}
+            <MeditationMenu
+              {...menu}
+              title={saved.title}
+              onEdit={() => setEditing(true)}
+              visibility={visibility}
+            />
+          </div>
+        </div>
+      )}
+      {children}
+      {!editing && saved.description && (
         <p className="max-w-[60ch] text-muted-foreground">{saved.description}</p>
       )}
-      <MetaLine tags={saved.tags} meta={meta} />
     </div>
   );
 }
 
+/** The owner's Public/Private, optimistic; null for anyone else. */
+function useVisibility(meditationId: string, initial: boolean | null) {
+  const [isPublic, setIsPublic] = useState(initial);
+  const [isPending, startTransition] = useTransition();
+  if (isPublic === null) return null;
+
+  function toggle() {
+    const previous = isPublic;
+    setIsPublic(!previous);
+    startTransition(async () => {
+      try {
+        await updateMeditation(meditationId, { is_public: !previous });
+      } catch {
+        setIsPublic(previous);
+        toast.error("Couldn't update visibility");
+      }
+    });
+  }
+
+  return { isPublic, isPending, toggle };
+}
+
 /**
- * The tags as quiet links into Discover, then the length and date, on one
- * Dusk line (task 54). Pills stay for editing; read-only they outweighed the
- * title, as they did in the lists (task 48).
+ * The first tag as a quiet link into Discover, then the length, on one Dusk
+ * line above the title (task 55, after task 54's line). The owner also sees
+ * whether it is public, since the switch is in the menu.
  */
-function MetaLine({ tags, meta }: { tags: string[]; meta?: string }) {
-  const known = tags.filter(isTag);
-  if (known.length === 0 && !meta) return null;
+function MetaLine({
+  tags,
+  meta,
+  visibility,
+}: {
+  tags: string[];
+  meta?: string;
+  visibility: string | null;
+}) {
+  const tag = tags.find(isTag);
+  const rest = [meta, visibility].filter(Boolean).join(" · ");
+  if (!tag && !rest) return null;
 
   return (
-    <p className="flex flex-wrap items-center gap-x-1.5 pt-1 text-sm text-muted-foreground tabular-nums">
-      {/* Each separator ends the item before it, so a wrap never starts a line with one. */}
-      {known.map((tag, i) => (
-        <span key={tag}>
-          <Link
-            href={discoverHref({}, { tag })}
-            className="underline-offset-4 hover:text-foreground hover:underline"
-          >
-            {TAG_LABELS[tag]}
-          </Link>
-          {(i < known.length - 1 || meta) && <span aria-hidden> ·</span>}
-        </span>
-      ))}
-      {meta && <span>{meta}</span>}
+    <p className="text-sm text-muted-foreground tabular-nums">
+      {tag && (
+        <Link
+          href={discoverHref({}, { tag })}
+          className="underline-offset-4 hover:text-foreground hover:underline"
+        >
+          {TAG_LABELS[tag]}
+        </Link>
+      )}
+      {tag && rest && " · "}
+      {rest}
     </p>
   );
 }
