@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { UseChatHelpers } from "@ai-sdk/react";
-import { AlertCircle, ArrowUpRight, Loader2, RotateCcw, Sparkles } from "lucide-react";
+import { AlertCircle, ArrowUpRight, AudioLines, Loader2, RotateCcw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { VoicePicker } from "@/components/voice-picker";
 import { AudioProcessingStatus } from "@/components/audio-processing-status";
 import { AudioPlayer } from "@/components/audio-player";
@@ -285,19 +286,25 @@ export function AudioCard({ part, meditationId, addToolOutput }: AudioCardProps)
             <Button variant="ghost" onClick={dismiss} disabled={starting}>
               Not now
             </Button>
+            {/* While the render starts, the button stays at full strength with a
+                spinner. `disabled` would fade it to half opacity for the few
+                seconds the request takes, which read as a stuck overlay on a
+                phone (task 50); `startingRef` already stops a second click. */}
             <Button
               onClick={() => start({ voiceId: selected, ambience: selectedAmbience }, true)}
-              disabled={starting || exhausted}
-              className="gap-2 sm:min-w-40"
+              disabled={exhausted}
+              aria-disabled={starting || undefined}
+              aria-busy={starting || undefined}
+              className={cn("gap-2 sm:min-w-40", starting && "pointer-events-none")}
             >
               {starting ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Starting...
+                  <Loader2 className="h-4 w-4 motion-safe:animate-spin" />
+                  Starting…
                 </>
               ) : (
                 <>
-                  <Sparkles className="h-4 w-4" />
+                  <AudioLines className="h-4 w-4" />
                   Make audio
                 </>
               )}

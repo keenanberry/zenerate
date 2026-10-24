@@ -38,7 +38,7 @@ export default async function CreatePage() {
                   href={`/create/${chat.id}`}
                   className="flex items-baseline justify-between gap-4 py-3.5 hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
-                  <span className="truncate">{chat.title}</span>
+                  <span className="truncate font-serif text-base">{chat.title}</span>
                   <time
                     dateTime={chat.updated_at}
                     className="shrink-0 text-sm text-muted-foreground tabular-nums"

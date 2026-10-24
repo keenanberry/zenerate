@@ -1,6 +1,6 @@
 # Studio Chat Polish
 
-**Status:** Not started
+**Status:** In progress. Code done and verified locally
 **Priority:** Phase 6 (seed & open)
 **Phase:** 6
 **Depends on:** 49 (the draft chip shows the cover)
@@ -27,12 +27,19 @@ AI-chat chrome:
 - No Sparkles icon anywhere in the studio.
 - One Dusk hint line under the first reply: you can ask for another voice, a different
   length or ambient sound.
-- `/create`'s Recent list shows the cover, the title in Lora and a Dusk date line.
+- `/create`'s Recent list shows the title in Lora. Not the cover: a Recent draft is a chat
+  with no meditation yet, so every cover would be the same quiet one.
+- **Operator, 2026-10-23:** on a phone, tapping Make audio left the button "in a weird
+  overlay loading state". It was `disabled` fading the button to half opacity for the few
+  seconds the request takes. It now stays at full strength with a spinner, in the studio
+  card and on the meditation page's panel.
+- The canvas sets its tags as one Dusk line, as the meditation page does (task 54).
 
 ## Acceptance
 
-- [ ] Studio in dark and light, desktop and 390px, through a first draft, a revision and the
-      audio card.
-- [ ] Task 43's behaviour is unchanged: the buttons send the same messages the chips did.
+- [x] Studio in dark at 390px (first draft, the audio card, the starting state with the
+      render request held by the test) and light at 390px and 1280px. A revision was not run.
+- [x] Task 43's behaviour is unchanged: the buttons send the same messages the chips did
+      (`MAKE_AUDIO_REPLY`, and focus to the composer).
 - [ ] Operator: the buttons on the phone, including whether "Change something" raises the
       keyboard (replaces the 43 phone check).
