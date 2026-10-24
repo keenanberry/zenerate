@@ -4,7 +4,7 @@ Everything left before signups open that only the operator can do: a phone, a da
 account, or a judgment call. Agents keep this file current. When you finish an item, tick it
 and add the date, or tell an agent and it will. Each item names the task file with the detail.
 
-Last updated: 2026-10-23. Sections are in the order to do them. Live sandbox snapshot: `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`.
+Last updated: 2026-10-24. Sections are in the order to do them. Live sandbox snapshot: `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`.
 
 ## 1. Protect the spend (do first)
 
@@ -61,6 +61,11 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
       reopens it at the right place. Lock the phone with the session open: the lock screen
       shows the title, artwork and controls, and they work. "Show script" in the session's
       "…" opens the script on the page, following the audio.
+- [ ] Studio audio card (56): when it appears the whole card is on screen with the voice
+      row visible; Listen plays each voice and bed through the speaker, the playing one says
+      Stop, and starting another stops it; Change opens the list and Done folds it. After
+      one render, the next card says "Same as last time" on the voice and background you
+      used. The meditation page's Generate Audio panel has the same rows.
 
 ## 5. Production checks (after seeding)
 

@@ -1,10 +1,15 @@
 "use server";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { getQuotaUsage, isFreeRetryAvailable } from "@/lib/audio/quota";
 import { estimateDuration } from "@/lib/meditation/duration";
 import type { MeditationSettings, MeditationStatus } from "@/lib/meditation/types";
 import { savedAmbience, type AmbienceId } from "@/lib/meditation/ambience";
+import { getVoices } from "@/lib/voices/server";
+
+/** The voice and bed of the person's most recent completed meditation. */
+export type LastAudioChoices = { voice: string | null; ambience: AmbienceId | null };
 
 export type AudioOffer = {
   title: string;
@@ -26,6 +31,8 @@ export type AudioOffer = {
   voice: string | null;
   /** The bed the last render was made with (settings.music), or null before any choice. */
   ambience: AmbienceId | null;
+  /** What the person chose last time on any meditation, preselected when this one has no choice of its own. */
+  lastUsed: LastAudioChoices;
   quota: { remaining: number; limit: number; unlimited: boolean; resetsAt: string };
   /** The failed event a free retry would follow, when one is available. */
   freeRetryEventId: string | null;
@@ -69,7 +76,7 @@ export async function getAudioOffer(meditationId: string): Promise<AudioOffer> {
         : (data.status as MeditationStatus);
   const rendersDraft = draft !== null;
   const script = (draft?.script ?? data.script ?? "") as string;
-  const [usage, retry, latestVersion] = await Promise.all([
+  const [usage, retry, latestVersion, lastUsed] = await Promise.all([
     getQuotaUsage(user.id, supabase),
     status === "failed"
       ? isFreeRetryAvailable(meditationId, user.id, supabase)
@@ -81,6 +88,7 @@ export async function getAudioOffer(meditationId: string): Promise<AudioOffer> {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    lastAudioChoices(supabase, user.id),
   ]);
 
   return {
@@ -94,6 +102,7 @@ export async function getAudioOffer(meditationId: string): Promise<AudioOffer> {
     estimatedSeconds: estimateDuration(script).totalSeconds,
     voice: (data.settings as MeditationSettings | null)?.voice ?? null,
     ambience: savedAmbience((data.settings as MeditationSettings | null)?.music),
+    lastUsed,
     quota: {
       remaining: usage.remaining,
       limit: usage.limit,
@@ -103,4 +112,46 @@ export async function getAudioOffer(meditationId: string): Promise<AudioOffer> {
     freeRetryEventId: retry.eventId,
     latestVersionId: (latestVersion.data?.id as string | undefined) ?? null,
   };
+}
+
+/**
+ * The voice and bed from the owner's most recent completed meditation's
+ * settings, read through their RLS-bound client and filtered to their own
+ * rows. A voice since removed from the collection is dropped, so the card
+ * never preselects one the generate route would refuse. Never throws: with
+ * nothing to go on the card offers its defaults.
+ */
+async function lastAudioChoices(supabase: SupabaseClient, userId: string): Promise<LastAudioChoices> {
+  const none = { voice: null, ambience: null };
+  const { data, error } = await supabase
+    .from("meditations")
+    .select("settings")
+    .eq("user_id", userId)
+    .eq("status", "completed")
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return none;
+
+  const settings = (data.settings as MeditationSettings | null) ?? {};
+  let voice = settings.voice ?? null;
+  if (voice) {
+    try {
+      const voices = await getVoices();
+      if (!voices.some((v) => v.voiceId === voice)) voice = null;
+    } catch {
+      // ElevenLabs is unreachable; the voice list and the render fail with it.
+    }
+  }
+  return { voice, ambience: savedAmbience(settings.music) };
+}
+
+/** Last time's voice and bed, for the meditation page's Generate Audio panel. */
+export async function getLastAudioChoices(): Promise<LastAudioChoices> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { voice: null, ambience: null };
+  return lastAudioChoices(supabase, user.id);
 }
