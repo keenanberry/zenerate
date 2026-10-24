@@ -130,4 +130,17 @@ describe("MeditationCover", () => {
     expect(named).toContain('role="img"');
     expect(named).toContain('aria-label="Evening wind-down"');
   });
+  it("runs every mountain range past both edges, so no strip is left bare", () => {
+    const ids = Array.from({ length: 400 }, (_, i) => `${ID.slice(0, -3)}${i}`)
+      .filter((id) => coverDesign(id, []).motif === "ridge");
+    expect(ids.length).toBeGreaterThan(5);
+    for (const id of ids) {
+      for (const size of [56, 120, 240]) {
+        for (const [, d] of render(id, [], size).matchAll(/<path[^>]* d="([^"]+)"/g)) {
+          const xs = [...d.matchAll(/[ML](-?[\d.]+) /g)].map((m) => Number(m[1]));
+          expect(Math.max(...xs)).toBeGreaterThanOrEqual(100);
+        }
+      }
+    }
+  });
 });

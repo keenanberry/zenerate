@@ -32,7 +32,7 @@ export function DiscoverViewWrapper({
   children: ReactNode;
 }) {
   return (
-    <ViewProvider>
+    <ViewProvider storageKey="zenerate:view:discover">
       <Inner summary={summary}>{children}</Inner>
     </ViewProvider>
   );
