@@ -1,6 +1,6 @@
 # Agent User Memory
 
-**Status:** Not started. Scoped for a future session (refreshed 2026-10-22)
+**Status:** First slice (preselect last-used voice and bed) promoted to ship task 56 on 2026-10-23. The agent-context slice stays here, and may not be needed once preselection ships.
 **Priority:** Post-ship. One of the "next up" candidates in the post-ship README.
 **Related:** `tasks/ship/29-chat-agent.md` (the agent loop this builds on). See *The coupling* below.
 
