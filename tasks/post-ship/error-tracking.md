@@ -1,6 +1,6 @@
 # Error Tracking
 
-**Status:** Not started
+**Status:** Done* (code merged with no DSN; the Sentry account is an operator item)
 **Priority:** Pre-launch. Promoted to ship task 51 on 2026-10-23
 
 > **Update `/privacy` in the same PR.** The policy states that Zenerate uses no
@@ -27,3 +27,32 @@
 - Sensitive data: scrub request bodies, especially `/api/generate` (script prompts may be personal) and anything carrying user input.
 - Source map upload adds a step to Vercel build — ensure `SENTRY_AUTH_TOKEN` is set as a Vercel env var.
 - Tag errors with `tier: 'free' | 'paid'` once paid tier exists — helps prioritize paid-user-impacting bugs.
+
+## Outcome
+
+Built with `@sentry/nextjs` 11.9 (the current major; its `withSentryConfig` lives at
+`@sentry/nextjs/config`, and `dataCollection` replaced `sendDefaultPii`). No wizard: its
+output was written by hand to fit the App Router layout here.
+
+- `src/instrumentation.ts` inits Node and edge and exports `onRequestError`;
+  `src/instrumentation-client.ts` inits the browser and exports `onRouterTransitionStart`.
+  With no `NEXT_PUBLIC_SENTRY_DSN` neither inits, so every Sentry call is a no-op.
+- `src/lib/sentry/options.ts` holds the shared options: errors only (no tracing, replay or
+  release-health sessions), every `dataCollection` category off (bodies, cookies, headers,
+  query strings, AI inputs and outputs, stack-frame variables), and `scrubEvent` /
+  `scrubBreadcrumb` as a second filter. Tested.
+- User id, never email: the browser follows Supabase's `onAuthStateChange`; the server
+  wraps `auth.getUser` in `src/lib/supabase/server.ts`.
+- Captured explicitly besides the boundaries (`error.tsx`, `(app)/error.tsx`,
+  `global-error.tsx`): chat stream and save failures, a workflow that fails to start, a
+  failed render (in the `markFailed` step, tagged with the meditation and owner, flushed
+  before the step ends) and the keepalive cron.
+- Source maps upload only when `SENTRY_AUTH_TOKEN` is set, and are deleted after; without
+  it none are generated. Sentry's build telemetry is off.
+- Verified locally against a fake DSN: a server route error with a JSON body, cookie and
+  query string arrived as method, path and user id only; a client render error arrived
+  with the user id and no query; no session envelopes.
+- `/privacy` names Sentry and what a report contains. Account steps, IP storage off and
+  the 5-users alert are in `tasks/OPERATOR-TODO.md`.
+
+Not done: the `tier` tag waits for a paid tier; session replay stays off.

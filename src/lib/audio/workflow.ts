@@ -1,4 +1,5 @@
 import { FatalError } from "workflow";
+import * as Sentry from "@sentry/nextjs";
 
 import { Sandbox } from "@vercel/sandbox";
 import { createClient } from "@supabase/supabase-js";
@@ -306,6 +307,7 @@ async function markFailed(
 
   console.error(`Audio generation failed for ${meditationId}: ${reason}`);
   const supabase = serviceClient();
+  await reportFailure(supabase, meditationId, reason);
   // A draft render failed: the current version is still good, so the
   // meditation stays completed and only the draft render is marked. Anything
   // else has no audio to fall back on.
@@ -324,6 +326,37 @@ async function markFailed(
       .from("audio_generation_events")
       .update({ status: "failed", completed_at: new Date().toISOString() })
       .eq("id", eventId);
+  }
+}
+
+/**
+ * Send a failed render to Sentry, tagged with the meditation and its owner's
+ * id. The workflow body can't call Sentry (it runs in the workflow sandbox),
+ * so this runs in the markFailed step, with only the error's message to go
+ * on. Flushed before returning because the step's function can freeze as
+ * soon as it ends. Best effort: reporting never stops the status update.
+ */
+async function reportFailure(
+  supabase: ReturnType<typeof serviceClient>,
+  meditationId: string,
+  reason: string,
+): Promise<void> {
+  if (!Sentry.getClient()) return;
+  try {
+    const { data } = await supabase
+      .from("meditations")
+      .select("user_id")
+      .eq("id", meditationId)
+      .maybeSingle();
+    const error = new Error(reason);
+    error.name = "AudioGenerationError";
+    Sentry.captureException(error, {
+      tags: { area: "audio", meditationId },
+      user: data?.user_id ? { id: data.user_id } : undefined,
+    });
+    await Sentry.flush(2000);
+  } catch (err) {
+    console.error("Reporting the failed render to Sentry failed:", err);
   }
 }
 

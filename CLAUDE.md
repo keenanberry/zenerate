@@ -53,6 +53,7 @@ Seeded test users: `alice@example.com` / `bob@example.com` — password `passwor
 | `src/lib/ai/` | System prompts + the daily chat ceiling |
 | `src/lib/chat/` | Studio tools (`writeScript`, `setDetails`, `offerAudio`), chat persistence, chat server actions |
 | `src/lib/supabase/` | Client factories (server, browser, service-role) |
+| `src/lib/sentry/` | Error-tracking options shared by `src/instrumentation.ts` and `src/instrumentation-client.ts`; what reports may carry |
 | `src/components/` | UI components |
 | `supabase/migrations/` | SQL migrations |
 | `supabase/seed.sql` | Seed data (test users, meditations, collections) |

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import {
   consumeStream,
   convertToModelMessages,
@@ -170,6 +171,7 @@ export async function POST(req: Request) {
       generateMessageId,
       onError: (error) => {
         console.error("[chat] stream error", error);
+        Sentry.captureException(error, { tags: { area: "chat" } });
         return "Something went wrong on our side. Try sending that again.";
       },
       onEnd: async ({ messages: final }) => {
@@ -180,6 +182,7 @@ export async function POST(req: Request) {
           await touchChat(supabase, { id: chat.id, title: chat.title ?? firstRequest }, null);
         } catch (error) {
           console.error("[chat] saving the turn failed", error);
+          Sentry.captureException(error, { tags: { area: "chat" } });
         }
       },
     }),

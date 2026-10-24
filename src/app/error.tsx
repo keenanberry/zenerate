@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 import Link from "next/link";
 import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,8 +24,8 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Minimum viable logging. Post-ship error-tracking.md replaces this.
     console.error("Unhandled error:", error);
+    Sentry.captureException(error);
   }, [error]);
 
   return (
