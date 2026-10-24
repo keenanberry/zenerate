@@ -25,6 +25,21 @@ from its script.
 - Media Session artwork and per-meditation OG images (an idea from the Phase 3 closeout)
   both get it for free.
 
+## Custom uploads (operator idea, 2026-10-23)
+
+With the full-screen session player (ship 55) the cover becomes the most visible thing
+in a session, and the operator asked about letting people upload their own picture.
+Treat this task as **custom artwork** with three sources: generated, uploaded, and the
+designed cover as the default and the fallback. For uploads:
+
+- **Moderation is the cost, not storage.** An uploaded image on a public meditation shows
+  to strangers on Discover. Start with uploads shown to the owner only (or on private
+  meditations only) until moderation exists; ship 53's Report link is not enough for
+  images.
+- Resize on upload and strip EXIF, which carries GPS on phone photos.
+- `/privacy` lists what is stored; add images in the same PR.
+- A photo full-bleed behind the player needs a darker fade than a flat designed cover.
+
 ## Decisions to make
 
 - The provider and model, chosen for consistency of style, not novelty.
