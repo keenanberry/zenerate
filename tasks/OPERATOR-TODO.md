@@ -51,8 +51,10 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
 - [ ] Library rows (48, merged): tap a cover to play and pause; long titles end in "…". Say
       if tapping the cover to play is hard to discover.
 - [ ] Library and Discover rows, covers and category tiles, in both themes (48, 49).
-- [ ] Studio: "Make the audio" and "Change something", and whether "Change something"
-      raises the keyboard (50).
+- [ ] The Collections tab artwork, a collection page and a meditation page's tag line;
+      a dropdown (the Discover tag filter) shows its groups clearly (54, #89).
+- [ ] Studio: "Make the audio" and "Change something", whether "Change something"
+      raises the keyboard, and Make audio staying at full strength while it starts (50).
 
 ## 5. Production checks (after seeding)
 
