@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { MeditationCover } from "@/components/meditation-cover";
 import { ScriptViewer } from "@/components/script-viewer";
 import { useFollowScroll } from "@/components/studio/use-follow-scroll";
 import { nextExample, type DemoExample } from "@/lib/landing/examples";
@@ -23,7 +25,7 @@ interface ScriptStreamDemoProps {
  * The landing page's product surface: a request in a chat bubble, the script
  * streaming into the real ScriptViewer beneath it, and the agent's one-line
  * reply once it is in. Looped through the examples while it is on screen,
- * with a row of chips that name them and jump between them.
+ * with a row of plain text buttons that name them and jump between them.
  *
  * It never blocks first paint and never shifts layout. The script sits in a
  * window of fixed height that follows the newest line as it streams, the way
@@ -144,14 +146,21 @@ export function ScriptStreamDemo({ examples }: ScriptStreamDemoProps) {
             </p>
           ))}
         </div>
-        <div className="mt-5 flex items-center justify-between gap-4 text-xs font-medium tracking-[0.06em] uppercase">
-          <p className="text-muted-foreground">Draft 1</p>
-          {/* Under reduced motion the script is shown whole, so it reads Ready. */}
-          <p aria-hidden className="shrink-0">
-            <span className={cn("motion-reduce:hidden", done ? "text-sage" : "text-candle")}>
-              {done ? "Ready" : "Writing"}
-            </span>
-            <span className="hidden text-sage motion-reduce:inline">Ready</span>
+        {/* The draft as the studio's chat shows it (task 50): a cover, then
+            "Writing draft 1" with a spinner until the script is in. Under
+            reduced motion the script is shown whole, so it reads Draft 1. */}
+        <div className="mt-5 flex items-center gap-3">
+          <span className="relative shrink-0">
+            <MeditationCover id={`demo:${example.chip}`} tags={[]} title={example.chip} size={32} />
+            {!done && (
+              <span className="absolute inset-0 flex items-center justify-center motion-reduce:hidden">
+                <Loader2 className="size-3.5 text-foreground motion-safe:animate-spin" aria-hidden />
+              </span>
+            )}
+          </span>
+          <p aria-hidden className="text-sm text-muted-foreground">
+            <span className="motion-reduce:hidden">{done ? "Draft 1" : "Writing draft 1"}</span>
+            <span className="hidden motion-reduce:inline">Draft 1</span>
           </p>
         </div>
         {/* A fixed window, so the card is one height whatever the script.
@@ -201,7 +210,8 @@ export function ScriptStreamDemo({ examples }: ScriptStreamDemoProps) {
           ))}
         </div>
       </div>
-      <div role="group" aria-label="Example requests" className="flex flex-wrap gap-2 px-1">
+      {/* Plain text, not pills: these switch the example, they are not tags. */}
+      <div role="group" aria-label="Example requests" className="flex flex-wrap gap-x-4 gap-y-1 px-1">
         {examples.map((e, i) => (
           <button
             key={e.chip}
@@ -209,11 +219,11 @@ export function ScriptStreamDemo({ examples }: ScriptStreamDemoProps) {
             aria-pressed={i === index}
             onClick={() => choose(i)}
             className={cn(
-              "rounded-full border px-3 py-1.5 text-xs font-medium outline-none",
+              "rounded-sm py-1.5 text-sm underline-offset-[6px] outline-none",
               "focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-safe:transition-colors",
               i === index
-                ? "border-transparent bg-secondary text-secondary-foreground"
-                : "text-muted-foreground hover:bg-card-hover hover:text-foreground",
+                ? "text-foreground underline decoration-primary decoration-2"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             {e.chip}

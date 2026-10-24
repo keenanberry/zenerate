@@ -83,7 +83,7 @@ function TabsInner({
 
 export function DashboardTabs(props: DashboardTabsProps) {
   return (
-    <ViewProvider>
+    <ViewProvider storageKey="zenerate:view:library">
       <TabsInner {...props} />
     </ViewProvider>
   );

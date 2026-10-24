@@ -10,7 +10,8 @@ import { MAKE_AUDIO_REPLY } from "@/lib/chat/replies";
  * something" hands the composer back. `showsQuickReplies` decides when they
  * show. Since task 50 they are real buttons, because making the audio is the
  * most important step in the product, and the first draft adds one line on
- * what else can be asked for.
+ * what else can be asked for. Voice and background are chosen on the audio
+ * card, not by asking, so the line leaves them out.
  */
 export function QuickReplies({
   firstDraft,
@@ -34,7 +35,7 @@ export function QuickReplies({
       </div>
       {firstDraft && (
         <p className="text-sm text-muted-foreground">
-          You can also ask for a different length, another voice or ambient sound.
+          Not quite right? Ask for a different length, focus or tone.
         </p>
       )}
     </div>

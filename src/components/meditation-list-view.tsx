@@ -20,7 +20,8 @@ export function MeditationListView({
 
   if (view === "grid") {
     return (
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      // The collection grid's columns and rhythm, so the two tabs match.
+      <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
         {meditations.map((m) => (
           <MeditationCard
             key={m.id}

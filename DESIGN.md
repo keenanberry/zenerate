@@ -478,6 +478,12 @@ quiet cover of its own. The Library grid is
 two columns on a phone, three from `sm`, four from `lg`; the collection page header sets
 the artwork at 160px beside the name, as the meditation page does.
 
+The Library's and Discover's grid view draws a meditation the same way: its cover at the
+column's width, the title in Lora (two lines at most), and one Dusk line of tag and
+length with no date, behind the status icon. Favourite sits beside the title, with play
+from `sm`; on a phone the tile opens the page, where Play is (task 55). Each page
+remembers its list or grid choice in localStorage (`ViewProvider`'s `storageKey`).
+
 ### Menus
 Every dropdown, select and picker shares one look (the Discover filters, the collection
 menu, the meditation page's "…" and the session view's, Add to collection, the tag
@@ -498,10 +504,9 @@ picker):
 - **Background:** Raised Night in dark, white in light; Moonlit / Ink text.
 - **Shadow Strategy:** none (see Elevation).
 - **Border:** 1px Hairline.
-- **Internal Padding:** 24px on a phone, 32px from `sm`, with 24px between blocks. A
-  meditation card is a whole-card link with the play and favourite controls layered above
-  it; its title is Lora at 1.125rem, and hover is `--card-hover` (Well in dark, Paper
-  Hover in light).
+- **Internal Padding:** 24px on a phone, 32px from `sm`, with 24px between blocks. Hover
+  on a linked card is `--card-hover` (Well in dark, Paper Hover in light). A meditation in
+  the grid view is not a card but a tile (see Collections).
 
 ### Inputs / Fields
 - **Style:** 36px tall, 6px radius, 1px Hairline border, transparent in light and 30% Well
@@ -670,12 +675,14 @@ reopens the session.
 ### Landing Demo
 The hero's product surface (`src/components/script-stream-demo.tsx`): a card that reads as
 a moment in the studio. The person's request sits at its top as a Secondary-fill bubble
-at 85% width on the right, as in the chat; below it a Label-type "Draft 1" with a
-Writing/Ready state, the script streaming into the real Script Viewer, and, once it is
+at 85% width on the right, as in the chat; below it the draft as the studio's chat shows it, a
+32px cover with "Writing draft 1" and a spinner on the cover until the script is in, then
+"Draft 1", the script streaming into the real Script Viewer, and, once it is
 in, the agent's one-line reply in plain Body text below a Hairline rule. Under the card
-a row of chips names the six examples (`src/lib/landing/examples.ts`). Chips are pills
-in UI type at 12px with a Hairline border; the live one takes the Secondary fill, as the
-active nav item does, and a tap streams that example from its first word. The loop walks
+a row of plain text buttons names the six examples (`src/lib/landing/examples.ts`). They
+switch the example and are not tags, so they are not pills: Dusk Body type, the live one
+in Foreground with a 2px primary underline, as the Library's tabs mark theirs, and a tap
+streams that example from its first word. The loop walks
 the six in order. The script sits in a window of fixed height (13rem at every width),
 followed to its newest line as it streams, the way the studio canvas is, with lines
 fading out under its top edge through an alpha mask (see The One Gradient Rule); the
@@ -683,7 +690,7 @@ window keeps the hero, headline to CTAs to card, inside a 1280x800 screen. Reque
 replies are short, so every one is rendered invisibly in its own grid cell and the card
 holds the longest of each and never shifts. Under reduced motion the window shows the
 start of the chosen script, fading out under its bottom edge instead, with its reply,
-and chips swap them.
+and the buttons swap them.
 
 ### Studio
 The chat and its canvas (`src/components/studio/`), the way Claude builds an artifact:
