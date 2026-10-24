@@ -4,7 +4,7 @@ Everything left before signups open that only the operator can do: a phone, a da
 account, or a judgment call. Agents keep this file current. When you finish an item, tick it
 and add the date, or tell an agent and it will. Each item names the task file with the detail.
 
-Last updated: 2026-10-23. Sections are in the order to do them. Live sandbox snapshot: `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`.
+Last updated: 2026-10-24. Sections are in the order to do them. Live sandbox snapshot: `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`.
 
 ## 1. Protect the spend (do first)
 
@@ -20,6 +20,25 @@ Last updated: 2026-10-23. Sections are in the order to do them. Live sandbox sna
       from Vercel. Nothing reads them since 29.
 - [ ] Supabase → Auth → URL Configuration: `https://www.zeneratestudio.com/auth/callback**`
       is in Redirect URLs, then run a full password reset with your own account (11).
+
+### Sentry error tracking (51)
+
+The code is merged and does nothing until the DSN is set. Either take the Vercel Marketplace
+route (Vercel → Integrations → Sentry, which makes the account and project and links them;
+afterwards check which of the four variables below it set and add the rest), or by hand:
+
+- [ ] Sign up at sentry.io (the free Developer plan is enough) and create a **Next.js**
+      project. Copy its DSN (Project Settings → Client Keys).
+- [ ] Settings → Auth Tokens → create an Organization Auth Token, for source map uploads.
+- [ ] Vercel → Settings → Environment Variables, for Production and Preview:
+      `NEXT_PUBLIC_SENTRY_DSN` (the DSN), `SENTRY_AUTH_TOKEN` (mark it sensitive),
+      `SENTRY_ORG` and `SENTRY_PROJECT` (the slugs in the project's URL). Redeploy.
+- [ ] Sentry project → Settings → Security & Privacy: turn on **Prevent Storing of IP
+      Addresses** and leave the Data Scrubber on. `/privacy` says reports carry no IP address.
+- [ ] Alerts: keep the default new-issue email, and add an issue alert for **more than 5
+      users affected in an hour**.
+- [ ] Check: the deploy's build log shows the source map upload. The first real report
+      should have a readable stack trace and a user id, and no email or message text.
 
 ## 3. Seed Discover on your iPhone (task 37)
 

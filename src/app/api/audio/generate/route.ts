@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { start } from "workflow/api";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@/lib/supabase/service-role";
@@ -217,6 +218,7 @@ export async function POST(req: Request) {
 
   if (!run.ok) {
     console.error(`Could not start the audio workflow for ${meditationId}:`, run.error);
+    Sentry.captureException(run.error, { tags: { area: "audio", meditationId } });
     return NextResponse.json(
       {
         error:

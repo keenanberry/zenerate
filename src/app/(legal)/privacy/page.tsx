@@ -6,15 +6,16 @@ export const metadata = {
 
 /**
  * Every claim on this page describes how the code actually behaves -- the
- * cookie list, the absence of analytics, what each provider receives. Change
- * the behaviour (add analytics, a new provider, a deletion UI) and this page
- * must change in the same PR.
+ * cookie list, the absence of analytics, what each provider receives (for
+ * error reports, see src/lib/sentry/options.ts). Change the behaviour (add
+ * analytics, a new provider, a deletion UI) and this page must change in the
+ * same PR.
  */
 export default function PrivacyPage() {
   return (
     <>
       <h1>Privacy Policy</h1>
-      <p className="text-muted-foreground">Last updated: October 21, 2026</p>
+      <p className="text-muted-foreground">Last updated: October 24, 2026</p>
 
       <p>
         Zenerate is operated by Keenan Berry, an individual based in Missouri,
@@ -59,10 +60,20 @@ export default function PrivacyPage() {
           host Zenerate receive your IP address, browser type and the pages
           you request, which appear in hosting logs.
         </li>
+        <li>
+          <strong>Error reports:</strong> when something breaks, a report of
+          the error is recorded: what failed and where in the code, the page
+          address without anything after a &ldquo;?&rdquo;, your browser and
+          device type, your account ID if you are signed in, and for a failed
+          audio render, which meditation it was. Reports
+          never include your email address or IP address, the contents of
+          your messages or scripts, or anything else you typed.
+        </li>
       </ul>
       <p>
         I do not use analytics, advertising or tracking tools, and I do not
-        sell your data or share it for advertising.
+        sell your data or share it for advertising. Error reports are sent
+        only when something fails, not as you browse.
       </p>
 
       <h2>How I use it</h2>
@@ -136,10 +147,16 @@ export default function PrivacyPage() {
           </a>
           )
         </li>
+        <li>
+          <strong>Sentry</strong>: error tracking, so I hear about failures
+          and can fix them. Receives the error reports described above, with
+          no message contents. (
+          <a href="https://sentry.io/privacy/">Sentry privacy policy</a>)
+        </li>
       </ul>
       <p>
-        Your email address and password are never sent to Anthropic or
-        ElevenLabs. Even so, please do not include sensitive personal
+        Your email address and password are never sent to Anthropic,
+        ElevenLabs or Sentry. Even so, please do not include sensitive personal
         information, such as health details or other people&rsquo;s private
         information, in your messages to the agent.
       </p>
@@ -220,8 +237,8 @@ export default function PrivacyPage() {
           removed.
         </li>
         <li>
-          Hosting logs are kept by Vercel for a short period under its own
-          retention policy.
+          Hosting logs are kept by Vercel, and error reports by Sentry, for a
+          limited period under their own retention policies.
         </li>
       </ul>
 

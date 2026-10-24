@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { timingSafeEqual } from "node:crypto";
 import { createClient } from "@/lib/supabase/service-role";
 
@@ -93,6 +94,7 @@ export async function GET(request: Request) {
     // Surfaces as a failed cron run in the Vercel dashboard. The ping above
     // is what actually alerts; this is the log for afterwards.
     console.error("Keepalive failed:", err);
+    Sentry.captureException(err, { tags: { area: "keepalive" } });
     return NextResponse.json(
       { ok: false, error: "Keepalive query failed" },
       { status: 500 },
