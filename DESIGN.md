@@ -700,6 +700,15 @@ the conversation on the left, the script on the right.
   buttons, a primary "Make the audio" with a waveform icon and an outline "Change
   something", with a Dusk hint line after the first draft. No Sparkles icon anywhere.
   Cards from other tools render through `renderStudioPart`.
+- **Audio card (task 56):** summary first, so it fits one phone screen. A Voice row and a
+  Background row, each a Label-type heading over the chosen name, a two-line Dusk
+  description and a Sage note ("Same as last time", "Suggested for this one"), with an
+  outline **Listen** button (Stop while playing) and a link-style Change. Change opens a
+  list in place: one row per option, a Primary check on the chosen one, the name with
+  the gender in Dusk, the description wrapping to at most two lines, and its own Listen;
+  hover and the chosen row take `--card-hover`. One preview plays at a time. The meditation
+  page's Generate Audio panel uses the same rows (`src/components/audio-choices.tsx`).
+  The chat scrolls the card's top into view when it appears, not its bottom.
 - **Starting a render:** the Make audio button stays at full strength with a spinner and
   "Starting…" while the request runs (`aria-busy`, no pointer events); `disabled` would
   fade it to half opacity, which read as a stuck overlay on a phone.

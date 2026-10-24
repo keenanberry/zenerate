@@ -119,7 +119,7 @@ and make the audio from cards in the chat. See the studio spec.
 | 53 | [Report a public meditation](../post-ship/public-content-moderation.md) | Not started | Promoted 2026-10-23, the minimal slice only: a Report link (mailto `privacy@`) on public meditation pages; the operator unlists by hand. The review queue stays post-ship |
 | 54 | [Meditation page meta + collection artwork](./54-page-and-collections.md) | Done* | Collections drawn as playlists from their covers (two and three shown split); no status badges, an icon only when there is no playable audio; the page's tags as a line of Discover links (PR #87). Dropdowns share one look (PR #89); seed meditations tagged (PR #88). *Operator: phone check |
 | 55 | [Detail page + session player](./55-meditation-player.md) | In review (#93) | Insight Timer's pattern: a detail page with one Play, then a full-screen session over the cover with large remaining time and 15s skips; rows open the page; the script collapses. Built; iPhone lock-screen check is an operator item |
-| 56 | [Audio card choices](./56-audio-card-choices.md) | Not started | Summary-first audio card that fits a phone, a labelled Listen per voice and bed, last-used voice and bed preselected from past `settings`, and the chat scrolls to the card's top. A tester missed the voices. Mockup up for review |
+| 56 | [Audio card choices](./56-audio-card-choices.md) | In review | Summary-first audio card that fits a phone, a labelled Listen per voice and bed, last-used voice and bed preselected from past `settings`, and the chat scrolls to the card's top. A tester missed the voices. The meditation page's panel shares the rows. iPhone check is an operator item |
 
 ### Running Phases 4–5 with Orca
 

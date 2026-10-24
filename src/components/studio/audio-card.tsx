@@ -7,15 +7,15 @@ import { AlertCircle, ArrowUpRight, AudioLines, Loader2, RotateCcw } from "lucid
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { VoicePicker } from "@/components/voice-picker";
+import { AmbienceChoice, VoiceChoice } from "@/components/audio-choices";
 import { AudioProcessingStatus } from "@/components/audio-processing-status";
 import { AudioPlayer } from "@/components/audio-player";
 import { getAudioOffer, type AudioOffer } from "@/lib/audio/actions";
 import { generateErrorMessage } from "@/lib/audio/generate-error";
+import { choiceNote, resolveChoice } from "@/lib/audio/choices";
 import { getMeditationStatus } from "@/lib/meditation/actions";
 import { DEFAULT_VOICE_ID } from "@/lib/voices/catalog";
 import { ReplaceOrKeep } from "@/components/studio/replace-or-keep";
-import { AmbiencePicker } from "@/components/studio/ambience-picker";
 import type { AmbienceId } from "@/lib/meditation/ambience";
 import type { StudioUIMessage } from "@/lib/chat/tools";
 
@@ -246,31 +246,49 @@ export function AudioCard({ part, meditationId, addToolOutput }: AudioCardProps)
   // answered card shows the audio it led to instead.
   if (awaitingAnswer && offer.canRender) {
     const exhausted = !offer.quota.unlimited && offer.quota.remaining === 0;
-    const selected = voiceId ?? offer.voice ?? DEFAULT_VOICE_ID;
-    // The person's pick, else the agent's suggestion for this render, else
-    // the bed the last render used, else None. The agent only suggests on a
-    // re-render when the person asked for a different background.
-    const selectedAmbience = ambience ?? suggestedAmbience ?? offer.ambience ?? "none";
+    const voice = resolveChoice({
+      picked: voiceId,
+      saved: offer.voice,
+      lastUsed: offer.lastUsed.voice,
+      fallback: DEFAULT_VOICE_ID,
+    });
+    // The agent only suggests a bed on a re-render when the person asked for
+    // a different background, and its suggestion beats last time's.
+    const bed = resolveChoice<AmbienceId>({
+      picked: ambience,
+      suggested: suggestedAmbience,
+      saved: offer.ambience,
+      lastUsed: offer.lastUsed.ambience,
+      fallback: "none",
+    });
 
     return (
-      <Card>
-        <CardContent className="space-y-6">
+      // The chat scrolls this card's top into view when it appears, not its
+      // bottom, so the voice is the first thing seen (task 56).
+      <Card data-follow-anchor>
+        <CardContent className="space-y-4">
           <div className="space-y-1">
             <h2 className="font-serif text-lg font-medium">Make the audio</h2>
-            <p className="text-sm text-muted-foreground">
-              {offer.rendersDraft
-                ? "Narrates your latest revision. The current audio keeps playing until the new one is ready."
-                : "Pick a voice and a background, then make the audio. It plays right here when it's ready."}
-            </p>
+            {offer.rendersDraft && (
+              <p className="text-sm text-muted-foreground">
+                Narrates your latest revision. The current audio keeps playing until the new one
+                is ready.
+              </p>
+            )}
           </div>
 
-          <VoicePicker selectedVoiceId={selected} onSelect={setVoiceId} />
-
-          <AmbiencePicker
-            selected={selectedAmbience}
-            suggested={suggestedAmbience}
-            onSelect={setAmbience}
-          />
+          <div className="divide-y border-y">
+            <VoiceChoice
+              selectedVoiceId={voice.value}
+              note={choiceNote(voice.origin)}
+              onSelect={setVoiceId}
+            />
+            <AmbienceChoice
+              selected={bed.value}
+              note={choiceNote(bed.origin)}
+              onSelect={setAmbience}
+            />
+          </div>
 
           <p className="text-xs tabular-nums text-muted-foreground">
             Runs {formatLength(offer.estimatedSeconds)} · {rendersLeft(offer.quota)}
@@ -282,7 +300,7 @@ export function AudioCard({ part, meditationId, addToolOutput }: AudioCardProps)
             </div>
           )}
 
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={dismiss} disabled={starting}>
               Not now
             </Button>
@@ -291,7 +309,7 @@ export function AudioCard({ part, meditationId, addToolOutput }: AudioCardProps)
                 seconds the request takes, which read as a stuck overlay on a
                 phone (task 50); `startingRef` already stops a second click. */}
             <Button
-              onClick={() => start({ voiceId: selected, ambience: selectedAmbience }, true)}
+              onClick={() => start({ voiceId: voice.value, ambience: bed.value }, true)}
               disabled={exhausted}
               aria-disabled={starting || undefined}
               aria-busy={starting || undefined}

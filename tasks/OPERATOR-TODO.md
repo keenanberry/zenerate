@@ -80,6 +80,11 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
       reopens it at the right place. Lock the phone with the session open: the lock screen
       shows the title, artwork and controls, and they work. "Show script" in the session's
       "…" opens the script on the page, following the audio.
+- [ ] Studio audio card (56): when it appears the whole card is on screen with the voice
+      row visible; Listen plays each voice and bed through the speaker, the playing one says
+      Stop, and starting another stops it; Change opens the list and Done folds it. After
+      one render, the next card says "Same as last time" on the voice and background you
+      used. The meditation page's Generate Audio panel has the same rows.
 
 ## 5. Production checks (after seeding)
 

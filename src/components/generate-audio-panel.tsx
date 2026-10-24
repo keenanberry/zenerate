@@ -1,14 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { VoicePicker } from "@/components/voice-picker";
+import { AmbienceChoice, VoiceChoice } from "@/components/audio-choices";
 import { AudioLines, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { DEFAULT_VOICE_ID } from "@/lib/voices/catalog";
 import { generateErrorMessage } from "@/lib/audio/generate-error";
+import { getLastAudioChoices, type LastAudioChoices } from "@/lib/audio/actions";
+import { choiceNote, resolveChoice } from "@/lib/audio/choices";
+import { savedAmbience, type AmbienceId } from "@/lib/meditation/ambience";
+import type { MeditationSettings } from "@/lib/meditation/types";
 
 export type QuotaProp = {
   used: number;
@@ -21,17 +25,24 @@ export type QuotaProp = {
 
 interface GenerateAudioPanelProps {
   meditationId: string;
+  /** This meditation's saved voice and bed, preselected before last time's. */
+  settings: MeditationSettings | null;
   quota: QuotaProp;
   onStarted: () => void;
 }
 
 export function GenerateAudioPanel({
   meditationId,
+  settings,
   quota,
   onStarted,
 }: GenerateAudioPanelProps) {
-  // Pre-selected, so the voice that will be used is the one shown.
-  const [selectedVoiceId, setSelectedVoiceId] = useState(DEFAULT_VOICE_ID);
+  // The person's picks; until they make one, the shown choice is preselected,
+  // so the voice and bed that will be used are the ones shown.
+  const [voiceId, setVoiceId] = useState<string | null>(null);
+  const [ambience, setAmbience] = useState<AmbienceId | null>(null);
+  // Null until read, so the choices never flash the defaults first.
+  const [lastUsed, setLastUsed] = useState<LastAudioChoices | null>(null);
   const [generating, setGenerating] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +55,25 @@ export function GenerateAudioPanel({
     timeZone: "UTC",
   });
 
+  useEffect(() => {
+    getLastAudioChoices()
+      .catch(() => ({ voice: null, ambience: null }))
+      .then(setLastUsed);
+  }, []);
+
+  const voice = resolveChoice({
+    picked: voiceId,
+    saved: settings?.voice,
+    lastUsed: lastUsed?.voice,
+    fallback: DEFAULT_VOICE_ID,
+  });
+  const bed = resolveChoice<AmbienceId>({
+    picked: ambience,
+    saved: savedAmbience(settings?.music),
+    lastUsed: lastUsed?.ambience,
+    fallback: "none",
+  });
+
   async function submit() {
     setGenerating(true);
     setError(null);
@@ -54,7 +84,8 @@ export function GenerateAudioPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           meditationId,
-          voiceId: selectedVoiceId,
+          voiceId: voice.value,
+          ambience: bed.value,
         }),
       });
 
@@ -93,14 +124,30 @@ export function GenerateAudioPanel({
         <div className="space-y-1">
           <h2 className="font-serif text-lg font-medium">Generate Audio</h2>
           <p className="text-sm text-muted-foreground">
-            Select a voice and generate the audio for your meditation.
+            Choose a voice and a background, then generate the audio for your meditation.
           </p>
         </div>
 
-        <VoicePicker
-          selectedVoiceId={selectedVoiceId}
-          onSelect={setSelectedVoiceId}
-        />
+        {/* The same choices as the studio's audio card, so the two never drift apart. */}
+        {lastUsed ? (
+          <div className="divide-y border-y">
+            <VoiceChoice
+              selectedVoiceId={voice.value}
+              note={choiceNote(voice.origin)}
+              onSelect={setVoiceId}
+            />
+            <AmbienceChoice
+              selected={bed.value}
+              note={choiceNote(bed.origin)}
+              onSelect={setAmbience}
+            />
+          </div>
+        ) : (
+          <p className="flex items-center gap-2 border-y py-3 text-sm text-muted-foreground">
+            <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden />
+            Loading voices…
+          </p>
+        )}
 
         {error && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3">
@@ -152,7 +199,7 @@ export function GenerateAudioPanel({
           // Full strength while starting, as in the studio's audio card (task 50).
           <Button
             onClick={handlePrimaryClick}
-            disabled={exhausted}
+            disabled={exhausted || !lastUsed}
             aria-disabled={generating || undefined}
             aria-busy={generating || undefined}
             className={cn("w-full gap-2", generating && "pointer-events-none")}

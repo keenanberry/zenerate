@@ -135,6 +135,7 @@ export function AudioSection({
     return (
       <GenerateAudioPanel
         meditationId={meditation.id}
+        settings={meditation.settings}
         quota={quota}
         onStarted={handleGenerationStarted}
       />

@@ -1,6 +1,6 @@
 # Audio Card: Summary First, Remembered Choices
 
-**Status:** Not started. Mockup up for the operator's review
+**Status:** In review. Built; the iPhone check is an operator item
 **Priority:** Phase 6 (seed & open)
 **Phase:** 6
 **Depends on:** 50 (studio chat polish), 55 (merged in #93; it left the audio card and the Generate Audio panel alone).
@@ -48,11 +48,27 @@ Mockup: https://claude.ai/artifact/FC4927G3Vz6HHrEY23JDaM
 
 ## Acceptance
 
-- [ ] At 390px the whole card is on screen when it appears, with the voice row visible.
-- [ ] A returning user's card preselects their last voice and bed, marked; a new user gets
+- [x] At 390px the whole card is on screen when it appears, with the voice row visible.
+- [x] A returning user's card preselects their last voice and bed, marked; a new user gets
       Brittney and None.
-- [ ] Every voice and bed can be previewed from a labelled control; one preview plays at a
+- [x] Every voice and bed can be previewed from a labelled control; one preview plays at a
       time.
-- [ ] The started render uses the voice and bed shown (`offerAudio` output unchanged).
-- [ ] Dark and light, 390px and desktop; `impeccable detect` clean.
+- [x] The started render uses the voice and bed shown (`offerAudio` output unchanged).
+- [x] Dark and light, 390px and desktop; `impeccable detect` clean.
 - [ ] Operator: the card on the iPhone, including that previews play.
+
+## As built
+
+- `src/components/audio-choices.tsx` holds `VoiceChoice` and `AmbienceChoice`, used by the
+  studio card and the meditation page's Generate Audio panel. They replace `voice-picker.tsx`
+  and `studio/ambience-picker.tsx`. Previews share the studio's one-at-a-time player.
+- Listen is the system's outline button (6px radius), not the mockup's pill, per DESIGN.md
+  Buttons.
+- The panel gained the Background row too, so both surfaces choose the same two things; it
+  used to send only a voice.
+- Last-used comes from `getAudioOffer().lastUsed` (card) and `getLastAudioChoices()` (panel):
+  the newest completed meditation by `updated_at`. A voice since dropped from the collection
+  is not preselected. Precedence lives in `src/lib/audio/choices.ts`.
+- The chat anchors on `data-follow-anchor` (`use-follow-scroll.ts`): its top is kept in view
+  while the card loads, until the person touches or scrolls; it does not re-pin to the bottom
+  until they send a message.
