@@ -21,8 +21,8 @@ export interface TrackAudio {
 
 /**
  * A row's audio: one element per row, and one row playing at a time across
- * the page. A row has two triggers that share it, the index column from `sm`
- * and the cover on a phone (task 48).
+ * the page. Its trigger is the index column from `sm`; on a phone the row
+ * opens the meditation's page instead (task 55).
  */
 export function useTrackAudio({
   audioUrl,
@@ -159,46 +159,6 @@ export function TrackPlayButton({
           <span className="group-hover:hidden">{index}</span>
           <Play className="hidden h-3.5 w-3.5 fill-current group-hover:block" />
         </>
-      )}
-    </button>
-  );
-}
-
-/**
- * The cover as a play target. It is the only one below `sm`, where there is
- * no index column. Idle, it is the cover alone; playing, a round pause
- * button sits on it there (from `sm` the index column shows the pause).
- */
-export function CoverPlayButton({
-  audio,
-  title,
-  children,
-  className,
-}: {
-  audio: TrackAudio;
-  title: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  if (!audio.canPlay) {
-    return <div className={cn("relative shrink-0", className)}>{children}</div>;
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={audio.toggle}
-      aria-label={audio.playing ? `Pause ${title}` : `Play ${title}`}
-      className={cn(
-        "relative z-10 shrink-0 rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
-        className,
-      )}
-    >
-      {children}
-      {audio.playing && (
-        <span className="absolute inset-0 m-auto flex size-7 sm:hidden items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <Pause className="size-3 fill-current" />
-        </span>
       )}
     </button>
   );

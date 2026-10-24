@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import type { MeditationWithMeta, MeditationStatus } from "@/lib/meditation/types";
 import { GenerateAudioPanel, type QuotaProp } from "@/components/generate-audio-panel";
 import { AudioProcessingStatus } from "@/components/audio-processing-status";
-import { AudioPlayer } from "@/components/audio-player";
+import { SessionPlayer } from "@/components/session-player";
 import { getMeditationStatus } from "@/lib/meditation/actions";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, RotateCcw } from "lucide-react";
@@ -16,6 +16,8 @@ interface AudioSectionProps {
   isSignedIn: boolean;
   quota: QuotaProp;
   freeRetryEventId: string | null;
+  /** "Sleep · 20 min", under the title in the session view. */
+  meta: string;
 }
 
 export function AudioSection({
@@ -24,6 +26,7 @@ export function AudioSection({
   isSignedIn,
   quota,
   freeRetryEventId,
+  meta,
 }: AudioSectionProps) {
   const [status, setStatus] = useState<MeditationStatus>(meditation.status);
   const [audioUrl, setAudioUrl] = useState(meditation.audio_url);
@@ -71,12 +74,14 @@ export function AudioSection({
 
   if (status === "completed" && audioUrl) {
     return (
-      <AudioPlayer
+      <SessionPlayer
         audioUrl={audioUrl}
-        title={meditation.title}
         meditationId={meditation.id}
-        canDownload={isSignedIn}
-        trackPlays={isSignedIn}
+        title={meditation.title}
+        tags={meditation.tags ?? []}
+        meta={meta}
+        isSignedIn={isSignedIn}
+        hasScript={!!meditation.script}
       />
     );
   }

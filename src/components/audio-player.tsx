@@ -1,9 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import WaveSurfer from "wavesurfer.js";
-import Hover from "wavesurfer.js/dist/plugins/hover.esm.js";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -14,12 +12,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Download, Pause, Play, Volume2, VolumeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  useMediaSession,
-  watchMediaElement,
-} from "@/components/use-media-session";
-import { useReportScriptPlayback } from "@/components/script-playback";
-import { usePlayTracking } from "@/components/use-play-tracking";
-import { recordPlay } from "@/lib/meditation/actions";
+  formatTime,
+  useWaveformPlayer,
+} from "@/components/use-waveform-player";
 
 interface AudioPlayerProps {
   audioUrl: string;
@@ -48,54 +43,10 @@ interface AudioPlayerProps {
   downloadHref?: string;
 }
 
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
-
-function resolveCssColor(cssVar: string): string {
-  return getComputedStyle(document.documentElement)
-    .getPropertyValue(cssVar)
-    .trim();
-}
-
 /**
- * The waveform's colours, read from the theme tokens. The played portion is
- * the player gradient, laid across the full width so it reaches the rose as
- * the session ends; wavesurfer takes a CanvasGradient in canvas pixels, which
- * is why the width and pixel ratio matter here.
+ * The card player, for the studio and earlier versions. The meditation page
+ * plays through the session view instead (`session-player.tsx`).
  */
-function waveformColors(container: HTMLElement) {
-  const start = resolveCssColor("--gradient-start");
-  const end = resolveCssColor("--gradient-end");
-  const pixelRatio = Math.max(1, window.devicePixelRatio || 1);
-  const width = Math.max(1, container.clientWidth * pixelRatio);
-
-  let progressColor: string | CanvasGradient = start;
-  const ctx = document.createElement("canvas").getContext("2d");
-  if (ctx && start && end) {
-    const gradient = ctx.createLinearGradient(0, 0, width, 0);
-    gradient.addColorStop(0, start);
-    gradient.addColorStop(1, end);
-    progressColor = gradient;
-  }
-
-  return {
-    waveColor: resolveCssColor("--track"),
-    progressColor,
-    cursorColor: end,
-  };
-}
-
-function hoverColors() {
-  return {
-    lineColor: resolveCssColor("--muted-foreground"),
-    labelBackground: resolveCssColor("--popover"),
-    labelColor: resolveCssColor("--popover-foreground"),
-  };
-}
-
 export function AudioPlayer({
   audioUrl,
   title,
@@ -104,134 +55,33 @@ export function AudioPlayer({
   trackPlays = false,
   downloadHref = `/api/audio/${meditationId}/download`,
 }: AudioPlayerProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const wavesurferRef = useRef<WaveSurfer | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const player = useWaveformPlayer({
+    audioUrl,
+    title,
+    meditationId,
+    trackPlays,
+    shape: { height: 80, barWidth: 3, barGap: 2, barRadius: 3, cursorWidth: 2 },
+    hover: true,
+  });
+  const { containerRef, isPlaying, currentTime, duration, ready } = player;
   const [volume, setVolume] = useState(0.8);
   const [muted, setMuted] = useState(false);
-  const [ready, setReady] = useState(false);
-  // True from the first play on, so the script keeps the reader's place.
-  const [started, setStarted] = useState(false);
-  // The <audio> element wavesurfer plays through, for the lock screen.
-  const [media, setMedia] = useState<HTMLMediaElement | null>(null);
-  // Read when a player is created, so a volume change does not recreate it.
-  const volumeRef = useRef(volume);
-
-  useMediaSession(media, title);
-
-  const record = useCallback(() => {
-    void recordPlay(meditationId).catch(() => {});
-  }, [meditationId]);
-  usePlayTracking(media, trackPlays ? record : null);
-
-  const reportPlayback = useReportScriptPlayback();
-  useEffect(() => {
-    reportPlayback?.({ time: currentTime, duration, started });
-  }, [reportPlayback, currentTime, duration, started]);
-
-  const initWaveSurfer = useCallback(() => {
-    if (!containerRef.current) return;
-
-    wavesurferRef.current?.destroy();
-
-    const ws = WaveSurfer.create({
-      container: containerRef.current,
-      height: 80,
-      barWidth: 3,
-      barGap: 2,
-      barRadius: 3,
-      // A silence is most of a meditation. Without a floor its bars vanish,
-      // and so does any sign of progress through it.
-      barMinHeight: 2,
-      cursorWidth: 2,
-      ...waveformColors(containerRef.current),
-      url: audioUrl,
-      normalize: true,
-      plugins: [
-        Hover.create({
-          ...hoverColors(),
-          lineWidth: 1,
-          labelSize: "11px",
-        }),
-      ],
-    });
-
-    ws.on("ready", () => {
-      setDuration(ws.getDuration());
-      setReady(true);
-      ws.setVolume(volumeRef.current);
-    });
-
-    ws.on("timeupdate", (time) => setCurrentTime(time));
-    ws.on("play", () => {
-      setIsPlaying(true);
-      setStarted(true);
-    });
-    ws.on("pause", () => setIsPlaying(false));
-    ws.on("finish", () => setIsPlaying(false));
-    watchMediaElement(ws, setMedia);
-
-    wavesurferRef.current = ws;
-  }, [audioUrl]);
-
-  useEffect(() => {
-    initWaveSurfer();
-    return () => {
-      wavesurferRef.current?.destroy();
-    };
-  }, [initWaveSurfer]);
-
-  // Follow the theme and the width without recreating the player (which
-  // would drop the playback position). The theme toggle swaps a class on
-  // <html>; a resize stretches the canvas the gradient was measured for.
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    let frame = 0;
-    const recolor = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        wavesurferRef.current?.setOptions(waveformColors(container));
-      });
-    };
-    const themeObserver = new MutationObserver(recolor);
-    themeObserver.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-    const sizeObserver = new ResizeObserver(recolor);
-    sizeObserver.observe(container);
-    return () => {
-      cancelAnimationFrame(frame);
-      themeObserver.disconnect();
-      sizeObserver.disconnect();
-    };
-  }, []);
-
-  function togglePlay() {
-    wavesurferRef.current?.playPause();
-  }
 
   function handleVolumeChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = parseFloat(e.target.value);
     setVolume(val);
     setMuted(val === 0);
-    volumeRef.current = val;
-    wavesurferRef.current?.setVolume(val);
+    player.setVolume(val);
   }
 
   function toggleMute() {
     if (muted) {
       const restored = volume > 0 ? volume : 0.8;
       setMuted(false);
-      volumeRef.current = restored;
-      wavesurferRef.current?.setVolume(restored);
+      player.setVolume(restored);
     } else {
       setMuted(true);
-      volumeRef.current = 0;
-      wavesurferRef.current?.setVolume(0);
+      player.setVolume(0);
     }
   }
 
@@ -258,7 +108,7 @@ export function AudioPlayer({
           <div className="flex items-center gap-4">
             <button
               type="button"
-              onClick={togglePlay}
+              onClick={player.togglePlay}
               disabled={!ready}
               aria-label={isPlaying ? "Pause" : "Play"}
               className="flex size-12 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-gradient-start to-gradient-end text-gradient-foreground outline-none hover:brightness-110 focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 motion-safe:transition-[filter,transform] motion-safe:active:scale-95"

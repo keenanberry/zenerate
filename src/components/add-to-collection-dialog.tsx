@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import {
   Popover,
+  PopoverAnchor,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
@@ -23,16 +24,35 @@ import type { CollectionWithCount } from "@/lib/meditation/types";
 interface AddToCollectionDialogProps {
   meditationId: string;
   trigger?: React.ReactNode;
+  /**
+   * Opened from somewhere else (a menu item) rather than its own trigger:
+   * the popover is controlled and anchors to this element instead.
+   */
+  anchor?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function AddToCollectionDialog({
   meditationId,
   trigger,
+  anchor,
+  open: controlledOpen,
+  onOpenChange,
 }: AddToCollectionDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [ownOpen, setOwnOpen] = useState(false);
+  const open = controlledOpen ?? ownOpen;
+  const setOpen = onOpenChange ?? setOwnOpen;
   const [collections, setCollections] = useState<CollectionWithCount[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
+  // Show loading from the render that opens it, however it was opened (its
+  // trigger, or a menu item when controlled), so no stale list flashes.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setLoading(true);
+  }
   const [newName, setNewName] = useState("");
   const [showNew, setShowNew] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -144,19 +164,20 @@ export function AddToCollectionDialog({
   return (
     <Popover
       open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (next) setLoading(true);
-      }}
+      onOpenChange={setOpen}
     >
-      <PopoverTrigger asChild>
-        {trigger ?? (
-          <Button variant="ghost" size="sm" className="gap-2">
-            <FolderPlus className="h-4 w-4" />
-            Add to collection
-          </Button>
-        )}
-      </PopoverTrigger>
+      {anchor ? (
+        <PopoverAnchor asChild>{anchor}</PopoverAnchor>
+      ) : (
+        <PopoverTrigger asChild>
+          {trigger ?? (
+            <Button variant="ghost" size="sm" className="gap-2">
+              <FolderPlus className="h-4 w-4" />
+              Add to collection
+            </Button>
+          )}
+        </PopoverTrigger>
+      )}
       <PopoverContent align="end" className="w-64 p-0">
         <div className="border-b px-3 py-2">
           <p className="text-xs font-medium tracking-[0.06em] text-muted-foreground uppercase">Collections</p>

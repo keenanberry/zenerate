@@ -1,6 +1,6 @@
 # Meditation Detail Page and Session Player
 
-**Status:** Not started. Mockup up for the operator's review
+**Status:** In review (PR #93). Built to the approved mockup; the iPhone check is in `tasks/OPERATOR-TODO.md`
 **Priority:** Phase 6 (seed & open)
 **Phase:** 6
 **Depends on:** 49 (album covers), 54 (page meta)
@@ -16,7 +16,7 @@ mini-player is days of plumbing that the category does not use.
 
 Mockup: https://claude.ai/artifact/S8Tu8CjAJkephvSx9oVpCR
 
-## Decisions (proposed; confirm against the mockup)
+## Decisions (approved with the mockup, 2026-10-23)
 
 **Detail page** (`src/app/(app)/meditation/[id]/page.tsx`)
 - Full-width cover on a phone (the 160px header stays from `sm`), then the meta line
@@ -55,12 +55,27 @@ Mockup: https://claude.ai/artifact/S8Tu8CjAJkephvSx9oVpCR
 
 ## Acceptance
 
-- [ ] Detail page and session player in dark and light (player dark in both), at 390px
+- [x] Detail page and session player in dark and light (player dark in both), at 390px
       and desktop.
-- [ ] Play, pause, both skips and scrubbing work in the session view; closing it keeps
+- [x] Play, pause, both skips and scrubbing work in the session view; closing it keeps
       the audio playing; reopening shows the right position.
-- [ ] The Media Session still shows title, artwork and controls (task 25).
-- [ ] The script, when shown, still follows playback.
-- [ ] A meditation without audio shows the existing generate or processing states, not Play.
+- [x] The Media Session still shows title, artwork and controls (task 25).
+- [x] The script, when shown, still follows playback.
+- [x] A meditation without audio shows the existing generate or processing states, not Play.
 - [ ] Operator: the iPhone lock screen while the session view is open, in Safari and the
       installed app.
+
+## How it was built
+
+- One wavesurfer and one `<audio>` for the page's life: `useWaveformPlayer`
+  (`src/components/use-waveform-player.ts`) owns the instance, the Media Session, play
+  counting and the script sync. `AudioPlayer` (studio, earlier versions) and
+  `SessionPlayer` are two skins over it.
+- The session view stays mounted while minimized (`invisible` + `inert`), so opening and
+  closing it never touches the element. It is visible at once on open (only the close
+  delays `visibility`), so focus can land in it.
+- The page's favourite and the "Show script" state live in `MeditationPageProvider`
+  (`src/components/meditation-page.tsx`), shared by the header and the session's menu.
+- Verified with Playwright at 390px and 1280px against a synthesized 3:21 WAV with
+  silences, uploaded to local storage for a throwaway meditation, so no ElevenLabs render
+  was needed.

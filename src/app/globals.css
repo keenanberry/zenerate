@@ -79,6 +79,7 @@
   --color-sage: var(--sage);
   --color-periwinkle: var(--periwinkle);
   --color-menu-hover: var(--menu-hover);
+  --color-night: var(--night);
   --color-cover-ground: var(--cover-ground);
   --color-cover-rose: var(--cover-rose);
   --color-cover-clay: var(--cover-clay);
@@ -144,6 +145,9 @@
   /* The unfilled part of anything that fills: the unplayed waveform, the
      volume slider. Quieter than text, louder than a hairline. */
   --track: oklch(0.8447 0.0226 300.1421);
+  /* The session view's ground (task 55). That view is dark in either theme,
+     so this value is never drawn; it is Deep Night so the token exists here. */
+  --night: oklch(0.1985 0.0200 293.6639);
   /* The player gradient, and nothing else (DESIGN.md, The One Gradient Rule).
      Its own pair because the rose is --accent here and --accent-foreground in
      .dark. */
@@ -240,6 +244,8 @@
   --card-hover: oklch(0.2847 0.0346 291.2726);
   --menu-hover: oklch(0.3063 0.0359 293.3367);
   --track: oklch(0.4604 0.0472 295.5578);
+  /* Deep Night: the session view's ground, a step below the page. */
+  --night: oklch(0.1985 0.0200 293.6639);
   --gradient-start: oklch(0.7058 0.0777 302.0489);
   --gradient-end: oklch(0.8391 0.0692 2.6681);
   --gradient-foreground: oklch(0.2166 0.0215 292.8474);

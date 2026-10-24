@@ -3,11 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { FavoriteButton } from "@/components/favorite-button";
-import {
-  CoverPlayButton,
-  TrackPlayButton,
-  useTrackAudio,
-} from "@/components/track-play-button";
+import { TrackPlayButton, useTrackAudio } from "@/components/track-play-button";
 import { AudioStatusIcon } from "@/components/audio-status-icon";
 import { MeditationCover } from "@/components/meditation-cover";
 import { metaLine } from "@/lib/meditation/meta";
@@ -28,6 +24,10 @@ interface TrackRowProps {
  * One meditation in a list, as a music app draws a track (task 48): the
  * cover, the title, and one quiet line under it. A Hairline rule between
  * rows starts where the text starts, so the covers keep a clean column.
+ *
+ * The whole row opens the meditation's page, where Play is (task 55). From
+ * `sm` the index column plays in place; it and the row's buttons sit above
+ * the row's link.
  */
 export function TrackRow({
   meditation: m,
@@ -48,7 +48,7 @@ export function TrackRow({
   return (
     <div
       className={cn(
-        "group flex items-center gap-4 rounded-md sm:px-2 sm:hover:bg-muted/50 motion-safe:transition-colors",
+        "group relative flex items-center gap-4 rounded-md sm:px-2 sm:hover:bg-muted/50 motion-safe:transition-colors",
         playing && "sm:bg-primary/5",
       )}
     >
@@ -61,14 +61,13 @@ export function TrackRow({
         />
       )}
 
-      <CoverPlayButton audio={audio} title={m.title}>
-        <MeditationCover id={m.id} tags={m.tags ?? []} title={m.title} size={56} />
-      </CoverPlayButton>
+      <MeditationCover id={m.id} tags={m.tags ?? []} title={m.title} size={56} />
 
       <div className="flex min-h-[4.5rem] min-w-0 flex-1 items-center gap-2 self-stretch border-t group-first:border-t-0">
         <Link
           href={`/meditation/${m.id}`}
-          className="flex min-w-0 flex-1 flex-col gap-0.5 py-3"
+          // Stretched over the whole row, cover included.
+          className="flex min-w-0 flex-1 flex-col gap-0.5 rounded-md py-3 outline-none after:absolute after:inset-0 after:rounded-md focus-visible:after:ring-[3px] focus-visible:after:ring-ring/50"
         >
           <span className="flex min-w-0 items-center gap-2">
             <span

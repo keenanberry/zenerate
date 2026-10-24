@@ -7,24 +7,25 @@ import { toggleFavorite } from "@/lib/meditation/actions";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-interface FavoriteButtonProps {
-  meditationId: string;
+export type FavoriteState = {
   isFavorited: boolean;
-  size?: "sm" | "default";
-  /** The meditation's title, for the button's accessible name. */
-  title?: string;
-}
+  isPending: boolean;
+  toggle: () => void;
+};
 
-export function FavoriteButton({
-  meditationId,
-  isFavorited: initialFavorited,
-  size = "sm",
-  title,
-}: FavoriteButtonProps) {
+/**
+ * A meditation's favourite, optimistic. The meditation page holds one and
+ * shares it between the heart by the title and the session view's menu, so
+ * the two never disagree.
+ */
+export function useFavorite(
+  meditationId: string,
+  initialFavorited: boolean,
+): FavoriteState {
   const [isFavorited, setIsFavorited] = useState(initialFavorited);
   const [isPending, startTransition] = useTransition();
 
-  function handleToggle() {
+  function toggle() {
     setIsFavorited(!isFavorited);
     startTransition(async () => {
       try {
@@ -39,11 +40,34 @@ export function FavoriteButton({
     });
   }
 
+  return { isFavorited, isPending, toggle };
+}
+
+interface FavoriteButtonProps {
+  meditationId: string;
+  isFavorited: boolean;
+  /** The meditation's title, for the button's accessible name. */
+  title?: string;
+  /** A favourite held elsewhere (the meditation page's); otherwise its own. */
+  state?: FavoriteState;
+  className?: string;
+}
+
+export function FavoriteButton({
+  meditationId,
+  isFavorited: initialFavorited,
+  title,
+  state,
+  className,
+}: FavoriteButtonProps) {
+  const own = useFavorite(meditationId, initialFavorited);
+  const { isFavorited, isPending, toggle } = state ?? own;
+
   return (
     <Button
       variant="ghost"
-      size={size === "sm" ? "icon" : "default"}
-      onClick={handleToggle}
+      size="icon"
+      onClick={toggle}
       disabled={isPending}
       aria-pressed={isFavorited}
       aria-label={
@@ -53,7 +77,7 @@ export function FavoriteButton({
             ? "Remove from favorites"
             : "Add to favorites"
       }
-      className={cn(size === "sm" && "h-10 w-10 sm:h-8 sm:w-8")}
+      className={cn("h-10 w-10 sm:h-8 sm:w-8", className)}
     >
       <Heart
         className={cn(
