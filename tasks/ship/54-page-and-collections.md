@@ -1,6 +1,6 @@
 # Meditation Page Meta and Collection Artwork
 
-**Status:** In progress
+**Status:** Done (PR #87); the iPhone check is the operator's
 **Priority:** Phase 6 (seed & open)
 **Phase:** 6
 **Depends on:** 48 (quiet list), 49 (album covers)

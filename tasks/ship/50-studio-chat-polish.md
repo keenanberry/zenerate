@@ -1,6 +1,6 @@
 # Studio Chat Polish
 
-**Status:** In progress. Code done and verified locally
+**Status:** Done (PR #90); the iPhone check is the operator's
 **Priority:** Phase 6 (seed & open)
 **Phase:** 6
 **Depends on:** 49 (the draft chip shows the cover)
