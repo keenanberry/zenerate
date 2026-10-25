@@ -58,13 +58,13 @@ mails a link where the new `/login` asks for a code. Until Google is on, the but
       `http://127.0.0.1:54321/auth/v1/callback` (`.env.example` says how to use it locally).
 - [ ] Supabase → Authentication → Sign In / Providers → **Google**: on, with the client ID
       and secret.
-- [ ] Supabase → Authentication → Emails: paste the **Magic Link** template from
+- [x] 2026-10-25: Supabase → Authentication → Emails: paste the **Magic Link** template from
       `supabase/templates/magic_link.html` with the subject "Your Zenerate sign-in code", and
       replace **Confirm signup** with `confirmation.html`, subject "Your Zenerate sign-up
       code". Both now show a 6-digit code and no link; a password sign-up confirms with the
       code too.
-- [ ] Supabase → Authentication → Sign In / Providers → **Email**: Email OTP Length **6** and
-      Email OTP Expiration **3600**. `/login` and the emails say six digits and an hour.
+- [x] 2026-10-25: Supabase → Authentication → Sign In / Providers → **Email**: Email OTP
+      Length **6** and Email OTP Expiration **3600**. `/login` and the emails say six digits and an hour.
 - [ ] Know that Google's consent screen will say "continue to xnvqjqobegcpkigkmoct.supabase.co"
       unless you buy Supabase's custom domain add-on. It works either way.
 
@@ -143,6 +143,9 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
 - [ ] Everything above is ticked, and ship tasks 48–57 are merged.
 - [ ] Decide the free tier first: see `tasks/post-ship/paid-tier.md`. At minimum lower the
       daily chat ceiling (200 messages a day is a lot of Anthropic spend per user).
+- [ ] Supabase → Authentication → Rate Limits: raise **emails per hour** from 25 to about
+      100. Every email sign-in now sends a code (57), so 25 an hour runs out on a busy day.
+      Check Resend's plan limits too: the free plan allows 100 a day and 3,000 a month.
 - [ ] Supabase → Auth → enable signups.
 
 ## Done

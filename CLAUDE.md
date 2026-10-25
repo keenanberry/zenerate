@@ -47,7 +47,7 @@ Seeded test users: `alice@example.com` / `bob@example.com` — password `passwor
 | `src/app/(auth)/` | Login + auth callbacks |
 | `src/app/api/chat/` | Studio chat agent — persisted chat, tools, daily message ceiling |
 | `src/app/api/audio/generate/` | Audio pipeline trigger — validates, kicks off workflow |
-| `src/app/proxy.ts` | Supabase session refresh |
+| `src/proxy.ts` | Supabase session refresh (Next loads it only from the root or `src/`) |
 | `src/lib/audio/` | Audio pipeline — `workflow.ts`, `generate-audio.ts`, `storage.ts` |
 | `src/lib/meditation/` | Parser, types, tag vocabulary, server actions |
 | `src/lib/ai/` | System prompts + the daily chat ceiling |
