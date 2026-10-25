@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import {
   Download,
+  Flag,
   FolderPlus,
   Globe,
   Lock,
@@ -30,6 +31,8 @@ export type MeditationMenuProps = {
   chatId: string | null;
   /** Whether the audio exists: downloads, and the owner's Public/Private. */
   hasAudio: boolean;
+  /** A visitor's mailto for reporting a public meditation (task 53); null for the owner. */
+  reportHref: string | null;
 };
 
 /**
@@ -43,6 +46,7 @@ export function MeditationMenu({
   isOwner,
   chatId,
   hasAudio,
+  reportHref,
   onEdit,
   visibility,
 }: MeditationMenuProps & {
@@ -58,7 +62,7 @@ export function MeditationMenu({
 
   const ownerItems = isOwner;
   const shareItems = isSignedIn || hasAudio;
-  if (!ownerItems && !shareItems) return null;
+  if (!ownerItems && !shareItems && !reportHref) return null;
 
   const button = (
     <Button
@@ -142,6 +146,17 @@ export function MeditationMenu({
               </Link>
             )}
           </DropdownMenuItem>
+        )}
+        {reportHref && (
+          <>
+            {shareItems && <DropdownMenuSeparator />}
+            <DropdownMenuItem asChild>
+              <a href={reportHref}>
+                <Flag />
+                Report
+              </a>
+            </DropdownMenuItem>
+          </>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

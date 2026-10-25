@@ -126,6 +126,19 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
       of iMessage, Slack, X and Discord. Each shows a large card with the lotus or the
       meditation's title and description. Optionally run Facebook's Sharing Debugger (23, 26).
 
+### When a report arrives (53)
+
+A Report link mails `privacy@` with the meditation's title and URL. If it breaks the terms,
+unlist it in the Supabase SQL editor (production), using the id at the end of the URL:
+
+```sql
+update public.meditations set is_public = false, is_featured = false where id = '…';
+```
+
+It leaves `/discover` and its page at once; the sitemap drops it within the hour. The owner
+can make it public again from the "…" menu, so email them, and delete the meditation or the
+account (`/terms`, "Be decent") if it comes back.
+
 ## 6. Backups
 
 - [ ] Confirm the keepalive cron in Vercel's cron log, and take one production dump with the
