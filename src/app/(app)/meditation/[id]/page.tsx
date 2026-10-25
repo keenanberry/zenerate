@@ -13,9 +13,10 @@ import { ParentLink } from "@/components/parent-link";
 import { MeditationCover } from "@/components/meditation-cover";
 import { MeditationDetails } from "@/components/meditation-details";
 import { getQuotaUsage, isFreeRetryAvailable } from "@/lib/audio/quota";
-import { meditationMetadata } from "@/lib/seo/metadata";
+import { meditationMetadata, siteUrl } from "@/lib/seo/metadata";
 import { getMeditationChatId } from "@/lib/chat/actions";
 import { metaLine } from "@/lib/meditation/meta";
+import { reportHref } from "@/lib/meditation/report";
 import { MeditationVersions } from "@/components/meditation-versions";
 
 // One read per request, shared by generateMetadata and the page. React's
@@ -114,6 +115,12 @@ export default async function MeditationDetailPage({
                     isOwner,
                     chatId,
                     hasAudio,
+                    // Anyone but the owner can report a public meditation;
+                    // the operator unlists it by hand (task 53).
+                    reportHref:
+                      !isOwner && meditation.is_public
+                        ? reportHref(meditation, siteUrl)
+                        : null,
                   }}
                 >
                   {/* No status badge: a meditation's state is its audio, and

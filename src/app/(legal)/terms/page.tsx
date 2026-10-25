@@ -45,6 +45,15 @@ export default function TermsPage() {
         service or get around its usage limits. I may remove any content or
         close any account at my discretion.
       </p>
+      <p>
+        To report a public meditation that breaks these rules, choose Report
+        in its &ldquo;…&rdquo; menu, or email{" "}
+        <a href="mailto:privacy@zeneratestudio.com">
+          privacy@zeneratestudio.com
+        </a>{" "}
+        with its link. I review each report by hand and make the meditation
+        private if it breaks these terms.
+      </p>
 
       <h2>Not medical advice</h2>
       <p>
