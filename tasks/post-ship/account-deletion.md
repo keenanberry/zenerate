@@ -36,8 +36,11 @@ Audio rendered before task 32 sat at the bucket root as `<meditation_id>.mp3` (t
 was wiped on 2026-10-21, so production should hold none), and is found through the user's
 meditation ids.
 
-**Until this ships, a manual deletion must do both:** remove everything under the user's
-prefix (plus any root-level `<meditation_id>.mp3` of theirs), *then* delete the user.
+**Until this ships, a manual deletion must do all three:** remove everything under the user's
+prefix (plus any root-level `<meditation_id>.mp3` of theirs), *then* delete the user,
+*then* record the deletion so a backup restore deletes them again
+(`docs/runbooks/backup-restore.md`, "Deletion records"). A self-serve deletion needs a
+record of its own that a restore cannot roll back, so not a row in the same database.
 `docs/runbooks/operator-data-wipe.md` has the queries.
 
 ## Scope sketch
