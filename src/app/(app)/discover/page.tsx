@@ -193,7 +193,9 @@ export default async function DiscoverPage({
   const active = hasActiveFilters(filters);
 
   return (
-    <div className="space-y-10">
+    // `data-back-label`: a meditation opened from here links back to this
+    // exact URL, filters and all (src/components/back-origin.tsx).
+    <div data-back-label="Discover" className="space-y-10">
       <div className="space-y-6">
         <div className="space-y-2">
           <h1 className="font-serif text-2xl font-medium tracking-tight">Discover</h1>

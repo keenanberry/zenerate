@@ -103,7 +103,9 @@ export default async function DashboardPage({
   const { tab } = await searchParams;
 
   return (
-    <div className="space-y-10">
+    // `data-back-label`: a meditation opened from either tab links back to
+    // it (src/components/back-origin.tsx).
+    <div data-back-label="Library" className="space-y-10">
       <div className="flex items-end justify-between gap-4">
         <div className="min-w-0 space-y-2">
           <h1 className="font-serif text-2xl font-medium tracking-tight">Library</h1>

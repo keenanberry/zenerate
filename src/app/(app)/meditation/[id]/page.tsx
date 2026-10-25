@@ -9,7 +9,7 @@ import {
   MeditationPageProvider,
   ScriptDisclosure,
 } from "@/components/meditation-page";
-import { ParentLink } from "@/components/parent-link";
+import { MeditationParentLink } from "@/components/back-origin";
 import { MeditationCover } from "@/components/meditation-cover";
 import { MeditationDetails } from "@/components/meditation-details";
 import { getQuotaUsage, isFreeRetryAvailable } from "@/lib/audio/quota";
@@ -83,11 +83,9 @@ export default async function MeditationDetailPage({
       >
         <ScriptPlaybackProvider>
           <div className="space-y-3">
-            {/* The owner came from their library; everyone else, including a
-                signed-in visitor on a shared link, belongs to Discover. */}
-            <ParentLink href={isOwner ? "/dashboard" : "/discover"}>
-              {isOwner ? "Library" : "Discover"}
-            </ParentLink>
+            {/* Back to the list it was opened from; without a record, the
+                owner's Library or, for everyone else, Discover. */}
+            <MeditationParentLink meditationId={meditation.id} isOwner={isOwner} />
 
             {/* The cover runs full width on a phone, as album art does; from
                 `sm` it sits at 160px beside the details. */}

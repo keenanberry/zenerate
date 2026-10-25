@@ -525,10 +525,12 @@ picker):
 - The wordmark has the Brand Mark beside it at 22px, in `text-primary`, bold tier.
 - A page that belongs to a section (a meditation, a collection) carries an eyebrow
   above its title (`src/components/parent-link.tsx`): a Label-type link in Dusk with a
-  12px arrow, no box and no "Back", lifting to Foreground on hover. It names where the
-  page lives rather than promising a history it cannot honour, so the owner's meditation
-  says Library and anyone else's, including a signed-in visitor on a shared link, says
-  Discover. It replaced a ghost button that sat in its own 24px band and read as an
+  12px arrow, no box and no "Back", lifting to Foreground on hover. It names a place, not
+  a history. On a meditation that place is the list it was opened from in this tab
+  (Discover with its filters, a Library tab, or a collection by name; see
+  `src/components/back-origin.tsx`), returned to through history when that list is the
+  previous entry. Without a record (a shared link, a new tab, the installed app) the
+  owner's meditation says Library and anyone else's says Discover. It replaced a ghost button that sat in its own 24px band and read as an
   action beside the real ones.
 
 ### Brand Mark
