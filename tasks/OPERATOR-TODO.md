@@ -4,7 +4,7 @@ Everything left before signups open that only the operator can do: a phone, a da
 account, or a judgment call. Agents keep this file current. When you finish an item, tick it
 and add the date, or tell an agent and it will. Each item names the task file with the detail.
 
-Last updated: 2026-10-24. Sections are in the order to do them. Live sandbox snapshot: `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`.
+Last updated: 2026-10-25. Sections are in the order to do them. Live sandbox snapshot: `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`.
 
 ## 1. Protect the spend (do first)
 
@@ -43,7 +43,9 @@ afterwards check which of the four variables below it set and add the rest), or 
 ### Google sign-in (57)
 
 Needed before the Google button works in production; the emailed code needs only the
-template step. Do these once task 57 is merged, or earlier, since nothing reads them yet.
+email steps. Do the email steps **before task 57 merges**: until they are done, production
+mails a link where the new `/login` asks for a code. Until Google is on, the button says
+"Google sign-in isn't available right now" and nothing breaks.
 
 - [ ] Google Cloud Console → a new project → **OAuth consent screen**: External, app name
       Zenerate, support email, the `zeneratestudio.com` domain, links to `/privacy` and
@@ -53,11 +55,16 @@ template step. Do these once task 57 is merged, or earlier, since nothing reads 
 - [ ] **Credentials** → Create OAuth client ID → Web application. Authorized redirect URI:
       `https://xnvqjqobegcpkigkmoct.supabase.co/auth/v1/callback` (Supabase shows the exact
       one on the Google provider page). For local testing, a second client with
-      `http://127.0.0.1:54321/auth/v1/callback`.
+      `http://127.0.0.1:54321/auth/v1/callback` (`.env.example` says how to use it locally).
 - [ ] Supabase → Authentication → Sign In / Providers → **Google**: on, with the client ID
       and secret.
-- [ ] Supabase → Authentication → Emails: paste the **Magic Link** and **Confirm signup**
-      templates from `supabase/templates/` (task 57 adds the first and changes the second).
+- [ ] Supabase → Authentication → Emails: paste the **Magic Link** template from
+      `supabase/templates/magic_link.html` with the subject "Your Zenerate sign-in code", and
+      replace **Confirm signup** with `confirmation.html`, subject "Your Zenerate sign-up
+      code". Both now show a 6-digit code and no link; a password sign-up confirms with the
+      code too.
+- [ ] Supabase → Authentication → Sign In / Providers → **Email**: Email OTP Length **6** and
+      Email OTP Expiration **3600**. `/login` and the emails say six digits and an hour.
 - [ ] Know that Google's consent screen will say "continue to xnvqjqobegcpkigkmoct.supabase.co"
       unless you buy Supabase's custom domain add-on. It works either way.
 

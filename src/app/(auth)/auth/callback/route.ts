@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { RESET_PASSWORD_PATH, safeNextPath } from "@/lib/auth/redirect";
+import { callbackErrorKind } from "@/lib/auth/errors";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -24,5 +25,11 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}${RESET_PASSWORD_PATH}?error=expired`);
   }
 
-  return NextResponse.redirect(`${origin}/login`);
+  // A Google sign-in that failed or was cancelled goes back to /login with a sentence,
+  // keeping `next` so a second try still lands where the first was headed.
+  const login = new URL("/login", origin);
+  const kind = callbackErrorKind(searchParams) ?? (code ? "link-failed" : null);
+  if (kind) login.searchParams.set("error", kind);
+  if (next !== "/dashboard") login.searchParams.set("next", next);
+  return NextResponse.redirect(login);
 }

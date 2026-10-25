@@ -8,7 +8,7 @@ export default function TermsPage() {
   return (
     <>
       <h1>Terms of Service</h1>
-      <p className="text-muted-foreground">Last updated: October 8, 2026</p>
+      <p className="text-muted-foreground">Last updated: October 25, 2026</p>
 
       <p>
         Zenerate is a free hobby project run by Keenan Berry, an individual,
@@ -25,7 +25,9 @@ export default function TermsPage() {
 
       <h2>Your account</h2>
       <p>
-        You must be at least 16 to create an account. Keep your password safe;
+        You must be at least 16 to create an account. You can create one with
+        Google, with a code sent to your email address, or with a password.
+        Keep access to that email address, Google account or password safe;
         you are responsible for what happens under your account.
       </p>
 

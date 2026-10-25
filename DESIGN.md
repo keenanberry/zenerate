@@ -738,6 +738,28 @@ the conversation on the left, the script on the right.
   stream alike. A reload that lands while a reply is still being written shows a Card
   saying so, with a Reload button.
 
+### Sign-in
+`/login` (task 57) is one 28rem `AuthCard` for signing in and signing up, in three steps
+that swap inside the card:
+
+- **Start:** "Welcome" over "Sign in, or create a free account". First an outline
+  **Continue with Google** at 40px with Google's own "G" at 18px, the one place a colour
+  is not a token (Google's brand rules require the mark unaltered). Then a Hairline rule
+  broken by "or" in Label type, the Email field, a primary **Continue with email** and a
+  Dusk line saying a 6-digit code is coming. Below the form, a link-style "Use a password
+  instead", then the Terms line.
+- **Code:** "Check your email" with the address. One field, 48px tall, the digits at
+  1.5rem with 0.4em tracking and tabular figures, its left padding widened by the
+  tracking so the digits sit centred; the placeholder at 40% Dusk so it never reads as
+  a code. `inputMode="numeric"` and `autoComplete="one-time-code"`, so iOS offers the
+  code from Mail; a full six digits submits itself. A rejected code empties the field and
+  marks it in Ember. "Send a new code" and "Use a different email" sit below as links.
+- **Password:** the original form, with its own sign-up toggle and "Other ways to sign in"
+  back to the start.
+
+Errors are one sentence in Ember under the field, never Supabase's own text
+(`src/lib/auth/errors.ts`); notices such as "A new code is on its way" are Dusk.
+
 ### Processing State
 A centred card with a 48px Amethyst Glow circle holding a spinning loader, ringed by a
 slow `motion-safe:animate-ping` halo at 10%, with an elapsed-time counter in tabular figures. The

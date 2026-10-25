@@ -15,7 +15,7 @@ export default function PrivacyPage() {
   return (
     <>
       <h1>Privacy Policy</h1>
-      <p className="text-muted-foreground">Last updated: October 24, 2026</p>
+      <p className="text-muted-foreground">Last updated: October 25, 2026</p>
 
       <p>
         Zenerate is operated by Keenan Berry, an individual based in Missouri,
@@ -29,9 +29,18 @@ export default function PrivacyPage() {
       <h2>What I collect</h2>
       <ul>
         <li>
-          <strong>Account data:</strong> your email address and password. The
-          password is stored only as a secure hash by the authentication
-          provider; I never see it.
+          <strong>Account data:</strong> your email address and, if you
+          choose one, a password. The password is stored only as a secure hash
+          by the authentication provider; I never see it. You can also sign in
+          with a 6-digit code sent to your email address, or with Google.
+        </li>
+        <li>
+          <strong>If you sign in with Google:</strong> Google shares your
+          email address, your name and the address of your profile picture.
+          The authentication provider keeps them with your account record;
+          Zenerate uses only your email address and never shows your name or
+          picture. Google learns that you signed in to Zenerate, under
+          Google&rsquo;s own privacy policy.
         </li>
         <li>
           <strong>Your content:</strong> the meditations you make, with their
@@ -114,8 +123,8 @@ export default function PrivacyPage() {
           <a href="https://supabase.com/privacy">Supabase privacy policy</a>)
         </li>
         <li>
-          <strong>Resend</strong>: delivers account emails, such as sign-up
-          confirmation and password resets. Receives your email address. (
+          <strong>Resend</strong>: delivers account emails: sign-in and
+          sign-up codes and password resets. Receives your email address. (
           <a href="https://resend.com/legal/privacy-policy">
             Resend privacy policy
           </a>
@@ -146,6 +155,11 @@ export default function PrivacyPage() {
             ElevenLabs privacy policy
           </a>
           )
+        </li>
+        <li>
+          <strong>Google</strong>: only if you choose to sign in with Google.
+          Confirms who you are and sends Zenerate the details listed above. (
+          <a href="https://policies.google.com/privacy">Google privacy policy</a>)
         </li>
         <li>
           <strong>Sentry</strong>: error tracking, so I hear about failures
