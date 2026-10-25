@@ -1,6 +1,6 @@
 # Sign In with Google or an Emailed Code
 
-**Status:** In review (code done 2026-10-25; Google untested end to end, see below)
+**Status:** Done* (PR #99, 2026-10-25). *Operator: create the Google client and switch the provider on; Google sign-in is untested end to end until then (see below)
 **Priority:** Phase 6 (seed & open). Promoted from `tasks/post-ship/google-apple-auth.md`
 on 2026-10-24, the Google half only, plus an emailed code.
 **Phase:** 6

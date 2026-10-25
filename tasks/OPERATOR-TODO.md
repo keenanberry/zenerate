@@ -142,7 +142,19 @@ account (`/terms`, "Be decent") if it comes back.
 ## 6. Backups
 
 - [ ] Confirm the keepalive cron in Vercel's cron log, and take one production dump with the
-      backup runbook (10). Prune anything older than 30 days as you do (52).
+      backup runbook (10).
+- [ ] Install the 30-day prune once, on every machine that holds dumps, passing the
+      off-site folder if it is a synced folder on this Mac:
+      `./scripts/schedule-backup-prune.sh "$HOME/Library/CloudStorage/<drive>/zenerate"`.
+      Then check `launchctl print gui/$(id -u)/com.zeneratestudio.backup-prune` shows exit
+      code 0 and `~/backups/zenerate/prune.log` is empty (52). Any dump already older than
+      29 days is deleted on the first run.
+- [ ] Decide the off-site copy: the job cannot empty a cloud drive's trash (Google Drive and
+      iCloud keep deleted files 30 days), so either empty it after prunes or use a drive or
+      folder with no trash. Copies anywhere else need the job too (52).
+- [ ] From now on, each time you delete an account, `touch
+      ~/backups/zenerate/deletions/<user-id>`. A restore re-deletes those accounts; one
+      without a record comes back (52, runbook "Deletion records").
 
 ## 7. Optional
 

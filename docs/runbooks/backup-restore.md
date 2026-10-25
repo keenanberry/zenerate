@@ -6,6 +6,10 @@ purpose — see *Why this is manual* at the bottom.
 
 **Cadence:** weekly. A calendar reminder is sufficient for a single-user app.
 
+**Retention:** 30 days at most, everywhere a dump lives. `/privacy` promises that backups
+hold deleted data for no longer than that. See *Retention* below; the prune runs on its
+own, so a missed backup never leaves an old dump behind.
+
 ---
 
 ## What is and isn't covered
@@ -44,6 +48,7 @@ environment variable set for the one command.
  export SUPABASE_DB_URL='postgresql://postgres.<ref>:<password>@<host>:5432/postgres'
 
 # Write to a dated file outside the repo.
+mkdir -p ~/backups/zenerate
 pg_dump "$SUPABASE_DB_URL" \
   --clean --if-exists \
   --no-owner --no-privileges \
@@ -59,9 +64,57 @@ Why each flag:
 | `--no-owner --no-privileges` | Supabase-managed roles do not exist on a local scratch database. Without these the restore fails on every `ALTER ... OWNER TO` |
 | `--schema=public --schema=auth` | `public` is the app; `auth` is the users. Supabase's other internal schemas (`storage`, `realtime`, `vault`, …) are managed by the platform and restoring them into a scratch database is noise at best |
 
-Then move the file somewhere off Supabase — local disk **plus** a cloud drive. A backup
+Then copy the file off this machine — local disk **plus** a cloud drive. A backup
 that lives only on the machine that also holds the only copy of everything else is not
-off-site.
+off-site. Copy with `cp -p` (or Finder), which keeps the file's date: the prune goes by
+it, and a plain `cp` would give the copy today's date and another 30 days.
+
+---
+
+## Retention
+
+Install the prune once per machine that holds dumps. Pass the off-site folder too, if it
+is a folder on this Mac (a synced cloud drive):
+
+```bash
+./scripts/schedule-backup-prune.sh "$HOME/Library/CloudStorage/<drive>/zenerate"
+```
+
+It installs a launchd job (`com.zeneratestudio.backup-prune`) that runs daily at 09:00 and
+at every login, and deletes every `zenerate-*.sql` dump and every deletion record (below)
+that is 29 or more days old, so nothing reaches 30. It calls `/usr/bin/find` directly, so
+it keeps working when this checkout moves. It also excludes `~/backups/zenerate` from
+Time Machine, whose snapshots would otherwise keep pruned dumps. Run it again with the
+full folder list to change the folders; `--dry-run` prints the job without installing it.
+
+Check it works: `launchctl print gui/$(id -u)/com.zeneratestudio.backup-prune` shows the
+last exit code, and `~/backups/zenerate/prune.log` holds any errors. An
+`Operation not permitted` there for the cloud folder means macOS blocked background access
+to it: give `/usr/bin/find` access under System Settings → Privacy & Security → Full Disk
+Access, or keep the off-site copy somewhere the job can reach.
+
+Two places the job cannot reach:
+
+- **The cloud drive's trash.** Google Drive and iCloud keep deleted files for 30 days,
+  so a pruned dump lives on there. Empty the trash of that folder after a prune, or use a
+  drive or folder with no trash.
+- **Any other copy.** An external disk or a second machine needs the job too, or no dumps.
+
+---
+
+## Deletion records
+
+Restoring a dump brings back every account deleted after the dump was taken. To delete
+them again, keep one empty file per handled deletion request, named by the user id. Its
+date is the record; nothing else goes in it. When you delete an account:
+
+```bash
+mkdir -p ~/backups/zenerate/deletions
+touch ~/backups/zenerate/deletions/<user-id>
+```
+
+The prune removes a record after 29 days. By then every dump older than the deletion is
+gone too, so the record has nothing left to protect against.
 
 ---
 
@@ -99,13 +152,22 @@ This is the "something has gone badly wrong" path. Read it before you need it.
 # ALWAYS dry-run first: restore into a scratch database and look at it.
 ./scripts/verify-backup.sh ~/backups/zenerate/zenerate-YYYY-MM-DD.sql
 
-# Only then, against production:
+# Only then, against production. The second command deletes again every account
+# in the deletion records, in the same transaction, so no deleted account is ever
+# live. Deleting the auth.users row cascades to every public table.
+ids=$(ls ~/backups/zenerate/deletions 2>/dev/null | sed "s/.*/'&'/" | paste -sd, -)
+reapply=()
+[[ -n "$ids" ]] && reapply=(--command "delete from auth.users where id in ($ids)")
 psql "$SUPABASE_DB_URL" --single-transaction --set ON_ERROR_STOP=on \
-  --file ~/backups/zenerate/zenerate-YYYY-MM-DD.sql
+  --file ~/backups/zenerate/zenerate-YYYY-MM-DD.sql "${reapply[@]}"
 ```
 
 `--single-transaction` with `ON_ERROR_STOP=on` means a failure part-way leaves production
 exactly as it was, rather than half-restored. Never restore to production without both.
+A malformed record (not a uuid) fails the whole restore; fix the file name and run it again.
+
+If a deletion was handled but never recorded, delete that account again by hand now. The
+records are only as complete as the habit of writing them.
 
 After restoring, remember that **audio files are not in the dump**. Meditations whose
 `audio_path` points at an object that no longer exists will render a "no audio" state
@@ -122,4 +184,13 @@ is recorded in `docs/superpowers/specs/2026-09-11-go-live-design.md`.
 **When there is user data whose loss would matter, move to Pro.** At that point this
 runbook and the keepalive route should both be *deleted*, not left running — a manual
 backup procedure nobody performs is worse than an automated one, because it reads like
-protection.
+protection. Before deleting it:
+
+- Check the plan's backup retention is 30 days or less. If it is longer, change the
+  number in `/privacy` in the same PR.
+- Keep the deletion records and the re-delete step, moved to wherever the restore
+  procedure goes. A restored Supabase backup brings deleted accounts back too.
+- Delete the old dumps. Leave the prune job running while it still expires the deletion
+  records; once they live elsewhere, remove it with
+  `launchctl bootout gui/$(id -u)/com.zeneratestudio.backup-prune` and delete its plist in
+  `~/Library/LaunchAgents/`.
