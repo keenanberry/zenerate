@@ -231,8 +231,14 @@ otp_expiry = 3600
 # the dashboard (Authentication → Emails); keep both copies the same. Mail lands
 # in Mailpit at http://127.0.0.1:54324 locally.
 [auth.email.template.confirmation]
-subject = "Confirm your email for Zenerate"
+subject = "Your Zenerate sign-up code"
 content_path = "./supabase/templates/confirmation.html"
+
+# Sent by "Continue with email" to an address that already has an account; a new
+# address gets the confirmation template above. Both carry a 6-digit code, no link.
+[auth.email.template.magic_link]
+subject = "Your Zenerate sign-in code"
+content_path = "./supabase/templates/magic_link.html"
 
 [auth.email.template.recovery]
 subject = "Reset your Zenerate password"
@@ -322,6 +328,21 @@ url = ""
 # If enabled, the nonce check will be skipped. Required for local sign in with Google auth.
 skip_nonce_check = false
 # If enabled, it will allow the user to successfully authenticate when the provider does not return an email address.
+email_optional = false
+
+# Google sign-in (task 57). Off by default: with no client, Supabase answers the
+# authorize redirect with a raw error, and the CLI cannot make `enabled` depend on
+# whether the variables are set. To test locally, put both variables in .env.local (see
+# .env.example), set enabled = true here without committing it, and restart Supabase.
+# Production configures the provider in the dashboard, not from this file.
+[auth.external.google]
+enabled = false
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+redirect_uri = ""
+url = ""
+# Required for local sign in with Google auth.
+skip_nonce_check = true
 email_optional = false
 
 # Allow Solana wallet holders to sign in to your project via the Sign in with Solana (SIWS, EIP-4361) standard.

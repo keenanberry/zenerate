@@ -1,6 +1,6 @@
 # Sign In with Google or an Emailed Code
 
-**Status:** Not started
+**Status:** In review (code done 2026-10-25; Google untested end to end, see below)
 **Priority:** Phase 6 (seed & open). Promoted from `tasks/post-ship/google-apple-auth.md`
 on 2026-10-24, the Google half only, plus an emailed code.
 **Phase:** 6
@@ -64,6 +64,30 @@ Considered and left out (2026-10-24):
 - **Errors in words:** a wrong or expired code, too many requests (Supabase's rate limit),
   Google cancelled by the person, and signups closed.
 
+### Chosen in the build (2026-10-25)
+
+- **Templates: the password sign-up moved to the code too.** `confirmation.html` and the
+  new `magic_link.html` both show `{{ .Token }}` and no link, so no email in the sign-in
+  path depends on which browser opens it. With email confirmation on, a password
+  sign-up goes straight to the code step on `/login`, and `verifyOtp({ type: "email" })`
+  confirms it. Only the password reset (`recovery.html`) is still a link.
+- **`[auth.external.google]` is committed with `enabled = false`.** The Supabase CLI cannot
+  make `enabled` depend on the variables: `enabled = "env(...)"` fails to parse when the
+  variable is unset, and `enabled = true` with an unset client id starts Supabase with a
+  bogus client. To test Google locally, set both variables in `.env.local` and flip
+  `enabled` locally (`.env.example` has the steps).
+- **The Google button checks first.** With the provider off, Supabase answers the
+  authorize redirect with a raw JSON page, so the button reads `/auth/v1/settings` and
+  says "Google sign-in isn't available right now" instead of leaving.
+- **Callback errors** come back to `/login?error=<kind>` (`google-cancelled`,
+  `signups-closed`, `google-failed`, `link-failed`), keeping `next`. All sentences live
+  in `src/lib/auth/errors.ts`. Supabase reports a wrong code and an expired one with the
+  same error (`otp_expired`), so one sentence covers both.
+- **`/privacy` differs from the spec on one point.** Supabase Auth keeps the name and
+  picture URL Google sends in the account's identity record, so the page says the
+  authentication provider keeps them and Zenerate uses only the email, rather than that
+  only the email is stored.
+
 ## Scope
 
 - `src/app/(auth)/login/page.tsx`: Google button, the email-code step (the email field,
@@ -94,14 +118,20 @@ works.
 - [ ] Locally, with a test Google client: a new Google account signs up and lands on
       `/dashboard`; an existing password account signs in with Google into the same
       Library; `next` is honoured; a cancelled consent returns to `/login` with a sentence.
-- [ ] Locally, in Mailpit: a new address gets a code and signs up; an existing one signs
+      **Not done: no Google client was available.** Checked instead: with the provider
+      off the button says so in a sentence; `/auth/callback` with `error=access_denied`,
+      `error_code=signup_disabled` or another error lands on `/login` with the right
+      sentence and keeps `next`. Account linking is unverified.
+- [x] Locally, in Mailpit: a new address gets a code and signs up; an existing one signs
       in; a wrong code and an expired code each say so; resending is rate-limited with a
-      sentence.
-- [ ] With signups disabled locally, Google and the code refuse a new address with a
-      sentence, and still sign in an existing one.
-- [ ] The password form still signs in and signs up.
-- [ ] Dark, light and 390px wide, per the `zenerate-design` order.
-- [ ] `/privacy` names Google; the operator TODO and this file are current.
+      sentence. (Expiry and the rate limit with `otp_expiry = 60` and `max_frequency =
+      "60s"` set temporarily; `next` honoured for the code too.)
+- [x] With signups disabled locally, the code refuses a new address with a sentence, and
+      still signs in an existing one. (Google: the callback mapping only, as above.)
+- [x] The password form still signs in and signs up, and with confirmation on a password
+      sign-up confirms with the emailed code.
+- [x] Dark, light and 390px wide, per the `zenerate-design` order.
+- [x] `/privacy` names Google; the operator TODO and this file are current.
 - [ ] Operator (`tasks/OPERATOR-TODO.md` §2 and §4): Google client created, provider on in
       Supabase, templates pasted, sign-in with Google and with a code checked in Safari and
       the installed iPhone app.
