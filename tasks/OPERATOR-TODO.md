@@ -40,6 +40,27 @@ afterwards check which of the four variables below it set and add the rest), or 
 - [ ] Check: the deploy's build log shows the source map upload. The first real report
       should have a readable stack trace and a user id, and no email or message text.
 
+### Google sign-in (57)
+
+Needed before the Google button works in production; the emailed code needs only the
+template step. Do these once task 57 is merged, or earlier, since nothing reads them yet.
+
+- [ ] Google Cloud Console → a new project → **OAuth consent screen**: External, app name
+      Zenerate, support email, the `zeneratestudio.com` domain, links to `/privacy` and
+      `/terms`. Scopes: the defaults only (email, profile, openid), so no app review. Publish
+      it to Production, or only test users can sign in. A logo triggers brand verification
+      (a few days); leave it off unless you want to wait.
+- [ ] **Credentials** → Create OAuth client ID → Web application. Authorized redirect URI:
+      `https://xnvqjqobegcpkigkmoct.supabase.co/auth/v1/callback` (Supabase shows the exact
+      one on the Google provider page). For local testing, a second client with
+      `http://127.0.0.1:54321/auth/v1/callback`.
+- [ ] Supabase → Authentication → Sign In / Providers → **Google**: on, with the client ID
+      and secret.
+- [ ] Supabase → Authentication → Emails: paste the **Magic Link** and **Confirm signup**
+      templates from `supabase/templates/` (task 57 adds the first and changes the second).
+- [ ] Know that Google's consent screen will say "continue to xnvqjqobegcpkigkmoct.supabase.co"
+      unless you buy Supabase's custom domain add-on. It works either way.
+
 ## 3. Seed Discover on your iPhone (task 37)
 
 Seeding is independent of the redesign (48–50), so it can start now. Do it on the phone and
@@ -85,6 +106,9 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
       Stop, and starting another stops it; Change opens the list and Done folds it. After
       one render, the next card says "Same as last time" on the voice and background you
       used. The meditation page's Generate Audio panel has the same rows.
+- [ ] Sign-in (57), in Safari **and the installed app**, signed out: Continue with Google
+      lands you in your Library inside the same app, not in Safari; Continue with email
+      sends a code that iOS offers above the keyboard, and typing it signs you in.
 
 ## 5. Production checks (after seeding)
 
@@ -109,7 +133,7 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
 
 ## 8. Open signups (task 38)
 
-- [ ] Everything above is ticked, and ship tasks 48–53 are merged.
+- [ ] Everything above is ticked, and ship tasks 48–57 are merged.
 - [ ] Decide the free tier first: see `tasks/post-ship/paid-tier.md`. At minimum lower the
       daily chat ceiling (200 messages a day is a lot of Anthropic spend per user).
 - [ ] Supabase → Auth → enable signups.

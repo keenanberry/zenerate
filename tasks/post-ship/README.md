@@ -12,7 +12,7 @@ free tier.
 |---|---|
 | [Paid tier](./paid-tier.md) | Charge about $5/month? Includes a per-meditation cost model (about $0.35–0.50) and the free tier's real Anthropic exposure |
 | [User profiles](./user-profiles.md) | Let people who publish show who they are: name, a short bio, their public meditations; plus an `/account` page |
-| [Google / Apple sign-in](./google-apple-auth.md) | Yes, Supabase supports both. Google is free; Apple needs a $99/year developer account. Recommends Google first |
+| [Google / Apple sign-in](./google-apple-auth.md) | Yes, Supabase supports both. **Google moved to ship 57** (2026-10-24) with an emailed code; Apple ($99/year) stays here |
 | [Remember preferences](./agent-user-memory.md) | "Brittney again, or change it up?" The audio card preselects the last voice and bed, and the agent gets a short summary of recent choices. Derived from existing `settings`, so no new table for the first slice |
 
 ## Everything else
@@ -21,7 +21,7 @@ free tier.
 |---|---|
 | [User profiles](./user-profiles.md) | Public author surface for `/discover`; private settings/quota home |
 | [Paid tier](./paid-tier.md) | Stripe integration, tiered quotas, custom voice upload |
-| [Google / Apple auth](./google-apple-auth.md) | OAuth providers via Supabase |
+| [Google / Apple auth](./google-apple-auth.md) | OAuth providers via Supabase. **Google moved to ship 57** (2026-10-24); Apple stays here |
 | [Admin dashboard](./admin-dashboard.md) | User + usage + cost visibility for the operator |
 | [Public content moderation](./public-content-moderation.md) | Report, review, flag for `/discover`. **A minimal Report link moved to ship 53** (2026-10-23); the queue stays here |
 | [Analytics](./analytics.md) | Usage + conversion funnel tracking |

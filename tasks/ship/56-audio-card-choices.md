@@ -1,6 +1,6 @@
 # Audio Card: Summary First, Remembered Choices
 
-**Status:** In review. Built; the iPhone check is an operator item
+**Status:** Done* (PR #96). The iPhone check is an operator item
 **Priority:** Phase 6 (seed & open)
 **Phase:** 6
 **Depends on:** 50 (studio chat polish), 55 (merged in #93; it left the audio card and the Generate Audio panel alone).

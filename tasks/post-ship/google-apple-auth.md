@@ -1,7 +1,8 @@
 # Google / Apple Auth
 
-**Status:** Not started. Scoped for a future session (refreshed 2026-10-22)
-**Priority:** Post-ship. One of the three "next up" candidates in the README.
+**Status:** Google promoted to ship task 57 on 2026-10-24, with an emailed sign-in code
+(`tasks/ship/57-google-and-email-code.md`). **Apple stays here**, post-ship.
+**Priority:** Post-ship for Apple: add it when iPhone users ask, or if a native app ships.
 
 > **Does Supabase offer this?** Yes. Google and Apple are both built-in Supabase Auth
 > providers, configured under Authentication → Sign In / Providers, and called from the app
