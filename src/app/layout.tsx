@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Lora } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { BackOriginRecorder } from "@/components/back-origin";
 import { GROUND_DARK, GROUND_LIGHT } from "@/lib/brand/ground";
 import { defaultMetadata } from "@/lib/seo/metadata";
 import "./globals.css";
@@ -78,6 +79,7 @@ export default function RootLayout({
             {children}
           </TooltipProvider>
           <Toaster />
+          <BackOriginRecorder />
         </ThemeProvider>
       </body>
     </html>

@@ -36,7 +36,9 @@ export default async function CollectionDetailPage({
   }
 
   return (
-    <div className="space-y-10">
+    // `data-back-label`: a meditation opened from here links back to this
+    // collection by name (src/components/back-origin.tsx).
+    <div data-back-label={collection.name} className="space-y-10">
       <div className="space-y-3">
         <ParentLink href="/dashboard?tab=collections">Collections</ParentLink>
 
