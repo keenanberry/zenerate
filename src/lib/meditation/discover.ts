@@ -125,6 +125,24 @@ export function discoverHref(
   return query ? `/discover?${query}` : "/discover";
 }
 
+/** The search field, and the query it has sent that the URL has yet to reach. */
+export type SearchField = { text: string; awaiting: string | null };
+
+/**
+ * The search field once the URL's query changes. While a typed query is on its
+ * way, an older one can land first (typing went on during the server render);
+ * copying it in would wipe what was typed since, so the field waits for its
+ * own. Any other change (a category card, "Clear all", the back button) is
+ * followed.
+ */
+export function followUrlQuery(field: SearchField, urlQuery: string | undefined): SearchField {
+  const q = urlQuery ?? "";
+  if (field.awaiting !== null) {
+    return q === field.awaiting ? { text: field.text, awaiting: null } : field;
+  }
+  return q === field.text.trim() ? field : { text: q, awaiting: null };
+}
+
 /**
  * `primary` first, then `fallback`, without repeats, up to `size`. This is
  * how a row stays full before real counts exist: Popular and Picked for you

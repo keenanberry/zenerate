@@ -18,7 +18,9 @@ import {
   DURATION_BUCKETS,
   TYPE_LABELS,
   discoverHref,
+  followUrlQuery,
   type DiscoverFilters,
+  type SearchField,
 } from "@/lib/meditation/discover";
 import { MEDITATION_TYPES, TAG_GROUPS, TAG_LABELS } from "@/lib/meditation/tags";
 import { cn } from "@/lib/utils";
@@ -75,7 +77,8 @@ function FilterSelect({
 export function DiscoverSearch({ filters }: { filters: DiscoverFilters }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [query, setQuery] = useState(filters.q ?? "");
+  const [field, setField] = useState<SearchField>({ text: filters.q ?? "", awaiting: null });
+  const query = field.text;
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Read inside the debounced callback, so a filter chosen mid-typing is kept.
   const filtersRef = useRef(filters);
@@ -87,12 +90,12 @@ export function DiscoverSearch({ filters }: { filters: DiscoverFilters }) {
   }, []);
 
   // The URL can change from outside the field (a category card, "Clear
-  // all", the back button). Follow it, unless it is only catching up with
-  // what is being typed.
+  // all", the back button). Follow it, but never with an older query that
+  // lands while newer typing is on its way (followUrlQuery).
   const [urlQuery, setUrlQuery] = useState(filters.q);
   if (filters.q !== urlQuery) {
     setUrlQuery(filters.q);
-    if ((filters.q ?? "") !== query.trim()) setQuery(filters.q ?? "");
+    setField(followUrlQuery(field, filters.q));
   }
 
   function go(patch: Partial<Record<keyof DiscoverFilters, string | undefined>>, replace = false) {
@@ -101,19 +104,25 @@ export function DiscoverSearch({ filters }: { filters: DiscoverFilters }) {
     else router.push(href, { scroll: false });
   }
 
+  /** Send the typed query; the field waits for the URL to reach it. */
+  function sendQuery(text: string, replace = true) {
+    const q = text.trim();
+    // Already the URL's query: no change will arrive to end the wait.
+    const awaiting = q === (filtersRef.current.q ?? "") ? null : q;
+    setField({ text, awaiting });
+    go({ q: q || undefined }, replace);
+  }
+
   function handleQuery(value: string) {
-    setQuery(value);
+    // Typing starts a wait at once, so a query landing mid-word is not copied in.
+    setField({ text: value, awaiting: value.trim() });
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(
-      () => go({ q: value.trim() || undefined }, true),
-      SEARCH_DEBOUNCE_MS,
-    );
+    timer.current = setTimeout(() => sendQuery(value), SEARCH_DEBOUNCE_MS);
   }
 
   function clearQuery() {
     if (timer.current) clearTimeout(timer.current);
-    setQuery("");
-    go({ q: undefined }, true);
+    sendQuery("");
   }
 
   return (
@@ -123,7 +132,7 @@ export function DiscoverSearch({ filters }: { filters: DiscoverFilters }) {
       onSubmit={(e) => {
         e.preventDefault();
         if (timer.current) clearTimeout(timer.current);
-        go({ q: query.trim() || undefined }, pathname === "/discover");
+        sendQuery(query, pathname === "/discover");
         (document.activeElement as HTMLElement | null)?.blur();
       }}
     >

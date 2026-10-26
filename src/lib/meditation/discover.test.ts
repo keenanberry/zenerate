@@ -3,6 +3,7 @@ import {
   DURATION_BUCKETS,
   discoverHref,
   fillRow,
+  followUrlQuery,
   hasActiveFilters,
   parseDiscoverFilters,
   rankByTagAffinity,
@@ -117,5 +118,40 @@ describe("rankByTagAffinity", () => {
       weights,
     );
     expect(ranked.map((r) => r.id)).toEqual(["both", "sleep", "bed"]);
+  });
+});
+
+describe("followUrlQuery", () => {
+  it("ignores an older query that lands while newer typing is on its way", () => {
+    // "sle" was sent; "sleep" typed during the render; "sle" lands.
+    const field = { text: "sleep", awaiting: "sleep" };
+    expect(followUrlQuery(field, "sle")).toBe(field);
+  });
+
+  it("ends the wait when the URL reaches the typed query, keeping the text as typed", () => {
+    expect(followUrlQuery({ text: "sleep ", awaiting: "sleep" }, "sleep")).toEqual({
+      text: "sleep ",
+      awaiting: null,
+    });
+  });
+
+  it("ends the wait for a cleared query", () => {
+    expect(followUrlQuery({ text: "", awaiting: "" }, undefined)).toEqual({ text: "", awaiting: null });
+  });
+
+  it("follows a change from outside the field", () => {
+    expect(followUrlQuery({ text: "sleep", awaiting: null }, "calm")).toEqual({
+      text: "calm",
+      awaiting: null,
+    });
+    expect(followUrlQuery({ text: "sleep", awaiting: null }, undefined)).toEqual({
+      text: "",
+      awaiting: null,
+    });
+  });
+
+  it("leaves the field alone when it already matches the URL", () => {
+    const field = { text: " calm ", awaiting: null };
+    expect(followUrlQuery(field, "calm")).toBe(field);
   });
 });
