@@ -29,7 +29,7 @@ Owner clicks Make audio on the studio chat's audio card
 (or the meditation page's Generate / free retry)
        │
        ▼
-POST /api/audio/generate (status check, quota reservation)
+POST /api/audio/generate (status check, render bounds, voice check, quota reservation)
        │
        ▼
 Vercel Workflow (orchestrator)
@@ -69,6 +69,38 @@ The route accepts a meditation in `script_ready`, or in `completed` when it has 
 row in `meditation_drafts` (a revision the agent made after the audio existed). The second is a
 **draft render**, described next.
 
+## Who Writes What (task 58)
+
+Grants are checked before RLS, and RLS restricts rows, not columns. So the owner's role is
+narrowed by column (`supabase/migrations/20261030000058_launch_security.sql`), and
+everything else is written on the service role after an RLS read has shown the row is
+theirs.
+
+| Table | `authenticated` may write | Service role only |
+|---|---|---|
+| `meditations` | insert `user_id, title, prompt, description, tags, script, status, is_public, settings` (policy: status `generating_script`/`script_ready`, not public); update `title, description, tags, script, is_public, settings, updated_at` | `status`, `is_featured`, `audio_path`, `audio_url`, `generation_meta`, `user_id` |
+| `meditation_versions` | delete | insert (the workflow archives) |
+| `chat_messages` | nothing; reads only | every save (the chat route) |
+| `chat_turns`, `audio_generation_events` | nothing | `reserve_chat_turn`, `reserve_audio_generation` |
+
+Publishing needs `status = 'completed'` and an `audio_path` (`updateMeditation`, and the
+`meditations_guard_publish` trigger for a write that skips it). `anon` reads only the public
+columns of `meditations` (no `user_id`, `prompt`, `audio_path`, `audio_url`,
+`generation_meta`), so a signed-out read names its columns, and `hydrateAudioUrls` signs a
+public row's audio by looking the path up with the service role. It never signs a path
+outside the row's own folder, and `removeAudio` never removes one (`ownsAudioPath` in
+`src/lib/audio/storage.ts`).
+
+The script and settings stay the owner's to write, so a render is bounded on the server:
+`src/lib/audio/render-bounds.ts` caps narration characters, each `PAUSE` and `SILENCE`, total
+runtime and script length, refuses a sound marker that names a path, drops a sound outside
+the catalog, and clamps `settings.volume`. The generate route checks it before reserving a
+generation, and the workflow's `fetchAndParse` checks it again on what it hands the sandbox,
+since the owner can edit between the two. The route also checks the effective voice (the
+requested one, else the saved one, else the default) against the collection and always hands
+it to the workflow. A failed render counts toward both audio caps (its free retry makes a
+genuine failure whole); only the route's own `refunded` events give a slot back.
+
 ## Draft Renders and Archived Versions
 
 A meditation row always describes its **current version**: `script`, `audio_path`,
@@ -79,8 +111,8 @@ row per meditation; no row means no draft.
 
 `meditation_drafts` is owner-only under RLS and has **no `anon` grant**, so a draft is
 unreachable to anyone else by REST, RPC or page payload, even on a public meditation. Never
-put draft text or draft state back on `meditations`: `anon` may read every column of a
-public row there, and `discover_meditations` returns `m.*`.
+put draft text or draft state back on `meditations`: `anon` may read its public columns
+(see "Who Writes What" below), and `authenticated` may read every column of anyone's public row.
 
 A draft render never touches `meditations` at all until promotion. The meditation stays
 `completed` the whole time, so the public page and Discover keep playing the current

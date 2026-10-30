@@ -258,6 +258,12 @@ describe("writeScript", () => {
     expect(result.issues).toEqual([expect.stringMatching(/malformed/)]);
   });
 
+  it("asks for a rewrite when the audio could not be made from the script", async () => {
+    const script = GOOD_SCRIPT.replace("*[PAUSE: 15 seconds]*", "*[SILENCE: 45 minutes]*");
+    const result = await run("writeScript", { durationMinutes: 60, script }, context(db.client));
+    expect(result.issues).toEqual(expect.arrayContaining([expect.stringMatching(/silence can be at most/i)]));
+  });
+
   it("flags sounds outside the catalog", async () => {
     const script = GOOD_SCRIPT.replace("bell-tibetan.mp3", "rain.mp3");
     const result = await run("writeScript", { durationMinutes: 10, script }, context(db.client));

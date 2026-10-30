@@ -26,6 +26,16 @@ import type {
 
 // ── Meditations ──
 
+/**
+ * The columns anon may read (task 58), and all a page about someone else's
+ * meditation needs. Signed out, `select("*")` is refused outright, so every
+ * read a signed-out visitor can reach names these. user_id, prompt,
+ * audio_path, audio_url and generation_meta stay out; hydrateAudioUrls signs
+ * the audio of a public row without the path ever joining it.
+ */
+const PUBLIC_COLUMNS =
+  "id, title, description, tags, script, status, is_public, is_featured, settings, created_at, updated_at";
+
 export async function createMeditation(data: {
   title: string;
   prompt: string;
@@ -59,15 +69,42 @@ export async function createMeditation(data: {
   return meditation as Meditation;
 }
 
-export async function updateMeditation(
-  id: string,
-  data: Partial<Pick<Meditation, "title" | "script" | "status" | "is_public" | "settings">>
-) {
+// The owner's publish toggle, and nothing else: a server action is callable
+// with any argument, so the type alone guards nothing. Every other column has
+// its own action (updateMeditationDetails) or is written by the service role.
+const visibilityInput = z.object({ is_public: z.boolean() }).strict();
+
+export async function updateMeditation(id: string, data: { is_public: boolean }) {
+  const parsed = visibilityInput.safeParse(data);
+  if (!parsed.success) throw new Error("Only is_public can be changed here.");
+  const { is_public } = parsed.data;
+
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: current, error: readError } = await supabase
+    .from("meditations")
+    .select("status, audio_path")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (readError) throw new Error(readError.message);
+  if (!current) throw new Error("Meditation not found");
+  // A public page with nothing to play. The database refuses it too (the
+  // meditations_guard_publish trigger); this is the message the owner sees.
+  if (is_public && (current.status !== "completed" || !current.audio_path)) {
+    throw new Error("A meditation can be published once its audio is made.");
+  }
+
   const { error } = await supabase
     .from("meditations")
-    .update({ ...data, updated_at: new Date().toISOString() })
-    .eq("id", id);
+    .update({ is_public, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .select("id");
 
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard");
@@ -171,18 +208,18 @@ export async function getMeditation(id: string) {
 
   const { data, error } = await supabase
     .from("meditations")
-    .select("*")
+    .select(user ? "*" : PUBLIC_COLUMNS)
     .eq("id", id)
     .single();
 
   if (error) throw new Error(error.message);
 
-  const meditation = data as MeditationWithMeta;
+  const meditation = data as unknown as MeditationWithMeta;
   // The request a meditation was made from is the owner's. The page never
   // shows it, but the row is serialized whole into the client payload, so
   // drop it here. (A revision in progress is not on this row at all: it
   // lives in the owner-only meditation_drafts.)
-  if (user?.id !== meditation.user_id) {
+  if (!user || user.id !== meditation.user_id) {
     meditation.prompt = null;
   }
 
@@ -276,7 +313,7 @@ export async function getPublicMeditations(filters: DiscoverFilters = {}) {
 async function getFeaturedMeditations(supabase: ServerClient, excludeUserId?: string) {
   let query = supabase
     .from("meditations")
-    .select("*")
+    .select(PUBLIC_COLUMNS)
     .eq("is_public", true)
     .eq("status", "completed")
     .eq("is_featured", true)
@@ -285,7 +322,7 @@ async function getFeaturedMeditations(supabase: ServerClient, excludeUserId?: st
   if (excludeUserId) query = query.neq("user_id", excludeUserId);
   const { data, error } = await query;
   if (error) throw new Error(error.message);
-  return (data ?? []) as MeditationWithMeta[];
+  return (data ?? []) as unknown as MeditationWithMeta[];
 }
 
 /**
@@ -317,11 +354,11 @@ export async function getPopularMeditations() {
   if (ids.length > 0) {
     const { data, error: readError } = await supabase
       .from("meditations")
-      .select("*")
+      .select(PUBLIC_COLUMNS)
       .in("id", ids);
     if (readError) throw new Error(readError.message);
     const order = new Map(ids.map((id, i) => [id, i]));
-    popular = ((data ?? []) as MeditationWithMeta[]).sort(
+    popular = ((data ?? []) as unknown as MeditationWithMeta[]).sort(
       (a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0),
     );
   }
@@ -360,7 +397,7 @@ export async function getPickedForYou() {
     if (weights.size > 0) {
       const { data, error } = await supabase
         .from("meditations")
-        .select("*")
+        .select(PUBLIC_COLUMNS)
         .eq("is_public", true)
         .eq("status", "completed")
         .neq("user_id", user.id)
@@ -368,7 +405,7 @@ export async function getPickedForYou() {
         .order("created_at", { ascending: false })
         .limit(60);
       if (error) throw new Error(error.message);
-      picked = rankByTagAffinity((data ?? []) as MeditationWithMeta[], weights);
+      picked = rankByTagAffinity((data ?? []) as unknown as MeditationWithMeta[], weights);
     }
   }
 
@@ -400,17 +437,26 @@ export async function recordPlay(meditationId: string): Promise<boolean> {
 
 export async function getMeditationStatus(id: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   // The draft is owner-only under RLS, so anyone else reads no draft and a
-  // null draft_status.
+  // null draft_status. Signed out, audio_path is not readable: the public
+  // row's audio is looked up when it is signed.
   const [{ data, error }, { data: draft }] = await Promise.all([
-    supabase.from("meditations").select("status, audio_path").eq("id", id).single(),
+    supabase
+      .from("meditations")
+      .select(user ? "id, user_id, status, audio_path" : "id, status")
+      .eq("id", id)
+      .single(),
     supabase.from("meditation_drafts").select("render_status").eq("meditation_id", id).maybeSingle(),
   ]);
 
   if (error) throw new Error(error.message);
-  const { audio_url } = await hydrateAudioUrl(data);
+  const row = data as unknown as { id: string; status: string; user_id?: string; audio_path?: string | null };
+  const { audio_url } = await hydrateAudioUrl(row);
   return {
-    status: data.status as string,
+    status: row.status,
     /** The render of the owner's draft: null, "processing" or "failed". */
     draft_status: (draft?.render_status ?? null) as "processing" | "failed" | null,
     audio_url,
@@ -454,6 +500,11 @@ export async function getMeditationVersion(meditationId: string, versionId: stri
  */
 export async function deleteMeditationVersion(versionId: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
   const { data: deleted, error } = await supabase
     .from("meditation_versions")
     .delete()
@@ -463,7 +514,12 @@ export async function deleteMeditationVersion(versionId: string) {
   if (error) throw new Error(error.message);
   if (!deleted || deleted.length === 0) throw new Error("Version not found");
 
-  await removeAudio([deleted[0].audio_path]);
+  // The owner's folder only: a version row's path is the workflow's to
+  // write, and removeAudio skips anything else.
+  await removeAudio([deleted[0].audio_path], {
+    userId: user.id,
+    meditationId: deleted[0].meditation_id,
+  });
   revalidatePath(`/meditation/${deleted[0].meditation_id}`);
 }
 

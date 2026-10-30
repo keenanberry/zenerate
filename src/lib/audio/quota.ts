@@ -84,7 +84,8 @@ export async function getQuotaUsage(
     .eq("user_id", userId)
     .eq("year_month", currentYearMonth())
     .eq("is_free_retry", false)
-    .in("status", ["pending", "completed"]);
+    // The RPC's predicate: a failed render counts, only a refund does not.
+    .neq("status", "refunded");
 
   if (error) {
     throw new Error(`Failed to read quota usage: ${error.message}`);
@@ -166,7 +167,7 @@ async function countExemptEvents(exemptIds: string[], supabase: SupabaseClient):
     .in("user_id", exemptIds)
     .eq("year_month", currentYearMonth())
     .eq("is_free_retry", false)
-    .in("status", ["pending", "completed"]);
+    .neq("status", "refunded");
   if (error) {
     throw new Error(`Failed to count exempt generations: ${error.message}`);
   }

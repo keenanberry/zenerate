@@ -30,6 +30,37 @@ export function meditationFolder(userId: string, meditationId: string): string {
   return `${userId}/${meditationId}`;
 }
 
+/** What a file in a meditation's folder may be called: one plain name. */
+const RENDER_FILE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+
+/**
+ * Whether `path` is one of this meditation's own audio files: a render in
+ * `<user_id>/<meditation_id>/`, or the legacy `<meditation_id>.mp3` at the
+ * bucket root. Everything that signs or removes audio does so with the
+ * service role, which checks nothing, so a path is only acted on when it
+ * passes this; until task 58 the owner could write audio_path, and point it
+ * at anyone's file.
+ *
+ * `userId` is checked when the caller knows it. An archived version's row
+ * does not carry its owner, and the meditation's folder is what ties a file
+ * to it: uploads only ever land in `<owner>/<meditation_id>/`.
+ */
+export function ownsAudioPath(
+  path: string,
+  owner: { userId?: string | null; meditationId: string },
+): boolean {
+  if (path === `${owner.meditationId}.mp3`) return true;
+  const [user, meditation, file, ...rest] = path.split("/");
+  return (
+    rest.length === 0 &&
+    meditation === owner.meditationId &&
+    (owner.userId ? user === owner.userId : Boolean(user)) &&
+    file !== undefined &&
+    RENDER_FILE.test(file) &&
+    !file.includes("..")
+  );
+}
+
 /**
  * Upload an MP3 buffer to Supabase Storage and return its storage PATH.
  *
@@ -64,12 +95,20 @@ export async function uploadAudio(
 }
 
 /**
- * Remove audio objects. Storage does not cascade from the database, so
- * whatever deletes a row that points at audio calls this too. Removing a
- * path that is already gone is not an error.
+ * Remove a meditation's audio objects. Storage does not cascade from the
+ * database, so whatever deletes a row that points at audio calls this too.
+ * Removing a path that is already gone is not an error. A path that is not
+ * the meditation's own (see ownsAudioPath) is skipped, never removed.
  */
-export async function removeAudio(paths: Array<string | null | undefined>): Promise<void> {
-  const present = [...new Set(paths.filter((p): p is string => Boolean(p)))];
+export async function removeAudio(
+  paths: Array<string | null | undefined>,
+  owner: { userId?: string | null; meditationId: string },
+): Promise<void> {
+  const present = [...new Set(paths.filter((p): p is string => Boolean(p)))].filter((path) => {
+    if (ownsAudioPath(path, owner)) return true;
+    console.warn(`Not removing "${path}": it is outside meditation ${owner.meditationId}'s audio.`);
+    return false;
+  });
   if (present.length === 0) return;
 
   const supabase = createServiceClient();
@@ -98,7 +137,10 @@ export async function removeMeditationAudio(
     throw new Error(`Storage list failed: ${error.message}`);
   }
 
-  await removeAudio([...(data ?? []).map((o) => `${folder}/${o.name}`), ...extraPaths]);
+  await removeAudio([...(data ?? []).map((o) => `${folder}/${o.name}`), ...extraPaths], {
+    userId,
+    meditationId,
+  });
 }
 
 /**

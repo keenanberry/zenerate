@@ -18,7 +18,7 @@ export function readPositiveInt(name: string, fallback: number): number {
 
 /**
  * Chat turns are not metered against any user-facing quota. This is an abuse
- * ceiling: it stops a stolen session or a runaway client from running up the
+ * ceiling, counted in turns (one model run each, a continuation included): it stops a stolen session or a runaway client from running up the
  * Anthropic bill, and normal use never comes near it.
  *
  * Sized off the worst case, like the audio caps:
@@ -36,23 +36,43 @@ export function getDailyChatMessageLimit(): number {
 }
 
 /**
- * The user's own messages over the last 24 hours, across all their chats.
- * Runs on the RLS-bound client, so it can only ever see the caller's rows; the
- * join filter says the same thing explicitly.
+ * Every account's turns together, per rolling 24 hours: the per-user ceiling
+ * times the number of accounts is otherwise unbounded. At the worst case
+ * above (~$0.40 a turn) the default is ~$800 a day; real turns cost a small
+ * fraction of that. The Anthropic spend limit stays the hard backstop.
  */
-export async function countRecentUserMessages(
+export function getGlobalDailyChatTurnLimit(): number {
+  return readPositiveInt("MAX_GLOBAL_DAILY_CHAT_TURNS", 2000);
+}
+
+export type ChatTurnReservation =
+  | { ok: true }
+  | { ok: false; reason: "quota_exceeded" | "global_cap_reached" };
+
+const REFUSALS = new Set(["quota_exceeded", "global_cap_reached"]);
+
+/**
+ * Reserve one model turn in the chat_turns ledger, or say which ceiling
+ * refused it. Every turn the model runs is one row, continuations included,
+ * and the row is keyed by user, so deleting messages or chats refunds
+ * nothing. `supabase` must be the service-role client: only it may call
+ * reserve_chat_turn, which takes advisory locks so concurrent requests
+ * cannot all pass one count.
+ */
+export async function reserveChatTurn(
   supabase: SupabaseClient,
   userId: string,
-  now: Date = new Date(),
-): Promise<number> {
-  const since = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
-  const { count, error } = await supabase
-    .from("chat_messages")
-    .select("id, chats!inner(user_id)", { count: "exact", head: true })
-    .eq("chats.user_id", userId)
-    .eq("role", "user")
-    .gte("created_at", since);
+): Promise<ChatTurnReservation> {
+  const { error } = await supabase.rpc("reserve_chat_turn", {
+    p_user_id: userId,
+    p_per_user_cap: getDailyChatMessageLimit(),
+    p_global_cap: getGlobalDailyChatTurnLimit(),
+  });
+  if (!error) return { ok: true };
 
-  if (error) throw new Error(`counting chat messages failed: ${error.message}`);
-  return count ?? 0;
+  const reason = error.message?.trim();
+  if (reason && REFUSALS.has(reason)) {
+    return { ok: false, reason: reason as "quota_exceeded" | "global_cap_reached" };
+  }
+  throw new Error(`reserve_chat_turn failed: ${error.message}`);
 }

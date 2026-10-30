@@ -292,4 +292,48 @@ describe("processAudioWorkflow", () => {
       expect.objectContaining({ audio_path: first, script: CURRENT }),
     ]);
   });
+
+  // The owner can still write script, settings and the draft after the
+  // generate route checked them, so the workflow checks what it hands the
+  // sandbox itself.
+  describe("what reaches the sandbox", () => {
+    it.each([
+      ["a 999-minute silence", { script: "Breathe.\n*[SILENCE: 999 minutes]*" }],
+      ["a sound marker that names a path", { script: "Breathe.\n*[SOUND: ../config.json]*" }],
+      ["a 50,000-character script", { script: "Breathe. ".repeat(5556) }],
+      ["a filter-graph volume", { script: CURRENT, settings: { music: "rain", volume: "1,anull" } }],
+    ])("fails the render without starting a sandbox on %s", async (_, row) => {
+      seed({ audio_path: null, status: "processing_audio", ...row });
+
+      await expect(processAudioWorkflow("med-1", "voice-a", "evt-1")).rejects.toThrow();
+
+      expect(mockWriteFiles).not.toHaveBeenCalled();
+      expect(meditation().status).toBe("failed");
+    });
+
+    it("checks the draft it renders", async () => {
+      seedDraftRender();
+      db.meditation_drafts[0].script = "Breathe.\n*[SILENCE: 999 minutes]*";
+
+      await expect(processAudioWorkflow("med-1", "voice-a", "evt-1")).rejects.toThrow();
+      expect(mockWriteFiles).not.toHaveBeenCalled();
+    });
+
+    it("drops a sound that is not in the catalog", async () => {
+      seed({ script: `${CURRENT}\n*[SOUND: kazoo.mp3]*`, audio_path: null, status: "processing_audio" });
+      await processAudioWorkflow("med-1", "voice-a", "evt-1");
+      expect(sandboxConfig().segments).toEqual([{ type: "speech", content: CURRENT }]);
+    });
+
+    it("clamps a saved volume into [0, 1]", async () => {
+      seed({
+        script: CURRENT,
+        audio_path: null,
+        status: "processing_audio",
+        settings: { music: "rain", volume: 40 },
+      });
+      await processAudioWorkflow("med-1", "voice-a", "evt-1");
+      expect(sandboxConfig().musicVolume).toBe(1);
+    });
+  });
 });

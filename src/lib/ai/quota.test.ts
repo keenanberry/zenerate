@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
-  countRecentUserMessages,
   getDailyChatMessageLimit,
+  getGlobalDailyChatTurnLimit,
   MAX_MESSAGE_CHARS,
+  reserveChatTurn,
 } from "./quota";
 
 describe("getDailyChatMessageLimit", () => {
@@ -31,31 +32,59 @@ describe("getDailyChatMessageLimit", () => {
   });
 });
 
-function makeCountSupabase(result: { count: number | null; error: { message: string } | null }) {
-  const query = {
-    select: vi.fn(() => query),
-    eq: vi.fn(() => query),
-    gte: vi.fn(() => Promise.resolve(result)),
-  };
-  return { from: vi.fn(() => query), query };
-}
+describe("getGlobalDailyChatTurnLimit", () => {
+  const original = { ...process.env };
 
-describe("countRecentUserMessages", () => {
-  it("counts the user's own user-role messages over the last 24 hours", async () => {
-    const supabase = makeCountSupabase({ count: 7, error: null });
-    const now = new Date("2026-10-21T12:00:00Z");
-    const n = await countRecentUserMessages(supabase as never, "user-1", now);
-
-    expect(n).toBe(7);
-    expect(supabase.from).toHaveBeenCalledWith("chat_messages");
-    expect(supabase.query.eq).toHaveBeenCalledWith("chats.user_id", "user-1");
-    expect(supabase.query.eq).toHaveBeenCalledWith("role", "user");
-    expect(supabase.query.gte).toHaveBeenCalledWith("created_at", "2026-10-20T12:00:00.000Z");
+  beforeEach(() => {
+    delete process.env.MAX_GLOBAL_DAILY_CHAT_TURNS;
   });
 
-  it("rethrows a query error", async () => {
-    const supabase = makeCountSupabase({ count: null, error: { message: "boom" } });
-    await expect(countRecentUserMessages(supabase as never, "user-1")).rejects.toThrow(/boom/);
+  afterEach(() => {
+    process.env = { ...original };
+  });
+
+  it("defaults to 2000", () => {
+    expect(getGlobalDailyChatTurnLimit()).toBe(2000);
+  });
+
+  it("reads a positive integer env var", () => {
+    process.env.MAX_GLOBAL_DAILY_CHAT_TURNS = "50";
+    expect(getGlobalDailyChatTurnLimit()).toBe(50);
+  });
+});
+
+describe("reserveChatTurn", () => {
+  const original = { ...process.env };
+
+  afterEach(() => {
+    process.env = { ...original };
+  });
+
+  function rpcReturning(result: { data: unknown; error: { message: string } | null }) {
+    return { rpc: vi.fn(() => Promise.resolve(result)) };
+  }
+
+  it("reserves through reserve_chat_turn with both daily caps", async () => {
+    process.env.PER_USER_DAILY_CHAT_MESSAGES = "7";
+    process.env.MAX_GLOBAL_DAILY_CHAT_TURNS = "70";
+    const supabase = rpcReturning({ data: "turn-1", error: null });
+
+    expect(await reserveChatTurn(supabase as never, "user-1")).toEqual({ ok: true });
+    expect(supabase.rpc).toHaveBeenCalledWith("reserve_chat_turn", {
+      p_user_id: "user-1",
+      p_per_user_cap: 7,
+      p_global_cap: 70,
+    });
+  });
+
+  it.each(["quota_exceeded", "global_cap_reached"])("maps %s to a refusal", async (reason) => {
+    const supabase = rpcReturning({ data: null, error: { message: reason } });
+    expect(await reserveChatTurn(supabase as never, "user-1")).toEqual({ ok: false, reason });
+  });
+
+  it("rethrows any other error", async () => {
+    const supabase = rpcReturning({ data: null, error: { message: "boom" } });
+    await expect(reserveChatTurn(supabase as never, "user-1")).rejects.toThrow(/boom/);
   });
 });
 
