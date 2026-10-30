@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient as createServiceClient } from "@/lib/supabase/service-role";
+import { ownsAudioPath } from "./storage";
 
 const BUCKET = "meditation-audio";
 
@@ -73,6 +74,55 @@ async function signAudioUrls(
 }
 
 /**
+ * A row to hydrate: a meditation (id, user_id), an archived version (id,
+ * meditation_id), or a meditation read as anon, whose public columns leave
+ * out user_id and audio_path (task 58).
+ */
+type AudioRow = {
+  id?: string;
+  user_id?: string | null;
+  meditation_id?: string;
+  audio_path?: string | null;
+};
+
+/** The row's own audio path, or null when it has none or names someone else's file. */
+function ownPath(row: AudioRow): string | null {
+  const meditationId = row.meditation_id ?? row.id;
+  if (!row.audio_path || !meditationId) return null;
+  const userId = row.meditation_id ? null : row.user_id;
+  if (ownsAudioPath(row.audio_path, { userId, meditationId })) return row.audio_path;
+  console.error(`Not signing "${row.audio_path}": it is outside meditation ${meditationId}'s audio.`);
+  return null;
+}
+
+/**
+ * The paths of rows read without audio_path, by id. anon may not read the
+ * column, so it is read here with the service role, for public meditations
+ * only: a row the caller saw without the column is a public one (or it is
+ * not, and gets no audio).
+ */
+async function lookUpPublicPaths(
+  rows: AudioRow[],
+  supabase: SupabaseClient,
+): Promise<Map<string, string | null>> {
+  const ids = rows.flatMap((row) => (!("audio_path" in row) && row.id ? [row.id] : []));
+  const paths = new Map<string, string | null>();
+  if (ids.length === 0) return paths;
+
+  const { data, error } = await supabase
+    .from("meditations")
+    .select("id, user_id, audio_path")
+    .in("id", ids)
+    .eq("is_public", true);
+  if (error) {
+    console.error(`Failed to look up public audio paths: ${error.message}`);
+    return paths;
+  }
+  for (const row of (data ?? []) as AudioRow[]) paths.set(row.id!, ownPath(row));
+  return paths;
+}
+
+/**
  * Rows come back with audio_path; every consumer expects audio_url. Sign the
  * path into a short-lived URL so client components need no changes.
  *
@@ -88,23 +138,37 @@ async function signAudioUrls(
  * param, a client component, a hand-built object) skips that check entirely
  * and will hand out another user's private audio.
  *
+ * Two checks of its own back that up (task 58). A path outside the row's own
+ * folder is never signed, whatever the row says (see ownsAudioPath). And a
+ * row read without audio_path, as anon reads every meditation, is signed
+ * only if the service role finds the meditation public; the path itself
+ * never joins the row, so it never reaches the page.
+ *
  * This is why signAudioUrl/signAudioUrls above are not exported, and why
  * `@/lib/audio/signed-url` is restricted (see eslint.config.mjs) to
  * `src/lib/meditation/actions.ts`, the one module whose every call site
  * fetches the row through an RLS-bound client first.
  */
-export async function hydrateAudioUrl<T extends { audio_path?: string | null }>(
+export async function hydrateAudioUrl<T extends AudioRow>(
   row: T,
 ): Promise<T & { audio_url: string | null }> {
-  const supabase = createServiceClient();
-  return { ...row, audio_url: await signAudioUrl(row.audio_path ?? null, supabase) };
+  const [hydrated] = await hydrateAudioUrls([row]);
+  return hydrated;
 }
 
 /** See hydrateAudioUrl -- same invariant: hydrate only rows already authorized by an RLS-bound fetch. */
-export async function hydrateAudioUrls<T extends { audio_path?: string | null }>(
+export async function hydrateAudioUrls<T extends AudioRow>(
   rows: T[],
 ): Promise<Array<T & { audio_url: string | null }>> {
+  if (rows.length === 0) return [];
   const supabase = createServiceClient();
-  const urls = await signAudioUrls(rows.map((r) => r.audio_path ?? null), supabase);
+  const looked = await lookUpPublicPaths(rows, supabase);
+  const paths = rows.map((row) =>
+    "audio_path" in row ? ownPath(row) : (looked.get(row.id ?? "") ?? null),
+  );
+  const urls =
+    paths.length === 1
+      ? [await signAudioUrl(paths[0], supabase)]
+      : await signAudioUrls(paths, supabase);
   return rows.map((row, i) => ({ ...row, audio_url: urls[i] }));
 }

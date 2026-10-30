@@ -14,6 +14,7 @@ import { SOUND_NAMES, soundPreview } from "@/lib/meditation/sound-previews";
 import { MEDITATION_TYPES, TAGS } from "@/lib/meditation/tags";
 import { AMBIENCE_IDS } from "@/lib/meditation/ambience";
 import type { MeditationSettings } from "@/lib/meditation/types";
+import { checkRenderScript } from "@/lib/audio/render-bounds";
 import { MAKE_AUDIO_REPLY } from "./replies";
 
 /**
@@ -158,6 +159,12 @@ function reviewScript(script: string, durationMinutes: number, rewriteAsked: boo
   }
   if (unknownSounds.length > 0) {
     issues.push(`Unknown sound file(s): ${unknownSounds.join(", ")}. Use only the listed sounds.`);
+  }
+  // The generate route refuses a script outside these bounds (task 58), so
+  // say so now, while the agent can still fix it, not at "Make audio".
+  const renderable = checkRenderScript(script);
+  if (!renderable.ok) {
+    issues.push(`The audio cannot be made from this script: ${renderable.error} Write it again within that.`);
   }
   // One length rewrite per turn. A second miss is kept as written, and the
   // person hears its real length instead of waiting through another rewrite.

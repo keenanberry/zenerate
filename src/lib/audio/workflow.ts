@@ -3,7 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 
 import { Sandbox } from "@vercel/sandbox";
 import { createClient } from "@supabase/supabase-js";
-import { parseMeditationText } from "@/lib/meditation/parser";
+import { checkRenderScript, checkRenderSettings } from "./render-bounds";
 import { uploadAudio, updateMeditationStatus } from "./storage";
 import type {
   MeditationSegment,
@@ -11,7 +11,7 @@ import type {
   MeditationSettings,
 } from "@/lib/meditation/types";
 import { DEFAULT_VOICE_ID } from "@/lib/voices/catalog";
-import { AMBIENCES, savedAmbience, type AmbienceId } from "@/lib/meditation/ambience";
+import { AMBIENCES, type AmbienceId } from "@/lib/meditation/ambience";
 
 interface MeditationData {
   /** The owner, whose folder the audio is uploaded into. */
@@ -64,17 +64,28 @@ async function fetchAndParse(meditationId: string): Promise<MeditationData> {
     throw new FatalError("Meditation has no script to process");
   }
 
-  const segments = parseMeditationText(script);
-  if (segments.length === 0) {
-    throw new FatalError("No valid segments found in meditation script");
+  // The generate route checked these before reserving, but the owner can
+  // still write the script, the draft and settings, so check what the
+  // sandbox will actually be handed. A sound outside the catalog is dropped
+  // here and a path is refused: generate-audio.ts joins the name onto its
+  // sounds folder. The volume reaches an FFmpeg filter graph, so it is a
+  // clamped number by the time it leaves this step.
+  const checked = checkRenderScript(script);
+  if (!checked.ok) {
+    throw new FatalError(`Script is outside the render bounds: ${checked.error}`);
+  }
+  const settings = checkRenderSettings(meditation.settings);
+  if (!settings.ok) {
+    throw new FatalError("Meditation settings are not valid");
   }
 
-  const settings = meditation.settings ?? {};
   return {
     userId: meditation.user_id,
-    segments,
-    voiceId: settings.voice ?? DEFAULT_VOICE_ID,
-    ...ambienceSettings(savedAmbience(settings.music) ?? "none", settings.volume),
+    segments: checked.segments,
+    // The route always passes the voice it checked against the collection;
+    // this fallback serves only a run started before it did.
+    voiceId: settings.settings.voice ?? DEFAULT_VOICE_ID,
+    ...ambienceSettings(settings.settings.music ?? "none", settings.settings.volume),
     renderedDraft: draft?.script ?? null,
   };
 }

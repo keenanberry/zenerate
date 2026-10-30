@@ -6,8 +6,10 @@ import type { StudioUIMessage } from "./tools";
  * Chat persistence, shared by the route and the server actions. Deliberately
  * not a "use server" module: saving messages is the route's job, and a
  * client-callable save would let anyone write assistant turns into their own
- * history. Every function takes the caller's RLS-bound client, so a chat that
- * is not theirs reads as missing.
+ * history. The reads take the caller's RLS-bound client, so a chat that is not
+ * theirs reads as missing. saveMessages takes the service-role client:
+ * chat_messages is read-only to its owner (task 58), and the route saves only
+ * after loadChat has shown the chat is the caller's.
  */
 
 export async function loadChat(

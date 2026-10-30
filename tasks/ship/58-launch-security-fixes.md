@@ -1,6 +1,6 @@
 # Launch Security Fixes
 
-**Status:** Not started (filed 2026-10-30 from the pre-launch audit)
+**Status:** Done* (PR #107); the production PostgREST checks run after merge are the operator's (`tasks/OPERATOR-TODO.md` §5)
 **Priority:** Phase 6. **Gates signups.** Until this merges, the Anthropic spend limit in
 `tasks/OPERATOR-TODO.md` §1 is the only thing bounding what one account can spend.
 **Phase:** 6
@@ -173,20 +173,67 @@ In order; 1 and 2 are the gate, 3 is nearly free, 4 and 5 are cheap once 1 is in
 
 ## Done when
 
-- [ ] As a signed-in user through PostgREST: PATCH of `audio_path`, `status`,
+- [x] As a signed-in user through PostgREST: PATCH of `audio_path`, `status`,
       `is_featured`, `user_id` on an own row fails with 42501; INSERT into
       `meditation_versions` fails; DELETE of an own `chat_messages` row fails; PATCH of
       `role` or `created_at` on one fails. Written as a test against local Supabase, and
       run once by hand in production after the merge.
-- [ ] `updateMeditation(id, { audio_path: "x" })` and `{ script: "x" }` are rejected; the
+      *`src/test/launch-security.db.test.ts`, 28/28 against local Supabase after
+      `supabase db reset`. `user_id` was already refused by the `update_own` policy (RLS,
+      also 42501). The production run is in `tasks/OPERATOR-TODO.md` §5.*
+- [x] `updateMeditation(id, { audio_path: "x" })` and `{ script: "x" }` are rejected; the
       `is_public` toggle still works and refuses a meditation with no audio.
-- [ ] 201 chat turns in a day, deleting the chat between them, still ends in the 429.
+      *`actions.test.ts` "updateMeditation"; the DB test's publish cases.*
+- [x] 201 chat turns in a day, deleting the chat between them, still ends in the 429.
       Replaying the last assistant message is counted, and its parts come from the store.
       A `file` part is a 400.
-- [ ] A 50,000-character script, a `*[SILENCE: 999 minutes]*` line, a `*[SOUND:
+      *DB test "refuses turn 201 in a day even when every chat is deleted between turns";
+      chat `route.test.ts` "a continuation" (metered, parts from the store) and "returns
+      400 on a user message carrying a file part". A replay that answers no open card is a
+      400 before the ledger, so it never runs the model.*
+- [x] A 50,000-character script, a `*[SILENCE: 999 minutes]*` line, a `*[SOUND:
       ../config.json]*` line and `settings.volume = "1,anull"` each fail the generate
       route before a slot is reserved.
-- [ ] Hydrating a row whose `audio_path` is outside the owner's folder returns null, and
+      *Generate `route.test.ts` "render bounds, before a generation is reserved"; the
+      workflow refuses the same four (`workflow.test.ts` "what reaches the sandbox").*
+- [x] Hydrating a row whose `audio_path` is outside the owner's folder returns null, and
       removing one skips it.
-- [ ] `npm run lint && npm run typecheck && npm test && npm run build` pass; the audio
+      *`signed-url.test.ts` "a path outside the row's own folder", `storage.test.ts`.*
+- [~] `npm run lint && npm run typecheck && npm test && npm run build` pass; the audio
       integration test still renders a house meditation unchanged.
+      *Lint, `npx tsc --noEmit` (CI's typecheck; there is no `typecheck` script), tests and
+      build pass. The integration script was not run: it builds its own segments and runs
+      the snapshot directly, no snapshot file changed, and nothing in this PR is on its path.*
+
+## Outcome
+
+PR #107, one migration: `supabase/migrations/20261030000058_launch_security.sql`.
+
+- **Grants.** `authenticated` updates only `title, description, tags, script, is_public,
+  settings, updated_at` on `meditations` and inserts only the columns `writeScript` writes,
+  with the insert policy pinning `status` and `is_public`. No INSERT on
+  `meditation_versions`. `chat_messages` is read-only to its owner, stricter than Scope 1's
+  `(parts, metadata)`: the route saves on the service role, so a forged assistant row cannot
+  be inserted either, and a PostgREST upsert would have needed UPDATE on `role` anyway.
+  `meditations_guard_publish` refuses publishing without a completed render. Length CHECKs
+  on `meditations` and `meditation_drafts.script`, validated if existing rows allow.
+- **Chat.** `chat_turns` + `reserve_chat_turn` (a new ledger: `script_generation_events`
+  counts by month). Every turn reserves, continuations included; a continuation is the
+  stored message plus the audio card's answer; user messages are text only.
+  `MAX_GLOBAL_DAILY_CHAT_TURNS` defaults to 2000.
+- **Renders.** `src/lib/audio/render-bounds.ts`, checked in the route before reserving and
+  in `fetchAndParse`: 6,000 narration characters, PAUSE 60 s, SILENCE 30 min, 120 min
+  total, sound markers plain names (unknown ones dropped), volume clamped. The route always
+  hands the workflow a voice checked against the collection. Failed renders count toward
+  both caps; the route's own refunds are `refunded`.
+- **Storage and anon.** `ownsAudioPath` gates signing and removal. `anon` reads public
+  columns only, `discover_meditations` returns them, and a public row's audio is signed
+  without the path joining the row.
+
+Follow-ups:
+
+- On the next snapshot build: `mix.ts` formats the volume with `.toFixed(3)`, and
+  `generate-audio.ts` resolves a sound with `basename` and catalog membership. The server
+  guards here make both defence in depth.
+- `authenticated` still reads every column of other users' public rows; signed audio URLs
+  still embed `<user_id>/<meditation_id>/`.

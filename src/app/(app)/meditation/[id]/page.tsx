@@ -56,7 +56,9 @@ export default async function MeditationDetailPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const isOwner = user?.id === meditation.user_id;
+  // Signed out, the row carries no user_id (anon cannot read it), so both
+  // sides would be undefined: test for a user first.
+  const isOwner = !!user && user.id === meditation.user_id;
 
   const quota =
     user && isOwner

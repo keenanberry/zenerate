@@ -6,9 +6,10 @@ import { createClient as createServiceClient } from "@/lib/supabase/service-role
 import { processAudioWorkflow } from "@/lib/audio/workflow";
 import { reserveAudioGeneration, getQuotaConfig } from "@/lib/audio/quota";
 import { startRunOrRevert } from "@/lib/audio/start-run";
-import { resolveVoiceId } from "@/lib/voices/catalog";
+import { DEFAULT_VOICE_ID, resolveVoiceId } from "@/lib/voices/catalog";
 import { getVoices } from "@/lib/voices/server";
 import { AMBIENCES, isAmbienceId } from "@/lib/meditation/ambience";
+import { checkRenderScript, checkRenderSettings } from "@/lib/audio/render-bounds";
 
 export const maxDuration = 30;
 
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json();
+  const body = await req.json().catch(() => null);
   const meditationId: unknown = body?.meditationId;
   const voiceId: unknown = body?.voiceId;
   const ambience: unknown = body?.ambience ?? null;
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
 
   const { data: meditation, error } = await supabase
     .from("meditations")
-    .select("id, user_id, status, settings")
+    .select("id, user_id, status, script, settings")
     .eq("id", meditationId)
     .single();
 
@@ -61,7 +62,7 @@ export async function POST(req: Request) {
 
   const { data: draft, error: draftError } = await supabase
     .from("meditation_drafts")
-    .select("render_status")
+    .select("script, render_status")
     .eq("meditation_id", meditationId)
     .maybeSingle();
   if (draftError) {
@@ -93,23 +94,45 @@ export async function POST(req: Request) {
     );
   }
 
-  // Validate the voice before reserving quota, so a rejected request never
-  // costs the user a generation. Only a requested voice needs the list; a
-  // retry sends none and reuses the voice saved on the meditation.
-  let allowedVoices = new Set<string>();
-  if (voiceId !== undefined && voiceId !== null) {
-    try {
-      allowedVoices = new Set((await getVoices()).map((v) => v.voiceId));
-    } catch (err) {
-      console.error("Could not load voices:", err);
-      return NextResponse.json(
-        { error: "Voices are temporarily unavailable. Try again shortly." },
-        { status: 503 },
-      );
-    }
+  // Everything below is checked before reserving quota, so a rejected request
+  // never costs the user a generation.
+  //
+  // What the render will cost. The script and settings are the owner's to
+  // write, so they are bounded here and not trusted from the studio; the
+  // workflow checks them again on what it hands the sandbox. The script is
+  // the one the workflow renders: the draft when there is one.
+  const script = (draft as { script?: string } | null)?.script ?? meditation.script ?? "";
+  const scriptCheck = checkRenderScript(script);
+  if (!scriptCheck.ok) {
+    return NextResponse.json({ error: scriptCheck.error }, { status: 400 });
+  }
+  const settings = checkRenderSettings(meditation.settings);
+  if (!settings.ok) {
+    return NextResponse.json(
+      { error: "This meditation's audio settings are not valid. Pick a voice and background again." },
+      { status: 400 },
+    );
+  }
+
+  // The voice must be in the collection, or any ElevenLabs library voice
+  // could narrate. A requested one is checked; with none (a retry), the saved
+  // one, else the default, is checked the same way and handed to the
+  // workflow, which never reads the voice off the row itself.
+  let allowedVoices: Set<string>;
+  try {
+    allowedVoices = new Set((await getVoices()).map((v) => v.voiceId));
+  } catch (err) {
+    console.error("Could not load voices:", err);
+    return NextResponse.json(
+      { error: "Voices are temporarily unavailable. Try again shortly." },
+      { status: 503 },
+    );
   }
   const voice = resolveVoiceId(voiceId, allowedVoices);
-  if (!voice.ok) {
+  const renderVoice = voice.ok
+    ? resolveVoiceId(voice.voiceId ?? settings.settings.voice ?? DEFAULT_VOICE_ID, allowedVoices)
+    : voice;
+  if (!voice.ok || !renderVoice.ok || !renderVoice.voiceId) {
     return NextResponse.json({ error: "Unknown voice" }, { status: 400 });
   }
 
@@ -143,7 +166,9 @@ export async function POST(req: Request) {
   // passed the check (a double click), only one flips the row, and the other
   // gives its reservation back. A draft render flips the draft, and the voice
   // and ambience are saved when the draft is promoted, not now: until then
-  // settings describe the current version.
+  // settings describe the current version. status is service-role only (task
+  // 58), so the meditation's flip runs on the service role, scoped to the
+  // owner the RLS read above already matched.
   const now = new Date().toISOString();
   let flip;
   if (draftRender) {
@@ -153,7 +178,7 @@ export async function POST(req: Request) {
       .eq("meditation_id", meditationId);
     flip = draftStatus === null ? flip.is("render_status", null) : flip.eq("render_status", draftStatus);
   } else {
-    flip = supabase
+    flip = serviceClient
       .from("meditations")
       .update({
         updated_at: now,
@@ -169,6 +194,7 @@ export async function POST(req: Request) {
         }),
       })
       .eq("id", meditationId)
+      .eq("user_id", user.id)
       .eq("status", meditation.status);
   }
   const { data: flipped, error: updateError } = await flip.select(
@@ -177,9 +203,10 @@ export async function POST(req: Request) {
 
   if (updateError || !flipped || flipped.length === 0) {
     // Refund the reserved slot so the user isn't charged for our failure.
+    // 'refunded', not 'failed': a failed render counts toward the caps.
     await serviceClient
       .from("audio_generation_events")
-      .update({ status: "failed", completed_at: new Date().toISOString() })
+      .update({ status: "refunded", completed_at: new Date().toISOString() })
       .eq("id", reserve.eventId);
     if (!updateError) {
       return NextResponse.json(
@@ -194,7 +221,7 @@ export async function POST(req: Request) {
   }
 
   const run = await startRunOrRevert({
-    start: () => start(processAudioWorkflow, [meditationId, voice.voiceId, reserve.eventId, ambience]),
+    start: () => start(processAudioWorkflow, [meditationId, renderVoice.voiceId, reserve.eventId, ambience]),
     // No run exists, so the workflow's own failure path will never fire:
     // put the script back where it was and refund the reserved generation.
     revert: async () => {
@@ -210,7 +237,7 @@ export async function POST(req: Request) {
               .eq("id", meditationId),
         serviceClient
           .from("audio_generation_events")
-          .update({ status: "failed", completed_at: new Date().toISOString() })
+          .update({ status: "refunded", completed_at: new Date().toISOString() })
           .eq("id", reserve.eventId),
       ]);
     },

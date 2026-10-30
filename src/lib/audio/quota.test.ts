@@ -42,7 +42,13 @@ function makeUsageSupabase(count: number, error: { message: string } | null = nu
         eq: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
-              in: vi.fn().mockResolvedValue({ count, error }),
+              // Everything but a refund counts, failed renders included,
+              // exactly as reserve_audio_generation counts.
+              neq: vi.fn((column: string, value: string) =>
+                column === "status" && value === "refunded"
+                  ? Promise.resolve({ count, error })
+                  : Promise.reject(new Error(`unexpected neq(${column}, ${value})`)),
+              ),
             }),
           }),
         }),
@@ -208,7 +214,7 @@ import { isQuotaExempt } from "./quota";
 type FakeEvent = {
   id: string;
   user_id: string;
-  status: "pending" | "completed" | "failed";
+  status: "pending" | "completed" | "failed" | "refunded";
   is_free_retry: boolean;
   year_month: string;
 };
@@ -224,7 +230,7 @@ function makeLedger() {
   const yearMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
   const events: FakeEvent[] = [];
   const counted = (e: FakeEvent) =>
-    e.year_month === yearMonth && !e.is_free_retry && e.status !== "failed";
+    e.year_month === yearMonth && !e.is_free_retry && e.status !== "refunded";
 
   const supabase = {
     rpc: vi.fn(async (_name: string, p: Record<string, unknown>) => {
@@ -255,6 +261,10 @@ function makeLedger() {
         },
         in: (col: keyof FakeEvent, values: unknown[]) => {
           filters.push((e) => values.includes(e[col]));
+          return builder;
+        },
+        neq: (col: keyof FakeEvent, value: unknown) => {
+          filters.push((e) => e[col] !== value);
           return builder;
         },
         then: (resolve: (r: { count: number; error: null }) => void) =>
@@ -315,6 +325,16 @@ describe("quota exemption", () => {
     for (let i = 0; i < 8; i++) await reserve("operator");
     // Global cap 5: alice, bob and carol get 5 between them, as if the
     // operator had rendered nothing.
+    for (const user of ["alice", "alice", "alice", "bob", "bob"]) {
+      expect((await reserve(user)).ok).toBe(true);
+    }
+    expect(await reserve("carol")).toEqual({ ok: false, reason: "global_cap_reached" });
+  });
+
+  it("leaves an exempt user's failed renders out of the global total too", async () => {
+    const { reserve, events } = makeLedger();
+    for (let i = 0; i < 4; i++) await reserve("operator");
+    for (const e of events) e.status = "failed";
     for (const user of ["alice", "alice", "alice", "bob", "bob"]) {
       expect((await reserve(user)).ok).toBe(true);
     }
