@@ -4,18 +4,28 @@ Everything left before signups open that only the operator can do: a phone, a da
 account, or a judgment call. Agents keep this file current. When you finish an item, tick it
 and add the date, or tell an agent and it will. Each item names the task file with the detail.
 
-Last updated: 2026-10-25. Sections are in the order to do them. Live sandbox snapshot: `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`.
+Last updated: 2026-10-30. Sections are in the order to do them. Live sandbox snapshot: `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`.
 
 ## 1. Protect the spend (do first)
 
 - [ ] Anthropic: set a monthly spend limit and auto-reload. The account ran dry once during
       agent test runs on 2026-10-21, and seeding runs about 24 agent chats. Consider a
       separate key for dev/testing, so test runs can't take production down.
+      **2026-10-30:** the pre-launch audit found the daily chat ceiling and the render
+      caps can both be bypassed by a signed-in user until ship task 58 merges, so this
+      limit is the only real bound on what one account can spend. Set it before seeding
+      resumes, not just before signups.
 
 ## 2. Quick dashboard items
 
 - [ ] Set up the `privacy@zeneratestudio.com` forwarder. `/privacy` tells people to email it
-      (15, 38), and the Report link (53) will too.
+      (15, 38), and the Report link (53) will too. **2026-10-30:** `zeneratestudio.com` has
+      no MX record, so nothing sent there is delivered yet. Resend's sending records on
+      `send.zeneratestudio.com` are in place. Add the forwarder's MX at the apex (DNS is on
+      Vercel) and send yourself one test mail.
+- [ ] Add a DMARC record: `_dmarc.zeneratestudio.com` TXT `v=DMARC1; p=none;
+      rua=mailto:privacy@zeneratestudio.com`. There is none today (2026-10-30), and Gmail
+      and Yahoo demote mail from domains without one, which is where the sign-in codes go.
 - [ ] Remove the old `PER_USER_MONTHLY_SCRIPT_LIMIT` and `MAX_GLOBAL_MONTHLY_SCRIPT_GENERATIONS`
       from Vercel. Nothing reads them since 29.
 - [ ] Supabase → Auth → URL Configuration: `https://www.zeneratestudio.com/auth/callback**`
@@ -23,7 +33,8 @@ Last updated: 2026-10-25. Sections are in the order to do them. Live sandbox sna
 
 ### Sentry error tracking (51)
 
-The code is merged and does nothing until the DSN is set. Either take the Vercel Marketplace
+The code is merged and does nothing until the DSN is set (2026-10-30: the production
+bundle still carries no DSN). Either take the Vercel Marketplace
 route (Vercel → Integrations → Sentry, which makes the account and project and links them;
 afterwards check which of the four variables below it set and add the rest), or by hand:
 
@@ -43,7 +54,7 @@ afterwards check which of the four variables below it set and add the rest), or 
 ### Google sign-in (57)
 
 Needed before the Google button works in production; the emailed code needs only the
-email steps. Do the email steps **before task 57 merges**: until they are done, production
+email steps. 2026-10-30: production's auth settings list only the email provider. Do the email steps **before task 57 merges**: until they are done, production
 mails a link where the new `/login` asks for a code. Until Google is on, the button says
 "Google sign-in isn't available right now" and nothing breaks.
 
@@ -142,13 +153,15 @@ account (`/terms`, "Be decent") if it comes back.
 ## 6. Backups
 
 - [ ] Confirm the keepalive cron in Vercel's cron log, and take one production dump with the
-      backup runbook (10).
+      backup runbook (10). 2026-10-30: the route answers 401 without its secret, as it
+      should; the cron log needs the dashboard.
 - [ ] Install the 30-day prune once, on every machine that holds dumps, passing the
       off-site folder if it is a synced folder on this Mac:
       `./scripts/schedule-backup-prune.sh "$HOME/Library/CloudStorage/<drive>/zenerate"`.
       Then check `launchctl print gui/$(id -u)/com.zeneratestudio.backup-prune` shows exit
       code 0 and `~/backups/zenerate/prune.log` is empty (52). Any dump already older than
-      29 days is deleted on the first run.
+      29 days is deleted on the first run. 2026-10-30: not installed on this Mac yet, and
+      `~/backups/zenerate/` does not exist.
 - [ ] Decide the off-site copy: the job cannot empty a cloud drive's trash (Google Drive and
       iCloud keep deleted files 30 days), so either empty it after prunes or use a drive or
       folder with no trash. Copies anywhere else need the job too (52).
@@ -160,12 +173,16 @@ account (`/terms`, "Be decent") if it comes back.
 
 - [ ] Enable the Sound Effects permission on an ElevenLabs key, if you ever want generated
       ambience candidates (44).
-- [ ] Other worktrees' `.env.local` copies still name a deleted snapshot. The live one is
-      `AUDIO_SANDBOX_SNAPSHOT_ID=snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`. Only local renders care.
+- [x] 2026-10-30: every `.env.local` on this Mac (the primary checkout and the one remaining
+      worktree) names the live snapshot `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`.
 
 ## 8. Open signups (task 38)
 
-- [ ] Everything above is ticked, and ship tasks 48–57 are merged.
+- [ ] Everything above is ticked, and ship tasks 48–57 are merged (they are, as of
+      2026-10-26; nothing is open).
+- [ ] **Ship task 58 (launch security fixes) is merged and its production checks are run.**
+      Filed 2026-10-30 from the pre-launch audit; without it one user can delete another
+      user's audio and the spend ceilings do not hold.
 - [ ] Decide the free tier first: see `tasks/post-ship/paid-tier.md`. At minimum lower the
       daily chat ceiling (200 messages a day is a lot of Anthropic spend per user).
 - [ ] Supabase → Authentication → Rate Limits: raise **emails per hour** from 25 to about
@@ -175,6 +192,11 @@ account (`/terms`, "Be decent") if it comes back.
 
 ## Done
 
+- 2026-10-30: pre-launch audit's production checks, as `anon` with the public key: every
+  private table (chats, messages, drafts, versions, plays, favorites, collections, events)
+  and the audio bucket refuse; public rows carry no prompt text and no audio URL; the
+  sitemap lists exactly the 14 public meditations; signups are off and email confirmation
+  is on. Code findings are ship task 58.
 - 2026-10-22: studio agent switched to `claude-sonnet-5-5` (`STUDIO_MODEL` in Vercel Production and Preview), after reading the comparison scripts (47).
 - 2026-10-22: ambience snapshot live and verified by ear in production (40, 44).
 - 2026-10-21: operator data wiped (28); `QUOTA_EXEMPT_USER_IDS` set (31);
