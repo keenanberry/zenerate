@@ -144,12 +144,18 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
       from production as `anon` before the merge).
 - [ ] Optional: set `MAX_GLOBAL_DAILY_CHAT_TURNS` in Vercel Production (all accounts' chat
       turns per 24 hours; the code defaults to 2000).
-- [ ] **After merging**, signed in as a test account, with its session JWT and the public key
-      against `https://<project>.supabase.co/rest/v1/`: PATCH `audio_path`, `status`,
+- [x] 2026-10-30, merged as 1fbba5b and checked signed out in production: `GET
+      /meditations?select=user_id` (and `audio_path`, `audio_url`, `generation_meta`, `prompt`)
+      returns 42501; `discover_meditations` returns the public columns only; `reserve_chat_turn`,
+      `reserve_audio_generation` and `chat_turns` are denied to `anon`; `/`, `/discover` and a
+      public meditation page load with no private column in the payload and the audio signed;
+      the sitemap still lists all 14 public meditations.
+- [ ] **After merging, the signed-in half**, as a test account with its session JWT and the
+      public key against `https://<project>.supabase.co/rest/v1/`: PATCH `audio_path`, `status`,
       `is_featured` on its own meditation each return 42501; POST to `meditation_versions`
-      returns 42501; DELETE and PATCH (`role`) on its own `chat_messages` return 42501. Signed
-      out, `GET /meditations?select=user_id` returns 42501 and `/discover` still loads.
-      `src/test/launch-security.db.test.ts` is the same list, run against local Supabase.
+      returns 42501; DELETE and PATCH (`role`) on its own `chat_messages` return 42501.
+      `src/test/launch-security.db.test.ts` is the same list, run against local Supabase, and
+      passed there before the merge.
 - [ ] After merging: make audio once in the studio and toggle the meditation public and
       private, so the service-role status flip and the publish rule are seen working live.
 
@@ -196,9 +202,8 @@ account (`/terms`, "Be decent") if it comes back.
 
 - [ ] Everything above is ticked, and ship tasks 48–57 are merged (they are, as of
       2026-10-26; nothing is open).
-- [ ] **Ship task 58 (launch security fixes) is merged and its production checks are run.**
-      Filed 2026-10-30 from the pre-launch audit; without it one user can delete another
-      user's audio and the spend ceilings do not hold.
+- [x] 2026-10-30: ship task 58 (launch security fixes) merged (PR #107) and its signed-out
+      production checks pass; the signed-in checks and one live render are in section 5.
 - [ ] Decide the free tier first: see `tasks/post-ship/paid-tier.md`. At minimum lower the
       daily chat ceiling (200 messages a day is a lot of Anthropic spend per user).
 - [ ] Supabase → Authentication → Rate Limits: raise **emails per hour** from 25 to about
