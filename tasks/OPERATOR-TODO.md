@@ -139,11 +139,9 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
 
 ### Launch security fixes (58, PR #107)
 
-- [ ] **Before merging:** in the production SQL editor, check the longest house meditation fits
-      the new 6,000-character narration cap:
-      `select title, (generation_meta->>'tts_characters')::int as chars from meditations
-      order by 2 desc nulls last limit 3;`. Anything over 6,000 would be refused on its next
-      render; say so on the PR instead of merging.
+- [x] 2026-10-30: the longest public house meditation (30 min) narrates 2,549 characters and
+      the longest script is 3,580, both well under the 6,000-character narration cap (read
+      from production as `anon` before the merge).
 - [ ] Optional: set `MAX_GLOBAL_DAILY_CHAT_TURNS` in Vercel Production (all accounts' chat
       turns per 24 hours; the code defaults to 2000).
 - [ ] **After merging**, signed in as a test account, with its session JWT and the public key
