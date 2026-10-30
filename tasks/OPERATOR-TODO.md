@@ -137,6 +137,24 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
       of iMessage, Slack, X and Discord. Each shows a large card with the lotus or the
       meditation's title and description. Optionally run Facebook's Sharing Debugger (23, 26).
 
+### Launch security fixes (58, PR #107)
+
+- [ ] **Before merging:** in the production SQL editor, check the longest house meditation fits
+      the new 6,000-character narration cap:
+      `select title, (generation_meta->>'tts_characters')::int as chars from meditations
+      order by 2 desc nulls last limit 3;`. Anything over 6,000 would be refused on its next
+      render; say so on the PR instead of merging.
+- [ ] Optional: set `MAX_GLOBAL_DAILY_CHAT_TURNS` in Vercel Production (all accounts' chat
+      turns per 24 hours; the code defaults to 2000).
+- [ ] **After merging**, signed in as a test account, with its session JWT and the public key
+      against `https://<project>.supabase.co/rest/v1/`: PATCH `audio_path`, `status`,
+      `is_featured` on its own meditation each return 42501; POST to `meditation_versions`
+      returns 42501; DELETE and PATCH (`role`) on its own `chat_messages` return 42501. Signed
+      out, `GET /meditations?select=user_id` returns 42501 and `/discover` still loads.
+      `src/test/launch-security.db.test.ts` is the same list, run against local Supabase.
+- [ ] After merging: make audio once in the studio and toggle the meditation public and
+      private, so the service-role status flip and the publish rule are seen working live.
+
 ### When a report arrives (53)
 
 A Report link mails `privacy@` with the meditation's title and URL. If it breaks the terms,
