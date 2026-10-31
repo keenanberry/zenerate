@@ -4,7 +4,7 @@ Everything left before signups open that only the operator can do: a phone, a da
 account, or a judgment call. Agents keep this file current. When you finish an item, tick it
 and add the date, or tell an agent and it will. Each item names the task file with the detail.
 
-Last updated: 2026-10-30. Sections are in the order to do them. Live sandbox snapshot: `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`.
+Last updated: 2026-10-31. Sections are in the order to do them. Live sandbox snapshot: `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`.
 
 ## 1. Protect the spend (do first)
 
@@ -15,6 +15,11 @@ Last updated: 2026-10-30. Sections are in the order to do them. Live sandbox sna
       caps can both be bypassed by a signed-in user until ship task 58 merges, so this
       limit is the only real bound on what one account can spend. Set it before seeding
       resumes, not just before signups.
+      **2026-10-31:** at the launch caps (3 renders a month, 30 chat turns a day, 25 renders
+      globally) the Anthropic share is a few dollars a month; **$25 a month** leaves room.
+      The cost model is in `tasks/post-ship/paid-tier.md`.
+- [ ] ElevenLabs → Subscription: confirm usage-based billing (overage) is **off**, so the
+      plan's 30k credits are the hard stop rather than an open-ended bill.
 
 ## 2. Quick dashboard items
 
@@ -204,8 +209,16 @@ account (`/terms`, "Be decent") if it comes back.
       2026-10-26; nothing is open).
 - [x] 2026-10-30: ship task 58 (launch security fixes) merged (PR #107) and its signed-out
       production checks pass; the signed-in checks and one live render are in section 5.
-- [ ] Decide the free tier first: see `tasks/post-ship/paid-tier.md`. At minimum lower the
-      daily chat ceiling (200 messages a day is a lot of Anthropic spend per user).
+- [x] 2026-10-31: free tier decided for launch (`tasks/post-ship/paid-tier.md`): free with
+      the current caps and no billing yet; open to 20–30 accounts, measure for a month,
+      then price. The daily chat ceiling's code default is now 30 turns (was 200).
+- [ ] Vercel → Settings → Environment Variables: confirm `PER_USER_DAILY_CHAT_MESSAGES` is
+      **not** set in Production (ship 29 said to set it only to override 200), or set it
+      to 30. If it is set to 200 there, the new code default never applies.
+- [ ] Supabase → Reports: write down the storage and egress figures on the day signups open.
+      Every meditation page view downloads the whole audio file (22 MB for 15 minutes), so
+      the free plan's 5 GB of egress is about 230 views a month; the fix is
+      `tasks/post-ship/audio-egress.md`.
 - [ ] Supabase → Authentication → Rate Limits: raise **emails per hour** from 25 to about
       100. Every email sign-in now sends a code (57), so 25 an hour runs out on a busy day.
       Check Resend's plan limits too: the free plan allows 100 a day and 3,000 a month.

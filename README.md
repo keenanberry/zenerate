@@ -85,7 +85,7 @@ it is. The short version:
 | `PER_USER_MONTHLY_AUDIO_LIMIT`, `MAX_GLOBAL_AUDIO_GENERATIONS_PER_MONTH` | Audio quota. The global cap is derived from the ElevenLabs plan |
 | `QUOTA_EXEMPT_USER_IDS` | Operator accounts exempt from both audio caps (comma-separated user ids) |
 | `NEXT_PUBLIC_SITE_URL` | The canonical site URL for metadata and share cards |
-| `PER_USER_DAILY_CHAT_MESSAGES` | Studio chat ceiling (default 200 a day), an abuse guard rather than a product limit |
+| `PER_USER_DAILY_CHAT_MESSAGES` | Studio chat ceiling (default 30 turns a day, continuations included). A meditation is about five turns; see `tasks/post-ship/paid-tier.md` |
 | `CRON_SECRET`, `KEEPALIVE_PING_URL` | The keepalive cron. The route fails closed without the secret |
 | `SOUND_EFFECTS_SUPABASE_URL`, `SOUND_EFFECTS_SUPABASE_SERVICE_ROLE_KEY` | Snapshot build only: the production bucket holding the recorded sound effects |
 

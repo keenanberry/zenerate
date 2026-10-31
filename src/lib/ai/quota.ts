@@ -18,21 +18,27 @@ export function readPositiveInt(name: string, fallback: number): number {
 
 /**
  * Chat turns are not metered against any user-facing quota. This is an abuse
- * ceiling, counted in turns (one model run each, a continuation included): it stops a stolen session or a runaway client from running up the
- * Anthropic bill, and normal use never comes near it.
+ * ceiling, counted in turns (one model run each, a continuation included): it
+ * stops a stolen session or a runaway client from running up the Anthropic
+ * bill, and normal use stays well under it.
  *
- * Sized off the worst case, like the audio caps:
+ * Sized for the free tier before signups open (2026-10-31; the cost model is
+ * in tasks/post-ship/paid-tier.md):
  *
- *   maxOutputTokens: 8000 per step, 5 steps per turn (src/app/api/chat/route.ts)
- *   claude-sonnet-5 output at $10/MTok -> ~$0.40 worst case per turn in output
- *   200 turns -> ~$80 per user per day, worst case
+ *   A meditation is about five turns: the draft, a revision or two, "make the
+ *   audio", and the card's continuation. 30 turns a day is about six of those.
+ *   Measured on claude-sonnet-5-5 (ship 47) a writing turn costs $0.02-0.04,
+ *   so one account tops out near $1 a day in practice.
  *
- * Input tokens grow with the conversation and are not in that figure. Real
- * turns are far smaller: a script is ~1-2k output tokens and most turns are a
- * one-line reply. Revisit the default if worst-case exposure needs to come down.
+ *   Worst case: maxOutputTokens 8000 per step, 5 steps per turn
+ *   (src/app/api/chat/route.ts) at $10/MTok output -> ~$0.40 a turn, ~$12 a
+ *   day. Input tokens grow with the conversation and are not in that figure.
+ *
+ * A paid plan would raise this per user (paid-tier.md). The Anthropic spend
+ * limit stays the hard backstop.
  */
 export function getDailyChatMessageLimit(): number {
-  return readPositiveInt("PER_USER_DAILY_CHAT_MESSAGES", 200);
+  return readPositiveInt("PER_USER_DAILY_CHAT_MESSAGES", 30);
 }
 
 /**
