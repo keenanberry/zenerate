@@ -698,6 +698,12 @@ and the buttons swap them.
 The chat and its canvas (`src/components/studio/`), the way Claude builds an artifact:
 the conversation on the left, the script on the right.
 
+- **Front door:** `/create` is one field (`src/components/studio/new-chat-form.tsx`). Its
+  placeholder types the landing demo's six requests in turn, a character every 48ms, held
+  for 2.6s and deleted faster, so the empty field reads as "anything like this" and not as
+  one suggestion. Under reduced motion, before hydration and once the person types it
+  reads "Describe the meditation you want", the chat composer's first-message
+  placeholder. The field keeps its minimum height, so the typing never moves the page.
 - **Chat (task 50):** the person's messages sit at 85% width on the right on the Card
   surface with a Hairline border, in Foreground: quiet, never the brightest thing on
   screen. The agent's replies are plain Body text on the ground, with no bubble. Each

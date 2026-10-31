@@ -8,6 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { MAX_MESSAGE_CHARS } from "@/lib/ai/quota";
 import { createChat } from "@/lib/chat/actions";
 import { firstMessageKey } from "./studio-context";
+import { PLACEHOLDER_EXAMPLES, useTypedPlaceholder } from "./use-typed-placeholder";
+
+/** What the field says when the examples are not typing: the label, as the chat's composer says it. */
+const STILL_PLACEHOLDER = "Describe the meditation you want";
 
 /**
  * The studio's front door: one input. Sending creates the chat and moves to
@@ -19,6 +23,7 @@ export function NewChatForm() {
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const placeholder = useTypedPlaceholder(PLACEHOLDER_EXAMPLES, STILL_PLACEHOLDER, text === "");
 
   function submit(e?: FormEvent) {
     e?.preventDefault();
@@ -53,7 +58,7 @@ export function NewChatForm() {
           onKeyDown={onKeyDown}
           maxLength={MAX_MESSAGE_CHARS}
           autoFocus
-          placeholder="Ten minutes to unwind after a rough day"
+          placeholder={placeholder}
           className="min-h-32 resize-none px-4 py-3.5 pr-16 text-base md:text-base"
         />
         <Button
