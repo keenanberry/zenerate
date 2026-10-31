@@ -5,12 +5,12 @@ Work that's out of scope for initial ship but tracked for the next cycle. No ord
 ## Next up: scoped for a future session (2026-10-22)
 
 The operator's candidates for after launch, each scoped with decisions to make. Nothing
-has started. **Pick the paid-tier decision up before opening signups**, because it sets the
-free tier.
+has started. **The paid-tier decision for launch was made 2026-10-31**: free with the current
+caps and no billing yet; the task file holds the cost model and what to measure.
 
 | Task | The question it answers |
 |---|---|
-| [Paid tier](./paid-tier.md) | Charge about $5/month? Includes a per-meditation cost model (about $0.35–0.50) and the free tier's real Anthropic exposure |
+| [Paid tier](./paid-tier.md) | **Decided for launch (2026-10-31):** free with the current caps and no billing yet; open to 20–30 accounts, measure a month, then price. Holds the per-meditation cost model (about $0.30) and where each free plan runs out |
 | [User profiles](./user-profiles.md) | Let people who publish show who they are: name, a short bio, their public meditations; plus an `/account` page |
 | [Google / Apple sign-in](./google-apple-auth.md) | Yes, Supabase supports both. **Google moved to ship 57** (2026-10-24) with an emailed code; Apple ($99/year) stays here |
 | [Remember preferences](./agent-user-memory.md) | "Brittney again, or change it up?" The audio card preselects the last voice and bed, and the agent gets a short summary of recent choices. Derived from existing `settings`, so no new table for the first slice |
@@ -35,6 +35,7 @@ free tier.
 | [Breath cues](./breath-cues.md) | An audible in-breath and out-breath after breathing instructions, sized by a `*[BREATH: in 4]*` marker so any rhythm works; samples first, since the risk is how it sounds (2026-10-25) |
 | [Stale audio run recovery](./stale-audio-run-recovery.md) | Unstick `processing_audio` rows whose workflow run died before `markFailed`; ask the run's status, refund the slot, offer the free retry |
 | [Meditation ratings](./meditation-ratings.md) | Five stars at the end of a session on a public meditation, from signed-in listeners who are not the owner; shown on Discover cards and folded into Popular once a meditation has enough of them (2026-10-31) |
+| [Audio egress](./audio-egress.md) | Every meditation page view downloads the whole audio file before play (22 MB for 15 minutes, measured 2026-10-31), and Supabase Free allows 5 GB a month. Precomputed waveform peaks so the player streams, then a lower bitrate |
 
 ## Promoted or dropped (2026-10-20)
 

@@ -17,8 +17,8 @@ describe("getDailyChatMessageLimit", () => {
     process.env = { ...original };
   });
 
-  it("defaults to 200", () => {
-    expect(getDailyChatMessageLimit()).toBe(200);
+  it("defaults to 30", () => {
+    expect(getDailyChatMessageLimit()).toBe(30);
   });
 
   it("reads a positive integer env var", () => {
