@@ -34,6 +34,7 @@ free tier.
 | [Generated cover art](./generated-cover-art.md) | Per-meditation artwork replacing the designed covers from ship task 35 |
 | [Breath cues](./breath-cues.md) | An audible in-breath and out-breath after breathing instructions, sized by a `*[BREATH: in 4]*` marker so any rhythm works; samples first, since the risk is how it sounds (2026-10-25) |
 | [Stale audio run recovery](./stale-audio-run-recovery.md) | Unstick `processing_audio` rows whose workflow run died before `markFailed`; ask the run's status, refund the slot, offer the free retry |
+| [Meditation ratings](./meditation-ratings.md) | Five stars at the end of a session on a public meditation, from signed-in listeners who are not the owner; shown on Discover cards and folded into Popular once a meditation has enough of them (2026-10-31) |
 
 ## Promoted or dropped (2026-10-20)
 
