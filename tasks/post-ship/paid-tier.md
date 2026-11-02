@@ -182,7 +182,9 @@ size is the only view count.
   is simpler to explain; the chat ceiling handles chat cost.
 - **Failed renders:** the free retry (ship 03) carries over unchanged.
 - **Cancel mid-month:** access to the end of the period, then the free tier.
-- **Custom voices** (ElevenLabs cloning) as a higher tier later. That needs a moderation story.
+- **Your own voice** (ElevenLabs instant cloning) as the higher tier, scoped in `own-voice.md`
+  (2026-11-02) with the consent story and the voice-slot constraint. A voice tier at $10–12 is
+  the second plan when it is built.
 
 ## Implementation notes
 
