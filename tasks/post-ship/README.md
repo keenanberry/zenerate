@@ -36,6 +36,7 @@ caps and no billing yet; the task file holds the cost model and what to measure.
 | [Stale audio run recovery](./stale-audio-run-recovery.md) | Unstick `processing_audio` rows whose workflow run died before `markFailed`; ask the run's status, refund the slot, offer the free retry |
 | [Meditation ratings](./meditation-ratings.md) | Five stars at the end of a session on a public meditation, from signed-in listeners who are not the owner; shown on Discover cards and folded into Popular once a meditation has enough of them (2026-10-31) |
 | [Audio egress](./audio-egress.md) | Every meditation page view downloads the whole audio file before play (22 MB for 15 minutes, measured 2026-10-31), and Supabase Free allows 5 GB a month. Precomputed waveform peaks so the player streams, then a lower bitrate |
+| [Your own voice](./own-voice.md) | Record two minutes in the app and narrate your own meditations in your voice (ElevenLabs instant clone); the reason for a higher paid tier. Live recording with a spoken consent line, own meditations only at first; the ElevenLabs plan's voice slots are the constraint (2026-11-02) |
 
 ## Promoted or dropped (2026-10-20)
 
