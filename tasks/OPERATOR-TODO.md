@@ -20,7 +20,7 @@ Last updated: 2026-11-06. Sections are in the order to do them. Live sandbox sna
       The cost model is in `tasks/post-ship/paid-tier.md`.
 - [x] 2026-11-06: ElevenLabs → Subscription: auto top-up (usage-based billing) is **off**,
       so the plan's 30k credits are the hard stop rather than an open-ended bill.
-- [ ] ElevenLabs → usage notifications: one at **80%** (24k credits). The global cap of 25
+- [x] 2026-11-06: ElevenLabs → usage notifications: one at **80%** (24k credits). The global cap of 25
       renders uses about 23k, and the exempt operator accounts (`QUOTA_EXEMPT_USER_IDS`)
       are not counted by that cap, so this is the only warning that your own renders
       are eating the headroom. Set it lower if you render a lot yourself.
