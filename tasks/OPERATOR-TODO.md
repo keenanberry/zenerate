@@ -18,8 +18,12 @@ Last updated: 2026-11-06. Sections are in the order to do them. Live sandbox sna
       **2026-10-31:** at the launch caps (3 renders a month, 30 chat turns a day, 25 renders
       globally) the Anthropic share is a few dollars a month; **$25 a month** leaves room.
       The cost model is in `tasks/post-ship/paid-tier.md`.
-- [ ] ElevenLabs → Subscription: confirm usage-based billing (overage) is **off**, so the
-      plan's 30k credits are the hard stop rather than an open-ended bill.
+- [x] 2026-11-06: ElevenLabs → Subscription: auto top-up (usage-based billing) is **off**,
+      so the plan's 30k credits are the hard stop rather than an open-ended bill.
+- [ ] ElevenLabs → usage notifications: one at **80%** (24k credits). The global cap of 25
+      renders uses about 23k, and the exempt operator accounts (`QUOTA_EXEMPT_USER_IDS`)
+      are not counted by that cap, so this is the only warning that your own renders
+      are eating the headroom. Set it lower if you render a lot yourself.
 
 ## 2. Quick dashboard items
 
