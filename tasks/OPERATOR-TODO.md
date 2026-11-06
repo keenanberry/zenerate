@@ -4,11 +4,15 @@ Everything left before signups open that only the operator can do: a phone, a da
 account, or a judgment call. Agents keep this file current. When you finish an item, tick it
 and add the date, or tell an agent and it will. Each item names the task file with the detail.
 
-Last updated: 2026-10-31. Sections are in the order to do them. Live sandbox snapshot: `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`.
+Last updated: 2026-11-06. Sections are in the order to do them. Live sandbox snapshot: `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`.
 
 ## 1. Protect the spend (do first)
 
-- [ ] Anthropic: set a monthly spend limit and auto-reload. The account ran dry once during
+- [x] 2026-11-06: Anthropic auto-reload **on** with a **$50 monthly spend limit**. The
+      balance never runs dry, and the limit blocks requests until the next billing cycle;
+      at the launch caps expected spend is a few dollars, so hitting $50 is itself the
+      abuse signal. The measurement scripts and seeding draw on the same workspace.
+      The original item, for the record: set a monthly spend limit and auto-reload. The account ran dry once during
       agent test runs on 2026-10-21, and seeding runs about 24 agent chats. Consider a
       separate key for dev/testing, so test runs can't take production down.
       **2026-10-30:** the pre-launch audit found the daily chat ceiling and the render
@@ -18,8 +22,12 @@ Last updated: 2026-10-31. Sections are in the order to do them. Live sandbox sna
       **2026-10-31:** at the launch caps (3 renders a month, 30 chat turns a day, 25 renders
       globally) the Anthropic share is a few dollars a month; **$25 a month** leaves room.
       The cost model is in `tasks/post-ship/paid-tier.md`.
-- [ ] ElevenLabs → Subscription: confirm usage-based billing (overage) is **off**, so the
-      plan's 30k credits are the hard stop rather than an open-ended bill.
+- [x] 2026-11-06: ElevenLabs → Subscription: auto top-up (usage-based billing) is **off**,
+      so the plan's 30k credits are the hard stop rather than an open-ended bill.
+- [x] 2026-11-06: ElevenLabs → usage notifications: one at **80%** (24k credits). The global cap of 25
+      renders uses about 23k, and the exempt operator accounts (`QUOTA_EXEMPT_USER_IDS`)
+      are not counted by that cap, so this is the only warning that your own renders
+      are eating the headroom. Set it lower if you render a lot yourself.
 
 ## 2. Quick dashboard items
 
@@ -27,10 +35,11 @@ Last updated: 2026-10-31. Sections are in the order to do them. Live sandbox sna
       (15, 38), and the Report link (53) will too. **2026-10-30:** `zeneratestudio.com` has
       no MX record, so nothing sent there is delivered yet. Resend's sending records on
       `send.zeneratestudio.com` are in place. Add the forwarder's MX at the apex (DNS is on
-      Vercel) and send yourself one test mail.
+      Vercel) and send yourself one test mail. **2026-11-06:** still no MX at the apex.
 - [ ] Add a DMARC record: `_dmarc.zeneratestudio.com` TXT `v=DMARC1; p=none;
       rua=mailto:privacy@zeneratestudio.com`. There is none today (2026-10-30), and Gmail
       and Yahoo demote mail from domains without one, which is where the sign-in codes go.
+      Still none on 2026-11-06.
 - [ ] Remove the old `PER_USER_MONTHLY_SCRIPT_LIMIT` and `MAX_GLOBAL_MONTHLY_SCRIPT_GENERATIONS`
       from Vercel. Nothing reads them since 29.
 - [ ] Supabase → Auth → URL Configuration: `https://www.zeneratestudio.com/auth/callback**`
@@ -38,17 +47,20 @@ Last updated: 2026-10-31. Sections are in the order to do them. Live sandbox sna
 
 ### Sentry error tracking (51)
 
-The code is merged and does nothing until the DSN is set (2026-10-30: the production
-bundle still carries no DSN). Either take the Vercel Marketplace
+The code is merged and does nothing until the DSN is set. **2026-11-06: the production
+bundle carries the DSN**, so the project exists and the deploy has it; what is left is
+the Sentry-side settings and the checks below. Either take the Vercel Marketplace
 route (Vercel → Integrations → Sentry, which makes the account and project and links them;
 afterwards check which of the four variables below it set and add the rest), or by hand:
 
-- [ ] Sign up at sentry.io (the free Developer plan is enough) and create a **Next.js**
-      project. Copy its DSN (Project Settings → Client Keys).
+- [x] 2026-11-06 (seen from the bundle): sign up at sentry.io (the free Developer plan is
+      enough) and create a **Next.js** project. Copy its DSN (Project Settings → Client Keys).
 - [ ] Settings → Auth Tokens → create an Organization Auth Token, for source map uploads.
 - [ ] Vercel → Settings → Environment Variables, for Production and Preview:
       `NEXT_PUBLIC_SENTRY_DSN` (the DSN), `SENTRY_AUTH_TOKEN` (mark it sensitive),
       `SENTRY_ORG` and `SENTRY_PROJECT` (the slugs in the project's URL). Redeploy.
+      2026-11-06: the DSN is deployed; confirm the other three, which the source map
+      upload needs.
 - [ ] Sentry project → Settings → Security & Privacy: turn on **Prevent Storing of IP
       Addresses** and leave the Data Scrubber on. `/privacy` says reports carry no IP address.
 - [ ] Alerts: keep the default new-issue email, and add an issue alert for **more than 5
@@ -59,7 +71,8 @@ afterwards check which of the four variables below it set and add the rest), or 
 ### Google sign-in (57)
 
 Needed before the Google button works in production; the emailed code needs only the
-email steps. 2026-10-30: production's auth settings list only the email provider. Do the email steps **before task 57 merges**: until they are done, production
+email steps. 2026-10-30, and again 2026-11-06: production's auth settings list only the
+email provider. Do the email steps **before task 57 merges**: until they are done, production
 mails a link where the new `/login` asks for a code. Until Google is on, the button says
 "Google sign-in isn't available right now" and nothing breaks.
 
@@ -89,54 +102,56 @@ mails a link where the new `/login` asks for a code. Until Google is on, the but
 Seeding is independent of the redesign (48–50), so it can start now. Do it on the phone and
 tick the studio checks in section 4 as you go.
 
-- [ ] Make the house meditations through the studio: about 24, at least 3 per Discover
+- [x] 2026-11-06: Make the house meditations through the studio: about 24, at least 3 per Discover
       category (`DISCOVER_CATEGORIES` in `src/lib/meditation/tags.ts`). Ambience is live, so
       pick beds as you go.
-- [ ] Make public the ones you'd show a stranger. Keep tests and anything personal private.
-- [ ] Mark 6–8 of the best as house picks. Until then Popular and Picked for you stay hidden
+- [x] 2026-11-06: Make public the ones you'd show a stranger. Keep tests and anything personal private.
+- [x] 2026-11-06: Mark 6–8 of the best as house picks. Until then Popular and Picked for you stay hidden
       on Discover, and the landing page shows the newest instead:
       `update public.meditations set is_featured = true where id in ('…');`
-- [ ] Note anything the agent did badly while seeding (unneeded questions, a missed length,
+- [x] 2026-11-06: Note anything the agent did badly while seeding (unneeded questions, a missed length,
       wrong tags) and file it as an issue.
 
 ## 4. Phone checks (iPhone: Safari and the installed app)
 
 While seeding:
 
-- [ ] Studio: tap the input. The composer rides just above the keyboard with the conversation
+- [x] 2026-11-06: Studio: tap the input. The composer rides just above the keyboard with the conversation
       visible. No sideways scroll after audio appears in the chat (39).
-- [ ] A sound preview and an ambience preview play (34, 40).
-- [ ] Landing page: swiping over the demo card still scrolls the page (46).
-- [ ] Tag remove buttons on a meditation page are easy to tap (33).
+- [x] 2026-11-06: A sound preview and an ambience preview play (34, 40).
+- [x] 2026-11-06: Landing page: swiping over the demo card still scrolls the page (46).
+- [x] 2026-11-06: Tag remove buttons on a meditation page are easy to tap (33).
 
 After the redesign merges (these replace the old 35, 42 and 43 checks):
 
-- [ ] Library rows (48, 55): tapping anywhere on a row, cover included, opens the
+- [x] 2026-11-06: Library rows (48, 55): tapping anywhere on a row, cover included, opens the
       meditation's page; long titles end in "…".
-- [ ] Library and Discover rows, covers and category tiles, in both themes (48, 49).
-- [ ] The Collections tab artwork, a collection page and a meditation page's tag line;
+- [x] 2026-11-06: Library and Discover rows, covers and category tiles, in both themes (48, 49).
+- [x] 2026-11-06: The Collections tab artwork, a collection page and a meditation page's tag line;
       a dropdown (the Discover tag filter) shows its groups clearly (54, #89).
-- [ ] Studio: "Make the audio" and "Change something", whether "Change something"
+- [x] 2026-11-06: Studio: "Make the audio" and "Change something", whether "Change something"
       raises the keyboard, and Make audio staying at full strength while it starts (50).
-- [ ] Meditation page and session player (55), in Safari and the installed app: Play opens
+- [x] 2026-11-06: Meditation page and session player (55), in Safari and the installed app: Play opens
       the full-screen session; play, pause, both 15s skips and dragging along the waveform
       work; the chevron minimizes while the audio plays on, and Play ("Playing · … left")
       reopens it at the right place. Lock the phone with the session open: the lock screen
       shows the title, artwork and controls, and they work. "Show script" in the session's
       "…" opens the script on the page, following the audio.
-- [ ] Studio audio card (56): when it appears the whole card is on screen with the voice
+- [x] 2026-11-06: Studio audio card (56): when it appears the whole card is on screen with the voice
       row visible; Listen plays each voice and bed through the speaker, the playing one says
       Stop, and starting another stops it; Change opens the list and Done folds it. After
       one render, the next card says "Same as last time" on the voice and background you
       used. The meditation page's Generate Audio panel has the same rows.
-- [ ] Sign-in (57), in Safari **and the installed app**, signed out: Continue with Google
+- [x] 2026-11-06: Sign-in (57), in Safari **and the installed app**, signed out: Continue with Google
       lands you in your Library inside the same app, not in Safari; Continue with email
       sends a code that iOS offers above the keyboard, and typing it signs you in.
+      The Google half waits for the provider: on 2026-11-06 production still lists only
+      the email provider (section 2).
 
 ## 5. Production checks (after seeding)
 
 - [ ] Revise a meditation that already has audio, re-render it, and choose keep or replace. Earlier versions should appear for you only (32).
-- [ ] Signed out, `/discover` loads with categories and shelves (36), and the landing page's
+- [x] 2026-11-06: Signed out, `/discover` loads with categories and shelves (36), and the landing page's
       "Hear one first" row shows meditations (45).
 - [ ] Share cards: paste `https://www.zeneratestudio.com/` and one public meditation into two
       of iMessage, Slack, X and Discord. Each shows a large card with the lotus or the
@@ -219,7 +234,7 @@ account (`/terms`, "Be decent") if it comes back.
       Every meditation page view downloads the whole audio file (22 MB for 15 minutes), so
       the free plan's 5 GB of egress is about 230 views a month; the fix is
       `tasks/post-ship/audio-egress.md`.
-- [ ] Supabase → Authentication → Rate Limits: raise **emails per hour** from 25 to about
+- [x] 2026-11-06: Supabase → Authentication → Rate Limits: raise **emails per hour** from 25 to about
       100. Every email sign-in now sends a code (57), so 25 an hour runs out on a busy day.
       Check Resend's plan limits too: the free plan allows 100 a day and 3,000 a month.
 - [ ] Supabase → Auth → enable signups.
