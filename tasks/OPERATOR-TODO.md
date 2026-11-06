@@ -8,7 +8,13 @@ Last updated: 2026-11-06. Sections are in the order to do them. Live sandbox sna
 
 ## 1. Protect the spend (do first)
 
-- [ ] Anthropic: set a monthly spend limit and auto-reload. The account ran dry once during
+- [x] 2026-11-06: Anthropic auto-reload is **off**, so the prepaid balance is the hard stop
+      ($15 on 2026-11-06; API requests stop when it runs out). At the launch caps that is
+      a few months. Top it up by hand, and remember the measurement scripts and seeding
+      draw on the same balance.
+- [ ] Anthropic → Billing: a low-balance email at about $5 if the console offers one, so
+      the studio does not go dark mid-session with no warning.
+      The original item, for the record: set a monthly spend limit and auto-reload. The account ran dry once during
       agent test runs on 2026-10-21, and seeding runs about 24 agent chats. Consider a
       separate key for dev/testing, so test runs can't take production down.
       **2026-10-30:** the pre-launch audit found the daily chat ceiling and the render
