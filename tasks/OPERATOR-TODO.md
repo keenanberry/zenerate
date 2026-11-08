@@ -176,14 +176,13 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
       `reserve_audio_generation` and `chat_turns` are denied to `anon`; `/`, `/discover` and a
       public meditation page load with no private column in the payload and the audio signed;
       the sitemap still lists all 14 public meditations.
-- [ ] **After merging, the signed-in half**, as a test account with its session JWT and the
-      public key against `https://<project>.supabase.co/rest/v1/`: PATCH `audio_path`, `status`,
-      `is_featured` on its own meditation each return 42501; POST to `meditation_versions`
-      returns 42501; DELETE and PATCH (`role`) on its own `chat_messages` return 42501.
-      `src/test/launch-security.db.test.ts` is the same list, run against local Supabase, and
-      passed there before the merge. **2026-11-08:** tried from the operator's signed-in tab; the
-      browser tool refused the script that reads the session cookie, so still open. Run the same
-      requests from the site's own DevTools console, which already holds the session.
+- [x] 2026-11-08: **the signed-in half**, run from the operator's own session in the site's
+      DevTools console with the publishable key against `https://<project>.supabase.co/rest/v1/`.
+      A control GET of the operator's meditation returned 200 with one row. Every write was
+      refused with 42501: PATCH of `audio_path`, `status`, `is_featured`, `user_id` and
+      `generation_meta` on `meditations`; POST to `meditation_versions`; DELETE and PATCH of
+      `role`, `created_at` and `parts` on `chat_messages`. Same list as
+      `src/test/launch-security.db.test.ts`, which passed against local Supabase before the merge.
 - [x] 2026-11-08: the re-render above was the live make-audio. Make private then Make public
       from the page menu: private returned 404 signed out and left `/discover` at once (the
       sitemap keeps it for up to an hour, as documented); public returned 200 with the new audio
