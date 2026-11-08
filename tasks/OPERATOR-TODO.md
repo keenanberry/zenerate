@@ -42,27 +42,34 @@ Last updated: 2026-11-08. Sections are in the order to do them. Live sandbox sna
       mail from domains without one, which is where the sign-in codes go. Aggregate
       reports (daily XML from each big mailbox provider) land in the privacy inbox; move
       `rua` to a separate alias if they get noisy.
-- [ ] Remove the old `PER_USER_MONTHLY_SCRIPT_LIMIT` and `MAX_GLOBAL_MONTHLY_SCRIPT_GENERATIONS`
-      from Vercel. Nothing reads them since 29.
+- [x] 2026-11-08: the old `PER_USER_MONTHLY_SCRIPT_LIMIT` and `MAX_GLOBAL_MONTHLY_SCRIPT_GENERATIONS`
+      are not set in Vercel, Production or Preview (`vercel env pull` of both). Nothing reads
+      them since 29.
 - [ ] Supabase → Auth → URL Configuration: `https://www.zeneratestudio.com/auth/callback**`
       is in Redirect URLs, then run a full password reset with your own account (11).
 
 ### Sentry error tracking (51)
 
-The code is merged and does nothing until the DSN is set. **2026-11-06: the production
-bundle carries the DSN**, so the project exists and the deploy has it; what is left is
-the Sentry-side settings and the checks below. Either take the Vercel Marketplace
-route (Vercel → Integrations → Sentry, which makes the account and project and links them;
-afterwards check which of the four variables below it set and add the rest), or by hand:
+The code is merged and does nothing until the DSN is set. **2026-11-08: Sentry is off in
+production.** The 2026-11-06 note here said the bundle carried the DSN; it does not. Every
+script the live pages load was read again: the SDK is in them, the DSN slot is the unset
+variable, and none of the four variables below is in Vercel (Production or Preview). The
+latest production build log says "No auth token provided. Will not create release." Either
+take the Vercel Marketplace route (Vercel → Integrations → Sentry, which makes the account
+and project and links them; afterwards check which of the four variables below it set and
+add the rest), or by hand:
 
-- [x] 2026-11-06 (seen from the bundle): sign up at sentry.io (the free Developer plan is
-      enough) and create a **Next.js** project. Copy its DSN (Project Settings → Client Keys).
+- [ ] Sign up at sentry.io (the free Developer plan is enough) and create a **Next.js**
+      project. Copy its DSN (Project Settings → Client Keys). The 2026-11-06 tick here was
+      wrong and is withdrawn (2026-11-08); whether the account exists is for the operator to say.
 - [ ] Settings → Auth Tokens → create an Organization Auth Token, for source map uploads.
 - [ ] Vercel → Settings → Environment Variables, for Production and Preview:
       `NEXT_PUBLIC_SENTRY_DSN` (the DSN), `SENTRY_AUTH_TOKEN` (mark it sensitive),
       `SENTRY_ORG` and `SENTRY_PROJECT` (the slugs in the project's URL). Redeploy.
-      2026-11-06: the DSN is deployed; confirm the other three, which the source map
-      upload needs.
+      2026-11-08: none of the four is set. An agent with `vercel` logged in can add the DSN
+      and the two slugs (`vercel env add NAME production preview`); the auth token is a
+      secret, so add that one yourself, in the dashboard or with
+      `vercel env add SENTRY_AUTH_TOKEN production preview --sensitive`.
 - [ ] Sentry project → Settings → Security & Privacy: turn on **Prevent Storing of IP
       Addresses** and leave the Data Scrubber on. `/privacy` says reports carry no IP address.
 - [ ] Alerts: keep the default new-issue email, and add an issue alert for **more than 5
@@ -170,7 +177,8 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
 - [x] 2026-10-30: the longest public house meditation (30 min) narrates 2,549 characters and
       the longest script is 3,580, both well under the 6,000-character narration cap (read
       from production as `anon` before the merge).
-- [ ] Optional: set `MAX_GLOBAL_DAILY_CHAT_TURNS` in Vercel Production (all accounts' chat
+- [ ] Optional: set `MAX_GLOBAL_DAILY_CHAT_TURNS` in Vercel Production (unset on 2026-11-08,
+      so the code default of 2000 applies) (all accounts' chat
       turns per 24 hours; the code defaults to 2000).
 - [x] 2026-10-30, merged as 1fbba5b and checked signed out in production: `GET
       /meditations?select=user_id` (and `audio_path`, `audio_url`, `generation_meta`, `prompt`)
@@ -207,7 +215,9 @@ account (`/terms`, "Be decent") if it comes back.
 
 - [ ] Confirm the keepalive cron in Vercel's cron log, and take one production dump with the
       backup runbook (10). 2026-10-30: the route answers 401 without its secret, as it
-      should; the cron log needs the dashboard.
+      should; the cron log needs the dashboard. 2026-11-08: `vercel crons ls` shows the job
+      registered (`/api/cron/keepalive`, `0 7 * * *`); the Hobby plan keeps runtime logs for
+      30 minutes, so the run history is only in Project → Settings → Cron Jobs.
 - [ ] Install the 30-day prune once, on every machine that holds dumps, passing the
       off-site folder if it is a synced folder on this Mac:
       `./scripts/schedule-backup-prune.sh "$HOME/Library/CloudStorage/<drive>/zenerate"`.
@@ -238,9 +248,8 @@ account (`/terms`, "Be decent") if it comes back.
 - [x] 2026-10-31: free tier decided for launch (`tasks/post-ship/paid-tier.md`): free with
       the current caps and no billing yet; open to 20–30 accounts, measure for a month,
       then price. The daily chat ceiling's code default is now 30 turns (was 200).
-- [ ] Vercel → Settings → Environment Variables: confirm `PER_USER_DAILY_CHAT_MESSAGES` is
-      **not** set in Production (ship 29 said to set it only to override 200), or set it
-      to 30. If it is set to 200 there, the new code default never applies.
+- [x] 2026-11-08: `PER_USER_DAILY_CHAT_MESSAGES` is not set in Vercel, Production or Preview,
+      so the code default of 30 applies (ship 29 said to set it only to override the default).
 - [ ] Supabase → Reports: write down the storage and egress figures on the day signups open.
       Every meditation page view downloads the whole audio file (22 MB for 15 minutes), so
       the free plan's 5 GB of egress is about 230 views a month; the fix is
