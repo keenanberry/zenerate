@@ -152,7 +152,11 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
 
 ## 5. Production checks (after seeding)
 
-- [ ] Revise a meditation that already has audio, re-render it, and choose keep or replace. Earlier versions should appear for you only (32).
+- [x] 2026-11-08: revised Listening with the Heart (public, 23 min) in the studio, re-rendered
+      it (about a minute), chose Keep. While the render ran, signed-out fetches of the page still
+      got the old script and the old audio, with nothing of the draft in the payload; when it
+      finished, both switched. Earlier versions shows one entry for the owner and nothing signed
+      out (32).
 - [x] 2026-11-06: Signed out, `/discover` loads with categories and shelves (36), and the landing page's
       "Hear one first" row shows meditations (45).
 - [ ] Share cards: paste `https://www.zeneratestudio.com/` and one public meditation into two
@@ -177,9 +181,13 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
       `is_featured` on its own meditation each return 42501; POST to `meditation_versions`
       returns 42501; DELETE and PATCH (`role`) on its own `chat_messages` return 42501.
       `src/test/launch-security.db.test.ts` is the same list, run against local Supabase, and
-      passed there before the merge.
-- [ ] After merging: make audio once in the studio and toggle the meditation public and
-      private, so the service-role status flip and the publish rule are seen working live.
+      passed there before the merge. **2026-11-08:** tried from the operator's signed-in tab; the
+      browser tool refused the script that reads the session cookie, so still open. Run the same
+      requests from the site's own DevTools console, which already holds the session.
+- [x] 2026-11-08: the re-render above was the live make-audio. Make private then Make public
+      from the page menu: private returned 404 signed out and left `/discover` at once (the
+      sitemap keeps it for up to an hour, as documented); public returned 200 with the new audio
+      signed.
 
 ### When a report arrives (53)
 
