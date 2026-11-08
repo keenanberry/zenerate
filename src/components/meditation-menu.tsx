@@ -11,7 +11,9 @@ import {
   MessageSquare,
   MoreHorizontal,
   Pencil,
+  Share,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -21,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AddToCollectionDialog } from "@/components/add-to-collection-dialog";
+import { shareMeditation, sharePayload } from "@/lib/meditation/share";
 
 export type MeditationMenuProps = {
   meditationId: string;
@@ -33,6 +36,10 @@ export type MeditationMenuProps = {
   hasAudio: boolean;
   /** A visitor's mailto for reporting a public meditation (task 53); null for the owner. */
   reportHref: string | null;
+  /** Whether it is public as the server last saw it; the owner's toggle overrides it. */
+  isPublic: boolean;
+  /** The site's origin, for the canonical link Share hands out (task 59). */
+  siteUrl: string;
 };
 
 /**
@@ -47,6 +54,8 @@ export function MeditationMenu({
   chatId,
   hasAudio,
   reportHref,
+  isPublic,
+  siteUrl,
   onEdit,
   visibility,
 }: MeditationMenuProps & {
@@ -60,9 +69,17 @@ export function MeditationMenu({
   // an outside interaction and closes again at once.
   const collectionsNext = useRef(false);
 
-  const ownerItems = isOwner;
-  const shareItems = isSignedIn || hasAudio;
-  if (!ownerItems && !shareItems && !reportHref) return null;
+  // A private link 404s for everyone else, so Share shows only while it is
+  // public: the owner's toggle once the audio exists, the server's word before.
+  const canShare = visibility?.isPublic ?? isPublic;
+  const visitorItems = canShare || isSignedIn || hasAudio;
+  if (!isOwner && !visitorItems && !reportHref) return null;
+
+  async function share() {
+    const outcome = await shareMeditation(sharePayload({ id: meditationId, title }, siteUrl));
+    if (outcome === "copied") toast.success("Link copied");
+    if (outcome === "failed") toast.error("Couldn't share this link");
+  }
 
   const button = (
     <Button
@@ -123,8 +140,14 @@ export function MeditationMenu({
                 {visibility.isPublic ? "Make private" : "Make public"}
               </DropdownMenuItem>
             )}
-            {shareItems && <DropdownMenuSeparator />}
+            {visitorItems && <DropdownMenuSeparator />}
           </>
+        )}
+        {canShare && (
+          <DropdownMenuItem onSelect={share}>
+            <Share />
+            Share
+          </DropdownMenuItem>
         )}
         {isSignedIn && (
           <DropdownMenuItem onSelect={() => (collectionsNext.current = true)}>
@@ -149,7 +172,7 @@ export function MeditationMenu({
         )}
         {reportHref && (
           <>
-            {shareItems && <DropdownMenuSeparator />}
+            {visitorItems && <DropdownMenuSeparator />}
             <DropdownMenuItem asChild>
               <a href={reportHref}>
                 <Flag />
