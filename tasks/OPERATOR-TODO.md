@@ -31,11 +31,12 @@ Last updated: 2026-11-08. Sections are in the order to do them. Live sandbox sna
 
 ## 2. Quick dashboard items
 
-- [ ] Set up the `privacy@zeneratestudio.com` forwarder. `/privacy` tells people to email it
-      (15, 38), and the Report link (53) will too. **2026-11-08:** ImprovMX, one alias
-      (`privacy`, no catch-all), free plan, forwarding only. The apex MX (`mx1`/`mx2.improvmx.com`)
-      and SPF (`v=spf1 include:spf.improvmx.com ~all`) are in Vercel DNS and resolve publicly.
-      Left: send one test mail to the address from another account and see it arrive.
+- [x] 2026-11-08: `privacy@zeneratestudio.com` forwards. ImprovMX, one alias (`privacy`,
+      no catch-all), free plan, forwarding only. The apex MX (`mx1`/`mx2.improvmx.com`) and
+      SPF (`v=spf1 include:spf.improvmx.com ~all`) are in Vercel DNS and resolve publicly;
+      a test mail from another account arrived. `/privacy` and `/terms` (15, 38) and the
+      Report link (53) all point here. Replies go out from the operator's own address;
+      Resend's SMTP relay would let Gmail send as privacy@ if that ever matters.
 - [x] 2026-11-08: DMARC record added: `_dmarc.zeneratestudio.com` TXT `v=DMARC1; p=none;
       rua=mailto:privacy@zeneratestudio.com`, resolving publicly. Gmail and Yahoo demote
       mail from domains without one, which is where the sign-in codes go. Aggregate
