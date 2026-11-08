@@ -122,6 +122,7 @@ and make the audio from cards in the chat. See the studio spec.
 | 56 | [Audio card choices](./56-audio-card-choices.md) | Done* | Summary-first audio card that fits a phone, a labelled Listen per voice and bed, last-used voice and bed preselected from past `settings`, and the chat scrolls to the card's top; the meditation page's panel shares the rows (PR #96). *Operator: iPhone check |
 | 57 | [Google + emailed code sign-in](./57-google-and-email-code.md) | Done* | Continue with Google, then a 6-digit emailed code typed into the page (works in the installed iPhone app), password kept as a fallback; errors as sentences; templates show the code (PR #99). *Operator: Google OAuth client and provider, then a Google and iPhone sign-in check |
 | 58 | [Launch security fixes](./58-launch-security-fixes.md) | Done* | Column-level grants on `meditations` (status, is_featured, audio_path service-role only), publish guard, `chat_turns` ledger with a global cap, continuations rebuilt from the store, text-only user parts, render bounds before a slot is reserved, failed renders counted, `anon` on public columns only (PR #107). *Operator: the production PostgREST checks after merge |
+| 59 | [Share a meditation](./59-share-button.md) | Done* | Share in the "…" menu of a public meditation (the owner only while public): the native share sheet with the title and canonical URL, else the link copied with a "Link copied" toast; the installed iPhone app had no way to share (PR #PR). *Operator: share sheet check in the installed app |
 
 ### Running Phases 4–5 with Orca
 

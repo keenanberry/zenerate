@@ -121,6 +121,8 @@ export default async function MeditationDetailPage({
                       !isOwner && meditation.is_public
                         ? reportHref(meditation, siteUrl)
                         : null,
+                    isPublic: meditation.is_public,
+                    siteUrl: siteUrl.href,
                   }}
                 >
                   {/* No status badge: a meditation's state is its audio, and
