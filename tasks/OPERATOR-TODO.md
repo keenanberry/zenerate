@@ -50,32 +50,35 @@ Last updated: 2026-11-08. Sections are in the order to do them. Live sandbox sna
 
 ### Sentry error tracking (51)
 
-The code is merged and does nothing until the DSN is set. **2026-11-08: Sentry is off in
-production.** The 2026-11-06 note here said the bundle carried the DSN; it does not. Every
-script the live pages load was read again: the SDK is in them, the DSN slot is the unset
-variable, and none of the four variables below is in Vercel (Production or Preview). The
-latest production build log says "No auth token provided. Will not create release." Either
-take the Vercel Marketplace route (Vercel → Integrations → Sentry, which makes the account
-and project and links them; afterwards check which of the four variables below it set and
-add the rest), or by hand:
+**2026-11-08: Sentry is on in production.** Org `keenan-berry-personal`, project `zenerate`.
+The four variables are in Vercel for Production and Preview, production was redeployed, the
+build log says "Successfully uploaded source maps to Sentry", the served bundles carry the
+DSN and Sentry's debug ids and no source-map comments, and an error thrown on the live site
+reached the ingest endpoint (200). Until that day nothing was configured: a 2026-11-06 note
+claiming the bundle carried the DSN was wrong. Left below: the two Sentry-side settings and
+a look at the first real report.
 
-- [ ] Sign up at sentry.io (the free Developer plan is enough) and create a **Next.js**
-      project. Copy its DSN (Project Settings → Client Keys). The 2026-11-06 tick here was
-      wrong and is withdrawn (2026-11-08); whether the account exists is for the operator to say.
-- [ ] Settings → Auth Tokens → create an Organization Auth Token, for source map uploads.
-- [ ] Vercel → Settings → Environment Variables, for Production and Preview:
-      `NEXT_PUBLIC_SENTRY_DSN` (the DSN), `SENTRY_AUTH_TOKEN` (mark it sensitive),
-      `SENTRY_ORG` and `SENTRY_PROJECT` (the slugs in the project's URL). Redeploy.
-      2026-11-08: none of the four is set. An agent with `vercel` logged in can add the DSN
-      and the two slugs (`vercel env add NAME production preview`); the auth token is a
-      secret, so add that one yourself, in the dashboard or with
-      `vercel env add SENTRY_AUTH_TOKEN production preview --sensitive`.
+- [x] 2026-11-08: Sentry account on the free plan, Next.js project `zenerate`. The project was
+      recreated once during setup, which changes the DSN; the DSN in Vercel is the current
+      one (Settings → Projects → zenerate → Client Keys).
+- [x] 2026-11-08: Organization Auth Token created and stored in Vercel as a sensitive
+      variable. To check such a token, call `/api/0/organizations/<org>/releases/` with it
+      (200); `/organizations/<org>/` answers 403 for an org token, which is normal.
+- [x] 2026-11-08: `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT` and
+      `SENTRY_AUTH_TOKEN` set for Production and Preview (the first three by an agent with
+      `vercel env add NAME --environment production,preview`, the token by the operator from
+      the clipboard with `--sensitive`), then `vercel redeploy` of the current production
+      deployment.
 - [ ] Sentry project → Settings → Security & Privacy: turn on **Prevent Storing of IP
       Addresses** and leave the Data Scrubber on. `/privacy` says reports carry no IP address.
 - [ ] Alerts: keep the default new-issue email, and add an issue alert for **more than 5
       users affected in an hour**.
-- [ ] Check: the deploy's build log shows the source map upload. The first real report
-      should have a readable stack trace and a user id, and no email or message text.
+- [x] 2026-11-08: the redeploy's build log shows "Successfully uploaded source maps to
+      Sentry". Two test events are in the project from that day (an info message and a
+      thrown error from injected code); resolve or delete them.
+- [ ] The first real report should have a readable stack trace and a user id, and no
+      email or message text. The test error came from injected code, so it says nothing
+      about source maps.
 
 ### Google sign-in (57)
 
