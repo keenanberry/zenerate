@@ -159,9 +159,11 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
       out (32).
 - [x] 2026-11-06: Signed out, `/discover` loads with categories and shelves (36), and the landing page's
       "Hear one first" row shows meditations (45).
-- [ ] Share cards: paste `https://www.zeneratestudio.com/` and one public meditation into two
-      of iMessage, Slack, X and Discord. Each shows a large card with the lotus or the
-      meditation's title and description. Optionally run Facebook's Sharing Debugger (23, 26).
+- [x] 2026-11-08: Share cards. A public meditation's link pasted into iMessage (desktop) showed
+      the large lotus card with the meditation's title and the domain; pasted into Slack, the
+      Zenerate name, the meditation's title and its description. Every page carries the same
+      `og-image.png`, so the home link was not pasted separately. Facebook's debugger skipped
+      (23, 26).
 
 ### Launch security fixes (58, PR #107)
 
