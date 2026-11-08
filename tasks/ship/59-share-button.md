@@ -1,6 +1,6 @@
 # Share a Meditation
 
-**Status:** Done* (PR #PR); the real-iPhone check in the installed app is the operator's (`tasks/OPERATOR-TODO.md` §5)
+**Status:** Done* (PR #119); the real-iPhone check in the installed app is the operator's (`tasks/OPERATOR-TODO.md` §5)
 **Priority:** Phase 6. Public meditations and their share cards (23, 26) exist to be shared.
 **Phase:** 6
 **Depends on:** 55 (the "…" menu), 53 (Report, the pattern for a link built from the site URL).
@@ -49,7 +49,7 @@ change to the Open Graph metadata.
 
 ## Outcome
 
-PR #PR.
+PR #119.
 
 - **`src/lib/meditation/share.ts`.** `sharePayload` builds `{ title, text, url }` from the
   meditation and the site URL (like `reportHref`, so a preview deploy or a stray query string

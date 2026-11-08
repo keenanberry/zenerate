@@ -165,7 +165,7 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
       `og-image.png`, so the home link was not pasted separately. Facebook's debugger skipped
       (23, 26).
 
-- [ ] 2026-11-08: Share (59). In the installed iPhone app, open a public meditation, choose
+- [ ] 2026-11-08: Share (59, PR #119). In the installed iPhone app, open a public meditation, choose
       Share from the "…" menu, and confirm the native share sheet opens with the title and
       the link.
 
