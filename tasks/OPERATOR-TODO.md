@@ -4,7 +4,7 @@ Everything left before signups open that only the operator can do: a phone, a da
 account, or a judgment call. Agents keep this file current. When you finish an item, tick it
 and add the date, or tell an agent and it will. Each item names the task file with the detail.
 
-Last updated: 2026-11-06. Sections are in the order to do them. Live sandbox snapshot: `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`.
+Last updated: 2026-11-08. Sections are in the order to do them. Live sandbox snapshot: `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`.
 
 ## 1. Protect the spend (do first)
 
@@ -31,15 +31,17 @@ Last updated: 2026-11-06. Sections are in the order to do them. Live sandbox sna
 
 ## 2. Quick dashboard items
 
-- [ ] Set up the `privacy@zeneratestudio.com` forwarder. `/privacy` tells people to email it
-      (15, 38), and the Report link (53) will too. **2026-10-30:** `zeneratestudio.com` has
-      no MX record, so nothing sent there is delivered yet. Resend's sending records on
-      `send.zeneratestudio.com` are in place. Add the forwarder's MX at the apex (DNS is on
-      Vercel) and send yourself one test mail. **2026-11-06:** still no MX at the apex.
-- [ ] Add a DMARC record: `_dmarc.zeneratestudio.com` TXT `v=DMARC1; p=none;
-      rua=mailto:privacy@zeneratestudio.com`. There is none today (2026-10-30), and Gmail
-      and Yahoo demote mail from domains without one, which is where the sign-in codes go.
-      Still none on 2026-11-06.
+- [x] 2026-11-08: `privacy@zeneratestudio.com` forwards. ImprovMX, one alias (`privacy`,
+      no catch-all), free plan, forwarding only. The apex MX (`mx1`/`mx2.improvmx.com`) and
+      SPF (`v=spf1 include:spf.improvmx.com ~all`) are in Vercel DNS and resolve publicly;
+      a test mail from another account arrived. `/privacy` and `/terms` (15, 38) and the
+      Report link (53) all point here. Replies go out from the operator's own address;
+      Resend's SMTP relay would let Gmail send as privacy@ if that ever matters.
+- [x] 2026-11-08: DMARC record added: `_dmarc.zeneratestudio.com` TXT `v=DMARC1; p=none;
+      rua=mailto:privacy@zeneratestudio.com`, resolving publicly. Gmail and Yahoo demote
+      mail from domains without one, which is where the sign-in codes go. Aggregate
+      reports (daily XML from each big mailbox provider) land in the privacy inbox; move
+      `rua` to a separate alias if they get noisy.
 - [ ] Remove the old `PER_USER_MONTHLY_SCRIPT_LIMIT` and `MAX_GLOBAL_MONTHLY_SCRIPT_GENERATIONS`
       from Vercel. Nothing reads them since 29.
 - [ ] Supabase → Auth → URL Configuration: `https://www.zeneratestudio.com/auth/callback**`
