@@ -281,7 +281,12 @@ account (`/terms`, "Be decent") if it comes back.
 - [ ] Supabase → Reports: write down the storage and egress figures on the day signups open.
       Every meditation page view downloads the whole audio file (22 MB for 15 minutes), so
       the free plan's 5 GB of egress is about 230 views a month; the fix is
-      `tasks/post-ship/audio-egress.md`.
+      `tasks/post-ship/audio-egress.md`. 2026-11-16 baseline, before launch, from
+      Organization → Usage (cycle 30 Oct–30 Nov, all of it the operator's own seeding and
+      testing, 1 monthly active user): egress 2.887 / 5 GB (58%), storage 0.351 / 1 GB
+      (35%), database 0.029 / 0.5 GB. That leaves about 95 views of a 15-minute meditation
+      this cycle and about 29 more 15-minute files in storage, which does not reset, so
+      **go-live waits for the 30 Nov reset**. Record the figures again on that day.
 - [x] 2026-11-06: Supabase → Authentication → Rate Limits: raise **emails per hour** from 25 to about
       100. Every email sign-in now sends a code (57), so 25 an hour runs out on a busy day.
       Check Resend's plan limits too: the free plan allows 100 a day and 3,000 a month.
