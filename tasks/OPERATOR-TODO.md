@@ -4,7 +4,7 @@ Everything left before signups open that only the operator can do: a phone, a da
 account, or a judgment call. Agents keep this file current. When you finish an item, tick it
 and add the date, or tell an agent and it will. Each item names the task file with the detail.
 
-Last updated: 2026-11-16. Sections are in the order to do them. Live sandbox snapshot: `snap_sXOy59qkIhIo95G7Y9N33oAaAPMY` (2026-11-16, task 60: peaks, 128 kbps; the two before it, `snap_dJAgDRqRJ9ugYNwe0QWMl7uAUIy4` and `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`, are kept until your first production render on the new one, §5).
+Last updated: 2026-11-16. Sections are in the order to do them. Live sandbox snapshot: `snap_sXOy59qkIhIo95G7Y9N33oAaAPMY` (2026-11-16, task 60: peaks, 128 kbps), the only one; the two before it were deleted once it had rendered in production.
 
 ## 1. Protect the spend (do first)
 
@@ -233,10 +233,14 @@ audio on play, instead of downloading the whole file on page load
       own peaks; if a render ever lacks them, from the primary checkout, count first, then
       add `--yes`:
       `(set -a; . ./.env.local; NEXT_PUBLIC_SUPABASE_URL="$SOUND_EFFECTS_SUPABASE_URL" SUPABASE_SERVICE_ROLE_KEY="$SOUND_EFFECTS_SUPABASE_SERVICE_ROLE_KEY" npx tsx scripts/backfill-peaks.ts)`.
-- [ ] One production render on the new snapshot (`snap_sXOy59qkIhIo95G7Y9N33oAaAPMY`, deployed
-      2026-11-16): make the audio for one short meditation and check it plays, sounds
-      right at 128 kbps, and that its page draws the waveform at once. Then tell an agent,
-      which deletes the two older snapshots (`audio-pipeline` skill, step 9).
+- [x] 2026-11-16: production renders on the new snapshot (`snap_sXOy59qkIhIo95G7Y9N33oAaAPMY`).
+      "Cold Plunge Breath Prep" rendered at 20:21 UTC: 11 min, 128 kbps, 8,000 peaks, and it
+      sounds right. Then an edit to it, re-rendered at 20:28: the new version became current
+      with its own peaks, the 20:21 one went to Earlier versions with its own, and both
+      draw at once. (An earlier render that day, "Opening the Door to Abundance", came from
+      the snapshot in between: peaks, but 192 kbps.) The two older snapshots,
+      `snap_dJAgDRqRJ9ugYNwe0QWMl7uAUIy4` and `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`, were then
+      deleted (`audio-pipeline` skill, step 9).
 
 ### When a report arrives (53)
 

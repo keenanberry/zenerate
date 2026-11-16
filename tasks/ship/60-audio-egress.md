@@ -1,10 +1,11 @@
 # Audio Egress
 
-**Status:** Done* (PRs #128 and #130, 2026-11-16). Snapshot
+**Status:** Done (PRs #128 and #130, 2026-11-16). Snapshot
 `snap_sXOy59qkIhIo95G7Y9N33oAaAPMY` (peaks, 128 kbps) live in Production and Preview, every
 production render backfilled, and a page view without play measured in production at
-90,256 bytes against 23,469,496. The operator's iPhone check passed. *Operator: one
-production render, before the two older snapshots are deleted (`tasks/OPERATOR-TODO.md` §5).
+90,256 bytes against 23,469,496. The operator's iPhone check passed, and production renders
+on the new snapshot, a first one and an edit of it, stored their peaks at 128 kbps; the
+older snapshots are deleted.
 **Priority:** Phase 6, before signups open. Approved by the operator 2026-11-16; promoted
 from `tasks/post-ship/audio-egress.md`.
 **Phase:** 6
@@ -190,6 +191,7 @@ nothing until played.
   Rebuilt as `snap_sXOy59qkIhIo95G7Y9N33oAaAPMY` (321.5 MB) from the PR's branch; the test
   passed with the ocean bed: 128 kb/s stereo by ffprobe, 6,245 peaks over 31.2 s. Set for
   Production and Preview, production redeployed. It replaces
-  `snap_dJAgDRqRJ9ugYNwe0QWMl7uAUIy4`, which was live for a few hours and rendered nothing
-  in production; both it and `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8` go after the operator's
-  first production render on the new one.
+  `snap_dJAgDRqRJ9ugYNwe0QWMl7uAUIy4`, which was live for about three hours and made one
+  production render (peaks, 192 kbps). Once the operator had rendered on the new one, and
+  edited and re-rendered that meditation (both at 128 kbps with their peaks, the first
+  archived with its own), both it and `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8` were deleted.
