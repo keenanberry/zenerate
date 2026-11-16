@@ -220,7 +220,7 @@ account (`/terms`, "Be decent") if it comes back.
 
 ## 6. Backups
 
-- [ ] Confirm the keepalive cron in Vercel's cron log, and take one production dump with the
+- [x] 2026-11-16: Confirm the keepalive cron in Vercel's cron log, and take one production dump with the
       backup runbook (10). 2026-10-30: the route answers 401 without its secret, as it
       should; the cron log needs the dashboard. 2026-11-08: `vercel crons ls` shows the job
       registered (`/api/cron/keepalive`, `0 7 * * *`); the Hobby plan keeps runtime logs for
@@ -229,7 +229,12 @@ account (`/terms`, "Be decent") if it comes back.
       477 KB): restored with 0 unexpected errors, 17 meditations all with scripts, 16 of
       them public as production shows signed out, 1 account. From now on it is weekly
       with `./scripts/backup.sh`, which dumps and verifies in one command (runbook "Taking
-      a backup"). Only the cron log is left here.
+      a backup"). The cron too, 2026-11-16: Vercel moved cron jobs out of Settings (the old
+      URL redirects to an empty Schedules page). The run history is in Observability →
+      `/api/cron/keepalive`: the scheduled run fired at 07:15–07:20 UTC (Hobby fires within
+      the hour), returned 2XX and called Supabase. Crons have been on since 2026-09-30
+      (`vercel api /v9/projects/zenerate`), and a manual `vercel crons run
+      /api/cron/keepalive` showed up there too.
 - [x] 2026-11-16: Install the 30-day prune once, on every machine that holds dumps, passing the
       off-site folder if it is a synced folder on this Mac:
       `./scripts/schedule-backup-prune.sh "$HOME/Library/CloudStorage/<drive>/zenerate"`.
