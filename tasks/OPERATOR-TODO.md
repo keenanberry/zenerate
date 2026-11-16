@@ -4,7 +4,7 @@ Everything left before signups open that only the operator can do: a phone, a da
 account, or a judgment call. Agents keep this file current. When you finish an item, tick it
 and add the date, or tell an agent and it will. Each item names the task file with the detail.
 
-Last updated: 2026-11-08. Sections are in the order to do them. Live sandbox snapshot: `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`.
+Last updated: 2026-11-16. Sections are in the order to do them. Live sandbox snapshot: `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`.
 
 ## 1. Protect the spend (do first)
 
@@ -225,6 +225,11 @@ account (`/terms`, "Be decent") if it comes back.
       should; the cron log needs the dashboard. 2026-11-08: `vercel crons ls` shows the job
       registered (`/api/cron/keepalive`, `0 7 * * *`); the Hobby plan keeps runtime logs for
       30 minutes, so the run history is only in Project → Settings → Cron Jobs.
+      2026-11-16: the first production dump is taken and verified (`zenerate-2026-11-16.sql`,
+      477 KB): restored with 0 unexpected errors, 17 meditations all with scripts, 16 of
+      them public as production shows signed out, 1 account. From now on it is weekly
+      with `./scripts/backup.sh <off-site folder>`, which dumps, copies and verifies in one
+      command (runbook "Taking a backup"). Only the cron log is left here.
 - [ ] Install the 30-day prune once, on every machine that holds dumps, passing the
       off-site folder if it is a synced folder on this Mac:
       `./scripts/schedule-backup-prune.sh "$HOME/Library/CloudStorage/<drive>/zenerate"`.
