@@ -337,7 +337,9 @@ account (`/terms`, "Be decent") if it comes back.
       `./scripts/backup.sh` and the keepalive cron carry on. Then follow the runbook's "Why
       this is manual": check the backup retention is 30 days or less (or change
       `/privacy`), move the deletion records, delete the old dumps, and retire the
-      keepalive cron, the prune job and the manual backups.
+      keepalive cron, the prune job and the manual backups. If storage reaches about 0.8 GB
+      before sign-ups justify Pro, `tasks/post-ship/audio-storage-r2.md` is the free
+      alternative: audio moves to Cloudflare R2.
 
 ## Done
 
