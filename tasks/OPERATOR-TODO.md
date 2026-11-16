@@ -228,9 +228,9 @@ account (`/terms`, "Be decent") if it comes back.
       2026-11-16: the first production dump is taken and verified (`zenerate-2026-11-16.sql`,
       477 KB): restored with 0 unexpected errors, 17 meditations all with scripts, 16 of
       them public as production shows signed out, 1 account. From now on it is weekly
-      with `./scripts/backup.sh <off-site folder>`, which dumps, copies and verifies in one
-      command (runbook "Taking a backup"). Only the cron log is left here.
-- [ ] Install the 30-day prune once, on every machine that holds dumps, passing the
+      with `./scripts/backup.sh`, which dumps and verifies in one command (runbook "Taking
+      a backup"). Only the cron log is left here.
+- [x] 2026-11-16: Install the 30-day prune once, on every machine that holds dumps, passing the
       off-site folder if it is a synced folder on this Mac:
       `./scripts/schedule-backup-prune.sh "$HOME/Library/CloudStorage/<drive>/zenerate"`.
       Then check `launchctl print gui/$(id -u)/com.zeneratestudio.backup-prune` shows exit
@@ -241,9 +241,11 @@ account (`/terms`, "Be decent") if it comes back.
       prunes and is excluded from Time Machine, but the first run exited 1 with
       `Operation not permitted` on the iCloud folder. macOS blocks the background job there
       until `/usr/bin/find` has Full Disk Access (System Settings → Privacy & Security).
-- [x] 2026-11-16: Decide the off-site copy: iCloud Drive, `zenerate-backups`, which holds the
-      first dump. The job cannot empty iCloud's Recently Deleted (30 days), so empty it
-      after prunes. Copies anywhere else need the job too (52).
+      Reinstalled the same day for the local folder only: exit code 0, `prune.log` empty.
+- [x] 2026-11-16: Decide the off-site copy: none. Dumps stay on this Mac's disk until the
+      move to Supabase Pro (section 8) makes the manual backups unnecessary. The iCloud copy
+      made that morning was removed and sits in iCloud's Recently Deleted until about
+      2026-12-16. Copies anywhere else need the job too (52).
 - [ ] From now on, each time you delete an account, `touch
       ~/backups/zenerate/deletions/<user-id>`. A restore re-deletes those accounts; one
       without a record comes back (52, runbook "Deletion records").
@@ -273,6 +275,10 @@ account (`/terms`, "Be decent") if it comes back.
 - [x] 2026-11-06: Supabase → Authentication → Rate Limits: raise **emails per hour** from 25 to about
       100. Every email sign-in now sends a code (57), so 25 an hour runs out on a busy day.
       Check Resend's plan limits too: the free plan allows 100 a day and 3,000 a month.
+- [ ] Move to Supabase Pro ($25/mo): daily automated backups, and no 7-day pause. Then
+      follow the runbook's "Why this is manual": check the backup retention is 30 days or
+      less (or change `/privacy`), move the deletion records, delete the old dumps, and
+      retire the keepalive cron, the prune job and the manual backups (decided 2026-11-16).
 - [ ] Supabase → Auth → enable signups.
 
 ## Done

@@ -49,14 +49,19 @@ security add-generic-password -s zenerate-db -a postgres -w   # prompts for it; 
 ## Taking a backup
 
 ```bash
-./scripts/backup.sh "$HOME/Library/Mobile Documents/com~apple~CloudDocs/zenerate-backups"
+./scripts/backup.sh [off-site folder]
 ```
 
 It dumps production to `~/backups/zenerate/zenerate-YYYY-MM-DD.sql`, copies the dump with
-`cp -p` to the folder you pass (or `ZENERATE_BACKUP_OFFSITE`), then runs the verification
+`cp -p` to the off-site folder if you pass one (or set `ZENERATE_BACKUP_OFFSITE`), then runs the verification
 restore below and exits non-zero if it fails. The password comes from `PGPASSWORD`, then the
 Keychain item, then a hidden prompt. Dumps are written owner-only: they hold every
 account's email and password hash.
+
+Since 2026-11-16 the dumps stay on this Mac's disk only, with no off-site copy, until the
+move to Supabase Pro retires this runbook. A cloud-drive copy needs the prune to reach
+it, and macOS blocks a background job from iCloud Drive or a CloudStorage folder unless
+`/usr/bin/find` has Full Disk Access.
 
 It passes the password apart from the host, not in a `postgresql://` URI. In a URI, a
 password containing `@` ends early and the rest is taken as the host name, so the error
