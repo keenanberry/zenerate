@@ -99,7 +99,7 @@ and make the audio from cards in the chat. See the studio spec.
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 37 | [House meditations](./37-house-meditations.md) | In progress | Operator makes 24 through the chat, 3 per category; 6–8 featured with `is_featured` (Popular and Picked for you stay hidden until then). Snapshot with ambience is live, so seeds get beds |
+| 37 | [House meditations](./37-house-meditations.md) | Done | Launched thin (2026-11-16, operator's choice): 16 public, 6 featured, Sleep and Morning one each, left for the first users to fill. Planned: 24 through the chat, 3 per category; 6–8 featured with `is_featured` (Popular and Picked for you stay hidden until then). Snapshot with ambience is live, so seeds get beds |
 | 38 | [Privacy update + open signups](./38-privacy-and-launch.md) | In progress | Code half done (PR #63): `/privacy` covers conversations, plays, versions and what goes public; chat text no longer copied to `meditations.prompt`. Left: the operator's launch checklist, ending with enabling signups |
 | 38b | [Drafts owner-only](./38b-drafts-owner-only.md) | Done | Drafts live in owner-only `meditation_drafts` (PR #64 migration, then #65 code + column drop). Verified in production as `anon`: `meditations.draft_script` → 42703, `meditation_drafts` → 42501 |
 | 39 | [Studio mobile fixes](./39-studio-mobile-fixes.md) | Done* | Sideways scroll from the player halo, the composer pinned to the visual viewport on the studio route, the voice picker on a container query, the meditation header's actions on their own row (PR #66). *Operator: real-iPhone keyboard and PWA checks |

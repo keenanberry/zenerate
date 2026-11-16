@@ -186,9 +186,10 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
 - [x] 2026-10-30: the longest public house meditation (30 min) narrates 2,549 characters and
       the longest script is 3,580, both well under the 6,000-character narration cap (read
       from production as `anon` before the merge).
-- [ ] Optional: set `MAX_GLOBAL_DAILY_CHAT_TURNS` in Vercel Production (unset on 2026-11-08,
-      so the code default of 2000 applies) (all accounts' chat
-      turns per 24 hours; the code defaults to 2000).
+- [x] 2026-11-16: `MAX_GLOBAL_DAILY_CHAT_TURNS` left unset in Vercel Production, so the code
+      default of 2000 applies (all accounts' chat turns per 24 hours). At 30 turns per account
+      a day it binds only past about 66 accounts at their cap. The operator has set a monthly
+      spend limit in the Anthropic Console, which caps the bill directly.
 - [x] 2026-10-30, merged as 1fbba5b and checked signed out in production: `GET
       /meditations?select=user_id` (and `audio_path`, `audio_url`, `generation_meta`, `prompt`)
       returns 42501; `discover_meditations` returns the public columns only; `reserve_chat_turn`,
@@ -295,17 +296,17 @@ account (`/terms`, "Be decent") if it comes back.
 
 ## 7. Optional
 
-- [ ] Enable the Sound Effects permission on an ElevenLabs key, if you ever want generated
-      ambience candidates (44).
+- [x] 2026-11-16: skipped. The ElevenLabs Sound Effects permission only serves generating
+      ambience candidates (44); the app never calls it.
 - [x] 2026-10-30: every `.env.local` on this Mac (the primary checkout and the one remaining
       worktree) names the live snapshot `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`.
 
 ## 8. Open signups (task 38)
 
-- [ ] Everything above is ticked, and ship tasks 48–57 are merged (they are, as of
-      2026-10-26; nothing is open). Three open items above don't block: Sentry's first
-      real report arrives with the first real error, and section 7 and the chat-turn
-      ceiling are optional.
+- [x] 2026-11-16: everything above is ticked, and ship tasks 48–60 are merged. The one open
+      item above doesn't block: Sentry's first real report arrives with the first real
+      error. Task 37 closed thin by choice: Sleep and Morning have one public meditation
+      each (`tasks/ship/37-house-meditations.md`).
 - [x] 2026-10-30: ship task 58 (launch security fixes) merged (PR #107) and its signed-out
       production checks pass; the signed-in checks and one live render are in section 5.
 - [x] 2026-10-31: free tier decided for launch (`tasks/post-ship/paid-tier.md`): free with

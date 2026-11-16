@@ -1,6 +1,7 @@
 # House Meditations (Seeding)
 
-**Status:** In progress (operator)
+**Status:** Done, launched thin by the operator's choice (2026-11-16). 16 public meditations,
+6 featured; Sleep and Morning have one each
 **Priority:** Phase 6. Run by the operator; agents assist.
 **Phase:** 6 (seed & open)
 **Depends on:** Wave A (27–31) in production. 32–36 are not required to start.
@@ -34,6 +35,17 @@ of the studio.
 ## Acceptance criteria
 
 - [ ] 24 public meditations in production, at least 3 per category, all with a title,
-  description, 2 to 5 tags, and audio.
-- [ ] 6 to 8 marked `is_featured`.
-- [ ] The issues from the seeding notes are filed.
+  description, 2 to 5 tags, and audio. Not met, and accepted: see Outcome.
+- [x] 6 to 8 marked `is_featured`: 6.
+- [x] The issues from the seeding notes are filed (operator, 2026-11-06).
+
+## Outcome
+
+Counted in production on 2026-11-16, public and completed only: 16 meditations, 6 featured,
+every one with 2 to 5 tags. By Discover category (a meditation counts in each category
+any of its tags belongs to, per `DISCOVER_CATEGORIES`): Sleep 1, Stress relief 3, Focus 7,
+Morning 1, Kindness 8, Breath & body 8.
+
+The operator chose to launch thin rather than make more: the first users' meditations
+should fill Sleep and Morning, and Supabase Free's 1 GB of storage, which does not reset,
+is better spent on theirs. Every category tile still opens to at least one meditation.
