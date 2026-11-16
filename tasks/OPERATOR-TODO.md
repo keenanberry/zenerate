@@ -45,8 +45,8 @@ Last updated: 2026-11-16. Sections are in the order to do them. Live sandbox sna
 - [x] 2026-11-08: the old `PER_USER_MONTHLY_SCRIPT_LIMIT` and `MAX_GLOBAL_MONTHLY_SCRIPT_GENERATIONS`
       are not set in Vercel, Production or Preview (`vercel env pull` of both). Nothing reads
       them since 29.
-- [ ] Supabase → Auth → URL Configuration: `https://www.zeneratestudio.com/auth/callback**`
-      is in Redirect URLs, then run a full password reset with your own account (11).
+- [x] 2026-11-16: Supabase → Auth → URL Configuration: `https://www.zeneratestudio.com/auth/callback**`
+      is in Redirect URLs, and a full password reset with your own account worked (11).
 
 ### Sentry error tracking (51)
 
@@ -69,9 +69,9 @@ a look at the first real report.
       `vercel env add NAME --environment production,preview`, the token by the operator from
       the clipboard with `--sensitive`), then `vercel redeploy` of the current production
       deployment.
-- [ ] Sentry project → Settings → Security & Privacy: turn on **Prevent Storing of IP
+- [x] 2026-11-16: Sentry project → Settings → Security & Privacy: turn on **Prevent Storing of IP
       Addresses** and leave the Data Scrubber on. `/privacy` says reports carry no IP address.
-- [ ] Alerts: keep the default new-issue email, and add an issue alert for **more than 5
+- [x] 2026-11-16: Alerts: keep the default new-issue email, and add an issue alert for **more than 5
       users affected in an hour**.
 - [x] 2026-11-08: the redeploy's build log shows "Successfully uploaded source maps to
       Sentry". Two test events are in the project from that day (an info message and a
@@ -236,10 +236,14 @@ account (`/terms`, "Be decent") if it comes back.
       Then check `launchctl print gui/$(id -u)/com.zeneratestudio.backup-prune` shows exit
       code 0 and `~/backups/zenerate/prune.log` is empty (52). Any dump already older than
       29 days is deleted on the first run. 2026-10-30: not installed on this Mac yet, and
-      `~/backups/zenerate/` does not exist.
-- [ ] Decide the off-site copy: the job cannot empty a cloud drive's trash (Google Drive and
-      iCloud keep deleted files 30 days), so either empty it after prunes or use a drive or
-      folder with no trash. Copies anywhere else need the job too (52).
+      `~/backups/zenerate/` does not exist. 2026-11-16: installed with the iCloud folder
+      (`~/Library/Mobile Documents/com~apple~CloudDocs/zenerate-backups`); the local folder
+      prunes and is excluded from Time Machine, but the first run exited 1 with
+      `Operation not permitted` on the iCloud folder. macOS blocks the background job there
+      until `/usr/bin/find` has Full Disk Access (System Settings → Privacy & Security).
+- [x] 2026-11-16: Decide the off-site copy: iCloud Drive, `zenerate-backups`, which holds the
+      first dump. The job cannot empty iCloud's Recently Deleted (30 days), so empty it
+      after prunes. Copies anywhere else need the job too (52).
 - [ ] From now on, each time you delete an account, `touch
       ~/backups/zenerate/deletions/<user-id>`. A restore re-deletes those accounts; one
       without a record comes back (52, runbook "Deletion records").
