@@ -88,16 +88,16 @@ email provider. Do the email steps **before task 57 merges**: until they are don
 mails a link where the new `/login` asks for a code. Until Google is on, the button says
 "Google sign-in isn't available right now" and nothing breaks.
 
-- [ ] Google Cloud Console → a new project → **OAuth consent screen**: External, app name
+- [x] 2026-11-16: Google Cloud Console → a new project → **OAuth consent screen**: External, app name
       Zenerate, support email, the `zeneratestudio.com` domain, links to `/privacy` and
       `/terms`. Scopes: the defaults only (email, profile, openid), so no app review. Publish
       it to Production, or only test users can sign in. A logo triggers brand verification
       (a few days); leave it off unless you want to wait.
-- [ ] **Credentials** → Create OAuth client ID → Web application. Authorized redirect URI:
+- [x] 2026-11-16: **Credentials** → Create OAuth client ID → Web application. Authorized redirect URI:
       `https://xnvqjqobegcpkigkmoct.supabase.co/auth/v1/callback` (Supabase shows the exact
       one on the Google provider page). For local testing, a second client with
       `http://127.0.0.1:54321/auth/v1/callback` (`.env.example` says how to use it locally).
-- [ ] Supabase → Authentication → Sign In / Providers → **Google**: on, with the client ID
+- [x] 2026-11-16: Supabase → Authentication → Sign In / Providers → **Google**: on, with the client ID
       and secret.
 - [x] 2026-10-25: Supabase → Authentication → Emails: paste the **Magic Link** template from
       `supabase/templates/magic_link.html` with the subject "Your Zenerate sign-in code", and
@@ -106,7 +106,7 @@ mails a link where the new `/login` asks for a code. Until Google is on, the but
       code too.
 - [x] 2026-10-25: Supabase → Authentication → Sign In / Providers → **Email**: Email OTP
       Length **6** and Email OTP Expiration **3600**. `/login` and the emails say six digits and an hour.
-- [ ] Know that Google's consent screen will say "continue to xnvqjqobegcpkigkmoct.supabase.co"
+- [x] 2026-11-16: Know that Google's consent screen will say "continue to xnvqjqobegcpkigkmoct.supabase.co"
       unless you buy Supabase's custom domain add-on. It works either way.
 
 ## 3. Seed Discover on your iPhone (task 37)
@@ -158,7 +158,9 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
       lands you in your Library inside the same app, not in Safari; Continue with email
       sends a code that iOS offers above the keyboard, and typing it signs you in.
       The Google half waits for the provider: on 2026-11-06 production still lists only
-      the email provider (section 2).
+      the email provider (section 2). 2026-11-16: production lists `google` and `email`,
+      and Continue with Google signs in on the desktop browser and in the installed iPhone
+      app. Signups were still off, so the sign-in linked Google to the existing account.
 
 ## 5. Production checks (after seeding)
 
@@ -175,7 +177,7 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
       `og-image.png`, so the home link was not pasted separately. Facebook's debugger skipped
       (23, 26).
 
-- [ ] 2026-11-08: Share (59, PR #119). In the installed iPhone app, open a public meditation, choose
+- [x] 2026-11-16: Share (59, PR #119). In the installed iPhone app, open a public meditation, choose
       Share from the "…" menu, and confirm the native share sheet opens with the title and
       the link.
 
@@ -266,7 +268,9 @@ account (`/terms`, "Be decent") if it comes back.
 ## 8. Open signups (task 38)
 
 - [ ] Everything above is ticked, and ship tasks 48–57 are merged (they are, as of
-      2026-10-26; nothing is open).
+      2026-10-26; nothing is open). Three open items above don't block: Sentry's first
+      real report arrives with the first real error, and section 7 and the chat-turn
+      ceiling are optional.
 - [x] 2026-10-30: ship task 58 (launch security fixes) merged (PR #107) and its signed-out
       production checks pass; the signed-in checks and one live render are in section 5.
 - [x] 2026-10-31: free tier decided for launch (`tasks/post-ship/paid-tier.md`): free with
@@ -281,11 +285,16 @@ account (`/terms`, "Be decent") if it comes back.
 - [x] 2026-11-06: Supabase → Authentication → Rate Limits: raise **emails per hour** from 25 to about
       100. Every email sign-in now sends a code (57), so 25 an hour runs out on a busy day.
       Check Resend's plan limits too: the free plan allows 100 a day and 3,000 a month.
-- [ ] Move to Supabase Pro ($25/mo): daily automated backups, and no 7-day pause. Then
-      follow the runbook's "Why this is manual": check the backup retention is 30 days or
-      less (or change `/privacy`), move the deletion records, delete the old dumps, and
-      retire the keepalive cron, the prune job and the manual backups (decided 2026-11-16).
 - [ ] Supabase → Auth → enable signups.
+
+## 9. After signups open
+
+- [ ] Once sign-ups arrive, move to Supabase Pro ($25/mo): daily automated backups, and no
+      7-day pause. 2026-11-16: waiting to see whether sign-ups come; until then the weekly
+      `./scripts/backup.sh` and the keepalive cron carry on. Then follow the runbook's "Why
+      this is manual": check the backup retention is 30 days or less (or change
+      `/privacy`), move the deletion records, delete the old dumps, and retire the
+      keepalive cron, the prune job and the manual backups.
 
 ## Done
 
