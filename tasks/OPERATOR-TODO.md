@@ -211,11 +211,10 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
 
 A meditation page now draws its waveform from peaks stored with the render and streams the
 audio on play, instead of downloading the whole file on page load
-(`tasks/ship/60-audio-egress.md`). Renders made before it keep the old path until the
-backfill reaches them.
+(`tasks/ship/60-audio-egress.md`). Every render made before it was backfilled on
+2026-11-16.
 
-- [ ] iPhone, in Safari **and the installed app**, on a meditation rendered after the new
-      snapshot (or backfilled): a tap on Play starts it promptly, the waveform is there
+- [ ] iPhone, in Safari **and the installed app**, on any meditation: a tap on Play starts it promptly, the waveform is there
       before you press it, dragging along it and both 15s skips work before and during
       play, and with the phone locked the lock screen shows the title and controls and
       they work (`use-media-session.ts`). The audio now streams instead of playing from a
@@ -225,13 +224,14 @@ backfill reaches them.
       192 (today), 128 and 96 kbps; `LISTEN.md` there says where the bed plays alone. Tell
       an agent the number: it is one line in `generate-audio.ts` and a snapshot rebuild.
       128 cuts every file and every full listen by a third, 96 by half.
-- [ ] When to run the backfill, which gives older renders their peaks. Every file is
-      downloaded once: on 2026-11-16 that was 19 files, 0.39 GB of egress. Right after the
-      30 Nov reset is the natural time. From the primary checkout, count first (downloads
-      nothing; check it prints the production URL as Target), then run it:
-      `(set -a; . ./.env.local; NEXT_PUBLIC_SUPABASE_URL="$SOUND_EFFECTS_SUPABASE_URL" SUPABASE_SERVICE_ROLE_KEY="$SOUND_EFFECTS_SUPABASE_SERVICE_ROLE_KEY" npx tsx scripts/backfill-peaks.ts)`,
-      then the same with `--yes` after `backfill-peaks.ts`. It needs ffmpeg
-      (`brew install ffmpeg`).
+- [x] 2026-11-16: the backfill, which gives older renders their peaks: run now rather than
+      after the 30 Nov reset, since this cycle's unused egress resets anyway. All 19 files
+      (17 current, 2 earlier versions), 391,645,073 bytes downloaded once, none failed;
+      every existing page streams. Then measured on Ho'oponopono: a view without play is
+      90,256 bytes (was 23,469,496). Nothing should need it again, since renders write their
+      own peaks; if a render ever lacks them, from the primary checkout, count first, then
+      add `--yes`:
+      `(set -a; . ./.env.local; NEXT_PUBLIC_SUPABASE_URL="$SOUND_EFFECTS_SUPABASE_URL" SUPABASE_SERVICE_ROLE_KEY="$SOUND_EFFECTS_SUPABASE_SERVICE_ROLE_KEY" npx tsx scripts/backfill-peaks.ts)`.
 - [ ] One production render on the new snapshot, after an agent has deployed it: make the
       audio for one short meditation and check it plays, and that its page draws the
       waveform at once. Then tell an agent, which deletes the old snapshot
@@ -309,9 +309,11 @@ account (`/terms`, "Be decent") if it comes back.
 - [x] 2026-11-08: `PER_USER_DAILY_CHAT_MESSAGES` is not set in Vercel, Production or Preview,
       so the code default of 30 applies (ship 29 said to set it only to override the default).
 - [ ] Supabase → Reports: write down the storage and egress figures on the day signups open.
-      Every meditation page view downloads the whole audio file (22 MB for 15 minutes), so
-      the free plan's 5 GB of egress is about 230 views a month; the fix is
-      `tasks/ship/60-audio-egress.md` (a view streams from then on). 2026-11-16 baseline, before launch, from
+      Until 2026-11-16 every meditation page view downloaded the whole audio file (22 MB
+      for 15 minutes), so the free plan's 5 GB was about 230 views a month. Since task 60 a
+      view without play is about 90 KB and the audio streams on play, so egress follows
+      listening, a file per full listen (`tasks/ship/60-audio-egress.md`). The backfill that
+      day spent 0.39 GB of this cycle's remainder. 2026-11-16 baseline, before launch, from
       Organization → Usage (cycle 30 Oct–30 Nov, all of it the operator's own seeding and
       testing, 1 monthly active user): egress 2.887 / 5 GB (58%), storage 0.351 / 1 GB
       (35%), database 0.029 / 0.5 GB. That leaves about 95 views of a 15-minute meditation

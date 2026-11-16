@@ -1,8 +1,10 @@
 # Audio Egress
 
-**Status:** In progress. Code merged (PR #128); snapshot `snap_dJAgDRqRJ9ugYNwe0QWMl7uAUIy4`
-live in Production and Preview since 2026-11-16. Left: the production measurement, which
-needs a production meditation with peaks, and the operator items in `tasks/OPERATOR-TODO.md` §5.
+**Status:** Done* (PR #128, 2026-11-16). Snapshot `snap_dJAgDRqRJ9ugYNwe0QWMl7uAUIy4` live in
+Production and Preview, every production render backfilled, and a page view without play
+measured in production at 90,256 bytes against 23,469,496. *Operator: the iPhone check, the
+bitrate, and one production render before the old snapshot is deleted
+(`tasks/OPERATOR-TODO.md` §5).
 **Priority:** Phase 6, before signups open. Approved by the operator 2026-11-16; promoted
 from `tasks/post-ship/audio-egress.md`.
 **Phase:** 6
@@ -74,13 +76,16 @@ nothing until played.
 - [x] Renders write peaks, and drafts and archived versions keep theirs.
       *`workflow.test.ts` "waveform peaks"; the compiled `generate-audio.js` run locally on
       a 10-minute mix wrote 8,000 peaks and a length matching ffprobe's.*
-- [x] The backfill script is ready and unrun against production.
-      *Run against local Supabase: the count, then `--yes`, then the count again (zero).*
+- [x] The backfill script is ready, and unrun against production until the operator says.
+      *Run against local Supabase: the count, then `--yes`, then the count again (zero).
+      The operator then chose to run it in production on 2026-11-16 (Outcome).*
 - [x] The new snapshot is live in Production, and the PR and this file name its ID.
       *`snap_dJAgDRqRJ9ugYNwe0QWMl7uAUIy4`, set for Production and Preview, production
       redeployed 2026-11-16 (Outcome).*
-- [ ] The production measurement is recorded: bytes for a page view without pressing
+- [x] The production measurement is recorded: bytes for a page view without pressing
       play, and for a short play.
+      *2026-11-16, Ho'oponopono, the 2026-10-31 baseline page: 90,256 and 3,218,370
+      (Outcome).*
 - [x] The operator items are in `tasks/OPERATOR-TODO.md` §5: the iPhone check, the
       bitrate, the backfill, one production render on the new snapshot.
 
@@ -138,8 +143,25 @@ nothing until played.
   versions without peaks (drafts have no audio of their own), prints the file count and
   total bytes, and stops unless passed `--yes`; then downloads each once, reads its peaks
   with the same reader and merges them in, skipping a row whose audio changed meanwhile.
-  Production on 2026-11-16 holds 19 files, 391.6 MB (17 current, 2 versions), so the run
-  costs about 0.39 GB of egress. Not run against production.
+  **Run in production on 2026-11-16** at the operator's go-ahead, after this PR, rather
+  than after the 30 Nov reset: this cycle's unused egress resets anyway, so spending it now
+  keeps the launch month's 5 GB whole, and every existing page streams from today. The
+  count first (19 files, 17 current and 2 versions, 391,645,073 bytes, as listed that
+  morning), then `--yes`: 19 written, 0 skipped, 0 failed, 391,645,073 bytes downloaded;
+  a second count found none left.
+- **Production measurement** (2026-11-16, after the backfill, on the new snapshot's
+  deployment). Ho'oponopono, the same page as the 2026-10-31 baseline, signed out, a
+  clean headless Chrome counting the storage host's bytes from its network events:
+
+  | | Bytes from storage |
+  |---|---|
+  | A page view, before (2026-10-31) | 23,469,496 |
+  | A page view without play | 90,256 (one metadata range request, aborted) |
+  | A page view and 15 s of play | 3,218,370 (Chrome buffers about two minutes ahead) |
+
+  The peaks add about 3 KB of gzipped database egress to each view. So 5 GB is now about
+  54,000 views that never press play, rather than 230; a full listen still costs a file,
+  which the bitrate decides.
 - **Snapshot** `snap_dJAgDRqRJ9ugYNwe0QWMl7uAUIy4` (321.0 MB), built from `main` after
   PR #128 merged, so production ran the new code on the old snapshot first and took the
   no-peaks path meanwhile. `test-audio-generation.ts` passed on it with the new checks
