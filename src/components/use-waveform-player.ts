@@ -10,6 +10,7 @@ import {
 import { useReportScriptPlayback } from "@/components/script-playback";
 import { usePlayTracking } from "@/components/use-play-tracking";
 import { recordPlay } from "@/lib/meditation/actions";
+import type { Waveform } from "@/lib/meditation/types";
 
 /**
  * One wavesurfer instance and everything bound to the element it plays
@@ -69,6 +70,80 @@ function hoverColors(container: HTMLElement) {
   };
 }
 
+/**
+ * The element a player with peaks streams through (task 60). wavesurfer only
+ * creates and fetches into its own element; handed this one, it draws the
+ * peaks and sets `src`, and the browser fetches by range as it plays.
+ * `preload="metadata"` keeps Chrome from buffering ahead on page load, so a
+ * visit that never presses play downloads next to nothing.
+ *
+ * It goes inside the waveform's container, so it is in the document as
+ * wavesurfer's own element is (an <audio> without controls takes no space).
+ */
+function streamingElement(container: HTMLElement): HTMLAudioElement {
+  const media = document.createElement("audio");
+  media.preload = "metadata";
+  container.appendChild(media);
+  return media;
+}
+
+/**
+ * wavesurfer leaves an element it was handed alone when destroyed, so stop
+ * it here: without this, a closed player plays on and keeps its connection.
+ */
+function releaseElement(media: HTMLAudioElement) {
+  media.pause();
+  media.removeAttribute("src");
+  media.load();
+  media.remove();
+}
+
+/** At most one fresh URL a minute, so a file that is really gone cannot loop. */
+const REFRESH_INTERVAL_MS = 60_000;
+
+/** A play pressed this recently still counts when the element fails to load. */
+const PLAY_INTENT_MS = 15_000;
+
+/**
+ * Keep a streaming element playing past its signed URL (4 hours,
+ * AUDIO_URL_TTL_SECONDS). It fetches by range on play, on a seek and on a
+ * resume, so a page left open, or a long pause, outlives the URL, and the
+ * next request fails. On that error, ask for a fresh URL and carry on from
+ * the same place, playing again if it was playing or a play was just
+ * pressed. The old path never needed this: it held the whole file as a blob.
+ */
+function recoverExpiredUrl(
+  media: HTMLAudioElement,
+  refresh: () => (() => Promise<string | null>) | undefined,
+  playRequestedAt: () => number,
+): () => void {
+  let refreshedAt = -Infinity;
+  let disposed = false;
+  const onError = async () => {
+    const fresh = refresh();
+    if (!fresh || Date.now() - refreshedAt < REFRESH_INTERVAL_MS) return;
+    refreshedAt = Date.now();
+    const position = media.currentTime;
+    const resume = !media.paused || Date.now() - playRequestedAt() < PLAY_INTENT_MS;
+    const url = await fresh().catch(() => null);
+    if (!url || disposed) return;
+    media.addEventListener(
+      "loadedmetadata",
+      () => {
+        if (position > 0) media.currentTime = position;
+        if (resume) void media.play().catch(() => {});
+      },
+      { once: true },
+    );
+    media.src = url;
+  };
+  media.addEventListener("error", onError);
+  return () => {
+    disposed = true;
+    media.removeEventListener("error", onError);
+  };
+}
+
 type Shape = Pick<
   WaveSurferOptions,
   "height" | "barWidth" | "barGap" | "barRadius" | "cursorWidth" | "dragToSeek"
@@ -76,6 +151,8 @@ type Shape = Pick<
 
 export function useWaveformPlayer({
   audioUrl,
+  waveform,
+  refreshUrl,
   title,
   meditationId,
   trackPlays,
@@ -83,6 +160,18 @@ export function useWaveformPlayer({
   hover,
 }: {
   audioUrl: string;
+  /**
+   * Peaks read from the mix when it was rendered (task 60). With them the
+   * waveform draws at once and the audio streams on play. Without them, for
+   * a render from before peaks, wavesurfer downloads the whole file on load
+   * to decode it.
+   */
+  waveform?: Waveform | null;
+  /**
+   * A fresh signed URL for the same audio, for when a streaming player's
+   * URL has expired (see recoverExpiredUrl).
+   */
+  refreshUrl?: () => Promise<string | null>;
   /** Shown on the lock screen and in the OS media controls. */
   title: string;
   meditationId: string;
@@ -109,6 +198,15 @@ export function useWaveformPlayer({
   const volumeRef = useRef(0.8);
   // Read once at creation; the shape is fixed for a given player.
   const shapeRef = useRef(shape);
+  // Read when an expired URL needs replacing, so a new callback does not
+  // recreate the player.
+  const refreshRef = useRef(refreshUrl);
+  useEffect(() => {
+    refreshRef.current = refreshUrl;
+  }, [refreshUrl]);
+  // When play was last pressed, so a play that failed on an expired URL
+  // resumes once a fresh one loads.
+  const playRequestedAtRef = useRef(-Infinity);
 
   useMediaSession(media, title);
 
@@ -126,6 +224,7 @@ export function useWaveformPlayer({
     const container = containerRef.current;
     if (!container) return;
 
+    const media = waveform ? streamingElement(container) : null;
     const ws = WaveSurfer.create({
       container,
       // A silence is most of a meditation. Without a floor its bars vanish,
@@ -134,6 +233,16 @@ export function useWaveformPlayer({
       ...shapeRef.current,
       ...waveformColors(container),
       url: audioUrl,
+      ...(media && waveform
+        ? {
+            media,
+            // Stored as percents; wavesurfer takes 0..1.
+            peaks: [waveform.peaks.map((p) => p / 100)],
+            duration: waveform.duration,
+          }
+        : {}),
+      // Scales the tallest bar to full height, whether the bars come from
+      // the peaks or from the decoded file, so both draw the same.
       normalize: true,
       plugins: hover
         ? [
@@ -160,13 +269,22 @@ export function useWaveformPlayer({
     ws.on("pause", () => setIsPlaying(false));
     ws.on("finish", () => setIsPlaying(false));
     watchMediaElement(ws, setMedia);
+    const stopRecovering = media
+      ? recoverExpiredUrl(
+          media,
+          () => refreshRef.current,
+          () => playRequestedAtRef.current,
+        )
+      : null;
 
     wavesurferRef.current = ws;
     return () => {
+      stopRecovering?.();
       ws.destroy();
+      if (media) releaseElement(media);
       wavesurferRef.current = null;
     };
-  }, [audioUrl, hover]);
+  }, [audioUrl, waveform, hover]);
 
   // Follow the theme and the width without recreating the player (which
   // would drop the playback position). The theme toggle swaps a class on
@@ -196,13 +314,17 @@ export function useWaveformPlayer({
   }, []);
 
   // play() reaches media.play() synchronously, so calling these from a tap
-  // keeps the user gesture iOS needs to start audio. Before the waveform has
-  // decoded, the element can already play; only the bars are missing.
+  // keeps the user gesture iOS needs to start audio. With peaks the element
+  // starts streaming there; without them it can play before the waveform has
+  // decoded, and only the bars are missing.
   const play = useCallback(() => {
+    playRequestedAtRef.current = Date.now();
     void wavesurferRef.current?.play().catch(() => {});
   }, []);
   const togglePlay = useCallback(() => {
-    void wavesurferRef.current?.playPause().catch(() => {});
+    const ws = wavesurferRef.current;
+    if (ws && !ws.isPlaying()) playRequestedAtRef.current = Date.now();
+    void ws?.playPause().catch(() => {});
   }, []);
   const skip = useCallback((seconds: number) => {
     const ws = wavesurferRef.current;

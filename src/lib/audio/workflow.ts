@@ -5,6 +5,7 @@ import { Sandbox } from "@vercel/sandbox";
 import { createClient } from "@supabase/supabase-js";
 import { checkRenderScript, checkRenderSettings } from "./render-bounds";
 import { uploadAudio, updateMeditationStatus } from "./storage";
+import { waveformOf } from "./waveform";
 import type {
   MeditationSegment,
   GenerationMeta,
@@ -163,6 +164,11 @@ async function generateAndUpload(
         tts_requests: raw.ttsRequests,
         processing_time_ms: raw.processingTimeMs,
         generated_at: raw.generatedAt,
+        // The player's waveform (task 60). A snapshot built before peaks
+        // returns none, and the player decodes the file instead. A draft
+        // render's meta reaches the meditation at promotion, and the version
+        // it replaces is archived with its own, so versions keep theirs.
+        ...waveformOf(raw),
       };
     }
 

@@ -9,11 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AudioPlayer } from "@/components/audio-player";
 import { ScriptViewer } from "@/components/script-viewer";
 import { ScriptPlaybackProvider } from "@/components/script-playback";
-import { deleteMeditationVersion } from "@/lib/meditation/actions";
-import type { MeditationVersion } from "@/lib/meditation/types";
+import { deleteMeditationVersion, getMeditationVersion } from "@/lib/meditation/actions";
+import type { MeditationVersion, Waveform } from "@/lib/meditation/types";
 import { cn } from "@/lib/utils";
 
-type Version = MeditationVersion & { audio_url: string | null };
+type Version = MeditationVersion & { audio_url: string | null; waveform: Waveform | null };
 
 function versionLabel(createdAt: string) {
   return new Date(createdAt).toLocaleString(undefined, {
@@ -95,10 +95,16 @@ export function VersionSwitcher({
               {selected.audio_url ? (
                 <AudioPlayer
                   audioUrl={selected.audio_url}
+                  waveform={selected.waveform}
                   title={title}
                   meditationId={meditationId}
                   canDownload
                   downloadHref={`/api/audio/${meditationId}/download?version=${selected.id}`}
+                  refreshUrl={() =>
+                    getMeditationVersion(meditationId, selected.id).then(
+                      (version) => version?.audio_url ?? null,
+                    )
+                  }
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">

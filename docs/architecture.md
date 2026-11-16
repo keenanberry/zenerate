@@ -178,6 +178,37 @@ Quota: `reserveAudioGeneration` in `src/lib/audio/quota.ts` enforces the per-use
 global monthly caps through the `reserve_audio_generation` RPC. Users listed in
 `QUOTA_EXEMPT_USER_IDS` skip both caps, and their renders are left out of the global total.
 
+## Playback: Peaks, So the Player Streams (task 60)
+
+Every byte the bucket sends counts toward Supabase's monthly egress (5 GB on Free). Given
+only a URL, wavesurfer downloads the whole file on page load to decode the waveform, so
+every meditation page view cost a full file (22 MB for 15 minutes) whether or not anyone
+pressed play. Given the waveform up front, it draws at once and the audio streams from
+the `<audio>` element by range request as it plays.
+
+- **Read in the sandbox.** After the final mix, `generate-audio.ts` decodes `output.mp3`
+  at 8 kHz (wavesurfer's own decoding rate) and `peaks.ts` reduces it to 8,000 peaks,
+  whole percents of full scale, plus the length in seconds. They go out in `result.json`
+  beside `ttsCharacters`, and `workflow.ts` stores them as `generation_meta.peaks` and
+  `generation_meta.duration`. A failed read leaves them out and the render still
+  succeeds. A draft render's meta reaches the meditation at promotion, and the version it
+  replaces is archived with its own `generation_meta`, so archived versions keep theirs.
+- **Delivered with the signed URL.** `hydrateAudioUrl(row, { waveform: true })` sets
+  `waveform` from the row's `generation_meta`, or, for a row read as `anon` (which may
+  not read `generation_meta`), from the same service-role lookup that finds a public
+  row's path, selecting only `generation_meta->peaks` and `->duration`. The anon grant is
+  unchanged. Only reads that feed a player ask: `getMeditation`, `getMeditationAudio` and
+  `getMeditationVersions`. The peaks never leave inside `generation_meta`, and the
+  signed-in list reads name their columns so they do not read it at all (`ROW_COLUMNS` in
+  `src/lib/meditation/actions.ts`): a list has no player.
+- **Played by streaming.** `useWaveformPlayer` hands wavesurfer `peaks`, `duration` and
+  its own `<audio preload="metadata">`, so a visit that never presses play fetches only
+  the file's header. A render without peaks keeps the old path: wavesurfer fetches and
+  decodes the whole file. The list pages' play buttons (`inline-play-button.tsx`,
+  `track-play-button.tsx`) were already streaming with `new Audio(url)` on tap.
+- **Older renders** get theirs from `scripts/backfill-peaks.ts`, which downloads each file
+  once (real egress), so it only counts until passed `--yes`.
+
 ## Sandbox Template
 
 Create a snapshot with all dependencies pre-installed so each job starts instantly:

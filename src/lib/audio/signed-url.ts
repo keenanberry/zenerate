@@ -1,14 +1,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient as createServiceClient } from "@/lib/supabase/service-role";
+import type { Waveform } from "@/lib/meditation/types";
 import { ownsAudioPath } from "./storage";
+import { waveformOf } from "./waveform";
 
 const BUCKET = "meditation-audio";
 
 /**
  * How long a minted audio URL stays valid. Long enough that a user can open a
- * meditation, read the script, and play it later in the same session --
- * wavesurfer re-requests the file on seek -- and short enough that a leaked
- * link is not a permanent grant.
+ * meditation, read the script, and play it later in the same session -- the
+ * player streams with range requests, so a seek or a resume re-requests the
+ * file -- and short enough that a leaked link is not a permanent grant.
  */
 export const AUDIO_URL_TTL_SECONDS = 4 * 60 * 60;
 
@@ -76,13 +78,26 @@ async function signAudioUrls(
 /**
  * A row to hydrate: a meditation (id, user_id), an archived version (id,
  * meditation_id), or a meditation read as anon, whose public columns leave
- * out user_id and audio_path (task 58).
+ * out user_id, audio_path and generation_meta (task 58).
  */
 type AudioRow = {
   id?: string;
   user_id?: string | null;
   meditation_id?: string;
   audio_path?: string | null;
+  generation_meta?: unknown;
+};
+
+/** What the service role reads for a row that came without its path. */
+type LookedUp = { path: string | null; waveform: Waveform | null };
+
+type Options = {
+  /**
+   * Add `waveform`, the peaks the player draws before any audio loads (task
+   * 60). Only for a read that feeds a player: the peaks are a few KB a row,
+   * and every byte read from Supabase counts toward its egress.
+   */
+  waveform?: boolean;
 };
 
 /** The row's own audio path, or null when it has none or names someone else's file. */
@@ -96,30 +111,53 @@ function ownPath(row: AudioRow): string | null {
 }
 
 /**
- * The paths of rows read without audio_path, by id. anon may not read the
- * column, so it is read here with the service role, for public meditations
- * only: a row the caller saw without the column is a public one (or it is
- * not, and gets no audio).
+ * The paths of rows read without audio_path, by id, and their waveforms when
+ * asked. anon may not read audio_path or generation_meta, so they are read
+ * here with the service role, for public meditations only: a row the caller
+ * saw without the column is a public one (or it is not, and gets no audio).
+ * Only the two waveform keys are selected, never the rest of generation_meta.
  */
-async function lookUpPublicPaths(
+async function lookUpPublicAudio(
   rows: AudioRow[],
   supabase: SupabaseClient,
-): Promise<Map<string, string | null>> {
+  withWaveform: boolean,
+): Promise<Map<string, LookedUp>> {
   const ids = rows.flatMap((row) => (!("audio_path" in row) && row.id ? [row.id] : []));
-  const paths = new Map<string, string | null>();
-  if (ids.length === 0) return paths;
+  const found = new Map<string, LookedUp>();
+  if (ids.length === 0) return found;
 
+  const columns = withWaveform
+    ? "id, user_id, audio_path, peaks:generation_meta->peaks, duration:generation_meta->duration"
+    : "id, user_id, audio_path";
   const { data, error } = await supabase
     .from("meditations")
-    .select("id, user_id, audio_path")
+    .select(columns)
     .in("id", ids)
     .eq("is_public", true);
   if (error) {
     console.error(`Failed to look up public audio paths: ${error.message}`);
-    return paths;
+    return found;
   }
-  for (const row of (data ?? []) as AudioRow[]) paths.set(row.id!, ownPath(row));
-  return paths;
+  for (const row of (data ?? []) as unknown as Array<AudioRow & { peaks?: unknown; duration?: unknown }>) {
+    found.set(row.id!, {
+      path: ownPath(row),
+      waveform: withWaveform ? waveformOf(row) : null,
+    });
+  }
+  return found;
+}
+
+/**
+ * generation_meta without its peaks. They are a few KB, and a page that
+ * serializes a row whole would otherwise ship them to the browser twice, or
+ * on a list with no player at all.
+ */
+function withoutPeaks<T extends AudioRow>(row: T): T {
+  const meta = row.generation_meta;
+  if (!meta || typeof meta !== "object" || !("peaks" in meta)) return row;
+  const rest: Record<string, unknown> = { ...meta };
+  delete rest.peaks;
+  return { ...row, generation_meta: rest };
 }
 
 /**
@@ -148,27 +186,59 @@ async function lookUpPublicPaths(
  * `@/lib/audio/signed-url` is restricted (see eslint.config.mjs) to
  * `src/lib/meditation/actions.ts`, the one module whose every call site
  * fetches the row through an RLS-bound client first.
+ *
+ * With `{ waveform: true }` it also sets `waveform` (task 60), from the row's
+ * own generation_meta when the read selected it, or from the same public
+ * lookup for a row read as anon; the anon grant stays as it is. A row read
+ * with its path but without generation_meta gets null: select the column
+ * where a player needs it. Either way the peaks never leave inside
+ * generation_meta (see withoutPeaks).
  */
 export async function hydrateAudioUrl<T extends AudioRow>(
   row: T,
-): Promise<T & { audio_url: string | null }> {
-  const [hydrated] = await hydrateAudioUrls([row]);
+): Promise<T & { audio_url: string | null }>;
+export async function hydrateAudioUrl<T extends AudioRow>(
+  row: T,
+  options: Options & { waveform: true },
+): Promise<T & { audio_url: string | null; waveform: Waveform | null }>;
+export async function hydrateAudioUrl<T extends AudioRow>(row: T, options: Options = {}) {
+  const [hydrated] = await hydrateRows([row], options);
   return hydrated;
 }
 
 /** See hydrateAudioUrl -- same invariant: hydrate only rows already authorized by an RLS-bound fetch. */
 export async function hydrateAudioUrls<T extends AudioRow>(
   rows: T[],
-): Promise<Array<T & { audio_url: string | null }>> {
+): Promise<Array<T & { audio_url: string | null }>>;
+export async function hydrateAudioUrls<T extends AudioRow>(
+  rows: T[],
+  options: Options & { waveform: true },
+): Promise<Array<T & { audio_url: string | null; waveform: Waveform | null }>>;
+export async function hydrateAudioUrls<T extends AudioRow>(rows: T[], options: Options = {}) {
+  return hydrateRows(rows, options);
+}
+
+async function hydrateRows<T extends AudioRow>(
+  rows: T[],
+  { waveform: withWaveform = false }: Options,
+): Promise<Array<T & { audio_url: string | null; waveform?: Waveform | null }>> {
   if (rows.length === 0) return [];
   const supabase = createServiceClient();
-  const looked = await lookUpPublicPaths(rows, supabase);
-  const paths = rows.map((row) =>
-    "audio_path" in row ? ownPath(row) : (looked.get(row.id ?? "") ?? null),
+  const looked = await lookUpPublicAudio(rows, supabase, withWaveform);
+  const audio = rows.map((row): LookedUp =>
+    "audio_path" in row
+      ? { path: ownPath(row), waveform: withWaveform ? waveformOf(row.generation_meta) : null }
+      : (looked.get(row.id ?? "") ?? { path: null, waveform: null }),
   );
+  const paths = audio.map((a) => a.path);
   const urls =
     paths.length === 1
       ? [await signAudioUrl(paths[0], supabase)]
       : await signAudioUrls(paths, supabase);
-  return rows.map((row, i) => ({ ...row, audio_url: urls[i] }));
+  return rows.map((row, i) => {
+    const hydrated = { ...withoutPeaks(row), audio_url: urls[i] };
+    if (!withWaveform) return hydrated;
+    // Peaks with nothing to play are no use to the player.
+    return { ...hydrated, waveform: urls[i] ? audio[i].waveform : null };
+  });
 }

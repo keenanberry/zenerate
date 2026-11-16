@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   AudioLines,
@@ -29,9 +29,13 @@ import {
   useWaveformPlayer,
 } from "@/components/use-waveform-player";
 import { cn } from "@/lib/utils";
+import type { Waveform } from "@/lib/meditation/types";
+import { getMeditationAudio } from "@/lib/meditation/actions";
 
 interface SessionPlayerProps {
   audioUrl: string;
+  /** Peaks to draw before any audio loads; the audio then streams on play (task 60). */
+  waveform: Waveform | null;
   meditationId: string;
   title: string;
   tags: string[];
@@ -55,6 +59,7 @@ interface SessionPlayerProps {
  */
 export function SessionPlayer({
   audioUrl,
+  waveform,
   meditationId,
   title,
   tags,
@@ -62,8 +67,15 @@ export function SessionPlayer({
   isSignedIn,
   hasScript,
 }: SessionPlayerProps) {
+  // A fresh signed URL once the page has outlived this one (task 60).
+  const refreshUrl = useCallback(
+    () => getMeditationAudio(meditationId).then((audio) => audio.audio_url),
+    [meditationId],
+  );
   const player = useWaveformPlayer({
     audioUrl,
+    waveform,
+    refreshUrl,
     title,
     meditationId,
     trackPlays: isSignedIn,

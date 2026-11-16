@@ -219,3 +219,101 @@ describe("a row read as anon, without audio_path", () => {
     expect(supabase.from).not.toHaveBeenCalled();
   });
 });
+
+// Task 60: the player draws these peaks instead of downloading the whole file
+// to decode it on page load.
+describe("the waveform", () => {
+  const PEAKS = [10, 50, 90];
+  const signedOne = () =>
+    vi.fn().mockResolvedValue({ data: { signedUrl: "https://signed/a" }, error: null });
+
+  it("comes from the row's own generation_meta, and leaves it without the peaks", async () => {
+    mockCreateServiceClient.mockReturnValue(makeStorage({ createSignedUrl: signedOne() }));
+
+    const result = await hydrateAudioUrl(
+      {
+        id: "a",
+        user_id: "u",
+        audio_path: "u/a/r.mp3",
+        generation_meta: { tts_characters: 10, peaks: PEAKS, duration: 61 },
+      },
+      { waveform: true },
+    );
+
+    expect(result.waveform).toEqual({ peaks: PEAKS, duration: 61 });
+    expect(result.generation_meta).toEqual({ tts_characters: 10, duration: 61 });
+  });
+
+  it("is null for a render from before peaks, so the player decodes the file", async () => {
+    mockCreateServiceClient.mockReturnValue(makeStorage({ createSignedUrl: signedOne() }));
+    const result = await hydrateAudioUrl(
+      { id: "a", user_id: "u", audio_path: "u/a/r.mp3", generation_meta: { tts_characters: 10 } },
+      { waveform: true },
+    );
+    expect(result.audio_url).toBe("https://signed/a");
+    expect(result.waveform).toBeNull();
+  });
+
+  it("is null when there is no audio to play", async () => {
+    const createSignedUrl = vi.fn().mockResolvedValue({ data: null, error: { message: "gone" } });
+    mockCreateServiceClient.mockReturnValue(makeStorage({ createSignedUrl }));
+    const result = await hydrateAudioUrl(
+      { id: "a", user_id: "u", audio_path: "u/a/r.mp3", generation_meta: { peaks: PEAKS, duration: 61 } },
+      { waveform: true },
+    );
+    expect(result.waveform).toBeNull();
+  });
+
+  it("is looked up for a public row read as anon, selecting only the two keys", async () => {
+    const supabase = makeStorage({
+      createSignedUrl: signedOne(),
+      publicRows: [{ id: "a", user_id: "u", audio_path: "u/a/r.mp3", peaks: PEAKS, duration: 61 }],
+    });
+    mockCreateServiceClient.mockReturnValue(supabase);
+
+    const result = await hydrateAudioUrl({ id: "a", title: "A" }, { waveform: true });
+
+    expect(result).toEqual({
+      id: "a",
+      title: "A",
+      audio_url: "https://signed/a",
+      waveform: { peaks: PEAKS, duration: 61 },
+    });
+    expect(supabase.lookup.select).toHaveBeenCalledWith(
+      "id, user_id, audio_path, peaks:generation_meta->peaks, duration:generation_meta->duration",
+    );
+    expect(supabase.lookup.filters).toContainEqual(["eq", "is_public", true]);
+  });
+
+  it("is neither read nor added for a list, which has no player", async () => {
+    const supabase = makeStorage({
+      createSignedUrls: vi.fn().mockResolvedValue({ data: [], error: null }),
+      publicRows: [],
+    });
+    mockCreateServiceClient.mockReturnValue(supabase);
+
+    const result = await hydrateAudioUrls([
+      { id: "a", title: "A" },
+      { id: "b", title: "B" },
+    ]);
+
+    expect(supabase.lookup.select).toHaveBeenCalledWith("id, user_id, audio_path");
+    expect(result[0]).not.toHaveProperty("waveform");
+  });
+
+  it("never rides along inside generation_meta, even on a list", async () => {
+    const createSignedUrls = vi.fn().mockResolvedValue({
+      data: [{ path: "u/a/r.mp3", signedUrl: "https://signed/a", error: null }],
+      error: null,
+    });
+    mockCreateServiceClient.mockReturnValue(makeStorage({ createSignedUrls }));
+
+    const [a, b] = await hydrateAudioUrls([
+      { id: "a", user_id: "u", audio_path: "u/a/r.mp3", generation_meta: { peaks: PEAKS, duration: 61 } },
+      { id: "b", user_id: "u", audio_path: null, generation_meta: null },
+    ]);
+
+    expect(a.generation_meta).toEqual({ duration: 61 });
+    expect(b.generation_meta).toBeNull();
+  });
+});

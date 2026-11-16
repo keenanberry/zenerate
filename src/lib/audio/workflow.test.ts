@@ -2,10 +2,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 type Row = Record<string, unknown>;
 
-const { db, uploads, mockWriteFiles } = vi.hoisted(() => ({
+const { db, uploads, mockWriteFiles, sandboxResult } = vi.hoisted(() => ({
   db: {} as Record<string, Row[]>,
   uploads: [] as string[],
   mockWriteFiles: vi.fn(),
+  /** What generate-audio.js leaves in result.json; null for no file. */
+  sandboxResult: { current: null as Row | null },
 }));
 
 /**
@@ -83,7 +85,11 @@ vi.mock("@vercel/sandbox", () => ({
       writeFiles: mockWriteFiles,
       runCommand: async () => ({ exitCode: 0 }),
       readFileToBuffer: async ({ path }: { path: string }) =>
-        path === "output.mp3" ? Buffer.from("mp3") : null,
+        path === "output.mp3"
+          ? Buffer.from("mp3")
+          : path === "result.json" && sandboxResult.current
+            ? Buffer.from(JSON.stringify(sandboxResult.current))
+            : null,
       stop: async () => {},
     }),
   },
@@ -138,6 +144,7 @@ function narratedText() {
 beforeEach(() => {
   vi.clearAllMocks();
   uploads.length = 0;
+  sandboxResult.current = null;
   process.env.AUDIO_SANDBOX_SNAPSHOT_ID = "snap_test";
   mockWriteFiles.mockResolvedValue(undefined);
 });
@@ -291,6 +298,73 @@ describe("processAudioWorkflow", () => {
     expect(db.meditation_versions).toEqual([
       expect.objectContaining({ audio_path: first, script: CURRENT }),
     ]);
+  });
+
+  // Task 60: the player draws these instead of downloading the file to
+  // decode it, so a meditation page streams.
+  describe("waveform peaks", () => {
+    const RESULT = {
+      ttsCharacters: 42,
+      ttsRequests: 2,
+      processingTimeMs: 1000,
+      generatedAt: "2026-11-16T00:00:00.000Z",
+    };
+
+    it("stores the sandbox's peaks and duration in generation_meta", async () => {
+      seed({ script: CURRENT, audio_path: null, status: "processing_audio" });
+      sandboxResult.current = { ...RESULT, peaks: [0, 50, 100], duration: 61.25 };
+
+      await processAudioWorkflow("med-1", null, "evt-1");
+
+      expect(meditation().generation_meta).toEqual({
+        tts_characters: 42,
+        tts_requests: 2,
+        processing_time_ms: 1000,
+        generated_at: RESULT.generatedAt,
+        peaks: [0, 50, 100],
+        duration: 61.25,
+      });
+    });
+
+    it("completes without peaks from a snapshot built before them", async () => {
+      seed({ script: CURRENT, audio_path: null, status: "processing_audio" });
+      sandboxResult.current = RESULT;
+
+      await processAudioWorkflow("med-1", null, "evt-1");
+
+      expect(meditation().status).toBe("completed");
+      expect(meditation().generation_meta).toEqual({
+        tts_characters: 42,
+        tts_requests: 2,
+        processing_time_ms: 1000,
+        generated_at: RESULT.generatedAt,
+      });
+    });
+
+    it("leaves out peaks it cannot use", async () => {
+      seed({ script: CURRENT, audio_path: null, status: "processing_audio" });
+      sandboxResult.current = { ...RESULT, peaks: null, duration: null };
+
+      await processAudioWorkflow("med-1", null, "evt-1");
+
+      expect(meditation().generation_meta).not.toHaveProperty("peaks");
+      expect(meditation().generation_meta).not.toHaveProperty("duration");
+    });
+
+    it("gives a promoted draft its own peaks and archives the old version with the old ones", async () => {
+      seedDraftRender();
+      meditation().generation_meta = { tts_characters: 10, peaks: [10, 20], duration: 30 };
+      sandboxResult.current = { ...RESULT, peaks: [90, 80, 70], duration: 45 };
+
+      await processAudioWorkflow("med-1", "voice-new", "evt-1");
+
+      expect(db.meditation_versions[0].generation_meta).toEqual({
+        tts_characters: 10,
+        peaks: [10, 20],
+        duration: 30,
+      });
+      expect(meditation().generation_meta).toMatchObject({ peaks: [90, 80, 70], duration: 45 });
+    });
   });
 
   // The owner can still write script, settings and the draft after the

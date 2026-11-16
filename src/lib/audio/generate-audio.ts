@@ -12,17 +12,18 @@
 
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import ffmpeg from "fluent-ffmpeg";
-import { createWriteStream } from "node:fs";
+import { createReadStream, createWriteStream } from "node:fs";
 import { readFile, writeFile, mkdir, copyFile, access } from "node:fs/promises";
 import { join } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
 import { narrationGainDb, parseIntegratedLoudness } from "./loudness";
 import { bedMixFilter, parseMediaSeconds } from "./mix";
+import { PEAKS_DECODE_ARGS, PeakReader, type Peaks } from "./peaks";
 
 // ---------------------------------------------------------------------------
-// Types (self-contained — the only project imports are ./loudness and ./mix,
-// which have no dependencies and are bundled in by esbuild)
+// Types (self-contained — the only project imports are ./loudness, ./mix and
+// ./peaks, which have no dependencies and are bundled in by esbuild)
 // ---------------------------------------------------------------------------
 
 interface Segment {
@@ -256,6 +257,37 @@ async function mixBackgroundMusic(
 }
 
 // ---------------------------------------------------------------------------
+// Waveform peaks for the player (task 60)
+// ---------------------------------------------------------------------------
+
+/**
+ * The final mix's peaks and length, for the player to draw before any audio
+ * loads. Null when they cannot be read: the render still succeeds, and the
+ * player decodes the file itself as it did before peaks existed.
+ */
+function readPeaks(path: string): Promise<Peaks | null> {
+  const pcmPath = join(TEMP_DIR, "peaks.pcm");
+  return new Promise((resolve) => {
+    ffmpeg()
+      .input(path)
+      .noVideo()
+      .outputOptions(PEAKS_DECODE_ARGS)
+      .output(pcmPath)
+      .on("end", async () => {
+        try {
+          const reader = new PeakReader();
+          for await (const chunk of createReadStream(pcmPath)) reader.push(chunk as Buffer);
+          resolve(reader.finish());
+        } catch {
+          resolve(null);
+        }
+      })
+      .on("error", () => resolve(null))
+      .run();
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Segment processing
 // ---------------------------------------------------------------------------
 
@@ -378,6 +410,14 @@ async function main(): Promise<void> {
     await copyFile(voiceOnlyPath, OUTPUT_PATH);
   }
 
+  console.log("Reading waveform peaks...");
+  const waveform = await readPeaks(OUTPUT_PATH);
+  console.log(
+    waveform
+      ? `  → ${waveform.peaks.length} peaks over ${waveform.duration.toFixed(1)}s`
+      : "  → could not read them; the player will decode the file itself",
+  );
+
   const processingTimeMs = Date.now() - startTime;
   const elapsed = (processingTimeMs / 1000).toFixed(1);
 
@@ -386,6 +426,8 @@ async function main(): Promise<void> {
     ttsRequests,
     processingTimeMs,
     generatedAt: new Date().toISOString(),
+    peaks: waveform?.peaks ?? null,
+    duration: waveform?.duration ?? null,
   };
   await writeFile(RESULT_PATH, JSON.stringify(result, null, 2));
 

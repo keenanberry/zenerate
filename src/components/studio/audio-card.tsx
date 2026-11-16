@@ -13,10 +13,11 @@ import { AudioPlayer } from "@/components/audio-player";
 import { getAudioOffer, type AudioOffer } from "@/lib/audio/actions";
 import { generateErrorMessage } from "@/lib/audio/generate-error";
 import { choiceNote, resolveChoice } from "@/lib/audio/choices";
-import { getMeditationStatus } from "@/lib/meditation/actions";
+import { getMeditationAudio } from "@/lib/meditation/actions";
 import { DEFAULT_VOICE_ID } from "@/lib/voices/catalog";
 import { ReplaceOrKeep } from "@/components/studio/replace-or-keep";
 import type { AmbienceId } from "@/lib/meditation/ambience";
+import type { Waveform } from "@/lib/meditation/types";
 import type { StudioUIMessage } from "@/lib/chat/tools";
 
 type OfferAudioPart = Extract<StudioUIMessage["parts"][number], { type: "tool-offerAudio" }>;
@@ -47,6 +48,7 @@ function rendersLeft(quota: AudioOffer["quota"]) {
 export function AudioCard({ part, meditationId, addToolOutput }: AudioCardProps) {
   const [offer, setOffer] = useState<AudioOffer | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [waveform, setWaveform] = useState<Waveform | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [voiceId, setVoiceId] = useState<string | null>(null);
   const [ambience, setAmbience] = useState<AmbienceId | null>(null);
@@ -63,12 +65,13 @@ export function AudioCard({ part, meditationId, addToolOutput }: AudioCardProps)
   const refresh = useCallback(async () => {
     if (!meditationId) return;
     try {
-      const [next, status] = await Promise.all([
+      const [next, audio] = await Promise.all([
         getAudioOffer(meditationId),
-        getMeditationStatus(meditationId),
+        getMeditationAudio(meditationId),
       ]);
       setOffer(next);
-      setAudioUrl(status.audio_url);
+      setAudioUrl(audio.audio_url);
+      setWaveform(audio.waveform);
       setLoadError(false);
     } catch {
       setLoadError(true);
@@ -338,6 +341,7 @@ export function AudioCard({ part, meditationId, addToolOutput }: AudioCardProps)
       <div className="space-y-2">
         <AudioPlayer
           audioUrl={audioUrl}
+          waveform={waveform}
           title={offer.title}
           meditationId={meditationId}
           canDownload

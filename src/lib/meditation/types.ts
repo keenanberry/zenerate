@@ -12,6 +12,27 @@ export interface GenerationMeta {
   tts_requests?: number;
   processing_time_ms?: number;
   generated_at?: string;
+  /**
+   * The waveform, read from the final mix in the sandbox (task 60), or by
+   * scripts/backfill-peaks.ts for a render from before. Absent on a render
+   * the backfill has not reached; the player then decodes the file itself.
+   * Hydration moves it to `waveform` for the player and never sends it inside
+   * generation_meta (see hydrateAudioUrls).
+   */
+  peaks?: number[];
+  /** The mix's length in seconds, read with the peaks. */
+  duration?: number;
+}
+
+/**
+ * What the player draws before any audio loads, so the audio can stream on
+ * play instead of downloading whole on page load (task 60).
+ */
+export interface Waveform {
+  /** Percent of full scale, integers 0..100 (src/lib/audio/peaks.ts). */
+  peaks: number[];
+  /** Seconds. */
+  duration: number;
 }
 
 export interface Meditation {
@@ -31,6 +52,12 @@ export interface Meditation {
   script: string | null;
   /** Short-lived signed URL, minted server-side at read time. Never persisted. */
   audio_url: string | null;
+  /**
+   * The player's waveform, set at read time by a hydration that asks for it
+   * (`hydrateAudioUrl(row, { waveform: true })`). Null for a render without
+   * peaks; absent on list reads, which have no player.
+   */
+  waveform?: Waveform | null;
   /** Storage path within the meditation-audio bucket. This is what the DB holds. */
   audio_path?: string | null;
   status: MeditationStatus;
