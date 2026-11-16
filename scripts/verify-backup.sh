@@ -126,6 +126,15 @@ select count(*) || ' of ' || (select count(*) from public.meditations) || ' have
 from public.meditations where script is not null and length(trim(script)) > 0;
 SQL
 
+MEDITATIONS=$(psql "$SCRATCH_URL" -q -X -A -t -c 'select count(*) from public.meditations' 2>/dev/null || echo 0)
+
 echo
 echo "Scratch database will be dropped on exit."
 echo "Review the counts above: a clean restore of zero rows is not a backup."
+
+# Exit non-zero on a bad restore so a wrapper (scripts/backup.sh) can't report
+# success for it.
+if [[ "$REAL" -gt 0 || "${MEDITATIONS:-0}" -eq 0 ]]; then
+  echo "FAILED: ${REAL} unexpected restore error(s), ${MEDITATIONS:-0} meditations restored." >&2
+  exit 1
+fi

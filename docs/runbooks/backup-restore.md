@@ -4,7 +4,8 @@ Zenerate runs on the Supabase **Free** plan, which has no automated backups and 
 point-in-time recovery. This procedure is the entire backup story. It is manual on
 purpose — see *Why this is manual* at the bottom.
 
-**Cadence:** weekly. A calendar reminder is sufficient for a single-user app.
+**Cadence:** weekly, with `./scripts/backup.sh` (below). A calendar reminder is sufficient
+for a single-user app.
 
 **Retention:** 30 days at most, everywhere a dump lives. `/privacy` promises that backups
 hold deleted data for no longer than that. See *Retention* below; the prune runs on its
@@ -31,25 +32,40 @@ becomes expensive enough to protect, that is a separate task, not a footnote her
 ## Prerequisites
 
 - `pg_dump` and `psql` (PostgreSQL 15+; this was written against 18.3)
-- The production database connection string, from the Supabase dashboard:
-  **Project Settings → Database → Connection string → URI**
+- The production database password. Supabase shows it only when you set it; if it is
+  lost, reset it under **Project Settings → Database**. Nothing in the app uses it, so a
+  reset breaks nothing.
+- The local stack running (`supabase start`), for the verification restore.
 
-The connection string contains the database password. Do not paste it into a file that
-gets committed, a chat window, or a shell history you keep. Prefer reading it from an
-environment variable set for the one command.
+Do not paste the password into a file that gets committed, a chat window, or a shell
+history you keep. Save it once in the macOS Keychain and the script reads it from there:
+
+```bash
+security add-generic-password -s zenerate-db -a postgres -w   # prompts for it; -U to update
+```
 
 ---
 
 ## Taking a backup
 
 ```bash
-# Paste the URI from the dashboard. The leading space keeps it out of shell
-# history in bash/zsh when HIST_IGNORE_SPACE / histignorespace is enabled.
- export SUPABASE_DB_URL='postgresql://postgres.<ref>:<password>@<host>:5432/postgres'
+./scripts/backup.sh "$HOME/Library/Mobile Documents/com~apple~CloudDocs/zenerate-backups"
+```
 
-# Write to a dated file outside the repo.
-mkdir -p ~/backups/zenerate
-pg_dump "$SUPABASE_DB_URL" \
+It dumps production to `~/backups/zenerate/zenerate-YYYY-MM-DD.sql`, copies the dump with
+`cp -p` to the folder you pass (or `ZENERATE_BACKUP_OFFSITE`), then runs the verification
+restore below and exits non-zero if it fails. The password comes from `PGPASSWORD`, then the
+Keychain item, then a hidden prompt. Dumps are written owner-only: they hold every
+account's email and password hash.
+
+It passes the password apart from the host, not in a `postgresql://` URI. In a URI, a
+password containing `@` ends early and the rest is taken as the host name, so the error
+message prints part of the password (2026-11-16).
+
+What it runs:
+
+```bash
+pg_dump "host=aws-0-us-east-1.pooler.supabase.com port=5432 user=postgres.<ref> dbname=postgres sslmode=require" \
   --clean --if-exists \
   --no-owner --no-privileges \
   --schema=public --schema=auth \
@@ -64,10 +80,10 @@ Why each flag:
 | `--no-owner --no-privileges` | Supabase-managed roles do not exist on a local scratch database. Without these the restore fails on every `ALTER ... OWNER TO` |
 | `--schema=public --schema=auth` | `public` is the app; `auth` is the users. Supabase's other internal schemas (`storage`, `realtime`, `vault`, …) are managed by the platform and restoring them into a scratch database is noise at best |
 
-Then copy the file off this machine — local disk **plus** a cloud drive. A backup
-that lives only on the machine that also holds the only copy of everything else is not
-off-site. Copy with `cp -p` (or Finder), which keeps the file's date: the prune goes by
-it, and a plain `cp` would give the copy today's date and another 30 days.
+Keep a copy off this machine — local disk **plus** a cloud drive. A backup that lives
+only on the machine that also holds the only copy of everything else is not off-site.
+Copy by hand with `cp -p` (or Finder), never a plain `cp`: the prune goes by the file's
+date, and a plain copy would give it today's date and another 30 days.
 
 ---
 
@@ -129,6 +145,8 @@ command:
 
 It restores the dump into a throwaway local database, prints row counts per table, and
 drops the database again. It never touches production or your local Supabase stack.
+`backup.sh` runs it after every dump. It exits non-zero on any unexpected error, or when
+no meditations were restored.
 
 Check the counts look like the real thing — a dump that restores cleanly but contains
 zero meditations is a successful restore of nothing.
@@ -147,7 +165,7 @@ being `0`.
 This is the "something has gone badly wrong" path. Read it before you need it.
 
 ```bash
- export SUPABASE_DB_URL='postgresql://postgres.<ref>:<password>@<host>:5432/postgres'
+PROD="host=aws-0-us-east-1.pooler.supabase.com port=5432 user=postgres.<ref> dbname=postgres sslmode=require"
 
 # ALWAYS dry-run first: restore into a scratch database and look at it.
 ./scripts/verify-backup.sh ~/backups/zenerate/zenerate-YYYY-MM-DD.sql
@@ -158,7 +176,8 @@ This is the "something has gone badly wrong" path. Read it before you need it.
 ids=$(ls ~/backups/zenerate/deletions 2>/dev/null | sed "s/.*/'&'/" | paste -sd, -)
 reapply=()
 [[ -n "$ids" ]] && reapply=(--command "delete from auth.users where id in ($ids)")
-psql "$SUPABASE_DB_URL" --single-transaction --set ON_ERROR_STOP=on \
+PGPASSWORD="$(security find-generic-password -s zenerate-db -w)" \
+  psql "$PROD" --single-transaction --set ON_ERROR_STOP=on \
   --file ~/backups/zenerate/zenerate-YYYY-MM-DD.sql "${reapply[@]}"
 ```
 
