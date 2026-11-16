@@ -15,9 +15,12 @@ import {
   formatTime,
   useWaveformPlayer,
 } from "@/components/use-waveform-player";
+import type { Waveform } from "@/lib/meditation/types";
 
 interface AudioPlayerProps {
   audioUrl: string;
+  /** Peaks to draw before any audio loads; the audio then streams on play (task 60). */
+  waveform?: Waveform | null;
   /** Shown on the lock screen and in the OS media controls. */
   title: string;
   /**
@@ -49,6 +52,7 @@ interface AudioPlayerProps {
  */
 export function AudioPlayer({
   audioUrl,
+  waveform,
   title,
   meditationId,
   canDownload,
@@ -57,6 +61,7 @@ export function AudioPlayer({
 }: AudioPlayerProps) {
   const player = useWaveformPlayer({
     audioUrl,
+    waveform,
     title,
     meditationId,
     trackPlays,

@@ -207,6 +207,36 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
       sitemap keeps it for up to an hour, as documented); public returned 200 with the new audio
       signed.
 
+### Audio egress (60)
+
+A meditation page now draws its waveform from peaks stored with the render and streams the
+audio on play, instead of downloading the whole file on page load
+(`tasks/ship/60-audio-egress.md`). Renders made before it keep the old path until the
+backfill reaches them.
+
+- [ ] iPhone, in Safari **and the installed app**, on a meditation rendered after the new
+      snapshot (or backfilled): a tap on Play starts it promptly, the waveform is there
+      before you press it, dragging along it and both 15s skips work before and during
+      play, and with the phone locked the lock screen shows the title and controls and
+      they work (`use-media-session.ts`). The audio now streams instead of playing from a
+      downloaded copy, which is what this checks.
+- [ ] The bitrate. Listen to `test-output/bitrate/` in the task's worktree
+      (`~/orca/workspaces/zenerate/audio-egress`): the same 10-minute ocean meditation at
+      192 (today), 128 and 96 kbps; `LISTEN.md` there says where the bed plays alone. Tell
+      an agent the number: it is one line in `generate-audio.ts` and a snapshot rebuild.
+      128 cuts every file and every full listen by a third, 96 by half.
+- [ ] When to run the backfill, which gives older renders their peaks. Every file is
+      downloaded once: on 2026-11-16 that was 19 files, 0.39 GB of egress. Right after the
+      30 Nov reset is the natural time. From the primary checkout, count first (downloads
+      nothing; check it prints the production URL as Target), then run it:
+      `(set -a; . ./.env.local; NEXT_PUBLIC_SUPABASE_URL="$SOUND_EFFECTS_SUPABASE_URL" SUPABASE_SERVICE_ROLE_KEY="$SOUND_EFFECTS_SUPABASE_SERVICE_ROLE_KEY" npx tsx scripts/backfill-peaks.ts)`,
+      then the same with `--yes` after `backfill-peaks.ts`. It needs ffmpeg
+      (`brew install ffmpeg`).
+- [ ] One production render on the new snapshot, after an agent has deployed it: make the
+      audio for one short meditation and check it plays, and that its page draws the
+      waveform at once. Then tell an agent, which deletes the old snapshot
+      (`audio-pipeline` skill, step 9).
+
 ### When a report arrives (53)
 
 A Report link mails `privacy@` with the meditation's title and URL. If it breaks the terms,
@@ -281,7 +311,7 @@ account (`/terms`, "Be decent") if it comes back.
 - [ ] Supabase → Reports: write down the storage and egress figures on the day signups open.
       Every meditation page view downloads the whole audio file (22 MB for 15 minutes), so
       the free plan's 5 GB of egress is about 230 views a month; the fix is
-      `tasks/post-ship/audio-egress.md`. 2026-11-16 baseline, before launch, from
+      `tasks/ship/60-audio-egress.md` (a view streams from then on). 2026-11-16 baseline, before launch, from
       Organization → Usage (cycle 30 Oct–30 Nov, all of it the operator's own seeding and
       testing, 1 monthly active user): egress 2.887 / 5 GB (58%), storage 0.351 / 1 GB
       (35%), database 0.029 / 0.5 GB. That leaves about 95 views of a 15-minute meditation

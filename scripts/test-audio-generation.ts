@@ -3,8 +3,9 @@
  *
  * Spins up a Vercel Sandbox from the snapshot, runs generate-audio.js with a
  * minimal meditation script (~80 characters of speech, two sound effects),
- * and validates the output MP3, result.json, that every sound was found and
- * that narration loudness was measured.
+ * and validates the output MP3, result.json (with the waveform peaks the
+ * player draws, task 60), that every sound was found and that narration
+ * loudness was measured.
  *
  * Prerequisites:
  *   - AUDIO_SANDBOX_SNAPSHOT_ID set in .env.local
@@ -148,8 +149,18 @@ async function main() {
     }
     const resultData = JSON.parse(resultBuffer.toString("utf-8"));
 
+    // The player's waveform (task 60): whole percents, and a length that
+    // matches the file's.
+    const peaks: unknown = resultData.peaks;
+    const peaksOk =
+      Array.isArray(peaks) &&
+      peaks.length > 0 &&
+      peaks.every((p) => Number.isInteger(p) && p >= 0 && p <= 100) &&
+      Math.max(...(peaks as number[])) > 0;
     const checks = [
       { name: "ttsCharacters", ok: typeof resultData.ttsCharacters === "number" && resultData.ttsCharacters > 0 },
+      { name: "peaks", ok: peaksOk, show: Array.isArray(peaks) ? `${peaks.length} peaks, max ${Math.max(...peaks)}` : peaks },
+      { name: "duration", ok: typeof resultData.duration === "number" && resultData.duration > 5 },
       { name: "ttsRequests", ok: typeof resultData.ttsRequests === "number" && resultData.ttsRequests === 3 },
       { name: "processingTimeMs", ok: typeof resultData.processingTimeMs === "number" && resultData.processingTimeMs > 0 },
       { name: "generatedAt", ok: typeof resultData.generatedAt === "string" },
@@ -159,7 +170,7 @@ async function main() {
     let allPassed = true;
     for (const check of checks) {
       const status = check.ok ? "PASS" : "FAIL";
-      log(`  ${status}: ${check.name} = ${JSON.stringify(resultData[check.name])}`);
+      log(`  ${status}: ${check.name} = ${JSON.stringify("show" in check ? check.show : resultData[check.name])}`);
       if (!check.ok) allPassed = false;
     }
 

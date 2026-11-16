@@ -25,7 +25,7 @@ character, Vercel Hobby, Supabase Free.
 | ElevenLabs narration | $0.16–0.40, typically about $0.24 | 800–2,000 speech characters at $0.0002 a credit (Starter, $6 for 30k). Seeded scripts measure about 840; the prompt asks for 1–4 minutes of speech whatever the length. Task 58's 6,000-character render bound caps one render at $1.20. Creator ($22 for 121k) brings a credit to $0.00018 |
 | Anthropic, `claude-sonnet-5-5` | about $0.05–0.08 | Measured in ship 47, warm cache: draft $0.021, revision $0.023, the audio turn and its continuation $0.009, a decline $0.0014. The first turn after five idle minutes writes the cache, +$0.011. Haiku 5.5 would be about $0.005 |
 | Vercel Sandbox | about $0 on Hobby | 5 free Active-CPU-hours a month is about 300 renders. On Pro, $0.128 an hour, about half a cent a render |
-| Supabase storage | 1.44 MB a minute of audio | The final mix is 192 kbps MP3: a 15-minute meditation is 22.4 MB (measured in production, `audio-egress.md`) |
+| Supabase storage | 1.44 MB a minute of audio | The final mix is 192 kbps MP3: a 15-minute meditation is 22.4 MB (measured in production, `../ship/60-audio-egress.md`) |
 
 **About $0.30 a meditation, 80% of it ElevenLabs.** A free user at the cap (3 renders, with
 the chat that produced them) costs about $1 a month; a typical user who renders once, about
@@ -37,13 +37,13 @@ $0.35. Stripe takes 2.9% + $0.30 a charge, so a $5 plan nets $4.55.
 |---|---|
 | ElevenLabs Starter, 30k credits (the global cap of 25 renders) | about 8 users at the free cap, 15–20 typical users |
 | Supabase Free, 1 GB of storage | about 45 stored 15-minute meditations, 70 ten-minute ones |
-| Supabase Free, 5 GB of egress a month | about 230 meditation page views of a 15-minute file. **A view, not a listen:** the player downloads the whole file on mount, and a fresh signed URL defeats the browser cache (`audio-egress.md`, measured 2026-10-31) |
+| Supabase Free, 5 GB of egress a month | about 230 meditation page views of a 15-minute file. **A view, not a listen:** the player downloads the whole file on mount, and a fresh signed URL defeats the browser cache (`../ship/60-audio-egress.md`, measured 2026-10-31; ship 60 streams instead) |
 | Vercel Hobby, 5 Sandbox CPU-hours | about 300 renders a month, then renders pause |
 | Anthropic | not a limit: 25 renders is about $2 a month. The chat ceilings and the spend limit cover the worst case |
 
 ElevenLabs is the expected ceiling, and Creator ($22, about 100 renders) the next step. The
 surprise is Supabase: storage and egress run out at about the same time as Starter, so Pro
-($25) arrives early unless `audio-egress.md` lands first (precomputed peaks so the player
+($25) arrives early unless `../ship/60-audio-egress.md` lands first (precomputed peaks so the player
 streams, then a lower bitrate; each roughly halves the egress figure).
 
 ## What the numbers say about $5 a month

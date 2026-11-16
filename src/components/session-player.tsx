@@ -29,9 +29,12 @@ import {
   useWaveformPlayer,
 } from "@/components/use-waveform-player";
 import { cn } from "@/lib/utils";
+import type { Waveform } from "@/lib/meditation/types";
 
 interface SessionPlayerProps {
   audioUrl: string;
+  /** Peaks to draw before any audio loads; the audio then streams on play (task 60). */
+  waveform: Waveform | null;
   meditationId: string;
   title: string;
   tags: string[];
@@ -55,6 +58,7 @@ interface SessionPlayerProps {
  */
 export function SessionPlayer({
   audioUrl,
+  waveform,
   meditationId,
   title,
   tags,
@@ -64,6 +68,7 @@ export function SessionPlayer({
 }: SessionPlayerProps) {
   const player = useWaveformPlayer({
     audioUrl,
+    waveform,
     title,
     meditationId,
     trackPlays: isSignedIn,

@@ -17,6 +17,7 @@ import {
 import { removeAudio, removeMeditationAudio } from "@/lib/audio/storage";
 import type {
   Meditation,
+  MeditationStatus,
   MeditationVersion,
   MeditationWithMeta,
   Collection,
@@ -35,6 +36,16 @@ import type {
  */
 const PUBLIC_COLUMNS =
   "id, title, description, tags, script, status, is_public, is_featured, settings, created_at, updated_at";
+
+/**
+ * A signed-in read's columns: every column but three. generation_meta
+ * carries the player's peaks, a few KB a row (task 60), so only a read that
+ * feeds a player adds it; search is the full-text vector, which only
+ * discover_meditations needs; and the legacy audio_url column is replaced by
+ * a signed URL anyway. Every byte read from Supabase counts toward its egress.
+ */
+const ROW_COLUMNS =
+  "id, user_id, title, prompt, description, tags, script, status, is_public, is_featured, settings, audio_path, created_at, updated_at";
 
 export async function createMeditation(data: {
   title: string;
@@ -206,9 +217,12 @@ export async function getMeditation(id: string) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // generation_meta for the player's waveform. Typed as a plain string: the
+  // client's select parser gives up on a union of two long column lists.
+  const columns: string = user ? `${ROW_COLUMNS}, generation_meta` : PUBLIC_COLUMNS;
   const { data, error } = await supabase
     .from("meditations")
-    .select(user ? "*" : PUBLIC_COLUMNS)
+    .select(columns)
     .eq("id", id)
     .single();
 
@@ -233,7 +247,10 @@ export async function getMeditation(id: string) {
     meditation.is_favorited = !!fav;
   }
 
-  return hydrateAudioUrl(meditation);
+  // The page's player draws the waveform from these peaks and streams the
+  // audio on play (task 60). Signed out, generation_meta is not readable and
+  // the peaks are looked up with the signed URL.
+  return hydrateAudioUrl(meditation, { waveform: true });
 }
 
 export async function getUserMeditations() {
@@ -245,7 +262,7 @@ export async function getUserMeditations() {
 
   const { data, error } = await supabase
     .from("meditations")
-    .select("*")
+    .select(ROW_COLUMNS)
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -435,32 +452,53 @@ export async function recordPlay(meditationId: string): Promise<boolean> {
   return !error;
 }
 
+/**
+ * What the render progress polls, every few seconds. It signs nothing: once
+ * a render finishes, the player reads its audio with getMeditationAudio.
+ */
 export async function getMeditationStatus(id: string) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
   // The draft is owner-only under RLS, so anyone else reads no draft and a
-  // null draft_status. Signed out, audio_path is not readable: the public
-  // row's audio is looked up when it is signed.
+  // null draft_status.
   const [{ data, error }, { data: draft }] = await Promise.all([
-    supabase
-      .from("meditations")
-      .select(user ? "id, user_id, status, audio_path" : "id, status")
-      .eq("id", id)
-      .single(),
+    supabase.from("meditations").select("id, status").eq("id", id).single(),
     supabase.from("meditation_drafts").select("render_status").eq("meditation_id", id).maybeSingle(),
   ]);
 
   if (error) throw new Error(error.message);
-  const row = data as unknown as { id: string; status: string; user_id?: string; audio_path?: string | null };
-  const { audio_url } = await hydrateAudioUrl(row);
   return {
-    status: row.status,
+    status: (data as { status: MeditationStatus }).status,
     /** The render of the owner's draft: null, "processing" or "failed". */
     draft_status: (draft?.render_status ?? null) as "processing" | "failed" | null,
-    audio_url,
   };
+}
+
+/**
+ * The current version's audio for a player: a signed URL and the waveform
+ * (task 60). For the meditation page after a render finishes, and the studio's
+ * audio card. Signed out, audio_path and generation_meta are not readable: the
+ * public row's audio is looked up when it is signed.
+ */
+export async function getMeditationAudio(id: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from("meditations")
+    .select(user ? "id, user_id, audio_path, generation_meta" : "id")
+    .eq("id", id)
+    .single();
+
+  if (error) throw new Error(error.message);
+  const row = data as unknown as {
+    id: string;
+    user_id?: string;
+    audio_path?: string | null;
+    generation_meta?: unknown;
+  };
+  const { audio_url, waveform } = await hydrateAudioUrl(row, { waveform: true });
+  return { audio_url, waveform };
 }
 
 // ── Versions ──
@@ -478,7 +516,8 @@ export async function getMeditationVersions(meditationId: string) {
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
-  return hydrateAudioUrls((data ?? []) as MeditationVersion[]);
+  // Each version plays in the Earlier versions player, drawn from its peaks.
+  return hydrateAudioUrls((data ?? []) as MeditationVersion[], { waveform: true });
 }
 
 /** One archived version with signed audio, or null when it is not the caller's. */
@@ -572,7 +611,7 @@ export async function getFavoriteMeditations() {
   const ids = favs.map((f) => f.meditation_id);
   const { data, error } = await supabase
     .from("meditations")
-    .select("*")
+    .select(ROW_COLUMNS)
     .in("id", ids);
 
   if (error) throw new Error(error.message);
@@ -682,7 +721,7 @@ export async function getCollectionWithItems(id: string) {
 
   const { data: items, error: itemsError } = await supabase
     .from("collection_items")
-    .select("*, meditation:meditations(*)")
+    .select(`*, meditation:meditations(${ROW_COLUMNS})`)
     .eq("collection_id", id)
     .order("position", { ascending: true });
 

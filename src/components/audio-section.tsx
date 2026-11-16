@@ -5,7 +5,7 @@ import type { MeditationWithMeta, MeditationStatus } from "@/lib/meditation/type
 import { GenerateAudioPanel, type QuotaProp } from "@/components/generate-audio-panel";
 import { AudioProcessingStatus } from "@/components/audio-processing-status";
 import { SessionPlayer } from "@/components/session-player";
-import { getMeditationStatus } from "@/lib/meditation/actions";
+import { getMeditationAudio } from "@/lib/meditation/actions";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, RotateCcw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,7 +29,10 @@ export function AudioSection({
   meta,
 }: AudioSectionProps) {
   const [status, setStatus] = useState<MeditationStatus>(meditation.status);
-  const [audioUrl, setAudioUrl] = useState(meditation.audio_url);
+  const [audio, setAudio] = useState({
+    url: meditation.audio_url,
+    waveform: meditation.waveform ?? null,
+  });
   const [retrying, setRetrying] = useState(false);
   const [retryError, setRetryError] = useState<string | null>(null);
 
@@ -38,8 +41,8 @@ export function AudioSection({
   }, []);
 
   const handleCompleted = useCallback(async () => {
-    const result = await getMeditationStatus(meditation.id);
-    setAudioUrl(result.audio_url);
+    const result = await getMeditationAudio(meditation.id);
+    setAudio({ url: result.audio_url, waveform: result.waveform });
     setStatus("completed");
   }, [meditation.id]);
 
@@ -72,10 +75,11 @@ export function AudioSection({
     }
   }
 
-  if (status === "completed" && audioUrl) {
+  if (status === "completed" && audio.url) {
     return (
       <SessionPlayer
-        audioUrl={audioUrl}
+        audioUrl={audio.url}
+        waveform={audio.waveform}
         meditationId={meditation.id}
         title={meditation.title}
         tags={meditation.tags ?? []}
