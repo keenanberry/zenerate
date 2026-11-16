@@ -4,7 +4,7 @@ Everything left before signups open that only the operator can do: a phone, a da
 account, or a judgment call. Agents keep this file current. When you finish an item, tick it
 and add the date, or tell an agent and it will. Each item names the task file with the detail.
 
-Last updated: 2026-11-16. Sections are in the order to do them. Live sandbox snapshot: `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`.
+Last updated: 2026-11-16. Sections are in the order to do them. Live sandbox snapshot: `snap_dJAgDRqRJ9ugYNwe0QWMl7uAUIy4` (2026-11-16, task 60; the previous one, `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`, is kept until your first production render on the new one, §5).
 
 ## 1. Protect the spend (do first)
 
