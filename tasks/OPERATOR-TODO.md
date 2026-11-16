@@ -4,7 +4,7 @@ Everything left before signups open that only the operator can do: a phone, a da
 account, or a judgment call. Agents keep this file current. When you finish an item, tick it
 and add the date, or tell an agent and it will. Each item names the task file with the detail.
 
-Last updated: 2026-11-16. Sections are in the order to do them. Live sandbox snapshot: `snap_dJAgDRqRJ9ugYNwe0QWMl7uAUIy4` (2026-11-16, task 60; the previous one, `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`, is kept until your first production render on the new one, §5).
+Last updated: 2026-11-16. Sections are in the order to do them. Live sandbox snapshot: `snap_sXOy59qkIhIo95G7Y9N33oAaAPMY` (2026-11-16, task 60: peaks, 128 kbps; the two before it, `snap_dJAgDRqRJ9ugYNwe0QWMl7uAUIy4` and `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`, are kept until your first production render on the new one, §5).
 
 ## 1. Protect the spend (do first)
 
@@ -214,16 +214,17 @@ audio on play, instead of downloading the whole file on page load
 (`tasks/ship/60-audio-egress.md`). Every render made before it was backfilled on
 2026-11-16.
 
-- [ ] iPhone, in Safari **and the installed app**, on any meditation: a tap on Play starts it promptly, the waveform is there
+- [x] 2026-11-16: iPhone, in Safari **and the installed app**, on any meditation: a tap on Play starts it promptly, the waveform is there
       before you press it, dragging along it and both 15s skips work before and during
       play, and with the phone locked the lock screen shows the title and controls and
       they work (`use-media-session.ts`). The audio now streams instead of playing from a
       downloaded copy, which is what this checks.
-- [ ] The bitrate. Listen to `test-output/bitrate/` in the task's worktree
-      (`~/orca/workspaces/zenerate/audio-egress`): the same 10-minute ocean meditation at
-      192 (today), 128 and 96 kbps; `LISTEN.md` there says where the bed plays alone. Tell
-      an agent the number: it is one line in `generate-audio.ts` and a snapshot rebuild.
-      128 cuts every file and every full listen by a third, 96 by half.
+- [x] 2026-11-16: the bitrate, by ear, from 192, 128 and 96 kbps samples of the same
+      10-minute ocean meditation (`test-output/bitrate/` in the task's worktree): **128**.
+      The three were hard to tell apart; 128 cuts every new file and every full listen by a
+      third and keeps the narration at its ElevenLabs source rate. Live in the snapshot
+      above; renders from before stay at 192. Supabase Pro is the answer if egress or
+      storage still binds.
 - [x] 2026-11-16: the backfill, which gives older renders their peaks: run now rather than
       after the 30 Nov reset, since this cycle's unused egress resets anyway. All 19 files
       (17 current, 2 earlier versions), 391,645,073 bytes downloaded once, none failed;
@@ -232,10 +233,10 @@ audio on play, instead of downloading the whole file on page load
       own peaks; if a render ever lacks them, from the primary checkout, count first, then
       add `--yes`:
       `(set -a; . ./.env.local; NEXT_PUBLIC_SUPABASE_URL="$SOUND_EFFECTS_SUPABASE_URL" SUPABASE_SERVICE_ROLE_KEY="$SOUND_EFFECTS_SUPABASE_SERVICE_ROLE_KEY" npx tsx scripts/backfill-peaks.ts)`.
-- [ ] One production render on the new snapshot, after an agent has deployed it: make the
-      audio for one short meditation and check it plays, and that its page draws the
-      waveform at once. Then tell an agent, which deletes the old snapshot
-      (`audio-pipeline` skill, step 9).
+- [ ] One production render on the new snapshot (`snap_sXOy59qkIhIo95G7Y9N33oAaAPMY`, deployed
+      2026-11-16): make the audio for one short meditation and check it plays, sounds
+      right at 128 kbps, and that its page draws the waveform at once. Then tell an agent,
+      which deletes the two older snapshots (`audio-pipeline` skill, step 9).
 
 ### When a report arrives (53)
 

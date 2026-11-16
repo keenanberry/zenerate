@@ -56,6 +56,14 @@ const SOUNDS_DIR = "./sounds";
 const OUTPUT_PATH = "./output.mp3";
 const RESULT_PATH = "./result.json";
 
+/**
+ * The final mix's bitrate, chosen by ear on 2026-11-16 (task 60) from 192, 128
+ * and 96 kbps samples of an ocean-bed meditation. The narration arrives from
+ * ElevenLabs at 128 kbps, so 192 only spent its extra bits on the bed; 128
+ * cuts every file, and every full listen's egress, by a third.
+ */
+const OUTPUT_BITRATE = "128k";
+
 async function fileExists(path: string): Promise<boolean> {
   try {
     await access(path);
@@ -205,7 +213,7 @@ function concatenateAudio(
       .complexFilter(filterComplex)
       .outputOptions("-map", "[out]")
       .audioCodec("libmp3lame")
-      .audioBitrate("192k")
+      .audioBitrate(OUTPUT_BITRATE)
       .output(outputPath)
       .on("end", () => resolve())
       .on("error", reject)
@@ -248,7 +256,7 @@ async function mixBackgroundMusic(
       .complexFilter(bedMixFilter(musicVolume, voiceSeconds))
       .outputOptions("-map", "[out]")
       .audioCodec("libmp3lame")
-      .audioBitrate("192k")
+      .audioBitrate(OUTPUT_BITRATE)
       .output(outputPath)
       .on("end", () => resolve())
       .on("error", reject)

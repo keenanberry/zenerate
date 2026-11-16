@@ -149,6 +149,8 @@ async function main() {
     }
     const resultData = JSON.parse(resultBuffer.toString("utf-8"));
 
+    const kbps = (audioBuffer.length * 8) / (Number(resultData.duration) || 1) / 1000;
+
     // The player's waveform (task 60): whole percents, and a length that
     // matches the file's.
     const peaks: unknown = resultData.peaks;
@@ -161,6 +163,8 @@ async function main() {
       { name: "ttsCharacters", ok: typeof resultData.ttsCharacters === "number" && resultData.ttsCharacters > 0 },
       { name: "peaks", ok: peaksOk, show: Array.isArray(peaks) ? `${peaks.length} peaks, max ${Math.max(...peaks)}` : peaks },
       { name: "duration", ok: typeof resultData.duration === "number" && resultData.duration > 5 },
+      // OUTPUT_BITRATE in generate-audio.ts, from the file's size over its length.
+      { name: "bitrate", ok: Math.abs(kbps - 128) < 8, show: `${kbps.toFixed(0)} kbps` },
       { name: "ttsRequests", ok: typeof resultData.ttsRequests === "number" && resultData.ttsRequests === 3 },
       { name: "processingTimeMs", ok: typeof resultData.processingTimeMs === "number" && resultData.processingTimeMs > 0 },
       { name: "generatedAt", ok: typeof resultData.generatedAt === "string" },

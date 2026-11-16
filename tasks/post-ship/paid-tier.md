@@ -25,7 +25,7 @@ character, Vercel Hobby, Supabase Free.
 | ElevenLabs narration | $0.16–0.40, typically about $0.24 | 800–2,000 speech characters at $0.0002 a credit (Starter, $6 for 30k). Seeded scripts measure about 840; the prompt asks for 1–4 minutes of speech whatever the length. Task 58's 6,000-character render bound caps one render at $1.20. Creator ($22 for 121k) brings a credit to $0.00018 |
 | Anthropic, `claude-sonnet-5-5` | about $0.05–0.08 | Measured in ship 47, warm cache: draft $0.021, revision $0.023, the audio turn and its continuation $0.009, a decline $0.0014. The first turn after five idle minutes writes the cache, +$0.011. Haiku 5.5 would be about $0.005 |
 | Vercel Sandbox | about $0 on Hobby | 5 free Active-CPU-hours a month is about 300 renders. On Pro, $0.128 an hour, about half a cent a render |
-| Supabase storage | 1.44 MB a minute of audio | The final mix is 192 kbps MP3: a 15-minute meditation is 22.4 MB (measured in production, `../ship/60-audio-egress.md`) |
+| Supabase storage | 0.96 MB a minute of audio (1.44 before 2026-11-16) | The final mix was 192 kbps MP3 until 2026-11-16 and is 128 kbps since (ship 60), about 0.96 MB a minute: a 15-minute meditation was 22.4 MB (measured in production, `../ship/60-audio-egress.md`) |
 
 **About $0.30 a meditation, 80% of it ElevenLabs.** A free user at the cap (3 renders, with
 the chat that produced them) costs about $1 a month; a typical user who renders once, about
