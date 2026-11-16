@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +16,7 @@ import {
   useWaveformPlayer,
 } from "@/components/use-waveform-player";
 import type { Waveform } from "@/lib/meditation/types";
+import { getMeditationAudio } from "@/lib/meditation/actions";
 
 interface AudioPlayerProps {
   audioUrl: string;
@@ -44,6 +45,11 @@ interface AudioPlayerProps {
   trackPlays?: boolean;
   /** Where Download points. Defaults to the current version's audio. */
   downloadHref?: string;
+  /**
+   * A fresh signed URL for this audio once the page has outlived this one
+   * (task 60). Defaults to the current version's.
+   */
+  refreshUrl?: () => Promise<string | null>;
 }
 
 /**
@@ -58,10 +64,16 @@ export function AudioPlayer({
   canDownload,
   trackPlays = false,
   downloadHref = `/api/audio/${meditationId}/download`,
+  refreshUrl,
 }: AudioPlayerProps) {
+  const refreshCurrent = useCallback(
+    () => getMeditationAudio(meditationId).then((audio) => audio.audio_url),
+    [meditationId],
+  );
   const player = useWaveformPlayer({
     audioUrl,
     waveform,
+    refreshUrl: refreshUrl ?? refreshCurrent,
     title,
     meditationId,
     trackPlays,

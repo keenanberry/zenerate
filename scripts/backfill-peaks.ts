@@ -32,7 +32,11 @@ import { resolve, dirname, posix } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-process.loadEnvFile(resolve(ROOT, ".env.local"));
+try {
+  process.loadEnvFile(resolve(ROOT, ".env.local"));
+} catch {
+  // No .env.local: the variables must come from the command line.
+}
 
 import { spawn, spawnSync } from "node:child_process";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -59,7 +63,14 @@ function mb(bytes: number) {
   return `${(bytes / 1_000_000).toFixed(1)} MB`;
 }
 
-/** Rows with audio and no peaks yet. A null generation_meta counts as none. */
+/** PostgREST's default cap on the rows one query returns. */
+const MAX_ROWS = 1000;
+
+/**
+ * Rows with audio and no peaks yet. A null generation_meta counts as none.
+ * Past MAX_ROWS of either kind a run covers the first ones; the next run
+ * lists the rest, since a row with peaks is no longer listed.
+ */
 async function findTargets(supabase: SupabaseClient): Promise<Target[]> {
   const [current, versions] = await Promise.all([
     supabase
@@ -77,6 +88,9 @@ async function findTargets(supabase: SupabaseClient): Promise<Target[]> {
   ]);
   if (current.error) throw new Error(`Reading meditations failed: ${current.error.message}`);
   if (versions.error) throw new Error(`Reading versions failed: ${versions.error.message}`);
+  if (current.data.length >= MAX_ROWS || versions.data.length >= MAX_ROWS) {
+    console.log(`More than ${MAX_ROWS} rows of one kind: this run covers the first; run it again for the rest.`);
+  }
 
   const targets: Target[] = [
     ...current.data.map((m) => ({

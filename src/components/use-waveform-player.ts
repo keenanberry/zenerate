@@ -98,6 +98,52 @@ function releaseElement(media: HTMLAudioElement) {
   media.remove();
 }
 
+/** At most one fresh URL a minute, so a file that is really gone cannot loop. */
+const REFRESH_INTERVAL_MS = 60_000;
+
+/** A play pressed this recently still counts when the element fails to load. */
+const PLAY_INTENT_MS = 15_000;
+
+/**
+ * Keep a streaming element playing past its signed URL (4 hours,
+ * AUDIO_URL_TTL_SECONDS). It fetches by range on play, on a seek and on a
+ * resume, so a page left open, or a long pause, outlives the URL, and the
+ * next request fails. On that error, ask for a fresh URL and carry on from
+ * the same place, playing again if it was playing or a play was just
+ * pressed. The old path never needed this: it held the whole file as a blob.
+ */
+function recoverExpiredUrl(
+  media: HTMLAudioElement,
+  refresh: () => (() => Promise<string | null>) | undefined,
+  playRequestedAt: () => number,
+): () => void {
+  let refreshedAt = -Infinity;
+  let disposed = false;
+  const onError = async () => {
+    const fresh = refresh();
+    if (!fresh || Date.now() - refreshedAt < REFRESH_INTERVAL_MS) return;
+    refreshedAt = Date.now();
+    const position = media.currentTime;
+    const resume = !media.paused || Date.now() - playRequestedAt() < PLAY_INTENT_MS;
+    const url = await fresh().catch(() => null);
+    if (!url || disposed) return;
+    media.addEventListener(
+      "loadedmetadata",
+      () => {
+        if (position > 0) media.currentTime = position;
+        if (resume) void media.play().catch(() => {});
+      },
+      { once: true },
+    );
+    media.src = url;
+  };
+  media.addEventListener("error", onError);
+  return () => {
+    disposed = true;
+    media.removeEventListener("error", onError);
+  };
+}
+
 type Shape = Pick<
   WaveSurferOptions,
   "height" | "barWidth" | "barGap" | "barRadius" | "cursorWidth" | "dragToSeek"
@@ -106,6 +152,7 @@ type Shape = Pick<
 export function useWaveformPlayer({
   audioUrl,
   waveform,
+  refreshUrl,
   title,
   meditationId,
   trackPlays,
@@ -120,6 +167,11 @@ export function useWaveformPlayer({
    * to decode it.
    */
   waveform?: Waveform | null;
+  /**
+   * A fresh signed URL for the same audio, for when a streaming player's
+   * URL has expired (see recoverExpiredUrl).
+   */
+  refreshUrl?: () => Promise<string | null>;
   /** Shown on the lock screen and in the OS media controls. */
   title: string;
   meditationId: string;
@@ -146,6 +198,15 @@ export function useWaveformPlayer({
   const volumeRef = useRef(0.8);
   // Read once at creation; the shape is fixed for a given player.
   const shapeRef = useRef(shape);
+  // Read when an expired URL needs replacing, so a new callback does not
+  // recreate the player.
+  const refreshRef = useRef(refreshUrl);
+  useEffect(() => {
+    refreshRef.current = refreshUrl;
+  }, [refreshUrl]);
+  // When play was last pressed, so a play that failed on an expired URL
+  // resumes once a fresh one loads.
+  const playRequestedAtRef = useRef(-Infinity);
 
   useMediaSession(media, title);
 
@@ -208,9 +269,17 @@ export function useWaveformPlayer({
     ws.on("pause", () => setIsPlaying(false));
     ws.on("finish", () => setIsPlaying(false));
     watchMediaElement(ws, setMedia);
+    const stopRecovering = media
+      ? recoverExpiredUrl(
+          media,
+          () => refreshRef.current,
+          () => playRequestedAtRef.current,
+        )
+      : null;
 
     wavesurferRef.current = ws;
     return () => {
+      stopRecovering?.();
       ws.destroy();
       if (media) releaseElement(media);
       wavesurferRef.current = null;
@@ -249,10 +318,13 @@ export function useWaveformPlayer({
   // starts streaming there; without them it can play before the waveform has
   // decoded, and only the bars are missing.
   const play = useCallback(() => {
+    playRequestedAtRef.current = Date.now();
     void wavesurferRef.current?.play().catch(() => {});
   }, []);
   const togglePlay = useCallback(() => {
-    void wavesurferRef.current?.playPause().catch(() => {});
+    const ws = wavesurferRef.current;
+    if (ws && !ws.isPlaying()) playRequestedAtRef.current = Date.now();
+    void ws?.playPause().catch(() => {});
   }, []);
   const skip = useCallback((seconds: number) => {
     const ws = wavesurferRef.current;

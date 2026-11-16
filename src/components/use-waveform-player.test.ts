@@ -24,7 +24,16 @@ const { created } = vi.hoisted(() => ({
 vi.mock("wavesurfer.js", () => ({
   default: {
     create: (options: Record<string, unknown>) => {
-      const ws = { options, on: vi.fn(() => () => {}), destroy: vi.fn(), setOptions: vi.fn() };
+      const ws = {
+        options,
+        on: vi.fn(() => () => {}),
+        destroy: vi.fn(),
+        setOptions: vi.fn(),
+        // A play that fails on an expired URL rejects; the element's error follows.
+        play: vi.fn(async () => {}),
+        playPause: vi.fn(async () => {}),
+        isPlaying: () => false,
+      };
       created.push(ws);
       return ws;
     },
@@ -41,9 +50,15 @@ vi.mock("@/lib/meditation/actions", () => ({ recordPlay: async () => true }));
 
 const { useWaveformPlayer: runPlayer } = await import("./use-waveform-player");
 
-class FakeAudio {
+class FakeAudio extends EventTarget {
   preload = "auto";
+  src = "";
+  paused = true;
+  currentTime = 0;
   calls: string[] = [];
+  play = vi.fn(async () => {
+    this.paused = false;
+  });
   pause = vi.fn(() => this.calls.push("pause"));
   removeAttribute = vi.fn((name: string) => this.calls.push(`removeAttribute:${name}`));
   load = vi.fn(() => this.calls.push("load"));
@@ -87,10 +102,14 @@ afterEach(() => {
 const SHAPE = { height: 28, barWidth: 2, barGap: 2, barRadius: 1, cursorWidth: 0 };
 const WAVEFORM = { peaks: [10, 60, 30], duration: 624.4 };
 
-function mount(waveform: typeof WAVEFORM | null) {
+function mount(
+  waveform: typeof WAVEFORM | null,
+  refreshUrl?: () => Promise<string | null>,
+) {
   const player = runPlayer({
     audioUrl: "https://signed/a.mp3",
     waveform,
+    refreshUrl,
     title: "Patience",
     meditationId: "med-1",
     trackPlays: false,
@@ -102,7 +121,7 @@ function mount(waveform: typeof WAVEFORM | null) {
     const cleanup = effect();
     if (cleanup) cleanups.push(cleanup);
   }
-  return { unmount: () => cleanups.splice(0).forEach((c) => c()) };
+  return { player, unmount: () => cleanups.splice(0).forEach((c) => c()) };
 }
 
 describe("useWaveformPlayer", () => {
@@ -141,5 +160,55 @@ describe("useWaveformPlayer", () => {
 
     expect(created[0].destroy).toHaveBeenCalled();
     expect(audios[0].calls).toEqual(["pause", "removeAttribute:src", "load", "remove"]);
+  });
+
+  // The element fetches by range on play and on every seek, so once the
+  // 4-hour signed URL expires the next request fails.
+  describe("an expired signed URL", () => {
+    it("is replaced, and playback carries on from the same place", async () => {
+      const refreshUrl = vi.fn(async () => "https://signed/fresh.mp3");
+      mount(WAVEFORM, refreshUrl);
+      const audio = audios[0];
+      audio.paused = false;
+      audio.currentTime = 300;
+
+      audio.dispatchEvent(new Event("error"));
+      await vi.waitFor(() => expect(audio.src).toBe("https://signed/fresh.mp3"));
+      audio.currentTime = 0;
+      audio.paused = true;
+      audio.dispatchEvent(new Event("loadedmetadata"));
+
+      expect(refreshUrl).toHaveBeenCalledTimes(1);
+      expect(audio.currentTime).toBe(300);
+      expect(audio.play).toHaveBeenCalled();
+    });
+
+    it("plays after a press of Play that failed on it", async () => {
+      const refreshUrl = vi.fn(async () => "https://signed/fresh.mp3");
+      const { player } = mount(WAVEFORM, refreshUrl);
+      player.play();
+      const audio = audios[0];
+
+      audio.dispatchEvent(new Event("error"));
+      await vi.waitFor(() => expect(audio.src).toBe("https://signed/fresh.mp3"));
+      audio.dispatchEvent(new Event("loadedmetadata"));
+
+      expect(audio.play).toHaveBeenCalled();
+    });
+
+    it("stays paused when it was paused, and asks at most once a minute", async () => {
+      const refreshUrl = vi.fn(async () => "https://signed/fresh.mp3");
+      mount(WAVEFORM, refreshUrl);
+      const audio = audios[0];
+
+      audio.dispatchEvent(new Event("error"));
+      await vi.waitFor(() => expect(audio.src).toBe("https://signed/fresh.mp3"));
+      audio.dispatchEvent(new Event("loadedmetadata"));
+      audio.dispatchEvent(new Event("error"));
+      await Promise.resolve();
+
+      expect(audio.play).not.toHaveBeenCalled();
+      expect(refreshUrl).toHaveBeenCalledTimes(1);
+    });
   });
 });

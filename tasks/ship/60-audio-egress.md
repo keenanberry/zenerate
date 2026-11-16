@@ -120,6 +120,17 @@ nothing until played.
   pauses and empties the element, which wavesurfer leaves alone when it did not create it.
   `AudioPlayer` (studio card, Earlier versions) and `SessionPlayer` (the meditation page)
   pass the waveform through.
+- **An expired URL.** The old path held the whole file as a blob, so the 4-hour signed URL
+  only had to work once. A streaming element fetches by range on play, seek and resume,
+  so a page left open or a long pause outlives the URL (found in review). On the
+  element's `error` the hook asks for a fresh URL (`getMeditationAudio`, or
+  `getMeditationVersion` for an earlier version), restores the position and plays again
+  if it was playing or Play was just pressed; at most once a minute, so a file that is
+  really gone cannot loop. Checked in Chrome by breaking the token by hand: paused, it
+  recovered and stayed paused; with Play pressed, it recovered and played.
+- **Accepted.** Earlier versions reads every archived version's peaks on the owner's page,
+  though only the selected one plays: owner-only, usually one or two versions, about
+  3 KB each gzipped.
 - **Backfill** (`scripts/backfill-peaks.ts`). Lists the current audio and kept earlier
   versions without peaks (drafts have no audio of their own), prints the file count and
   total bytes, and stops unless passed `--yes`; then downloads each once, reads its peaks

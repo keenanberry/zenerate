@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AudioPlayer } from "@/components/audio-player";
 import { ScriptViewer } from "@/components/script-viewer";
 import { ScriptPlaybackProvider } from "@/components/script-playback";
-import { deleteMeditationVersion } from "@/lib/meditation/actions";
+import { deleteMeditationVersion, getMeditationVersion } from "@/lib/meditation/actions";
 import type { MeditationVersion, Waveform } from "@/lib/meditation/types";
 import { cn } from "@/lib/utils";
 
@@ -100,6 +100,11 @@ export function VersionSwitcher({
                   meditationId={meditationId}
                   canDownload
                   downloadHref={`/api/audio/${meditationId}/download?version=${selected.id}`}
+                  refreshUrl={() =>
+                    getMeditationVersion(meditationId, selected.id).then(
+                      (version) => version?.audio_url ?? null,
+                    )
+                  }
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">
