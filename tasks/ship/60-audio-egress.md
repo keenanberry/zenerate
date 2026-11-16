@@ -1,15 +1,15 @@
 # Audio Egress
 
-**Status:** Done* (PR #128, 2026-11-16). Snapshot `snap_dJAgDRqRJ9ugYNwe0QWMl7uAUIy4` live in
-Production and Preview, every production render backfilled, and a page view without play
-measured in production at 90,256 bytes against 23,469,496. *Operator: the iPhone check, the
-bitrate, and one production render before the old snapshot is deleted
-(`tasks/OPERATOR-TODO.md` §5).
+**Status:** Done* (PRs #128 and #130, 2026-11-16). Snapshot
+`snap_sXOy59qkIhIo95G7Y9N33oAaAPMY` (peaks, 128 kbps) live in Production and Preview, every
+production render backfilled, and a page view without play measured in production at
+90,256 bytes against 23,469,496. The operator's iPhone check passed. *Operator: one
+production render, before the two older snapshots are deleted (`tasks/OPERATOR-TODO.md` §5).
 **Priority:** Phase 6, before signups open. Approved by the operator 2026-11-16; promoted
 from `tasks/post-ship/audio-egress.md`.
 **Phase:** 6
 **Depends on:** nothing. Related: `src/components/use-waveform-player.ts` (the one
-wavesurfer instance), `src/lib/audio/generate-audio.ts` (the 192 kbps final mix; baked into
+wavesurfer instance), `src/lib/audio/generate-audio.ts` (the final mix, 192 kbps until this task; baked into
 the sandbox snapshot), `src/lib/audio/signed-url.ts` (4-hour signed URLs),
 `src/lib/audio/workflow.ts` (writes `generation_meta`), `tasks/post-ship/paid-tier.md` (the
 cost model this feeds).
@@ -180,3 +180,16 @@ nothing until played.
 - **Bitrate samples** for the operator's ear: "Patience and Kindness" (10 min, ocean bed,
   downloaded once, 14,987,014 bytes) at 192 (the production file), 128 and 96 kbps, in
   `test-output/bitrate/` of the task's worktree with a `LISTEN.md`.
+- **Bitrate: 128 kbps** (PR #130). The operator could not tell the three apart much and
+  chose 128 on 2026-11-16, after the first rebuild. The narration arrives from ElevenLabs at
+  128 kbps, so 192 only spent its extra bits on the bed, and 96 would be the first step
+  below the voice's own source. `OUTPUT_BITRATE` in `generate-audio.ts` sets both final
+  encodes (narration alone, and over a bed). A 15-minute file is now about 14.4 MB, so a
+  full listen and the storage per render both drop by a third. Renders from before stay at
+  192 unless re-rendered. `test-audio-generation.ts` now checks the output's bitrate.
+  Rebuilt as `snap_sXOy59qkIhIo95G7Y9N33oAaAPMY` (321.5 MB) from the PR's branch; the test
+  passed with the ocean bed: 128 kb/s stereo by ffprobe, 6,245 peaks over 31.2 s. Set for
+  Production and Preview, production redeployed. It replaces
+  `snap_dJAgDRqRJ9ugYNwe0QWMl7uAUIy4`, which was live for a few hours and rendered nothing
+  in production; both it and `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8` go after the operator's
+  first production render on the new one.
