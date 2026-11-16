@@ -41,7 +41,7 @@ prefix (plus any root-level `<meditation_id>.mp3` of theirs), *then* delete the 
 *then* record the deletion so a backup restore deletes them again
 (`docs/runbooks/backup-restore.md`, "Deletion records"). A self-serve deletion needs a
 record of its own that a restore cannot roll back, so not a row in the same database.
-`docs/runbooks/operator-data-wipe.md` has the queries.
+`docs/runbooks/account-deletion.md` is the manual procedure, step by step.
 
 ## Scope sketch
 - A server action, run with the service-role client after confirming the session

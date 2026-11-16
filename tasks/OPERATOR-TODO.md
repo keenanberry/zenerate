@@ -246,9 +246,10 @@ account (`/terms`, "Be decent") if it comes back.
       move to Supabase Pro (section 8) makes the manual backups unnecessary. The iCloud copy
       made that morning was removed and sits in iCloud's Recently Deleted until about
       2026-12-16. Copies anywhere else need the job too (52).
-- [ ] From now on, each time you delete an account, `touch
+- [x] 2026-11-16: From now on, each time you delete an account, `touch
       ~/backups/zenerate/deletions/<user-id>`. A restore re-deletes those accounts; one
-      without a record comes back (52, runbook "Deletion records").
+      without a record comes back (52, runbook "Deletion records"). Agreed; the whole
+      procedure for a deletion request is `docs/runbooks/account-deletion.md`.
 
 ## 7. Optional
 

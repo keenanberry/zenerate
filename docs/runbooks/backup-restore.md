@@ -127,7 +127,8 @@ Two places the job cannot reach:
 
 Restoring a dump brings back every account deleted after the dump was taken. To delete
 them again, keep one empty file per handled deletion request, named by the user id. Its
-date is the record; nothing else goes in it. When you delete an account:
+date is the record; nothing else goes in it. When you delete an account (the whole
+procedure for a deletion request is [`account-deletion.md`](account-deletion.md)):
 
 ```bash
 mkdir -p ~/backups/zenerate/deletions
