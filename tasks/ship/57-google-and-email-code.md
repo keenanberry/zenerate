@@ -1,6 +1,6 @@
 # Sign In with Google or an Emailed Code
 
-**Status:** Done* (PR #99, 2026-10-25). *Operator: create the Google client and switch the provider on; Google sign-in is untested end to end until then (see below)
+**Status:** Done (PR #99, 2026-10-25). Google sign-in checked end to end in production on 2026-11-16, on the desktop browser and in the installed iPhone app
 **Priority:** Phase 6 (seed & open). Promoted from `tasks/post-ship/google-apple-auth.md`
 on 2026-10-24, the Google half only, plus an emailed code.
 **Phase:** 6
@@ -121,7 +121,9 @@ works.
       **Not done: no Google client was available.** Checked instead: with the provider
       off the button says so in a sentence; `/auth/callback` with `error=access_denied`,
       `error_code=signup_disabled` or another error lands on `/login` with the right
-      sentence and keeps `next`. Account linking is unverified.
+      sentence and keeps `next`. Account linking is unverified. 2026-11-16, in production
+      instead: with signups off, Google signed the operator into the existing account, so
+      linking works; a new Google account's sign-up is still unchecked.
 - [x] Locally, in Mailpit: a new address gets a code and signs up; an existing one signs
       in; a wrong code and an expired code each say so; resending is rate-limited with a
       sentence. (Expiry and the rate limit with `otp_expiry = 60` and `max_frequency =
@@ -132,6 +134,6 @@ works.
       sign-up confirms with the emailed code.
 - [x] Dark, light and 390px wide, per the `zenerate-design` order.
 - [x] `/privacy` names Google; the operator TODO and this file are current.
-- [ ] Operator (`tasks/OPERATOR-TODO.md` §2 and §4): Google client created, provider on in
+- [x] 2026-11-16: Operator (`tasks/OPERATOR-TODO.md` §2 and §4): Google client created, provider on in
       Supabase, templates pasted, sign-in with Google and with a code checked in Safari and
       the installed iPhone app.

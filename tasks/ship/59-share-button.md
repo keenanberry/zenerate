@@ -1,6 +1,6 @@
 # Share a Meditation
 
-**Status:** Done* (PR #119); the real-iPhone check in the installed app is the operator's (`tasks/OPERATOR-TODO.md` §5)
+**Status:** Done (PR #119). The operator checked the share sheet in the installed iPhone app on 2026-11-16
 **Priority:** Phase 6. Public meditations and their share cards (23, 26) exist to be shared.
 **Phase:** 6
 **Depends on:** 55 (the "…" menu), 53 (Report, the pattern for a link built from the site URL).
@@ -44,7 +44,7 @@ change to the Open Graph metadata.
       refuses, the URL is copied and "Link copied" shows.
       *`share.test.ts`; in the browser with `navigator.share` stubbed (payload recorded) and
       removed (clipboard written, toast shown).*
-- [ ] The native share sheet opens from the installed iPhone app with the title and link.
+- [x] 2026-11-16: The native share sheet opens from the installed iPhone app with the title and link.
       *Operator, `tasks/OPERATOR-TODO.md` §5.*
 
 ## Outcome
