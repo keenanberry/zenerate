@@ -218,7 +218,10 @@ export async function withRatingStats<T extends { id: string; rating?: RatingSta
 ): Promise<T[][]> {
   const ids = lists.flat().map((m) => m.id);
   if (ids.length === 0) return lists;
-  const stats = await getRatingStats(supabase, ids).catch(() => null);
+  const stats = await getRatingStats(supabase, ids).catch((err) => {
+    console.error("Could not load rating stats:", err);
+    return null;
+  });
   if (!stats) return lists;
   return lists.map((list) =>
     list.map((m) => {

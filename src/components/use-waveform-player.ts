@@ -210,7 +210,11 @@ export function useWaveformPlayer({
 
   useMediaSession(media, title);
 
+  // True once a play has passed the listening threshold on this page, so a
+  // seek to the end does not count as having listened (the rating prompt).
+  const [heard, setHeard] = useState(false);
   const record = useCallback(() => {
+    setHeard(true);
     void recordPlay(meditationId).catch(() => {});
   }, [meditationId]);
   usePlayTracking(media, trackPlays ? record : null);
@@ -345,6 +349,7 @@ export function useWaveformPlayer({
     duration,
     ready,
     started,
+    heard,
     play,
     togglePlay,
     skip,

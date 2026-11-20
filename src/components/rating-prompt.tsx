@@ -46,9 +46,12 @@ export function RatingPrompt({
 
   useEffect(() => {
     if (phase !== "thanks") return;
+    // The star that had focus is gone; keep it in the prompt so Escape and
+    // Tab still work during the thank-you.
+    if (placement === "session") panelRef.current?.focus();
     const timer = setTimeout(() => onClose(true), THANKS_MS);
     return () => clearTimeout(timer);
-  }, [phase, onClose]);
+  }, [phase, onClose, placement]);
 
   async function rate(stars: number) {
     setChosen(stars);

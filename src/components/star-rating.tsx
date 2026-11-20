@@ -42,7 +42,7 @@ export function StarRating({
     <div
       role="group"
       aria-label={label}
-      onMouseLeave={() => setPreview(null)}
+      onPointerLeave={() => setPreview(null)}
       className={cn("flex items-center", className)}
     >
       {STARS.map((n) => (
@@ -53,7 +53,9 @@ export function StarRating({
           aria-pressed={value === n}
           disabled={disabled}
           onClick={() => onRate(n)}
-          onMouseEnter={() => setPreview(n)}
+          // A mouse only: a tap fires enter but never leave, which would
+          // leave the preview lit over a failed save or a cleared rating.
+          onPointerEnter={(e) => e.pointerType === "mouse" && setPreview(n)}
           className={cn(
             "flex items-center justify-center rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-60 motion-safe:transition-transform motion-safe:active:scale-90",
             s.button,

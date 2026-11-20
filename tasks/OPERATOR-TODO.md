@@ -340,6 +340,10 @@ account (`/terms`, "Be decent") if it comes back.
       keepalive cron, the prune job and the manual backups. If storage reaches about 0.8 GB
       before sign-ups justify Pro, `tasks/post-ship/audio-storage-r2.md` is the free
       alternative: audio moves to Cloudflare R2.
+- [ ] Ratings prompt (card ZEN-6, post-ship): send the Insight Timer end-of-session
+      rating screenshots if you want the prompt restyled after them. Until then it follows
+      DESIGN.md; a restyle touches only `src/components/rating-prompt.tsx` and
+      `src/components/star-rating.tsx`. Detail in `tasks/post-ship/meditation-ratings.md`.
 
 ## Done
 

@@ -95,7 +95,7 @@ export function SessionPlayer({
     },
     hover: false,
   });
-  const { containerRef, isPlaying, currentTime, duration, started, ready } = player;
+  const { containerRef, isPlaying, currentTime, duration, started, ready, heard } = player;
   const page = useMeditationPage();
   const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -106,7 +106,8 @@ export function SessionPlayer({
   const remaining = Math.max(0, duration - currentTime);
 
   // The rating prompt (card ZEN-6): once per page, when a listener who may
-  // rate and has not reaches the end. "Not now" holds for the session.
+  // rate and has not reaches the end of a real listen. "Not now" holds for
+  // the session.
   const ownRating = page?.ownRating ?? null;
   const [prompt, setPrompt] = useState<"idle" | "shown" | "done">("idle");
   if (
@@ -115,6 +116,7 @@ export function SessionPlayer({
       canRate: !!ownRating,
       stars: ownRating?.stars ?? null,
       dismissed: false,
+      listened: heard,
       finished: started && reachedEnd(currentTime, duration),
     })
   ) {

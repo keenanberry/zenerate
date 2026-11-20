@@ -141,6 +141,8 @@ function YourRating({ title }: { title: string }) {
       <StarRating
         value={rating.stars}
         onRate={(stars) => void rating.rate(stars)}
+        // One write at a time, so two quick taps cannot land out of order.
+        disabled={rating.isPending}
         label={`Rate ${title}`}
         className="-ml-2"
       />

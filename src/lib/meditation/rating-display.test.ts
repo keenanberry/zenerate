@@ -21,7 +21,7 @@ describe("reachedEnd", () => {
 });
 
 describe("shouldPrompt", () => {
-  const ready = { canRate: true, stars: null, dismissed: false, finished: true };
+  const ready = { canRate: true, stars: null, dismissed: false, listened: true, finished: true };
 
   it("asks a listener who may rate, has not, and reached the end", () => {
     expect(shouldPrompt(ready)).toBe(true);
@@ -32,6 +32,10 @@ describe("shouldPrompt", () => {
     expect(shouldPrompt({ ...ready, stars: 4 })).toBe(false);
     expect(shouldPrompt({ ...ready, dismissed: true })).toBe(false);
     expect(shouldPrompt({ ...ready, finished: false })).toBe(false);
+  });
+
+  it("never asks someone who skipped to the end without listening", () => {
+    expect(shouldPrompt({ ...ready, listened: false })).toBe(false);
   });
 });
 

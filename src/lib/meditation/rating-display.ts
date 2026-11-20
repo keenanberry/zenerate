@@ -16,20 +16,24 @@ export function reachedEnd(currentTime: number, duration: number): boolean {
 /**
  * Ask only a listener who may rate (signed in, not the owner, a public and
  * finished meditation), has not rated it, has not said "Not now" this
- * session, and has reached the end.
+ * session, has actually listened (a counted play, so a seek to the end is
+ * not asked) and has reached the end.
  */
 export function shouldPrompt({
   canRate,
   stars,
   dismissed,
+  listened,
   finished,
 }: {
   canRate: boolean;
   stars: number | null;
   dismissed: boolean;
+  /** A play passed the listening threshold (watchPlays) on this page. */
+  listened: boolean;
   finished: boolean;
 }): boolean {
-  return canRate && stars === null && !dismissed && finished;
+  return canRate && stars === null && !dismissed && listened && finished;
 }
 
 /** "Not now" holds for the browser session, per meditation. */

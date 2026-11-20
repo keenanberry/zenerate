@@ -83,12 +83,18 @@ export default async function MeditationDetailPage({
     rateable
       ? getRatingStats(supabase, [meditation.id])
           .then((stats) => stats.get(meditation.id) ?? null)
-          .catch(() => undefined)
+          .catch((err) => {
+            console.error("Could not load rating stats:", err);
+            return undefined;
+          })
       : undefined,
     canRate
       ? getOwnRating(supabase, user.id, meditation.id)
           .then((own) => (own.ok ? (own.value?.stars ?? null) : undefined))
-          .catch(() => undefined)
+          .catch((err) => {
+            console.error("Could not load own rating:", err);
+            return undefined;
+          })
       : null,
   ]);
   const length = meditation.settings?.duration
