@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useRef, useState } from "react"
 import { ChevronDown } from "lucide-react";
 import { ScriptViewer } from "@/components/script-viewer";
 import { useFavorite, type FavoriteState } from "@/components/favorite-button";
+import { useOwnRating, type OwnRatingState } from "@/components/use-own-rating";
 import { cn } from "@/lib/utils";
 
 /**
@@ -19,6 +20,12 @@ type MeditationPage = {
   /** Open the script and bring it into view. */
   revealScript: () => void;
   scriptRef: React.RefObject<HTMLDivElement | null>;
+  /**
+   * The listener's own rating (card ZEN-6), shared by the end-of-session
+   * prompt and the stars on the page. Null when they may not rate: signed
+   * out, the owner, or a meditation that is not public and finished.
+   */
+  ownRating: OwnRatingState | null;
 };
 
 const MeditationPageContext = createContext<MeditationPage | null>(null);
@@ -26,13 +33,18 @@ const MeditationPageContext = createContext<MeditationPage | null>(null);
 export function MeditationPageProvider({
   meditationId,
   isFavorited,
+  rating,
   children,
 }: {
   meditationId: string;
   isFavorited: boolean;
+  /** Whether this listener may rate it, and their stars if they have. */
+  rating?: { canRate: boolean; stars: number | null };
   children: React.ReactNode;
 }) {
   const favorite = useFavorite(meditationId, isFavorited);
+  const own = useOwnRating(meditationId, rating?.stars ?? null);
+  const ownRating = rating?.canRate ? own : null;
   const [scriptOpen, setScriptOpen] = useState(false);
   const scriptRef = useRef<HTMLDivElement>(null);
 
@@ -50,7 +62,7 @@ export function MeditationPageProvider({
 
   return (
     <MeditationPageContext.Provider
-      value={{ favorite, scriptOpen, setScriptOpen, revealScript, scriptRef }}
+      value={{ favorite, scriptOpen, setScriptOpen, revealScript, scriptRef, ownRating }}
     >
       {children}
     </MeditationPageContext.Provider>

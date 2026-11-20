@@ -157,4 +157,6 @@ export type MeditationSegment =
 export interface MeditationWithMeta extends Meditation {
   is_favorited?: boolean;
   user_email?: string;
+  /** Average and count, where a page fetched them (Discover); absent with no ratings. */
+  rating?: { average: number; count: number };
 }

@@ -6,6 +6,8 @@ import { FavoriteButton } from "@/components/favorite-button";
 import { TrackPlayButton, useTrackAudio } from "@/components/track-play-button";
 import { AudioStatusIcon } from "@/components/audio-status-icon";
 import { MeditationCover } from "@/components/meditation-cover";
+import { RatingSummary } from "@/components/rating-summary";
+import { hasRatings } from "@/lib/meditation/rating-display";
 import { metaLine } from "@/lib/meditation/meta";
 import type { MeditationWithMeta } from "@/lib/meditation/types";
 import { Globe } from "lucide-react";
@@ -85,10 +87,11 @@ export function TrackRow({
               />
             )}
           </span>
-          {(meta || m.status !== "completed") && (
+          {(meta || m.status !== "completed" || hasRatings(m.rating)) && (
             <span className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground tabular-nums">
               <AudioStatusIcon status={m.status} />
               <span className="truncate">{meta}</span>
+              <RatingSummary stats={m.rating} className="shrink-0" />
             </span>
           )}
         </Link>

@@ -1,7 +1,16 @@
 # Meditation Ratings
 
 **Status:** Backend done (card ZEN-5): the table, policies, endpoints and stats below.
-The UI (stars, the end-of-session prompt, Discover's display) is card ZEN-6.
+UI done (card ZEN-6): the end-of-session prompt (`src/components/rating-prompt.tsx`,
+at 90% through or the end of a counted play, so a seek to the end is not asked; "Not now"
+held per meditation in `sessionStorage` for the browser session), the listener's own stars
+on the meditation page, and the average and count on Discover's rows and results and on
+the meditation page. How ZEN-6 settled the decisions below: stars on the page as well as
+at the end of the session; the average shows from the first rating (the card asks for it
+publicly; no three-rating threshold yet); stars fill in Primary; each star is a toggle
+button in a named group rather than a radio group. Still open: Popular's tie-breaker,
+seeded ratings, the display threshold once there is real data, and the Insight Timer
+references the owner may send to refine the prompt's look.
 **Priority:** Post-ship. Raised by the operator before launch (2026-10-31). It needs
 listeners before it means anything, so nothing at launch depends on it.
 **Related:** `src/components/session-player.tsx` (the session view, where a session

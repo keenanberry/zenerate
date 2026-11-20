@@ -16,6 +16,7 @@ import {
   type DiscoverFilters,
 } from "@/lib/meditation/discover";
 import { TAG_LABELS } from "@/lib/meditation/tags";
+import { withRatingStats } from "@/lib/meditation/ratings";
 import { pageMetadata } from "@/lib/seo/metadata";
 import { MeditationListView } from "@/components/meditation-list-view";
 import { DiscoverViewWrapper } from "./view-wrapper";
@@ -69,11 +70,13 @@ function ActiveFilters({ filters }: { filters: DiscoverFilters }) {
 async function Results({ filters }: { filters: DiscoverFilters }) {
   const supabase = await createClient();
   const [
-    meditations,
+    found,
     {
       data: { user },
     },
   ] = await Promise.all([getPublicMeditations(filters), supabase.auth.getUser()]);
+  // Every result's average and count in one lookup, never one per card.
+  const [meditations] = await withRatingStats(supabase, [found]);
 
   const category = filters.category ? getCategory(filters.category) : undefined;
   const heading = filters.q
@@ -121,8 +124,8 @@ async function Results({ filters }: { filters: DiscoverFilters }) {
 async function Rows() {
   const supabase = await createClient();
   const [
-    popular,
-    picked,
+    popularRow,
+    pickedRow,
     {
       data: { user },
     },
@@ -131,6 +134,8 @@ async function Rows() {
     getPickedForYou(),
     supabase.auth.getUser(),
   ]);
+  // Both rows' averages and counts in one lookup, never one per card.
+  const [popular, picked] = await withRatingStats(supabase, [popularRow, pickedRow]);
 
   return (
     <>

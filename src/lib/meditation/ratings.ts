@@ -206,3 +206,27 @@ export async function getRatingStats(
   }
   return stats;
 }
+
+/**
+ * Adds each meditation's average and count to every list, in one batched
+ * lookup for all of them (Discover's rows share one). A failed lookup leaves
+ * the lists as they were: a page without averages beats no page.
+ */
+export async function withRatingStats<T extends { id: string; rating?: RatingStats }>(
+  supabase: Pick<SupabaseClient, "rpc">,
+  lists: T[][],
+): Promise<T[][]> {
+  const ids = lists.flat().map((m) => m.id);
+  if (ids.length === 0) return lists;
+  const stats = await getRatingStats(supabase, ids).catch((err) => {
+    console.error("Could not load rating stats:", err);
+    return null;
+  });
+  if (!stats) return lists;
+  return lists.map((list) =>
+    list.map((m) => {
+      const rating = stats.get(m.id);
+      return rating ? { ...m, rating } : m;
+    }),
+  );
+}

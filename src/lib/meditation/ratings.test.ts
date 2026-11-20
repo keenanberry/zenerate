@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getRatingStats, MAX_RATING_LOOKUP, parseRating } from "./ratings";
+import { getRatingStats, MAX_RATING_LOOKUP, parseRating, withRatingStats } from "./ratings";
 
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 
@@ -44,5 +44,35 @@ describe("getRatingStats", () => {
 
   it("throws when the lookup fails", async () => {
     await expect(getRatingStats(client([], { message: "boom" }) as never, [id(1)])).rejects.toThrow("boom");
+  });
+});
+
+describe("withRatingStats", () => {
+  it("fills every list from one lookup, leaving unrated meditations bare", async () => {
+    const supabase = client([
+      { meditation_id: id(1), average: 4.6, count: 128 },
+      { meditation_id: id(3), average: 3, count: 1 },
+    ]);
+    const [popular, picked] = await withRatingStats(supabase as never, [
+      [{ id: id(1) }, { id: id(2) }],
+      [{ id: id(3) }],
+    ]);
+
+    expect(supabase.rpc).toHaveBeenCalledTimes(1);
+    expect(supabase.rpc).toHaveBeenCalledWith("meditation_rating_stats", {
+      p_meditation_ids: [id(1), id(2), id(3)],
+    });
+    expect(popular).toEqual([{ id: id(1), rating: { average: 4.6, count: 128 } }, { id: id(2) }]);
+    expect(picked).toEqual([{ id: id(3), rating: { average: 3, count: 1 } }]);
+  });
+
+  it("makes no call for empty lists, and keeps the lists when the lookup fails", async () => {
+    const none = client();
+    expect(await withRatingStats(none as never, [[], []])).toEqual([[], []]);
+    expect(none.rpc).not.toHaveBeenCalled();
+
+    const failing = client([], { message: "boom" });
+    const lists = [[{ id: id(1) }]];
+    expect(await withRatingStats(failing as never, lists)).toEqual(lists);
   });
 });

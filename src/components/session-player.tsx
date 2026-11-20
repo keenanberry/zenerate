@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MeditationCover } from "@/components/meditation-cover";
+import { RatingPrompt } from "@/components/rating-prompt";
 import { useMeditationPage } from "@/components/meditation-page";
 import { SEEK_OFFSET_SECONDS } from "@/components/use-media-session";
 import {
@@ -31,6 +32,12 @@ import {
 import { cn } from "@/lib/utils";
 import type { Waveform } from "@/lib/meditation/types";
 import { getMeditationAudio } from "@/lib/meditation/actions";
+import {
+  nextPromptPhase,
+  promptDismissedKey,
+  reachedEnd,
+  type PromptPhase,
+} from "@/lib/meditation/rating-display";
 
 interface SessionPlayerProps {
   audioUrl: string;
@@ -89,7 +96,7 @@ export function SessionPlayer({
     },
     hover: false,
   });
-  const { containerRef, isPlaying, currentTime, duration, started, ready } = player;
+  const { containerRef, isPlaying, currentTime, duration, started, ready, heard } = player;
   const page = useMeditationPage();
   const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -98,6 +105,42 @@ export function SessionPlayer({
   const dialogRef = useRef<HTMLDivElement>(null);
 
   const remaining = Math.max(0, duration - currentTime);
+
+  // The rating prompt (card ZEN-6): once per page, when a listener who may
+  // rate and has not reaches the end of a real listen. A rating had on this
+  // page (even one cleared since) ends it; "Not now" holds for the session.
+  const ownRating = page?.ownRating ?? null;
+  const [prompt, setPrompt] = useState<PromptPhase>("idle");
+  const nextPrompt = nextPromptPhase(
+    prompt,
+    {
+      canRate: !!ownRating,
+      stars: ownRating?.stars ?? null,
+      listened: heard,
+      finished: started && reachedEnd(currentTime, duration),
+    },
+    () => readDismissed(meditationId),
+  );
+  if (nextPrompt !== prompt) setPrompt(nextPrompt);
+  const closePrompt = useCallback(
+    (rated: boolean) => {
+      if (!rated) writeDismissed(meditationId);
+      setPrompt("done");
+      // Inside the session view, focus goes back to the view.
+      if (open) closeRef.current?.focus();
+    },
+    [meditationId, open],
+  );
+  const promptView = (placement: "session" | "page") =>
+    ownRating && (
+      <RatingPrompt
+        title={title}
+        placement={placement}
+        rated={ownRating.stars !== null && !ownRating.isPending}
+        onRate={ownRating.rate}
+        onClose={closePrompt}
+      />
+    );
 
   function openSession() {
     setOpen(true);
@@ -116,7 +159,10 @@ export function SessionPlayer({
     const root = document.documentElement;
     const overflow = root.style.overflow;
     root.style.overflow = "hidden";
-    closeRef.current?.focus();
+    // A rating prompt that moved in from the page (it was showing while the
+    // view was minimized) keeps the focus its own effect gave it.
+    const prompt = dialogRef.current?.querySelector<HTMLElement>("[data-rating-prompt] [role=dialog]");
+    (prompt ?? closeRef.current)?.focus();
     const playButton = playRef.current;
     return () => {
       root.style.overflow = overflow;
@@ -132,11 +178,16 @@ export function SessionPlayer({
       // By the time this runs the menu may already have closed, so ask the
       // event where it came from rather than the menu's state.
       if (e.target instanceof Element && e.target.closest("[role=menu]")) return;
-      if (e.key === "Escape") {
+      // The rating prompt over the view keeps Tab inside itself and handles
+      // its own Escape.
+      const ratingPrompt = dialogRef.current?.querySelector<HTMLElement>("[data-rating-prompt]");
+      if (e.key === "Tab") {
+        trapFocus(e, ratingPrompt ?? dialogRef.current);
+      } else if (ratingPrompt) {
+        return;
+      } else if (e.key === "Escape") {
         e.preventDefault();
         setOpen(false);
-      } else if (e.key === "Tab") {
-        trapFocus(e, dialogRef.current);
       } else if (
         e.key === " " &&
         !(e.target instanceof HTMLButtonElement) &&
@@ -371,8 +422,12 @@ export function SessionPlayer({
               <p className="mt-1 text-sm text-muted-foreground tabular-nums">{meta}</p>
             )}
           </div>
+
+          {prompt === "shown" && open && promptView("session")}
         </div>
       </div>
+
+      {prompt === "shown" && !open && promptView("page")}
     </>
   );
 }
@@ -440,5 +495,22 @@ function trapFocus(e: KeyboardEvent, root: HTMLElement | null) {
   } else if (!e.shiftKey && document.activeElement === last) {
     e.preventDefault();
     first.focus();
+  }
+}
+
+/** sessionStorage can throw (private mode, blocked storage); treat that as unset. */
+function readDismissed(meditationId: string): boolean {
+  try {
+    return sessionStorage.getItem(promptDismissedKey(meditationId)) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writeDismissed(meditationId: string) {
+  try {
+    sessionStorage.setItem(promptDismissedKey(meditationId), "1");
+  } catch {
+    // Without storage, "Not now" still holds for this page.
   }
 }

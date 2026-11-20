@@ -18,6 +18,7 @@ import { getMeditationChatId } from "@/lib/chat/actions";
 import { metaLine } from "@/lib/meditation/meta";
 import { reportHref } from "@/lib/meditation/report";
 import { MeditationVersions } from "@/components/meditation-versions";
+import { getOwnRating, getRatingStats } from "@/lib/meditation/ratings";
 
 // One read per request, shared by generateMetadata and the page. React's
 // cache is scoped to this request's render and keeps nothing between viewers;
@@ -72,6 +73,30 @@ export default async function MeditationDetailPage({
 
   const chatId = isOwner ? await getMeditationChatId(meditation.id) : null;
   const hasAudio = meditation.status === "completed" && !!meditation.audio_url;
+
+  // Ratings (card ZEN-6): a public, finished meditation shows its average to
+  // everyone, and a signed-in listener who is not the owner can rate it. A
+  // failed read hides the ratings rather than the page.
+  const rateable = meditation.is_public && meditation.status === "completed";
+  const canRate = rateable && !!user && !isOwner;
+  const [ratingStats, ownStars] = await Promise.all([
+    rateable
+      ? getRatingStats(supabase, [meditation.id])
+          .then((stats) => stats.get(meditation.id) ?? null)
+          .catch((err) => {
+            console.error("Could not load rating stats:", err);
+            return undefined;
+          })
+      : undefined,
+    canRate
+      ? getOwnRating(supabase, user.id, meditation.id)
+          .then((own) => (own.ok ? (own.value?.stars ?? null) : undefined))
+          .catch((err) => {
+            console.error("Could not load own rating:", err);
+            return undefined;
+          })
+      : null,
+  ]);
   const length = meditation.settings?.duration
     ? `${meditation.settings.duration} min`
     : undefined;
@@ -83,6 +108,9 @@ export default async function MeditationDetailPage({
       <MeditationPageProvider
         meditationId={meditation.id}
         isFavorited={meditation.is_favorited ?? false}
+        // Unknown own rating (a failed read): no stars and no prompt, rather
+        // than asking someone who has already rated.
+        rating={{ canRate: canRate && ownStars !== undefined, stars: ownStars ?? null }}
       >
         <ScriptPlaybackProvider>
           <div className="space-y-3">
@@ -108,6 +136,7 @@ export default async function MeditationDetailPage({
                   tags={meditation.tags ?? []}
                   meta={length}
                   isPublic={isOwner && hasAudio ? meditation.is_public : null}
+                  ratingStats={ratingStats}
                   menu={{
                     meditationId: meditation.id,
                     title: meditation.title,
