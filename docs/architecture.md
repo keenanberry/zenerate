@@ -83,6 +83,7 @@ theirs.
 | `chat_messages` | nothing; reads only | every save (the chat route) |
 | `chat_turns`, `audio_generation_events` | nothing | `reserve_chat_turn`, `reserve_audio_generation` |
 | `meditation_ratings` | own rows only: insert `meditation_id, user_id, stars` and update `stars` (policy: a public, completed meditation that is not theirs); delete always, so a rating can be taken back after the meditation goes private. Others' rows are unreadable; averages come from `meditation_rating_stats` | nothing more |
+| `meditation_bookmarks` | own rows only: insert `meditation_id, user_id` (policy: a public, completed meditation, the caller's own included, as with favorites); delete always, so a bookmark can be removed after the meditation goes private. No update; `created_at` is the database's | nothing more |
 
 Publishing needs `status = 'completed'` and an `audio_path` (`updateMeditation`, and the
 `meditations_guard_publish` trigger for a write that skips it). `anon` reads only the public
