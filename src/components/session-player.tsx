@@ -33,9 +33,10 @@ import { cn } from "@/lib/utils";
 import type { Waveform } from "@/lib/meditation/types";
 import { getMeditationAudio } from "@/lib/meditation/actions";
 import {
+  nextPromptPhase,
   promptDismissedKey,
   reachedEnd,
-  shouldPrompt,
+  type PromptPhase,
 } from "@/lib/meditation/rating-display";
 
 interface SessionPlayerProps {
@@ -106,22 +107,21 @@ export function SessionPlayer({
   const remaining = Math.max(0, duration - currentTime);
 
   // The rating prompt (card ZEN-6): once per page, when a listener who may
-  // rate and has not reaches the end of a real listen. "Not now" holds for
-  // the session.
+  // rate and has not reaches the end of a real listen. A rating had on this
+  // page (even one cleared since) ends it; "Not now" holds for the session.
   const ownRating = page?.ownRating ?? null;
-  const [prompt, setPrompt] = useState<"idle" | "shown" | "done">("idle");
-  if (
-    prompt === "idle" &&
-    shouldPrompt({
+  const [prompt, setPrompt] = useState<PromptPhase>("idle");
+  const nextPrompt = nextPromptPhase(
+    prompt,
+    {
       canRate: !!ownRating,
       stars: ownRating?.stars ?? null,
-      dismissed: false,
       listened: heard,
       finished: started && reachedEnd(currentTime, duration),
-    })
-  ) {
-    setPrompt(readDismissed(meditationId) ? "done" : "shown");
-  }
+    },
+    () => readDismissed(meditationId),
+  );
+  if (nextPrompt !== prompt) setPrompt(nextPrompt);
   const closePrompt = useCallback(
     (rated: boolean) => {
       if (!rated) writeDismissed(meditationId);

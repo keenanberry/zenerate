@@ -36,6 +36,25 @@ export function shouldPrompt({
   return canRate && stars === null && !dismissed && listened && finished;
 }
 
+export type PromptPhase = "idle" | "shown" | "done";
+
+/**
+ * The prompt's next phase on this page. It asks at most once, and never
+ * after the listener has had a rating on this page: clearing one (or a
+ * rating saved from the page stars) is a choice, not a reason to ask.
+ * `isDismissed` reads storage, so it runs only when the prompt would show.
+ */
+export function nextPromptPhase(
+  phase: PromptPhase,
+  inputs: Omit<Parameters<typeof shouldPrompt>[0], "dismissed">,
+  isDismissed: () => boolean,
+): PromptPhase {
+  if (phase !== "idle") return phase;
+  if (inputs.stars !== null) return "done";
+  if (!shouldPrompt({ ...inputs, dismissed: false })) return "idle";
+  return isDismissed() ? "done" : "shown";
+}
+
 /** "Not now" holds for the browser session, per meditation. */
 export function promptDismissedKey(meditationId: string): string {
   return `zenerate:rating-prompt-dismissed:${meditationId}`;

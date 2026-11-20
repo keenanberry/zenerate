@@ -2,11 +2,36 @@ import { describe, expect, it } from "vitest";
 import {
   formatAverage,
   hasRatings,
+  nextPromptPhase,
   promptDismissedKey,
   ratingSummaryLabel,
   reachedEnd,
   shouldPrompt,
 } from "./rating-display";
+
+describe("nextPromptPhase", () => {
+  const ready = { canRate: true, stars: null, listened: true, finished: true };
+  const notDismissed = () => false;
+
+  it("shows the prompt once the listener is ready to be asked", () => {
+    expect(nextPromptPhase("idle", ready, notDismissed)).toBe("shown");
+  });
+
+  it("is done instead when they said Not now this session", () => {
+    expect(nextPromptPhase("idle", ready, () => true)).toBe("done");
+  });
+
+  it("is done for good on this page once they have a rating, so clearing it does not ask again", () => {
+    const rated = nextPromptPhase("idle", { ...ready, stars: 3 }, notDismissed);
+    expect(rated).toBe("done");
+    expect(nextPromptPhase(rated, ready, notDismissed)).toBe("done");
+  });
+
+  it("waits while the listen is not finished, and leaves a shown prompt alone", () => {
+    expect(nextPromptPhase("idle", { ...ready, finished: false }, notDismissed)).toBe("idle");
+    expect(nextPromptPhase("shown", { ...ready, stars: 4 }, notDismissed)).toBe("shown");
+  });
+});
 
 describe("reachedEnd", () => {
   it("counts 90% through, or the end, as finished", () => {
