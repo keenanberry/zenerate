@@ -45,6 +45,7 @@ const PROFILE = {
   display_name: "Ada",
   avatar_url: null,
   bio: null,
+  is_public: false,
   created_at: "2026-11-20T00:00:00Z",
   updated_at: "2026-11-20T00:00:00Z",
 };

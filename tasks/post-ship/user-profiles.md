@@ -1,11 +1,14 @@
 # User Profiles
 
-**Status:** Started. The record and the owner's own API landed 2026-11-20 (card ZEN-2):
-`public.user_profiles` (`display_name`, `avatar_url`, `bio`; one row per account, created by a
-trigger on `auth.users`, owner-only RLS, no anon grant) and `GET`/`PATCH /api/profile`
-(`src/app/api/profile/route.ts`, validation in `src/lib/profile/profile.ts`). Still to do:
-`is_public_profile` and public reads, the `/account` and `/u/[id]` pages, avatar upload,
-the Discover author line, account deletion. (Scope refreshed 2026-10-22.)
+**Status:** Started. The record and its API landed 2026-11-20 (card ZEN-2):
+`public.user_profiles` (`display_name`, `avatar_url`, `bio`, opt-in `is_public`; one row per
+account, created by a trigger on `auth.users`), the owner's `GET`/`PATCH /api/profile`, the
+public `GET /api/profiles/[id]` (profile + public meditations, via `profile_meditations`), and
+`meditation_authors` / `getMeditationAuthors` (`src/lib/profile/authors.ts`) for author lines.
+`meditations.user_id` stays hidden from anon; only opted-in authors are linked. Default is
+private (the "Default privacy" decision below). Still to do: the `/account` and `/u/[id]` pages,
+the author line on Discover cards and the meditation page, avatar upload, follows, account
+deletion. (Scope refreshed 2026-10-22.)
 **Priority:** Post-ship. One of the three "next up" candidates in the README.
 
 > **What changed since this was written (2026-10-22).**

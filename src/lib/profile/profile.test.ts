@@ -56,5 +56,12 @@ describe("parseProfileUpdate", () => {
 
   it("refuses a field of the wrong type", () => {
     expect(parseProfileUpdate({ display_name: 42 })).toMatchObject({ ok: false });
+    expect(parseProfileUpdate({ is_public: "yes" })).toMatchObject({ ok: false });
+    expect(parseProfileUpdate({ is_public: null })).toMatchObject({ ok: false });
+  });
+
+  it("lets the owner make their profile public or private", () => {
+    expect(parseProfileUpdate({ is_public: true })).toEqual({ ok: true, update: { is_public: true } });
+    expect(parseProfileUpdate({ is_public: false })).toEqual({ ok: true, update: { is_public: false } });
   });
 });
