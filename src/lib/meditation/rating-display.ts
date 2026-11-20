@@ -89,12 +89,17 @@ export function ratingCountLabel(count: number): string {
  * "3 days ago", "2 weeks ago", "5 months ago", "1 year ago".
  */
 export function ratedAgo(iso: string, now = new Date()): string {
-  const days = Math.floor((now.getTime() - new Date(iso).getTime()) / 86_400_000);
+  // Calendar days in the reader's time zone, so a rating at 11pm reads as
+  // "Yesterday" the next morning. Rounded, as a day across a daylight-saving
+  // change is 23 or 25 hours.
+  const midnight = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.round((midnight(now) - midnight(new Date(iso))) / 86_400_000);
   if (days <= 0) return "Today";
   if (days === 1) return "Yesterday";
   const ago = (n: number, unit: string) => `${n} ${unit}${n === 1 ? "" : "s"} ago`;
   if (days < 7) return ago(days, "day");
   if (days < 30) return ago(Math.floor(days / 7), "week");
-  if (days < 365) return ago(Math.max(1, Math.floor(days / 30)), "month");
+  // Days 360 to 364 would be "12 months", so they stop at 11.
+  if (days < 365) return ago(Math.min(11, Math.max(1, Math.floor(days / 30))), "month");
   return ago(Math.floor(days / 365), "year");
 }

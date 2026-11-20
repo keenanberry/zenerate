@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 export type OwnRatingState = {
@@ -26,6 +27,7 @@ export function useOwnRating(
   const [stars, setStars] = useState(initial.stars);
   const [ratedAt, setRatedAt] = useState(initial.ratedAt);
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
   const url = `/api/meditations/${meditationId}/rating`;
 
   const rate = useCallback(
@@ -44,6 +46,8 @@ export function useOwnRating(
             // The server's clock, so "Today" agrees with a reload.
             const body = await res.json().catch(() => null);
             if (typeof body?.rating?.updated_at === "string") setRatedAt(body.rating.updated_at);
+            // The average and count beside the stars include this rating.
+            router.refresh();
             return resolve(true);
           }
           setStars(previous.stars);
@@ -53,7 +57,7 @@ export function useOwnRating(
         });
       });
     },
-    [stars, ratedAt, url],
+    [stars, ratedAt, url, router],
   );
 
   const clear = useCallback(() => {
@@ -62,12 +66,12 @@ export function useOwnRating(
     setRatedAt(null);
     startTransition(async () => {
       const res = await fetch(url, { method: "DELETE" }).catch(() => null);
-      if (res?.ok) return;
+      if (res?.ok) return router.refresh();
       setStars(previous.stars);
       setRatedAt(previous.ratedAt);
       toast.error("Couldn't clear your rating");
     });
-  }, [stars, ratedAt, url]);
+  }, [stars, ratedAt, url, router]);
 
   return { stars, ratedAt, isPending, rate, clear };
 }

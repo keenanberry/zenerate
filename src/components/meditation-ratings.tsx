@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useSyncExternalStore } from "react";
 import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StarRating } from "@/components/star-rating";
@@ -31,6 +31,7 @@ export function MeditationRatings({
 }) {
   const own = useMeditationPage()?.ownRating ?? null;
   const headingId = useId();
+  const inBrowser = useInBrowser();
   if (stats === undefined && !own) return null;
 
   return (
@@ -64,9 +65,10 @@ export function MeditationRatings({
             {own.stars === null ? "Rate this meditation" : "Your rating"}
           </p>
           {own.stars !== null && own.ratedAt && (
-            // Server and browser can straddle midnight; the browser's wins.
-            <p suppressHydrationWarning className="text-xs text-muted-foreground">
-              {ratedAgo(own.ratedAt)}
+            // In the browser's time zone, so after hydration: a mismatched
+            // server text would stay. A blank line holds the space until then.
+            <p className="text-xs text-muted-foreground">
+              {inBrowser ? ratedAgo(own.ratedAt) : "\u00a0"}
             </p>
           )}
           <div className="mt-1 flex flex-wrap items-center gap-x-3">
@@ -93,5 +95,16 @@ export function MeditationRatings({
         </div>
       )}
     </section>
+  );
+}
+
+const noSubscription = () => () => {};
+
+/** False on the server and while hydrating, true once rendered in the browser. */
+function useInBrowser(): boolean {
+  return useSyncExternalStore(
+    noSubscription,
+    () => true,
+    () => false,
   );
 }

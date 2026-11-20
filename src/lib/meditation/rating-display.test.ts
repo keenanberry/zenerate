@@ -113,8 +113,16 @@ describe("ratedAgo", () => {
     expect(ratedAgo(daysBefore(20), now)).toBe("2 weeks ago");
     expect(ratedAgo(daysBefore(30), now)).toBe("1 month ago");
     expect(ratedAgo(daysBefore(200), now)).toBe("6 months ago");
+    expect(ratedAgo(daysBefore(362), now)).toBe("11 months ago");
     expect(ratedAgo(daysBefore(400), now)).toBe("1 year ago");
     expect(ratedAgo(daysBefore(800), now)).toBe("2 years ago");
+  });
+
+  it("counts calendar days in the reader's time zone, not 24-hour spans", () => {
+    const morning = new Date(2026, 10, 20, 8, 0);
+    expect(ratedAgo(new Date(2026, 10, 19, 23, 0).toISOString(), morning)).toBe("Yesterday");
+    expect(ratedAgo(new Date(2026, 10, 18, 23, 0).toISOString(), morning)).toBe("2 days ago");
+    expect(ratedAgo(new Date(2026, 10, 20, 0, 5).toISOString(), morning)).toBe("Today");
   });
 
   it("treats a clock a little ahead of the server as today", () => {
