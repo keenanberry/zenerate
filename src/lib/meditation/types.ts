@@ -156,6 +156,11 @@ export type MeditationSegment =
 
 export interface MeditationWithMeta extends Meditation {
   is_favorited?: boolean;
+  /**
+   * Whether the signed-in listener has saved it for later (card ZEN-8), set in
+   * one batch per list by markBookmarks. Absent signed out.
+   */
+  is_bookmarked?: boolean;
   user_email?: string;
   /** Average and count, where a page fetched them (Discover); absent with no ratings. */
   rating?: { average: number; count: number };

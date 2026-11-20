@@ -110,11 +110,17 @@ async function Results({ filters }: { filters: DiscoverFilters }) {
           </p>
         </div>
       ) : (
-        // Favouriting needs an account; signed out, the button would only error.
+        // Favouriting needs an account; signed out, the button would only
+        // error. The bookmark stays, and signed out it asks them to sign in.
         <DiscoverViewWrapper
           summary={`${meditations.length} ${meditations.length === 1 ? "meditation" : "meditations"}`}
         >
-          <MeditationListView meditations={meditations} showFavorite={!!user} />
+          <MeditationListView
+            meditations={meditations}
+            showFavorite={!!user}
+            showBookmark
+            isSignedIn={!!user}
+          />
         </DiscoverViewWrapper>
       )}
     </section>
@@ -144,6 +150,7 @@ async function Rows() {
         title="Popular"
         description="What listeners keep coming back to."
         meditations={popular}
+        isSignedIn={!!user}
       />
       <DiscoverRow
         id="picked-heading"
@@ -154,6 +161,7 @@ async function Rows() {
             : "House picks to start with."
         }
         meditations={picked}
+        isSignedIn={!!user}
       />
     </>
   );

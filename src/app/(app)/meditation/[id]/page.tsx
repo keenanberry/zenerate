@@ -137,6 +137,14 @@ export default async function MeditationDetailPage({
                   meta={length}
                   isPublic={isOwner && hasAudio ? meditation.is_public : null}
                   ratingStats={ratingStats}
+                  // Save for later (card ZEN-8): anyone may see it on a
+                  // public, finished meditation; signed out it asks them to
+                  // sign in. The owner may save their own, as with favorites.
+                  bookmark={
+                    rateable
+                      ? { isBookmarked: meditation.is_bookmarked ?? false, isSignedIn: !!user }
+                      : null
+                  }
                   menu={{
                     meditationId: meditation.id,
                     title: meditation.title,

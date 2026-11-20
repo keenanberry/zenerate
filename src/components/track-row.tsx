@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { BookmarkButton } from "@/components/bookmark-button";
 import { FavoriteButton } from "@/components/favorite-button";
 import { TrackPlayButton, useTrackAudio } from "@/components/track-play-button";
 import { AudioStatusIcon } from "@/components/audio-status-icon";
 import { MeditationCover } from "@/components/meditation-cover";
 import { RatingSummary } from "@/components/rating-summary";
 import { hasRatings } from "@/lib/meditation/rating-display";
+import { canBookmark } from "@/lib/meditation/bookmark-state";
 import { metaLine } from "@/lib/meditation/meta";
 import type { MeditationWithMeta } from "@/lib/meditation/types";
 import { Globe } from "lucide-react";
@@ -19,6 +21,9 @@ interface TrackRowProps {
   showIndex: boolean;
   showFavorite: boolean;
   showVisibility: boolean;
+  /** The save-for-later control (card ZEN-8); signed out, a tap goes to sign-in. */
+  showBookmark?: boolean;
+  isSignedIn?: boolean;
   actions?: React.ReactNode;
 }
 
@@ -37,6 +42,8 @@ export function TrackRow({
   showIndex,
   showFavorite,
   showVisibility,
+  showBookmark = false,
+  isSignedIn = false,
   actions,
 }: TrackRowProps) {
   const [playing, setPlaying] = useState(false);
@@ -101,6 +108,17 @@ export function TrackRow({
             <FavoriteButton
               meditationId={m.id}
               isFavorited={m.is_favorited ?? false}
+              title={m.title}
+            />
+          </span>
+        )}
+
+        {showBookmark && canBookmark(m) && (
+          <span className="relative z-10">
+            <BookmarkButton
+              meditationId={m.id}
+              isBookmarked={m.is_bookmarked ?? false}
+              isSignedIn={isSignedIn}
               title={m.title}
             />
           </span>

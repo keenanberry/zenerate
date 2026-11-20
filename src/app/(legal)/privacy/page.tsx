@@ -46,7 +46,9 @@ export default function PrivacyPage() {
           <strong>Your content:</strong> the meditations you make, with their
           scripts, audio, titles, descriptions, tags and settings, the earlier
           versions you keep, whether each meditation is public, and your
-          favorites and collections.
+          favorites, bookmarks, ratings and collections. Your bookmarks are
+          private; a meditation shows only the average of its ratings and how
+          many there are.
         </li>
         <li>
           <strong>Conversations:</strong> your conversations with the
@@ -243,7 +245,8 @@ export default function PrivacyPage() {
         <li>
           When your account is deleted, your account data, meditations,
           generated audio (earlier versions included), conversations,
-          favorites, collections, plays and usage records are deleted.
+          favorites, bookmarks, ratings, collections, plays and usage records
+          are deleted.
         </li>
         <li>
           Backups may contain deleted data for up to 30 days before they are
