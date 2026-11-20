@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { Bookmark } from "lucide-react";
 import { toast } from "sonner";
@@ -9,9 +9,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import {
   bookmarkLabel,
   bookmarkOverride,
+  bookmarkPending,
   bookmarkTooltip,
   setBookmark,
   setBookmarkOverride,
+  setBookmarkPending,
   signInHref,
   subscribeBookmarks,
 } from "@/lib/meditation/bookmark-state";
@@ -33,19 +35,26 @@ export function useBookmark(meditationId: string, initialBookmarked: boolean, is
     () => bookmarkOverride(meditationId),
     () => undefined,
   );
-  const isBookmarked = override ?? initialBookmarked;
-  const [isPending, setIsPending] = useState(false);
+  const isPending = useSyncExternalStore(
+    subscribeBookmarks,
+    () => bookmarkPending(meditationId),
+    () => false,
+  );
+  // Signed out there is nothing saved, whatever an earlier session in this
+  // tab set (the store is also cleared on sign-in and sign-out).
+  const isBookmarked = isSignedIn ? (override ?? initialBookmarked) : false;
 
   async function toggle() {
     if (!isSignedIn) {
       router.push(signInHref(currentPath()));
       return;
     }
+    if (bookmarkPending(meditationId)) return;
     const next = !isBookmarked;
     setBookmarkOverride(meditationId, next);
-    setIsPending(true);
+    setBookmarkPending(meditationId, true);
     const result = await setBookmark(meditationId, next);
-    setIsPending(false);
+    setBookmarkPending(meditationId, false);
     if (result === "ok") return;
 
     setBookmarkOverride(meditationId, isBookmarked);

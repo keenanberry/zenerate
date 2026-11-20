@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { authErrorMessage } from "@/lib/auth/errors";
+import { resetBookmarkOverrides } from "@/lib/meditation/bookmark-state";
 import { AuthCard } from "@/components/auth-card";
 import { GoogleMark } from "@/components/google-mark";
 import { Button } from "@/components/ui/button";
@@ -66,6 +67,7 @@ export function LoginForm({
   }
 
   function signedIn() {
+    resetBookmarkOverrides();
     router.replace(next);
     router.refresh();
   }

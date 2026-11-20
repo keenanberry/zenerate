@@ -39,6 +39,12 @@ describe("BookmarkButton", () => {
     expect(html).not.toContain("aria-pressed");
   });
 
+  it("never shows a saved state signed out", () => {
+    const html = render({ isSignedIn: false, isBookmarked: true });
+    expect(html).toContain('aria-label="Save Evening Calm for later"');
+    expect(html).not.toContain("fill-current");
+  });
+
   it("renders the server's word on the server, whatever the tab changed since", () => {
     // useSyncExternalStore's server snapshot is used in a static render, so
     // the override shows on the client only; the server's word stands here.

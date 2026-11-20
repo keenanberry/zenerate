@@ -2,11 +2,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   bookmarkLabel,
   bookmarkOverride,
+  bookmarkPending,
   bookmarkTooltip,
   canBookmark,
   resetBookmarkOverrides,
   setBookmark,
   setBookmarkOverride,
+  setBookmarkPending,
   signInHref,
   subscribeBookmarks,
 } from "./bookmark-state";
@@ -80,5 +82,32 @@ describe("shared state", () => {
     setBookmarkOverride("m1", false);
     expect(bookmarkOverride("m1")).toBe(false);
     expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it("shares the in-flight request by meditation", () => {
+    const listener = vi.fn();
+    const unsubscribe = subscribeBookmarks(listener);
+    setBookmarkPending("m1", true);
+    setBookmarkPending("m1", true);
+    expect(bookmarkPending("m1")).toBe(true);
+    expect(bookmarkPending("m2")).toBe(false);
+    setBookmarkPending("m1", false);
+    expect(bookmarkPending("m1")).toBe(false);
+    expect(listener).toHaveBeenCalledTimes(2);
+    unsubscribe();
+  });
+
+  it("forgets everything on reset, so the next account starts from the server's word", () => {
+    setBookmarkOverride("m1", true);
+    setBookmarkPending("m2", true);
+    const listener = vi.fn();
+    const unsubscribe = subscribeBookmarks(listener);
+    resetBookmarkOverrides();
+    expect(bookmarkOverride("m1")).toBeUndefined();
+    expect(bookmarkPending("m2")).toBe(false);
+    expect(listener).toHaveBeenCalledTimes(1);
+    resetBookmarkOverrides();
+    expect(listener).toHaveBeenCalledTimes(1);
+    unsubscribe();
   });
 });

@@ -8,6 +8,7 @@ import { Compass, LayoutDashboard, Plus, LogIn, LogOut, UserRound } from "lucide
 import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
+import { resetBookmarkOverrides } from "@/lib/meditation/bookmark-state";
 
 const navItems = [
   { href: "/dashboard", label: "Library", icon: LayoutDashboard, authed: true },
@@ -23,6 +24,7 @@ export function Nav({ isSignedIn }: { isSignedIn: boolean }) {
 
   async function handleSignOut() {
     await supabase.auth.signOut();
+    resetBookmarkOverrides();
     router.push("/");
     router.refresh();
   }

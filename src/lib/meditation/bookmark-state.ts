@@ -65,7 +65,12 @@ export async function setBookmark(
 // ── Shared state ────────────────────────────────────────────────────────────
 
 const changed = new Map<string, boolean>();
+const inFlight = new Set<string>();
 const listeners = new Set<() => void>();
+
+function notify() {
+  listeners.forEach((listener) => listener());
+}
 
 /** What this tab last set for the meditation, or undefined if it has not. */
 export function bookmarkOverride(meditationId: string): boolean | undefined {
@@ -75,7 +80,23 @@ export function bookmarkOverride(meditationId: string): boolean | undefined {
 export function setBookmarkOverride(meditationId: string, bookmarked: boolean): void {
   if (changed.get(meditationId) === bookmarked) return;
   changed.set(meditationId, bookmarked);
-  listeners.forEach((listener) => listener());
+  notify();
+}
+
+/**
+ * Whether a save or remove for the meditation is on its way. Shared, so a
+ * second control for the same meditation (Popular and Picked for you) waits
+ * too, and two requests never race each other to the server.
+ */
+export function bookmarkPending(meditationId: string): boolean {
+  return inFlight.has(meditationId);
+}
+
+export function setBookmarkPending(meditationId: string, pending: boolean): void {
+  if (inFlight.has(meditationId) === pending) return;
+  if (pending) inFlight.add(meditationId);
+  else inFlight.delete(meditationId);
+  notify();
 }
 
 export function subscribeBookmarks(listener: () => void): () => void {
@@ -85,7 +106,14 @@ export function subscribeBookmarks(listener: () => void): () => void {
   };
 }
 
-/** For tests. */
+/**
+ * Forgets every change this tab made. Sign-in and sign-out are client-side
+ * navigations, so the module outlives the session: without this, one
+ * account's bookmarks would show as another's in the same tab.
+ */
 export function resetBookmarkOverrides(): void {
+  if (changed.size === 0 && inFlight.size === 0) return;
   changed.clear();
+  inFlight.clear();
+  notify();
 }
