@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Compass, LayoutDashboard, Plus, LogIn, LogOut } from "lucide-react";
+import { Compass, LayoutDashboard, Plus, LogIn, LogOut, UserRound } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
@@ -66,6 +66,22 @@ export function Nav({ isSignedIn }: { isSignedIn: boolean }) {
         </div>
         <div className="flex items-center gap-1 sm:gap-2">
           <ThemeToggle />
+          {isSignedIn && (
+            <Button
+              asChild
+              variant={pathname.startsWith("/account") ? "secondary" : "ghost"}
+              size="icon"
+              className="size-8"
+            >
+              <Link
+                href="/account"
+                aria-label="Account"
+                aria-current={pathname.startsWith("/account") ? "page" : undefined}
+              >
+                <UserRound className="h-4 w-4" aria-hidden />
+              </Link>
+            </Button>
+          )}
           {isSignedIn ? (
             <Button variant="ghost" size="sm" onClick={handleSignOut} className="gap-2">
               <LogOut className="h-4 w-4" aria-hidden />

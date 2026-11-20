@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 
 /**
  * Gate for routes that only make sense with an account: the library, the
- * creator and collections. Public pages (/discover, /meditation/[id]) sit
+ * creator, collections and the account page. Public pages (/discover, /meditation/[id]) sit
  * outside this group so signed-out visitors and crawlers can reach them --
  * RLS, not routing, decides which meditations they see.
  */
