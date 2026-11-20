@@ -44,6 +44,7 @@ export function ChatHeader({
         item={deleting ? { kind: "chat", id: chatId, title: name } : null}
         onOpenChange={setDeleting}
         onDeleted={() => {
+          setDeleting(false);
           toast.success("Chat deleted");
           router.replace("/create");
           router.refresh();

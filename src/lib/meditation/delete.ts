@@ -57,14 +57,30 @@ export async function deleteOwnMeditation(
     .eq("meditation_id", id);
   if (versionsError) throw new Error(`reading versions failed: ${versionsError.message}`);
 
+  // The status filter repeats the check above inside the delete itself, so a
+  // render started between the two (the audio route flips the row to
+  // processing_audio) keeps its meditation. A draft render flips another
+  // table, which no single delete can test; that window is the reads above.
   const { data: deleted, error } = await supabase
     .from("meditations")
     .delete()
     .eq("id", id)
     .eq("user_id", userId)
+    .neq("status", "processing_audio")
     .select("audio_path");
   if (error) throw new Error(`deleting meditation failed: ${error.message}`);
-  if (!deleted?.length) return { ok: false, reason: "not_found" };
+  if (!deleted?.length) {
+    // Gone meanwhile (another tab), or a render started: tell them apart, as
+    // the dialog takes a 404 for "already deleted".
+    const { data: still, error: recheckError } = await supabase
+      .from("meditations")
+      .select("id")
+      .eq("id", id)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (recheckError) throw new Error(`reading meditation failed: ${recheckError.message}`);
+    return { ok: false, reason: still ? "busy" : "not_found" };
+  }
 
   // Only once the row is really gone, and only the caller's own folder. The
   // extra paths catch audio from before the per-user layout.

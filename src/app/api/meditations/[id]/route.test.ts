@@ -2,12 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 type Row = Record<string, unknown>;
 
-const { mockGetUser, mockRemoveAudio, mockRevalidate, db, fail } = vi.hoisted(() => ({
+const { mockGetUser, mockRemoveAudio, mockRevalidate, db, fail, beforeDelete } = vi.hoisted(() => ({
   mockGetUser: vi.fn(),
   mockRemoveAudio: vi.fn(),
   mockRevalidate: vi.fn(),
   db: {} as Record<string, Row[]>,
   fail: { table: null as string | null },
+  // Runs just before a delete applies: another request landing in between.
+  beforeDelete: { fn: null as (() => void) | null },
 }));
 
 // A table-backed fake of the caller's client: select and delete apply their
@@ -18,9 +20,11 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     auth: { getUser: mockGetUser },
     from: (table: string) => {
-      const filters: [string, unknown][] = [];
+      const filters: [string, unknown, boolean][] = [];
       const matches = () =>
-        (db[table] ?? []).filter((row) => filters.every(([c, v]) => row[c] === v));
+        (db[table] ?? []).filter((row) =>
+          filters.every(([c, v, equal]) => (row[c] === v) === equal),
+        );
       const error = () => (fail.table === table ? { message: "boom" } : null);
       const chain = {
         mode: "select" as "select" | "delete",
@@ -32,7 +36,11 @@ vi.mock("@/lib/supabase/server", () => ({
           return chain;
         },
         eq(column: string, value: unknown) {
-          filters.push([column, value]);
+          filters.push([column, value, true]);
+          return chain;
+        },
+        neq(column: string, value: unknown) {
+          filters.push([column, value, false]);
           return chain;
         },
         async maybeSingle() {
@@ -40,6 +48,7 @@ vi.mock("@/lib/supabase/server", () => ({
         },
         then(resolve: (r: { data: Row[] | null; error: unknown }) => void) {
           if (error()) return resolve({ data: null, error: error() });
+          if (chain.mode === "delete") beforeDelete.fn?.();
           const hit = matches();
           if (chain.mode === "delete") db[table] = (db[table] ?? []).filter((r) => !hit.includes(r));
           resolve({ data: hit, error: null });
@@ -71,6 +80,7 @@ function signIn(id: string | null) {
 
 beforeEach(() => {
   fail.table = null;
+  beforeDelete.fn = null;
   for (const key of Object.keys(db)) delete db[key];
   db.meditations = [
     { id: ID, user_id: OWNER, status: "completed", is_public: true, audio_path: `${OWNER}/${ID}/a.mp3` },
@@ -125,6 +135,19 @@ describe("DELETE /api/meditations/[id]", () => {
     if (renderStatus) db.meditation_drafts = [{ meditation_id: ID, render_status: renderStatus }];
     expect((await del()).status).toBe(409);
     expect(db.meditations).toHaveLength(1);
+    expect(mockRemoveAudio).not.toHaveBeenCalled();
+  });
+
+  it("answers 409 when a render starts between its check and the delete", async () => {
+    beforeDelete.fn = () => Object.assign(db.meditations[0], { status: "processing_audio" });
+    expect((await del()).status).toBe(409);
+    expect(db.meditations).toHaveLength(1);
+    expect(mockRemoveAudio).not.toHaveBeenCalled();
+  });
+
+  it("answers 404 when another tab deleted it between its check and the delete", async () => {
+    beforeDelete.fn = () => (db.meditations = []);
+    expect((await del()).status).toBe(404);
     expect(mockRemoveAudio).not.toHaveBeenCalled();
   });
 

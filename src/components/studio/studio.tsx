@@ -9,7 +9,7 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/
 import type { StudioUIMessage } from "@/lib/chat/tools";
 import { Chat } from "./chat";
 import { ChatHeader } from "./chat-header";
-import { collectDrafts, describeChatError, latestDetails } from "./drafts";
+import { collectDrafts, currentMeditationId, describeChatError, latestDetails } from "./drafts";
 import { ScriptCanvas } from "./script-canvas";
 import { firstMessageKey, StudioProvider, type StudioContextValue } from "./studio-context";
 import { useVisualViewport } from "./use-visual-viewport";
@@ -66,16 +66,18 @@ export function Studio({ chatId, initialMessages, initialMeditationId, title }: 
   const draft = drafts.at(-1) ?? null;
   const details = useMemo(() => latestDetails(messages), [messages]);
 
-  const meditationId = useMemo(() => {
-    for (let m = messages.length - 1; m >= 0; m--) {
-      for (const part of messages[m].parts) {
-        if (part.type === "tool-writeScript" && part.state === "output-available") {
-          return part.output.meditationId;
-        }
-      }
-    }
-    return initialMeditationId;
-  }, [messages, initialMeditationId]);
+  const meditationId = useMemo(
+    () => currentMeditationId(messages, initialMessages, initialMeditationId),
+    [messages, initialMessages, initialMeditationId],
+  );
+
+  // The heading: the saved title, or what the route will save once this
+  // session's first turn lands (setDetails' title, else the first request).
+  const headerTitle =
+    details?.title ??
+    title ??
+    messages.find((m) => m.role === "user")?.parts.find((p) => p.type === "text")?.text ??
+    null;
 
   // /create hands over the first request through sessionStorage, so it is
   // sent from here, where the stream is watched. Deferred a tick and
@@ -157,7 +159,7 @@ export function Studio({ chatId, initialMessages, initialMeditationId, title }: 
           thinking={thinking}
           error={error ? describeChatError(error) : null}
           unanswered={unanswered}
-          header={<ChatHeader chatId={chatId} title={title} live={live} />}
+          header={<ChatHeader chatId={chatId} title={headerTitle} live={live} />}
           onSend={(text) => void sendMessage({ text })}
           onRetry={() => void regenerate()}
           onStop={() => void stop()}

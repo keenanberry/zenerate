@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { UUID, type DeleteOutcome } from "@/lib/meditation/delete";
+import { UUID } from "@/lib/meditation/delete";
 
 /**
  * Deleting a studio chat, for DELETE /api/chats/[id]. Takes the caller's
@@ -12,7 +12,7 @@ export async function deleteOwnChat(
   supabase: SupabaseClient,
   userId: string,
   id: string,
-): Promise<Exclude<DeleteOutcome, { reason: "busy" }>> {
+): Promise<{ ok: true } | { ok: false; reason: "not_found" }> {
   if (!UUID.test(id)) return { ok: false, reason: "not_found" };
 
   const { data, error } = await supabase

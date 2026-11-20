@@ -203,6 +203,8 @@ export function MeditationMenu({
           item={deleting ? { kind: "meditation", id: meditationId, title } : null}
           onOpenChange={setDeleting}
           onDeleted={() => {
+            // Closed now, so its Delete can't send again while the page goes.
+            setDeleting(false);
             toast.success("Meditation deleted");
             // Its page is gone; the Library is where the owner's others are.
             router.replace("/dashboard");
