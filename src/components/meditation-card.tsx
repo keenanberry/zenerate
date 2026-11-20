@@ -3,6 +3,7 @@ import { AudioStatusIcon } from "@/components/audio-status-icon";
 import { FavoriteButton } from "@/components/favorite-button";
 import { InlinePlayButton } from "@/components/inline-play-button";
 import { MeditationCover } from "@/components/meditation-cover";
+import { RatingSummary } from "@/components/rating-summary";
 import { metaLine } from "@/lib/meditation/meta";
 import type { MeditationWithMeta } from "@/lib/meditation/types";
 import { Globe } from "lucide-react";
@@ -59,6 +60,7 @@ export function MeditationCard({
               <Globe aria-label="Public" className="h-3 w-3 shrink-0" />
             )}
             <span className="min-w-0 truncate">{metaLine({ tags: meditation.tags, settings: meditation.settings })}</span>
+            <RatingSummary stats={meditation.rating} className="shrink-0" />
           </span>
         </Link>
         <div className="flex shrink-0 items-center">

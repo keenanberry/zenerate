@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { MeditationCover } from "@/components/meditation-cover";
+import { RatingSummary } from "@/components/rating-summary";
+import { hasRatings } from "@/lib/meditation/rating-display";
 import { metaLine } from "@/lib/meditation/meta";
 import type { MeditationWithMeta } from "@/lib/meditation/types";
 
@@ -54,8 +56,11 @@ export function DiscoverRow({
                 <p className="line-clamp-2 font-serif text-base font-medium leading-snug group-hover:text-accent-foreground">
                   {m.title}
                 </p>
-                {meta(m) && (
-                  <p className="truncate text-xs text-muted-foreground tabular-nums">{meta(m)}</p>
+                {(meta(m) || hasRatings(m.rating)) && (
+                  <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
+                    <span className="min-w-0 truncate">{meta(m)}</span>
+                    <RatingSummary stats={m.rating} className="shrink-0" />
+                  </p>
                 )}
               </div>
             </Link>
