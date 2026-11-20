@@ -1,6 +1,9 @@
 # Let the Owner Delete a Chat
 
-**Status:** Not started
+**Status:** Done 2026-11-20 (card ZEN-4). `DELETE /api/chats/[id]` (owner-only, by RLS and
+by the route; messages cascade), a Delete in the studio's chat header and on `/account`, each
+behind a confirmation. `/privacy` now says a conversation can be deleted directly. Deleting a
+meditation still keeps its chat, unlinked, as below.
 **Priority:** Post-ship
 
 ## Why it matters

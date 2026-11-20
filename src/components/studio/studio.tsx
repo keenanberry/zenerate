@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import type { StudioUIMessage } from "@/lib/chat/tools";
 import { Chat } from "./chat";
+import { ChatHeader } from "./chat-header";
 import { collectDrafts, describeChatError, latestDetails } from "./drafts";
 import { ScriptCanvas } from "./script-canvas";
 import { firstMessageKey, StudioProvider, type StudioContextValue } from "./studio-context";
@@ -33,9 +34,11 @@ interface StudioProps {
   chatId: string;
   initialMessages: StudioUIMessage[];
   initialMeditationId: string | null;
+  /** The chat's title as last saved; the route names it after the first request. */
+  title: string | null;
 }
 
-export function Studio({ chatId, initialMessages, initialMeditationId }: StudioProps) {
+export function Studio({ chatId, initialMessages, initialMeditationId, title }: StudioProps) {
   const transport = useMemo(
     () =>
       new DefaultChatTransport<StudioUIMessage>({
@@ -154,6 +157,7 @@ export function Studio({ chatId, initialMessages, initialMeditationId }: StudioP
           thinking={thinking}
           error={error ? describeChatError(error) : null}
           unanswered={unanswered}
+          header={<ChatHeader chatId={chatId} title={title} live={live} />}
           onSend={(text) => void sendMessage({ text })}
           onRetry={() => void regenerate()}
           onStop={() => void stop()}

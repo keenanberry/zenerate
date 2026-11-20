@@ -27,7 +27,7 @@ caps and no billing yet; the task file holds the cost model and what to measure.
 | [Analytics](./analytics.md) | Usage + conversion funnel tracking |
 | [Backup retention](./backup-retention.md) | **Moved to ship 52** (2026-10-23). Prune dumps past 30 days, as `/privacy` promises; re-apply deletions after a restore |
 | [Account deletion](./account-deletion.md) | Self-serve delete, including the audio files storage does not cascade |
-| [Chat deletion](./chat-deletion.md) | Let the owner delete a chat; today chats go only with the account |
+| [Chat deletion](./chat-deletion.md) | **Done 2026-11-20 (ZEN-4).** The owner deletes a chat from the studio or `/account` |
 | [Audio storage on R2](./audio-storage-r2.md) | Move generated MP3s to Cloudflare R2 (10 GB free, free egress) if Supabase's 1 GB fills before sign-ups justify Pro. Trigger: storage at about 0.8 GB, or ElevenLabs past Starter |
 | [Error tracking](./error-tracking.md) | **Moved to ship 51** (2026-10-23). Sentry or similar for production visibility |
 | [AI gateway](./ai-gateway.md) | Route model calls through Vercel AI Gateway for token/cost/latency visibility |

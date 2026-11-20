@@ -16,6 +16,7 @@ vi.mock("@/components/ui/dropdown-menu", () => {
     DropdownMenuSeparator: () => <hr />,
   };
 });
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: () => {}, refresh: () => {} }) }));
 vi.mock("@/components/add-to-collection-dialog", () => ({
   AddToCollectionDialog: ({ anchor }: { anchor: ReactNode }) => <>{anchor}</>,
 }));
@@ -73,7 +74,16 @@ describe("MeditationMenu", () => {
         reportHref: null,
         visibility: visibility(true),
       }),
-    ).toEqual(["Edit details", "Make private", "—", "Share", "Add to collection", "Download"]);
+    ).toEqual([
+      "Edit details",
+      "Make private",
+      "—",
+      "Share",
+      "Add to collection",
+      "Download",
+      "—",
+      "Delete",
+    ]);
   });
 
   it("hides Share from the owner while it is private, since the link would 404", () => {
@@ -98,12 +108,28 @@ describe("MeditationMenu", () => {
 
   it("before there is audio, shows the owner Share only if it is already public", () => {
     const owner = { isSignedIn: true, isOwner: true, reportHref: null, visibility: null };
-    expect(items({ ...owner, isPublic: false })).toEqual(["Edit details", "—", "Add to collection"]);
+    expect(items({ ...owner, isPublic: false })).toEqual([
+      "Edit details",
+      "—",
+      "Add to collection",
+      "—",
+      "Delete",
+    ]);
     expect(items({ ...owner, isPublic: true })).toEqual([
       "Edit details",
       "—",
       "Share",
       "Add to collection",
+      "—",
+      "Delete",
+    ]);
+  });
+
+  it("offers Delete to the owner only, last and apart", () => {
+    expect(items({ isSignedIn: true, hasAudio: true })).not.toContain("Delete");
+    expect(items({ isSignedIn: true, isOwner: true, reportHref: null }).slice(-2)).toEqual([
+      "—",
+      "Delete",
     ]);
   });
 });

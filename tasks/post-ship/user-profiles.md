@@ -8,8 +8,12 @@ public `GET /api/profiles/[id]` (profile + public meditations, via `profile_medi
 `meditations.user_id` stays hidden from anon; only opted-in authors are linked. Default is
 private (the "Default privacy" decision below). The `/account` page landed with card ZEN-3: it
 edits the profile (name, bio, avatar URL, the public switch) and holds placeholder sections for
-the user's meditations and chats and for bookmarks. Usage, email/password and deletion are not
-on it yet. Still to do: the `/u/[id]` page,
+the user's meditations and chats and for bookmarks. Card ZEN-4 filled the first: the owner's
+meditations and studio chats, each with a Delete behind a confirmation (`DELETE
+/api/meditations/[id]`, `DELETE /api/chats/[id]`). Bookmarks is still a placeholder; when it
+lands, its table's `meditation_id` must be `on delete cascade`, as `favorites` is, and
+`src/test/owner-delete.db.test.ts` should check it empties. Usage, email/password and account
+deletion are not on the page yet. Still to do: the `/u/[id]` page,
 the author line on Discover cards and the meditation page, avatar upload, follows, account
 deletion. (Scope refreshed 2026-10-22.)
 **Priority:** Post-ship. One of the three "next up" candidates in the README.

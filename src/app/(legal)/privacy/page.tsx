@@ -15,7 +15,7 @@ export default function PrivacyPage() {
   return (
     <>
       <h1>Privacy Policy</h1>
-      <p className="text-muted-foreground">Last updated: October 25, 2026</p>
+      <p className="text-muted-foreground">Last updated: November 20, 2026</p>
 
       <p>
         Zenerate is operated by Keenan Berry, an individual based in Missouri,
@@ -201,13 +201,10 @@ export default function PrivacyPage() {
         replies, as described above.
       </p>
       <p>
-        A conversation is kept until you delete your account. Deleting a
-        meditation keeps the conversation it was made in, so you can make it
-        again. To have a conversation deleted sooner, email{" "}
-        <a href="mailto:privacy@zeneratestudio.com">
-          privacy@zeneratestudio.com
-        </a>
-        .
+        A conversation is kept until you delete it or your account. You can
+        delete a conversation yourself at any time, from the studio or your
+        account page. Deleting a meditation keeps the conversation it was made
+        in, so you can make it again.
       </p>
 
       <h2>Cookies and local storage</h2>
@@ -235,7 +232,9 @@ export default function PrivacyPage() {
         <li>
           A meditation you delete is removed from the live database right
           away, together with its audio, its earlier versions and the plays
-          it received. Its conversation is kept, as described above.
+          it received. Its conversation is kept, as described above, and so
+          is the record that its audio was made, which counts toward your
+          monthly limit.
         </li>
         <li>
           An earlier version you keep is stored until you replace or delete
@@ -270,8 +269,8 @@ export default function PrivacyPage() {
           privacy@zeneratestudio.com
         </a>{" "}
         from the address on your account. I will respond within 30 days. You
-        can delete individual meditations and earlier versions yourself at any
-        time.
+        can delete individual meditations, earlier versions and conversations
+        yourself at any time.
       </p>
 
       <h2>International transfers</h2>

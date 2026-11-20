@@ -25,6 +25,7 @@ export default async function StudioPage({
       chatId={chatId}
       initialMessages={found.messages}
       initialMeditationId={found.chat.meditation_id}
+      title={found.chat.title}
     />
   );
 }
