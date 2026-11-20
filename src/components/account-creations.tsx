@@ -107,13 +107,7 @@ export function AccountCreations({
                   href={`/meditation/${m.id}`}
                   title={m.title}
                   meta={`${m.is_public ? "Public" : "Private"} · ${shortDate(m.created_at)}`}
-                  onDelete={() =>
-                    setDeleting({
-                      kind: "meditation",
-                      id: m.id,
-                      title: m.title,
-                    })
-                  }
+                  onDelete={() => setDeleting({ kind: "meditation", id: m.id, title: m.title })}
                 />
               ))}
             </CreationList>
