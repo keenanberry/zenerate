@@ -43,7 +43,7 @@ Seeded test users: `alice@example.com` / `bob@example.com` — password `passwor
 
 | Path | Purpose |
 |---|---|
-| `src/app/(app)/` | In-app routes. `discover`, `meditation/[id]` are public; `(authed)/` holds dashboard, create, collections/[id] |
+| `src/app/(app)/` | In-app routes. `discover`, `meditation/[id]` are public; `(authed)/` holds dashboard, create, collections/[id], account |
 | `src/app/(auth)/` | Login + auth callbacks |
 | `src/app/api/chat/` | Studio chat agent — persisted chat, tools, daily message ceiling |
 | `src/app/api/audio/generate/` | Audio pipeline trigger — validates, kicks off workflow |

@@ -72,6 +72,9 @@ describe("saveProfile", () => {
     const bare = vi.fn().mockResolvedValue(new Response("oops", { status: 502 }));
     expect(await saveProfile({ bio: "Hi" }, bare)).toEqual({ ok: false, error: "Couldn't save your profile" });
 
+    const notJson = vi.fn().mockResolvedValue(new Response("<html>", { status: 200 }));
+    expect(await saveProfile({ bio: "Hi" }, notJson)).toEqual({ ok: false, error: "Couldn't save your profile" });
+
     const offline = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
     expect(await saveProfile({ bio: "Hi" }, offline)).toMatchObject({ ok: false });
   });

@@ -75,5 +75,10 @@ export async function saveProfile(
     const error = data && typeof data.error === "string" ? data.error : "Couldn't save your profile";
     return { ok: false, error };
   }
+  // A 200 that isn't the stored row (a proxy's HTML page, say) is not a save
+  // the form can show; treating it as one would crash on the missing fields.
+  if (!data || typeof data !== "object" || typeof data.is_public !== "boolean") {
+    return { ok: false, error: "Couldn't save your profile" };
+  }
   return { ok: true, profile: data as Profile };
 }
