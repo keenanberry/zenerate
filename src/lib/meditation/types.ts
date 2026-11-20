@@ -157,8 +157,9 @@ export type MeditationSegment =
 export interface MeditationWithMeta extends Meditation {
   is_favorited?: boolean;
   /**
-   * Whether the signed-in listener has saved it for later (card ZEN-8), set in
-   * one batch per list by markBookmarks. Absent signed out.
+   * Whether the signed-in listener has saved it for later (card ZEN-8), set by
+   * markBookmarks for the meditation page only (card ZEN-12). Absent signed
+   * out and on Discover.
    */
   is_bookmarked?: boolean;
   user_email?: string;

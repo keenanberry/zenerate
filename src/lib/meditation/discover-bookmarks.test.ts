@@ -12,7 +12,7 @@ const MEDITATIONS = [
   { id: "00000000-0000-4000-8000-000000000003", is_public: true, status: "completed" },
 ];
 
-// Every table read is recorded, so the test can count the bookmark lookups.
+// Every table read is recorded, so the test can see there is no bookmark lookup.
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     auth: { getUser: mockGetUser },
@@ -51,20 +51,19 @@ beforeEach(() => {
   rows.meditation_bookmarks = [];
 });
 
-describe("Discover's bookmark state (card ZEN-8)", () => {
-  it("is read in one lookup for the whole list, never per card", async () => {
+describe("Discover's bookmark state (card ZEN-12)", () => {
+  // The bookmark lives on the meditation page only, so Discover never asks.
+  it("is not read for a signed-in listener", async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
     rows.meditation_bookmarks = [{ meditation_id: MEDITATIONS[1].id }];
 
     const found = await getPublicMeditations();
 
-    const lookups = reads.filter((r) => r.table === "meditation_bookmarks");
-    expect(lookups).toHaveLength(1);
-    expect(lookups[0].in).toEqual(MEDITATIONS.map((m) => m.id));
-    expect(found.map((m) => m.is_bookmarked)).toEqual([false, true, false]);
+    expect(reads.filter((r) => r.table === "meditation_bookmarks")).toHaveLength(0);
+    expect(found.every((m) => m.is_bookmarked === undefined)).toBe(true);
   });
 
-  it("reads nothing signed out", async () => {
+  it("is not read signed out", async () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
 
     const found = await getPublicMeditations();

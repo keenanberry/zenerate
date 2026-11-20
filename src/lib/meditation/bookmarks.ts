@@ -87,7 +87,7 @@ export async function removeBookmark(
 export const MAX_BOOKMARK_LOOKUP = 100;
 
 /**
- * Which of these meditations the caller has bookmarked, for Discover's cards
+ * Which of these meditations the caller has bookmarked, for a bookmark control
  * to show filled or empty, in one query per 100 ids. Signed out (no userId),
  * nothing is bookmarked and nothing is read. Malformed ids are dropped.
  */

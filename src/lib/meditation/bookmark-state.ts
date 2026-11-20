@@ -4,9 +4,8 @@
  * is card ZEN-7: PUT and DELETE /api/meditations/[id]/bookmark.
  *
  * A bookmark changed in this tab is remembered here by meditation id, so
- * every control for the same meditation agrees: the same one can sit in
- * Discover's Popular and Picked for you rows at once, and a page the router
- * kept from before the change would otherwise show the old state.
+ * every control for the same meditation agrees: a page the router kept from
+ * before the change would otherwise show the old state.
  */
 
 /** Only a public, finished meditation can be bookmarked (the insert policy's rule). */

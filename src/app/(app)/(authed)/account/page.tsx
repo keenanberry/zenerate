@@ -99,7 +99,7 @@ export default async function AccountPage() {
           <AccountBookmarks
             initial={bookmarks}
             empty={
-              <AccountEmptyState message="Nothing saved yet. Tap the bookmark on a meditation in Discover to save it for later.">
+              <AccountEmptyState message="Nothing saved yet. Open a meditation and tap its bookmark to save it for later.">
                 <Button asChild variant="outline" size="sm">
                   <Link href="/discover">Browse Discover</Link>
                 </Button>

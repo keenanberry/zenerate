@@ -288,10 +288,11 @@ async function markFavorites(
 }
 
 /**
- * Sets is_bookmarked for a signed-in listener (card ZEN-8): one lookup for
- * the whole list through getBookmarkedIds, never one per card. Only a public,
- * finished meditation can be bookmarked, so only those are asked about. A
- * failed read leaves every control empty rather than failing the page.
+ * Sets is_bookmarked for a signed-in listener (card ZEN-8) through
+ * getBookmarkedIds. Only the meditation page asks; Discover shows no bookmark
+ * (card ZEN-12). Only a public, finished meditation can be bookmarked, so only
+ * those are asked about. A failed read leaves the control empty rather than
+ * failing the page.
  */
 async function markBookmarks(
   supabase: ServerClient,
@@ -330,10 +331,7 @@ export async function getPublicMeditations(filters: DiscoverFilters = {}) {
   if (error) throw new Error(error.message);
 
   const meditations = (data ?? []) as MeditationWithMeta[];
-  await Promise.all([
-    markFavorites(supabase, user?.id, meditations),
-    markBookmarks(supabase, user?.id, meditations),
-  ]);
+  await markFavorites(supabase, user?.id, meditations);
   return hydrateAudioUrls(meditations);
 }
 
@@ -392,10 +390,7 @@ export async function getPopularMeditations() {
   }
 
   const row = fillRow(popular, featured);
-  await Promise.all([
-    markFavorites(supabase, user?.id, row),
-    markBookmarks(supabase, user?.id, row),
-  ]);
+  await markFavorites(supabase, user?.id, row);
   return hydrateAudioUrls(row);
 }
 
@@ -442,10 +437,7 @@ export async function getPickedForYou() {
 
   const featured = await getFeaturedMeditations(supabase, user?.id);
   const row = fillRow(picked, featured);
-  await Promise.all([
-    markFavorites(supabase, user?.id, row),
-    markBookmarks(supabase, user?.id, row),
-  ]);
+  await markFavorites(supabase, user?.id, row);
   return hydrateAudioUrls(row);
 }
 
