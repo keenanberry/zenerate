@@ -76,11 +76,6 @@ interface BookmarkButtonProps {
   isSignedIn: boolean;
   /** The meditation's title, for the button's accessible name. */
   title?: string;
-  /**
-   * `cover` sits on a cover's corner (Discover's shelves), on a chip of the
-   * page's own background so it reads over any art.
-   */
-  variant?: "ghost" | "cover";
   className?: string;
 }
 
@@ -89,7 +84,6 @@ export function BookmarkButton({
   isBookmarked: initialBookmarked,
   isSignedIn,
   title,
-  variant = "ghost",
   className,
 }: BookmarkButtonProps) {
   const { isBookmarked, isPending, toggle } = useBookmark(meditationId, initialBookmarked, isSignedIn);
@@ -109,12 +103,7 @@ export function BookmarkButton({
           disabled={isPending}
           aria-pressed={isSignedIn ? isBookmarked : undefined}
           aria-label={bookmarkLabel(isBookmarked, title)}
-          className={cn(
-            "h-10 w-10 sm:h-8 sm:w-8",
-            variant === "cover" &&
-              "rounded-full bg-background/80 text-foreground hover:bg-background hover:text-foreground dark:hover:bg-background",
-            className,
-          )}
+          className={cn("h-10 w-10 sm:h-8 sm:w-8", className)}
         >
           <Bookmark
             aria-hidden

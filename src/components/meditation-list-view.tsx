@@ -10,16 +10,12 @@ interface MeditationListViewProps {
   showFavorite?: boolean;
   showVisibility?: boolean;
   /** The save-for-later control (card ZEN-8); Discover shows it. */
-  showBookmark?: boolean;
-  isSignedIn?: boolean;
 }
 
 export function MeditationListView({
   meditations,
   showFavorite = true,
   showVisibility = false,
-  showBookmark = false,
-  isSignedIn = false,
 }: MeditationListViewProps) {
   const { view } = useView();
 
@@ -33,8 +29,6 @@ export function MeditationListView({
             meditation={m}
             showFavorite={showFavorite}
             showVisibility={showVisibility}
-            showBookmark={showBookmark}
-            isSignedIn={isSignedIn}
           />
         ))}
       </div>
@@ -46,8 +40,6 @@ export function MeditationListView({
       meditations={meditations}
       showFavorite={showFavorite}
       showVisibility={showVisibility}
-      showBookmark={showBookmark}
-      isSignedIn={isSignedIn}
     />
   );
 }

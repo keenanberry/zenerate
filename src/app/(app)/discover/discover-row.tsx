@@ -1,9 +1,7 @@
 import Link from "next/link";
-import { BookmarkButton } from "@/components/bookmark-button";
 import { MeditationCover } from "@/components/meditation-cover";
 import { RatingSummary } from "@/components/rating-summary";
 import { hasRatings } from "@/lib/meditation/rating-display";
-import { canBookmark } from "@/lib/meditation/bookmark-state";
 import { metaLine } from "@/lib/meditation/meta";
 import type { MeditationWithMeta } from "@/lib/meditation/types";
 
@@ -18,22 +16,19 @@ function meta(m: MeditationWithMeta) {
  * phone the row runs to the screen edges; the first card still lines up with
  * the heading.
  *
- * The save-for-later control (card ZEN-8) sits on the cover's corner, beside
- * the card's link rather than inside it, so a tap on it never opens the page.
- * A shelf card is too narrow to give it room beside the title.
+ * No bookmark here (card ZEN-12): a listener opens the meditation and learns
+ * about it before saving it, so the control lives on the meditation page only.
  */
 export function DiscoverRow({
   id,
   title,
   description,
   meditations,
-  isSignedIn,
 }: {
   id: string;
   title: string;
   description: string;
   meditations: MeditationWithMeta[];
-  isSignedIn: boolean;
 }) {
   if (meditations.length === 0) return null;
 
@@ -47,7 +42,7 @@ export function DiscoverRow({
       </div>
       <ul className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6">
         {meditations.map((m) => (
-          <li key={m.id} className="relative w-36 shrink-0 snap-start sm:w-44">
+          <li key={m.id} className="w-36 shrink-0 snap-start sm:w-44">
             <Link
               href={`/meditation/${m.id}`}
               className="group block space-y-3 rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
@@ -72,16 +67,6 @@ export function DiscoverRow({
                 )}
               </div>
             </Link>
-            {canBookmark(m) && (
-              <BookmarkButton
-                meditationId={m.id}
-                isBookmarked={m.is_bookmarked ?? false}
-                isSignedIn={isSignedIn}
-                title={m.title}
-                variant="cover"
-                className="absolute top-1.5 right-1.5"
-              />
-            )}
           </li>
         ))}
       </ul>
