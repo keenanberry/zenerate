@@ -82,6 +82,7 @@ theirs.
 | `meditation_versions` | delete | insert (the workflow archives) |
 | `chat_messages` | nothing; reads only | every save (the chat route) |
 | `chat_turns`, `audio_generation_events` | nothing | `reserve_chat_turn`, `reserve_audio_generation` |
+| `meditation_ratings` | own rows only: insert `meditation_id, user_id, stars` and update `stars` (policy: a public, completed meditation that is not theirs); delete always, so a rating can be taken back after the meditation goes private. Others' rows are unreadable; averages come from `meditation_rating_stats` | nothing more |
 
 Publishing needs `status = 'completed'` and an `audio_path` (`updateMeditation`, and the
 `meditations_guard_publish` trigger for a write that skips it). `anon` reads only the public

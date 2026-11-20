@@ -88,6 +88,7 @@ describe.skipIf(!enabled)("owner deletion against local Supabase", () => {
       service.from("meditation_drafts").insert({ meditation_id: meditationId, script: "Next.", render_status: "failed" }),
       other.from("meditation_plays").insert({ meditation_id: meditationId, user_id: otherId }),
       other.from("favorites").insert({ meditation_id: meditationId, user_id: otherId }),
+      other.from("meditation_ratings").insert({ meditation_id: meditationId, user_id: otherId, stars: 4 }),
     ]);
     for (const { error: e } of inserts) if (e) throw e;
 
@@ -157,7 +158,7 @@ describe.skipIf(!enabled)("owner deletion against local Supabase", () => {
       expect(await count("meditations", "id", meditationId)).toBe(0);
       expect(await onDiscover(anon)).toBe(false);
       expect(await onDiscover(other)).toBe(false);
-      for (const table of ["meditation_versions", "meditation_drafts", "meditation_plays", "favorites", "collection_items"]) {
+      for (const table of ["meditation_versions", "meditation_drafts", "meditation_plays", "favorites", "collection_items", "meditation_ratings"]) {
         expect(await count(table, "meditation_id", meditationId), table).toBe(0);
       }
     });

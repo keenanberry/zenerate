@@ -1,6 +1,7 @@
 # Meditation Ratings
 
-**Status:** Not started
+**Status:** Backend done (card ZEN-5): the table, policies, endpoints and stats below.
+The UI (stars, the end-of-session prompt, Discover's display) is card ZEN-6.
 **Priority:** Post-ship. Raised by the operator before launch (2026-10-31). It needs
 listeners before it means anything, so nothing at launch depends on it.
 **Related:** `src/components/session-player.tsx` (the session view, where a session
@@ -35,6 +36,31 @@ rank by it.
 - A listener who stops early is not asked, because there is no finish. Whether the stars
   also sit on the meditation page under the player, so a rating can be given or changed
   later, is a decision below.
+
+## What ZEN-5 built
+
+- **Migration** `supabase/migrations/20261120020000_meditation_ratings.sql`: the table as
+  described under Data, the four own-row policies, column grants (insert
+  `meditation_id, user_id, stars`; update `stars` only), a trigger that keeps
+  `created_at`/`updated_at`, and `meditation_rating_stats`.
+- **Endpoints**, `src/app/api/meditations/[id]/rating/route.ts`, all on the caller's client:
+  - `GET` → `200 { rating: { stars, created_at, updated_at } | null }` (null for the owner).
+  - `PUT { stars: 1..5 }` → `201 { rating }` new, `200 { rating }` changed.
+  - `DELETE` → `204`, also when there was nothing to remove.
+  - `401` signed out; `404` missing, private (even one's own) or not completed; `403` the
+    owner rating their own; `400` a body that is not exactly `{ stars: int 1..5 }`.
+- **Stats**: `meditation_rating_stats(p_meditation_ids uuid[])` returns
+  `(meditation_id, average numeric rounded to 1 decimal, count bigint)` for public,
+  completed meditations with at least one rating, any caller, at most 100 ids. Read it with
+  `getRatingStats(supabase, ids)` in `src/lib/meditation/ratings.ts`, which batches and
+  returns `Map<id, { average, count }>`; a missing id means no ratings (or not public).
+- **Decided:** an owner cannot rate their own meditation (the policies and the `403`), as
+  with plays and favorites. The stats function is named `meditation_rating_stats`, not
+  `rating_summaries`, beside `meditation_authors`. No server action and no seeded ratings
+  yet: ZEN-6 adds whichever its UI needs. Ranking needs the exact sum, which the function
+  can add then.
+- **Tests:** `src/lib/meditation/ratings.test.ts`, the route test beside it, and the opt-in
+  `src/test/meditation-ratings.db.test.ts`; `owner-delete.db.test.ts` checks the cascade.
 
 ## Data
 
