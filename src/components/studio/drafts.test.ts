@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { StudioUIMessage } from "@/lib/chat/tools";
 import {
   collectDrafts,
+  currentMeditationId,
   describeChatError,
   latestDetails,
   minutesLabel,
@@ -81,6 +82,32 @@ describe("collectDrafts", () => {
       assistant([{ type: "tool-writeScript", toolCallId: "t", state: "input-streaming", input: undefined }]),
     ]);
     expect(draft).toMatchObject({ script: "", durationMinutes: null, streaming: true });
+  });
+});
+
+describe("currentMeditationId", () => {
+  const wrote = (meditationId: string) =>
+    assistant([
+      {
+        type: "tool-writeScript",
+        toolCallId: `t-${meditationId}`,
+        state: "output-available",
+        input: { durationMinutes: 10, script: "One." },
+        output: { ...output, meditationId },
+      },
+    ]);
+
+  it("follows the latest script, else the chat's meditation", () => {
+    expect(currentMeditationId([], [], null)).toBeNull();
+    expect(currentMeditationId([], [], "m1")).toBe("m1");
+    expect(currentMeditationId([wrote("m1")], [], null)).toBe("m1");
+    expect(currentMeditationId([wrote("m1")], [wrote("m1")], "m1")).toBe("m1");
+  });
+
+  it("ignores a meditation deleted since the chat made it, until a script makes another", () => {
+    const history = [wrote("gone")];
+    expect(currentMeditationId(history, history, null)).toBeNull();
+    expect(currentMeditationId([...history, wrote("m2")], history, null)).toBe("m2");
   });
 });
 

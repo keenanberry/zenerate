@@ -88,6 +88,32 @@ export function latestDetails(messages: StudioUIMessage[]): Details | null {
 }
 
 /**
+ * The meditation this chat writes to: the one its latest finished
+ * writeScript reported, else the one the chat was loaded with. A chat that
+ * loads with no meditation but scripts in its history made one that has
+ * since been deleted (the chat outlives it, unlinked), so the ids in that
+ * history lead nowhere; the next script makes a new meditation.
+ */
+export function currentMeditationId(
+  messages: StudioUIMessage[],
+  initialMessages: StudioUIMessage[],
+  initialMeditationId: string | null,
+): string | null {
+  const deleted = new Set(initialMeditationId === null ? writtenIds(initialMessages) : []);
+  return writtenIds(messages).findLast((id) => !deleted.has(id)) ?? initialMeditationId;
+}
+
+function writtenIds(messages: StudioUIMessage[]): string[] {
+  return messages.flatMap((m) =>
+    m.parts.flatMap((part) =>
+      part.type === "tool-writeScript" && part.state === "output-available"
+        ? [part.output.meditationId]
+        : [],
+    ),
+  );
+}
+
+/**
  * Whether the "Make the audio" and "Change something" replies sit under the
  * latest message: it is the agent's finished reply, it saved a draft, and it
  * did not already bring up the audio card. Anything the person sends after

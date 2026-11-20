@@ -41,7 +41,10 @@ rank by it.
 - `meditation_ratings (meditation_id, user_id, stars smallint check (stars between 1 and
   5), created_at, updated_at, primary key (meditation_id, user_id))`. One row per listener
   per meditation; rating again updates it. `user_id` cascades with the account, as
-  favorites do.
+  favorites do, and `meditation_id` must be `on delete cascade` too: owners can delete a
+  meditation (card ZEN-4, `DELETE /api/meditations/[id]`), and its ratings go with it.
+  The opt-in `src/test/owner-delete.db.test.ts` lists every table that must be empty after
+  a delete; add `meditation_ratings` to it.
 - The rating belongs to the meditation, not a version: a re-render or a promoted draft
   keeps it.
 - Security, following task 58: `anon` gets nothing; `authenticated` gets insert, update

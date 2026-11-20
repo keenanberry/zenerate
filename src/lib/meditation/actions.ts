@@ -14,7 +14,8 @@ import {
   toSearchArgs,
   type DiscoverFilters,
 } from "./discover";
-import { removeAudio, removeMeditationAudio } from "@/lib/audio/storage";
+import { removeAudio } from "@/lib/audio/storage";
+import { deleteOwnMeditation } from "./delete";
 import type {
   Meditation,
   MeditationStatus,
@@ -180,35 +181,16 @@ export async function deleteMeditation(id: string) {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  // Read the archived versions first: the delete cascades their rows away,
-  // and storage does not cascade at all.
-  const { data: versions } = await supabase
-    .from("meditation_versions")
-    .select("audio_path")
-    .eq("meditation_id", id);
-  const { data: deleted, error } = await supabase
-    .from("meditations")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", user.id)
-    .select("audio_path");
-  if (error) throw new Error(error.message);
-
-  // Only once the row is really gone, and only the caller's own folder. The
-  // extra paths catch audio from before the per-user layout.
-  if (deleted && deleted.length > 0) {
-    try {
-      await removeMeditationAudio(user.id, id, [
-        deleted[0].audio_path,
-        ...(versions ?? []).map((v) => v.audio_path),
-      ]);
-    } catch (err) {
-      // The meditation is deleted either way. A file left behind sits in the
-      // owner's folder, where account deletion still finds it.
-      console.error(`Removing audio for deleted meditation ${id} failed:`, err);
-    }
+  // The same delete as DELETE /api/meditations/[id], which the UI calls.
+  const outcome = await deleteOwnMeditation(supabase, user.id, id);
+  if (!outcome.ok && outcome.reason === "busy") {
+    throw new Error("Its audio is being made. Delete it once that finishes.");
   }
+  if (!outcome.ok) throw new Error("Meditation not found");
+
   revalidatePath("/dashboard");
+  revalidatePath("/account");
+  revalidatePath("/discover");
 }
 
 export async function getMeditation(id: string) {

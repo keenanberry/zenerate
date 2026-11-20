@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Download,
   Flag,
@@ -12,6 +13,7 @@ import {
   MoreHorizontal,
   Pencil,
   Share,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -23,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AddToCollectionDialog } from "@/components/add-to-collection-dialog";
+import { DeleteDialog } from "@/components/delete-dialog";
 import { shareMeditation, sharePayload } from "@/lib/meditation/share";
 
 export type MeditationMenuProps = {
@@ -68,6 +71,8 @@ export function MeditationMenu({
   // the menu is still closing, the picker reads the menu's focus return as
   // an outside interaction and closes again at once.
   const collectionsNext = useRef(false);
+  const [deleting, setDeleting] = useState(false);
+  const router = useRouter();
 
   // A private link 404s for everyone else, so Share shows only while it is
   // public: the owner's toggle once the audio exists, the server's word before.
@@ -93,95 +98,120 @@ export function MeditationMenu({
   );
 
   return (
-    <DropdownMenu>
-      {isSignedIn ? (
-        // The collection picker opens from a menu item, so it anchors to the
-        // menu's button once the menu has closed.
-        <AddToCollectionDialog
-          meditationId={meditationId}
-          open={collectionsOpen}
-          onOpenChange={setCollectionsOpen}
-          anchor={<DropdownMenuTrigger asChild>{button}</DropdownMenuTrigger>}
-        />
-      ) : (
-        <DropdownMenuTrigger asChild>{button}</DropdownMenuTrigger>
-      )}
-      <DropdownMenuContent
-        align="end"
-        className="min-w-52"
-        onCloseAutoFocus={(e) => {
-          if (!collectionsNext.current) return;
-          collectionsNext.current = false;
-          // Leave focus to the collection picker, which opens now.
-          e.preventDefault();
-          setCollectionsOpen(true);
-        }}
-      >
-        {isOwner && (
-          <>
-            <DropdownMenuItem onSelect={onEdit}>
-              <Pencil />
-              Edit details
+    <>
+      <DropdownMenu>
+        {isSignedIn ? (
+          // The collection picker opens from a menu item, so it anchors to the
+          // menu's button once the menu has closed.
+          <AddToCollectionDialog
+            meditationId={meditationId}
+            open={collectionsOpen}
+            onOpenChange={setCollectionsOpen}
+            anchor={<DropdownMenuTrigger asChild>{button}</DropdownMenuTrigger>}
+          />
+        ) : (
+          <DropdownMenuTrigger asChild>{button}</DropdownMenuTrigger>
+        )}
+        <DropdownMenuContent
+          align="end"
+          className="min-w-52"
+          onCloseAutoFocus={(e) => {
+            if (!collectionsNext.current) return;
+            collectionsNext.current = false;
+            // Leave focus to the collection picker, which opens now.
+            e.preventDefault();
+            setCollectionsOpen(true);
+          }}
+        >
+          {isOwner && (
+            <>
+              <DropdownMenuItem onSelect={onEdit}>
+                <Pencil />
+                Edit details
+              </DropdownMenuItem>
+              {chatId && (
+                <DropdownMenuItem asChild>
+                  <Link href={`/create/${chatId}`}>
+                    <MessageSquare />
+                    Continue in chat
+                  </Link>
+                </DropdownMenuItem>
+              )}
+              {visibility && (
+                <DropdownMenuItem
+                  disabled={visibility.isPending}
+                  onSelect={visibility.toggle}
+                >
+                  {visibility.isPublic ? <Lock /> : <Globe />}
+                  {visibility.isPublic ? "Make private" : "Make public"}
+                </DropdownMenuItem>
+              )}
+              {visitorItems && <DropdownMenuSeparator />}
+            </>
+          )}
+          {canShare && (
+            <DropdownMenuItem onSelect={share}>
+              <Share />
+              Share
             </DropdownMenuItem>
-            {chatId && (
-              <DropdownMenuItem asChild>
-                <Link href={`/create/${chatId}`}>
-                  <MessageSquare />
-                  Continue in chat
-                </Link>
-              </DropdownMenuItem>
-            )}
-            {visibility && (
-              <DropdownMenuItem
-                disabled={visibility.isPending}
-                onSelect={visibility.toggle}
-              >
-                {visibility.isPublic ? <Lock /> : <Globe />}
-                {visibility.isPublic ? "Make private" : "Make public"}
-              </DropdownMenuItem>
-            )}
-            {visitorItems && <DropdownMenuSeparator />}
-          </>
-        )}
-        {canShare && (
-          <DropdownMenuItem onSelect={share}>
-            <Share />
-            Share
-          </DropdownMenuItem>
-        )}
-        {isSignedIn && (
-          <DropdownMenuItem onSelect={() => (collectionsNext.current = true)}>
-            <FolderPlus />
-            Add to collection
-          </DropdownMenuItem>
-        )}
-        {hasAudio && (
-          <DropdownMenuItem asChild>
-            {isSignedIn ? (
-              <a href={`/api/audio/${meditationId}/download`}>
-                <Download />
-                Download
-              </a>
-            ) : (
-              <Link href="/login">
-                <Download />
-                Sign in to download
-              </Link>
-            )}
-          </DropdownMenuItem>
-        )}
-        {reportHref && (
-          <>
-            {visitorItems && <DropdownMenuSeparator />}
+          )}
+          {isSignedIn && (
+            <DropdownMenuItem onSelect={() => (collectionsNext.current = true)}>
+              <FolderPlus />
+              Add to collection
+            </DropdownMenuItem>
+          )}
+          {hasAudio && (
             <DropdownMenuItem asChild>
-              <a href={reportHref}>
-                <Flag />
-                Report
-              </a>
+              {isSignedIn ? (
+                <a href={`/api/audio/${meditationId}/download`}>
+                  <Download />
+                  Download
+                </a>
+              ) : (
+                <Link href="/login">
+                  <Download />
+                  Sign in to download
+                </Link>
+              )}
             </DropdownMenuItem>
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          )}
+          {reportHref && (
+            <>
+              {visitorItems && <DropdownMenuSeparator />}
+              <DropdownMenuItem asChild>
+                <a href={reportHref}>
+                  <Flag />
+                  Report
+                </a>
+              </DropdownMenuItem>
+            </>
+          )}
+          {isOwner && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onSelect={() => setDeleting(true)}>
+                <Trash2 />
+                Delete
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {isOwner && (
+        <DeleteDialog
+          item={deleting ? { kind: "meditation", id: meditationId, title } : null}
+          onOpenChange={setDeleting}
+          onDeleted={() => {
+            // Closed now, so its Delete can't send again while the page goes.
+            setDeleting(false);
+            toast.success("Meditation deleted");
+            // Its page is gone; the Library is where the owner's others are.
+            router.replace("/dashboard");
+            router.refresh();
+          }}
+        />
+      )}
+    </>
   );
 }

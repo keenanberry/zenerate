@@ -187,6 +187,8 @@ interface ChatProps {
   error: { message: string; rateLimited: boolean } | null;
   /** The last saved message is a request with no reply: the turn may still be running. */
   unanswered: boolean;
+  /** Sits above the conversation: the chat's title and Delete. */
+  header?: ReactNode;
   /** Sits above the composer on a phone: the "Script updated" pill. */
   pill?: ReactNode;
   onSend: (text: string) => void;
@@ -202,6 +204,7 @@ export function Chat({
   thinking,
   error,
   unanswered,
+  header,
   pill,
   onSend,
   onRetry,
@@ -233,6 +236,7 @@ export function Chat({
 
   return (
     <div className={cn("flex min-h-0 flex-col", className)}>
+      {header}
       {/* Scrolls one way only. Overflow on one axis makes the other `auto`
           too, so the player's halo, which spills past its card by design,
           used to scroll the chat sideways. The 16px bleed into the gutter

@@ -3,6 +3,11 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PROFILE_COLUMNS, type Profile } from "@/lib/profile/profile";
 import { ProfileForm } from "@/components/profile-form";
+import {
+  AccountCreations,
+  type AccountChat,
+  type AccountMeditation,
+} from "@/components/account-creations";
 import { Button } from "@/components/ui/button";
 
 export const metadata = {
@@ -11,8 +16,9 @@ export const metadata = {
 
 /**
  * The signed-in user's account: their profile (edited through
- * PATCH /api/profile), then their own meditations and chats, then their
- * bookmarks. The last two are placeholders that later cards fill in.
+ * PATCH /api/profile), then their own meditations and chats, each of which
+ * they can delete here, then their bookmarks, a placeholder a later card
+ * fills in.
  * The (authed) layout has already sent signed-out visitors to /login.
  */
 export default async function AccountPage() {
@@ -32,6 +38,25 @@ export default async function AccountPage() {
   if (error) throw new Error("Could not load your profile");
   // A trigger on auth.users creates the row, so a missing one is a bug.
   if (!profile) throw new Error("Profile not found");
+
+  // Owner-only rows, filtered by owner too: the meditations select policy
+  // also passes everyone's public ones. A chat with no title was never sent
+  // to, so it has nothing to show (as on /create).
+  const [{ data: meditations, error: meditationsError }, { data: chats, error: chatsError }] =
+    await Promise.all([
+      supabase
+        .from("meditations")
+        .select("id, title, is_public, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("chats")
+        .select("id, title, updated_at")
+        .eq("user_id", user.id)
+        .not("title", "is", null)
+        .order("updated_at", { ascending: false }),
+    ]);
+  if (meditationsError || chatsError) throw new Error("Could not load your meditations and chats");
 
   return (
     <div className="mx-auto max-w-3xl space-y-10">
@@ -55,11 +80,17 @@ export default async function AccountPage() {
         title="My meditations & chats"
         description="What you've made in the studio, and the conversations behind it."
       >
-        <AccountEmptyState message="Your meditations and studio conversations will be listed here.">
-          <Button asChild variant="outline" size="sm">
-            <Link href="/dashboard">Open your Library</Link>
-          </Button>
-        </AccountEmptyState>
+        <AccountCreations
+          meditations={(meditations ?? []) as AccountMeditation[]}
+          chats={(chats ?? []) as AccountChat[]}
+          empty={
+            <AccountEmptyState message="Your meditations and studio conversations will be listed here.">
+              <Button asChild variant="outline" size="sm">
+                <Link href="/create">Make a meditation</Link>
+              </Button>
+            </AccountEmptyState>
+          }
+        />
       </AccountSection>
 
       <AccountSection

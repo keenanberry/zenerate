@@ -162,14 +162,18 @@ whole row into its client payload. Drafts need no such step: they are not on the
 Bucket `meditation-audio`, private. Paths are `<user_id>/<meditation_id>/<render_id>.mp3`,
 where `render_id` is a fresh UUID per upload (`uploadAudio` in `storage.ts`, `upsert:
 false`). One folder per user, so deleting a user's audio is removing their prefix; one
-folder per meditation, so `deleteMeditation` removes the meditation's folder after the row
-delete succeeds. Rows from before task 32 may still hold a flat `<meditation_id>.mp3`
+folder per meditation, so `deleteOwnMeditation` (`src/lib/meditation/delete.ts`, behind
+`DELETE /api/meditations/[id]`) removes the meditation's folder after the row delete
+succeeds. It refuses with 409 while a render is in flight, which would otherwise upload into
+the emptied folder. Rows from before task 32 may still hold a flat `<meditation_id>.mp3`
 path; every reader goes through the stored `audio_path`, so they keep playing, and the
 deletes remove those explicitly.
 
 Storage does not cascade from the database. Whatever deletes a row that points at audio
-removes the object too: `deleteMeditation` (the folder plus any flat paths) and
-`deleteMeditationVersion` (one object).
+removes the object too: `deleteOwnMeditation` (the folder plus any flat paths) and
+`deleteMeditationVersion` (one object). Deleting a meditation keeps two things by
+`on delete set null`: its chat, and its `audio_generation_events` rows, which the monthly
+audio cap counts, so a delete never hands render slots back.
 
 None of this is in the sandbox snapshot: `generate-audio.ts` writes `output.mp3` inside
 the sandbox, and `storage.ts` uploads it from the Vercel function.
