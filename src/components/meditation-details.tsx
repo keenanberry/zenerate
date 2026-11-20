@@ -16,8 +16,8 @@ import { FavoriteButton } from "@/components/favorite-button";
 import { useMeditationPage } from "@/components/meditation-page";
 import { MeditationMenu, type MeditationMenuProps } from "@/components/meditation-menu";
 import { RatingSummary } from "@/components/rating-summary";
-import { StarRating } from "@/components/star-rating";
 import type { RatingStats } from "@/lib/meditation/ratings";
+import { hasRatings } from "@/lib/meditation/rating-display";
 import { TAG_GROUPS, TAG_LABELS, isTag, type Tag, type TagGroup } from "@/lib/meditation/tags";
 
 const MAX_TAGS = 5;
@@ -38,8 +38,9 @@ interface MeditationDetailsProps {
   /** Owner only, once the audio exists; null otherwise. */
   isPublic: boolean | null;
   /**
-   * The public average and count (card ZEN-6). Undefined hides it, for a
-   * meditation that is not public and finished; null is "No ratings yet".
+   * The public average (card ZEN-6), shown alone on the meta line when there
+   * is one (card ZEN-10); the count and the listener's own rating are in the
+   * page's Ratings section.
    */
   ratingStats?: RatingStats | null;
   /**
@@ -95,11 +96,7 @@ export function MeditationDetails({
             tags={saved.tags}
             meta={meta}
             visibility={visibility && (visibility.isPublic ? "Public" : "Private")}
-            rating={
-              ratingStats !== undefined && (
-                <RatingSummary stats={ratingStats} empty="No ratings yet" />
-              )
-            }
+            rating={hasRatings(ratingStats) && <RatingSummary stats={ratingStats} />}
           />
           <div className="flex items-start gap-1">
             <h1 className="mr-auto font-serif text-2xl font-medium tracking-tight text-balance">
@@ -135,43 +132,6 @@ export function MeditationDetails({
       {children}
       {!editing && saved.description && (
         <p className="max-w-[60ch] text-muted-foreground">{saved.description}</p>
-      )}
-      {!editing && page?.ownRating && <YourRating title={saved.title} />}
-    </div>
-  );
-}
-
-/**
- * The listener's own rating, to give or change with a tap and to clear
- * (card ZEN-6). Only for someone who may rate: signed in, not the owner.
- */
-function YourRating({ title }: { title: string }) {
-  const rating = useMeditationPage()?.ownRating;
-  if (!rating) return null;
-
-  return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-      <span className="text-sm text-muted-foreground">
-        {rating.stars === null ? "Rate this meditation" : "Your rating"}
-      </span>
-      <StarRating
-        value={rating.stars}
-        onRate={(stars) => void rating.rate(stars)}
-        // One write at a time, so two quick taps cannot land out of order.
-        disabled={rating.isPending}
-        label={`Rate ${title}`}
-        className="-ml-2"
-      />
-      {rating.stars !== null && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={rating.clear}
-          disabled={rating.isPending}
-          className="text-muted-foreground"
-        >
-          Clear
-        </Button>
       )}
     </div>
   );

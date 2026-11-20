@@ -45,7 +45,8 @@ describe("AccountBookmarks", () => {
     expect(html).toContain('aria-label="Remove Before Sleep from saved"');
     expect(html).toContain("10 min");
     expect(html).toContain("Alice");
-    expect(html).toContain("4.5 (2)");
+    expect(html).toContain(">4.5<");
+    expect(html).not.toContain("(2)");
     expect(html).not.toContain("Nothing saved");
     expect(html).not.toContain("Load more");
   });

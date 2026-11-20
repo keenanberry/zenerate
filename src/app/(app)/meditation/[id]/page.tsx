@@ -18,6 +18,7 @@ import { getMeditationChatId } from "@/lib/chat/actions";
 import { metaLine } from "@/lib/meditation/meta";
 import { reportHref } from "@/lib/meditation/report";
 import { MeditationVersions } from "@/components/meditation-versions";
+import { MeditationRatings } from "@/components/meditation-ratings";
 import { getOwnRating, getRatingStats } from "@/lib/meditation/ratings";
 
 // One read per request, shared by generateMetadata and the page. React's
@@ -79,7 +80,7 @@ export default async function MeditationDetailPage({
   // failed read hides the ratings rather than the page.
   const rateable = meditation.is_public && meditation.status === "completed";
   const canRate = rateable && !!user && !isOwner;
-  const [ratingStats, ownStars] = await Promise.all([
+  const [ratingStats, ownRating] = await Promise.all([
     rateable
       ? getRatingStats(supabase, [meditation.id])
           .then((stats) => stats.get(meditation.id) ?? null)
@@ -90,7 +91,7 @@ export default async function MeditationDetailPage({
       : undefined,
     canRate
       ? getOwnRating(supabase, user.id, meditation.id)
-          .then((own) => (own.ok ? (own.value?.stars ?? null) : undefined))
+          .then((own) => (own.ok ? own.value : undefined))
           .catch((err) => {
             console.error("Could not load own rating:", err);
             return undefined;
@@ -110,7 +111,11 @@ export default async function MeditationDetailPage({
         isFavorited={meditation.is_favorited ?? false}
         // Unknown own rating (a failed read): no stars and no prompt, rather
         // than asking someone who has already rated.
-        rating={{ canRate: canRate && ownStars !== undefined, stars: ownStars ?? null }}
+        rating={{
+          canRate: canRate && ownRating !== undefined,
+          stars: ownRating?.stars ?? null,
+          ratedAt: ownRating?.updated_at ?? null,
+        }}
       >
         <ScriptPlaybackProvider>
           <div className="space-y-3">
@@ -179,6 +184,10 @@ export default async function MeditationDetailPage({
 
           {meditation.script && <ScriptDisclosure script={meditation.script} />}
         </ScriptPlaybackProvider>
+
+        {/* The count and the listener's own stars, below the script so the
+            header carries only the average (card ZEN-10). */}
+        <MeditationRatings title={meditation.title} stats={ratingStats} />
       </MeditationPageProvider>
 
       {isOwner && <MeditationVersions meditationId={meditation.id} title={meditation.title} />}

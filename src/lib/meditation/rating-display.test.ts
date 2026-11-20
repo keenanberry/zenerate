@@ -4,6 +4,8 @@ import {
   hasRatings,
   nextPromptPhase,
   promptDismissedKey,
+  ratedAgo,
+  ratingCountLabel,
   ratingSummaryLabel,
   reachedEnd,
   shouldPrompt,
@@ -86,5 +88,36 @@ describe("display", () => {
 
   it("keys the dismissal per meditation", () => {
     expect(promptDismissedKey("a")).not.toBe(promptDismissedKey("b"));
+  });
+});
+
+describe("ratingCountLabel", () => {
+  it("says the count in words, shortening thousands", () => {
+    expect(ratingCountLabel(1)).toBe("1 rating");
+    expect(ratingCountLabel(128)).toBe("128 ratings");
+    expect(ratingCountLabel(1000)).toBe("1k ratings");
+    expect(ratingCountLabel(1250)).toBe("1.3k ratings");
+    expect(ratingCountLabel(55_400)).toBe("55k ratings");
+  });
+});
+
+describe("ratedAgo", () => {
+  const now = new Date("2026-11-20T12:00:00Z");
+  const daysBefore = (d: number) => new Date(now.getTime() - d * 86_400_000).toISOString();
+
+  it("reads as days, weeks, months, then years", () => {
+    expect(ratedAgo(daysBefore(0), now)).toBe("Today");
+    expect(ratedAgo(daysBefore(1), now)).toBe("Yesterday");
+    expect(ratedAgo(daysBefore(3), now)).toBe("3 days ago");
+    expect(ratedAgo(daysBefore(7), now)).toBe("1 week ago");
+    expect(ratedAgo(daysBefore(20), now)).toBe("2 weeks ago");
+    expect(ratedAgo(daysBefore(30), now)).toBe("1 month ago");
+    expect(ratedAgo(daysBefore(200), now)).toBe("6 months ago");
+    expect(ratedAgo(daysBefore(400), now)).toBe("1 year ago");
+    expect(ratedAgo(daysBefore(800), now)).toBe("2 years ago");
+  });
+
+  it("treats a clock a little ahead of the server as today", () => {
+    expect(ratedAgo(new Date(now.getTime() + 60_000).toISOString(), now)).toBe("Today");
   });
 });

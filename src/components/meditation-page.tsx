@@ -38,12 +38,15 @@ export function MeditationPageProvider({
 }: {
   meditationId: string;
   isFavorited: boolean;
-  /** Whether this listener may rate it, and their stars if they have. */
-  rating?: { canRate: boolean; stars: number | null };
+  /** Whether this listener may rate it, and their stars and when, if they have. */
+  rating?: { canRate: boolean; stars: number | null; ratedAt: string | null };
   children: React.ReactNode;
 }) {
   const favorite = useFavorite(meditationId, isFavorited);
-  const own = useOwnRating(meditationId, rating?.stars ?? null);
+  const own = useOwnRating(meditationId, {
+    stars: rating?.stars ?? null,
+    ratedAt: rating?.ratedAt ?? null,
+  });
   const ownRating = rating?.canRate ? own : null;
   const [scriptOpen, setScriptOpen] = useState(false);
   const scriptRef = useRef<HTMLDivElement>(null);
