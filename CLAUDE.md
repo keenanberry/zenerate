@@ -51,6 +51,7 @@ Seeded test users: `alice@example.com` / `bob@example.com` — password `passwor
 | `src/lib/audio/` | Audio pipeline — `workflow.ts`, `generate-audio.ts`, `storage.ts` |
 | `src/lib/meditation/` | Parser, types, tag vocabulary, server actions |
 | `src/lib/ai/` | System prompts + the daily chat ceiling |
+| `src/lib/profile/` | User profiles: PATCH validation (kept in step with the `user_profiles` checks), author lookups for public meditations |
 | `src/lib/chat/` | Studio tools (`writeScript`, `setDetails`, `offerAudio`), chat persistence, chat server actions |
 | `src/lib/supabase/` | Client factories (server, browser, service-role) |
 | `src/lib/sentry/` | Error-tracking options shared by `src/instrumentation.ts` and `src/instrumentation-client.ts`; what reports may carry |

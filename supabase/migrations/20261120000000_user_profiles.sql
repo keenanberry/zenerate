@@ -56,7 +56,9 @@ create policy "update_own" on public.user_profiles
   for update using (auth.uid() = id) with check (auth.uid() = id);
 
 revoke all on public.user_profiles from anon, authenticated;
--- What a public profile shows. updated_at stays the owner's.
+-- What a public profile shows signed out. Column grants cannot vary by row,
+-- so a signed-in caller can also read updated_at of a profile RLS shows them
+-- (their own, or a public one); /api/profiles/[id] selects the anon columns.
 grant select (id, display_name, avatar_url, bio, is_public, created_at)
   on public.user_profiles to anon;
 grant select on public.user_profiles to authenticated;
