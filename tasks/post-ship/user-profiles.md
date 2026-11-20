@@ -1,6 +1,14 @@
 # User Profiles
 
-**Status:** Not started. Scoped for a future session (refreshed 2026-10-22)
+**Status:** Started. The record and its API landed 2026-11-20 (card ZEN-2):
+`public.user_profiles` (`display_name`, `avatar_url`, `bio`, opt-in `is_public`; one row per
+account, created by a trigger on `auth.users`), the owner's `GET`/`PATCH /api/profile`, the
+public `GET /api/profiles/[id]` (profile + public meditations, via `profile_meditations`), and
+`meditation_authors` / `getMeditationAuthors` (`src/lib/profile/authors.ts`) for author lines.
+`meditations.user_id` stays hidden from anon; only opted-in authors are linked. Default is
+private (the "Default privacy" decision below). Still to do: the `/account` and `/u/[id]` pages,
+the author line on Discover cards and the meditation page, avatar upload, follows, account
+deletion. (Scope refreshed 2026-10-22.)
 **Priority:** Post-ship. One of the three "next up" candidates in the README.
 
 > **What changed since this was written (2026-10-22).**
@@ -55,7 +63,7 @@ Two unrelated needs converge on the same surface:
 ## Key decisions to make
 
 - **Handles vs. user IDs in URLs.** Handles read better but introduce reservation, profanity, squatting concerns. UUIDs sidestep all of that. A reasonable middle ground: optional handle that defaults to a UUID-derived slug.
-- **Default privacy.** Profiles default-private (opt-in to public) feels safer; opt-out (default public) drives more Discover engagement. Probably default-private with a clear "make profile public" toggle next to the existing "make meditation public" one.
+- **Default privacy.** *Decided 2026-11-20 (ZEN-2): opt-in, default private.* Profiles default-private (opt-in to public) feels safer; opt-out (default public) drives more Discover engagement. Probably default-private with a clear "make profile public" toggle next to the existing "make meditation public" one.
 - **Display name uniqueness.** Probably not required (social-network-ish). But if we link to `/u/handle`, the handle field needs uniqueness even if `display_name` doesn't.
 - **What happens when someone makes their profile private after public meditations exist?** Options: hide all their meditations from Discover, keep meditations visible but anonymize the author, or keep both visible (status quo). Probably option 1 to respect the toggle.
 - **Account deletion semantics.** Hard delete (cascade) vs. soft delete (anonymize but keep meditations on Discover). GDPR/CCPA default expectation is hard delete on request; consider whether public meditations get scrubbed or transferred to an "anonymous" tombstone.

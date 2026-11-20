@@ -51,6 +51,7 @@ Seeded test users: `alice@example.com` / `bob@example.com` — password `passwor
 | `src/lib/audio/` | Audio pipeline — `workflow.ts`, `generate-audio.ts`, `storage.ts` |
 | `src/lib/meditation/` | Parser, types, tag vocabulary, server actions |
 | `src/lib/ai/` | System prompts + the daily chat ceiling |
+| `src/lib/profile/` | User profiles: PATCH validation (kept in step with the `user_profiles` checks), author lookups for public meditations |
 | `src/lib/chat/` | Studio tools (`writeScript`, `setDetails`, `offerAudio`), chat persistence, chat server actions |
 | `src/lib/supabase/` | Client factories (server, browser, service-role) |
 | `src/lib/sentry/` | Error-tracking options shared by `src/instrumentation.ts` and `src/instrumentation-client.ts`; what reports may carry |
@@ -92,3 +93,9 @@ it, then open signups; their spec is
 `docs/superpowers/specs/2026-10-20-agentic-studio-design.md`. Signups stay closed until
 Phase 6 is done.
 Post-ship ideas live in `tasks/post-ship/`. Anything only the operator can do (a phone, a dashboard, an account) goes in `tasks/OPERATOR-TODO.md`. Keep it current when a task leaves an operator item.
+
+<!-- andon:start -->
+This repository keeps what it has learned in `.andon/`: one memory entry a file under `memory/<kind>/`, longer notes under `knowledge/`, plans under `plans/` (`.andon/README.md` says how).
+Those entries are the repository's memory: Andon puts the relevant ones and the project's plan in a run's prompt; read the rest yourself, and record something by adding a file there, never by editing an entry in place.
+`andon memory show` prints the live set (accepted entries, their chains resolved) from this directory, with no board needed.
+<!-- andon:end -->
