@@ -6,7 +6,10 @@ account, created by a trigger on `auth.users`), the owner's `GET`/`PATCH /api/pr
 public `GET /api/profiles/[id]` (profile + public meditations, via `profile_meditations`), and
 `meditation_authors` / `getMeditationAuthors` (`src/lib/profile/authors.ts`) for author lines.
 `meditations.user_id` stays hidden from anon; only opted-in authors are linked. Default is
-private (the "Default privacy" decision below). Still to do: the `/account` and `/u/[id]` pages,
+private (the "Default privacy" decision below). The `/account` page landed with card ZEN-3: it
+edits the profile (name, bio, avatar URL, the public switch) and holds placeholder sections for
+the user's meditations and chats and for bookmarks. Usage, email/password and deletion are not
+on it yet. Still to do: the `/u/[id]` page,
 the author line on Discover cards and the meditation page, avatar upload, follows, account
 deletion. (Scope refreshed 2026-10-22.)
 **Priority:** Post-ship. One of the three "next up" candidates in the README.
