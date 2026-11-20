@@ -16,6 +16,8 @@ import {
 } from "./discover";
 import { removeAudio } from "@/lib/audio/storage";
 import { deleteOwnMeditation } from "./delete";
+import { getBookmarkedIds } from "./bookmarks";
+import { canBookmark } from "./bookmark-state";
 import type {
   Meditation,
   MeditationStatus,
@@ -227,6 +229,7 @@ export async function getMeditation(id: string) {
       .eq("meditation_id", id)
       .maybeSingle();
     meditation.is_favorited = !!fav;
+    await markBookmarks(supabase, user.id, [meditation]);
   }
 
   // The page's player draws the waveform from these peaks and streams the
@@ -285,6 +288,29 @@ async function markFavorites(
 }
 
 /**
+ * Sets is_bookmarked for a signed-in listener (card ZEN-8): one lookup for
+ * the whole list through getBookmarkedIds, never one per card. Only a public,
+ * finished meditation can be bookmarked, so only those are asked about. A
+ * failed read leaves every control empty rather than failing the page.
+ */
+async function markBookmarks(
+  supabase: ServerClient,
+  userId: string | undefined,
+  meditations: MeditationWithMeta[],
+) {
+  const ids = meditations.filter(canBookmark).map((m) => m.id);
+  if (!userId || ids.length === 0) return;
+  try {
+    const saved = await getBookmarkedIds(supabase, userId, ids);
+    meditations.forEach((m) => {
+      m.is_bookmarked = saved.has(m.id);
+    });
+  } catch (err) {
+    console.error("Could not load bookmarks:", err);
+  }
+}
+
+/**
  * Public, completed meditations for /discover, through `discover_meditations`
  * (migration 20261022000036): full-text search over the `search` vector,
  * ranked, plus the category, tag, type and duration filters. With no filters
@@ -304,7 +330,10 @@ export async function getPublicMeditations(filters: DiscoverFilters = {}) {
   if (error) throw new Error(error.message);
 
   const meditations = (data ?? []) as MeditationWithMeta[];
-  await markFavorites(supabase, user?.id, meditations);
+  await Promise.all([
+    markFavorites(supabase, user?.id, meditations),
+    markBookmarks(supabase, user?.id, meditations),
+  ]);
   return hydrateAudioUrls(meditations);
 }
 
@@ -363,7 +392,10 @@ export async function getPopularMeditations() {
   }
 
   const row = fillRow(popular, featured);
-  await markFavorites(supabase, user?.id, row);
+  await Promise.all([
+    markFavorites(supabase, user?.id, row),
+    markBookmarks(supabase, user?.id, row),
+  ]);
   return hydrateAudioUrls(row);
 }
 
@@ -410,7 +442,10 @@ export async function getPickedForYou() {
 
   const featured = await getFeaturedMeditations(supabase, user?.id);
   const row = fillRow(picked, featured);
-  await markFavorites(supabase, user?.id, row);
+  await Promise.all([
+    markFavorites(supabase, user?.id, row),
+    markBookmarks(supabase, user?.id, row),
+  ]);
   return hydrateAudioUrls(row);
 }
 

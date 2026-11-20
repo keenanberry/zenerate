@@ -1,7 +1,8 @@
 # Bookmarks ("save for later")
 
-**Status:** Backend done (card ZEN-7, 2026-11-20). UI is card ZEN-8: a save control on
-Discover cards and the meditation page, and a list (on `/account` or the dashboard).
+**Status:** Backend done (card ZEN-7, 2026-11-20). UI done (card ZEN-8, 2026-11-20): a save
+control on Discover's shelves, results and the meditation page (`BookmarkButton`), and the
+list on `/account#bookmarks` (`AccountBookmarks`).
 **Related:** `favorites` (`supabase/migrations/20250221000000_create_meditations.sql`,
 `src/components/favorite-button.tsx`, `toggleFavorite` in `src/lib/meditation/actions.ts`),
 `src/lib/meditation/ratings.ts` (the pattern this follows).

@@ -6,6 +6,8 @@ interface MeditationTrackListProps {
   showIndex?: boolean;
   showFavorite?: boolean;
   showVisibility?: boolean;
+  showBookmark?: boolean;
+  isSignedIn?: boolean;
   actions?: (meditation: MeditationWithMeta, index: number) => React.ReactNode;
 }
 
@@ -18,6 +20,8 @@ export function MeditationTrackList({
   showIndex = true,
   showFavorite = true,
   showVisibility = false,
+  showBookmark = false,
+  isSignedIn = false,
   actions,
 }: MeditationTrackListProps) {
   return (
@@ -30,6 +34,8 @@ export function MeditationTrackList({
           showIndex={showIndex}
           showFavorite={showFavorite}
           showVisibility={showVisibility}
+          showBookmark={showBookmark}
+          isSignedIn={isSignedIn}
           actions={actions?.(m, i)}
         />
       ))}

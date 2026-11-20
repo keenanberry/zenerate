@@ -11,6 +11,7 @@ import Link from "next/link";
 import { TagPill } from "@/components/tag-pills";
 import { discoverHref } from "@/lib/meditation/discover";
 import { updateMeditation, updateMeditationDetails } from "@/lib/meditation/actions";
+import { BookmarkButton } from "@/components/bookmark-button";
 import { FavoriteButton } from "@/components/favorite-button";
 import { useMeditationPage } from "@/components/meditation-page";
 import { MeditationMenu, type MeditationMenuProps } from "@/components/meditation-menu";
@@ -41,6 +42,11 @@ interface MeditationDetailsProps {
    * meditation that is not public and finished; null is "No ratings yet".
    */
   ratingStats?: RatingStats | null;
+  /**
+   * The save-for-later control (card ZEN-8), for a public, finished
+   * meditation; null hides it. Signed out, a tap goes to sign-in.
+   */
+  bookmark?: { isBookmarked: boolean; isSignedIn: boolean } | null;
   menu: MeditationMenuProps;
   /** Play, or the audio's generate, processing or failed state. */
   children: React.ReactNode;
@@ -61,6 +67,7 @@ export function MeditationDetails({
   meta,
   isPublic,
   ratingStats,
+  bookmark,
   menu,
   children,
 }: MeditationDetailsProps) {
@@ -103,6 +110,15 @@ export function MeditationDetails({
                 meditationId={meditationId}
                 isFavorited={page.favorite.isFavorited}
                 state={page.favorite}
+                title={saved.title}
+                className="shrink-0 text-muted-foreground"
+              />
+            )}
+            {bookmark && (
+              <BookmarkButton
+                meditationId={meditationId}
+                isBookmarked={bookmark.isBookmarked}
+                isSignedIn={bookmark.isSignedIn}
                 title={saved.title}
                 className="shrink-0 text-muted-foreground"
               />

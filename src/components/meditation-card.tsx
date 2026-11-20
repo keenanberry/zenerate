@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { AudioStatusIcon } from "@/components/audio-status-icon";
+import { BookmarkButton } from "@/components/bookmark-button";
 import { FavoriteButton } from "@/components/favorite-button";
 import { InlinePlayButton } from "@/components/inline-play-button";
 import { MeditationCover } from "@/components/meditation-cover";
 import { RatingSummary } from "@/components/rating-summary";
+import { canBookmark } from "@/lib/meditation/bookmark-state";
 import { metaLine } from "@/lib/meditation/meta";
 import type { MeditationWithMeta } from "@/lib/meditation/types";
 import { Globe } from "lucide-react";
@@ -12,6 +14,12 @@ interface MeditationCardProps {
   meditation: MeditationWithMeta;
   showFavorite?: boolean;
   showVisibility?: boolean;
+  /**
+   * The save-for-later control (card ZEN-8), on a public, finished meditation.
+   * Signed out it is still shown, and a tap goes to sign-in.
+   */
+  showBookmark?: boolean;
+  isSignedIn?: boolean;
 }
 
 /**
@@ -24,6 +32,8 @@ export function MeditationCard({
   meditation,
   showFavorite = true,
   showVisibility = false,
+  showBookmark = false,
+  isSignedIn = false,
 }: MeditationCardProps) {
   const href = `/meditation/${meditation.id}`;
 
@@ -74,6 +84,14 @@ export function MeditationCard({
             <FavoriteButton
               meditationId={meditation.id}
               isFavorited={meditation.is_favorited ?? false}
+              title={meditation.title}
+            />
+          )}
+          {showBookmark && canBookmark(meditation) && (
+            <BookmarkButton
+              meditationId={meditation.id}
+              isBookmarked={meditation.is_bookmarked ?? false}
+              isSignedIn={isSignedIn}
               title={meditation.title}
             />
           )}

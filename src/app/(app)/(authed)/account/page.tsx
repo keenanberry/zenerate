@@ -8,6 +8,9 @@ import {
   type AccountChat,
   type AccountMeditation,
 } from "@/components/account-creations";
+import { AccountBookmarks } from "@/components/account-bookmarks";
+import { ACCOUNT_BOOKMARK_PAGE } from "@/lib/meditation/bookmark-state";
+import { listBookmarks, type BookmarkPage } from "@/lib/meditation/bookmarks";
 import { Button } from "@/components/ui/button";
 
 export const metadata = {
@@ -17,8 +20,8 @@ export const metadata = {
 /**
  * The signed-in user's account: their profile (edited through
  * PATCH /api/profile), then their own meditations and chats, each of which
- * they can delete here, then their bookmarks, a placeholder a later card
- * fills in.
+ * they can delete here, then the meditations they have saved for later
+ * (card ZEN-8).
  * The (authed) layout has already sent signed-out visitors to /login.
  */
 export default async function AccountPage() {
@@ -42,8 +45,13 @@ export default async function AccountPage() {
   // Owner-only rows, filtered by owner too: the meditations select policy
   // also passes everyone's public ones. A chat with no title was never sent
   // to, so it has nothing to show (as on /create).
-  const [{ data: meditations, error: meditationsError }, { data: chats, error: chatsError }] =
-    await Promise.all([
+  // Bookmarks: the first page, as GET /api/bookmarks would give it; a failed
+  // read says so in that section rather than failing the page.
+  const [
+    { data: meditations, error: meditationsError },
+    { data: chats, error: chatsError },
+    bookmarks,
+  ] = await Promise.all([
       supabase
         .from("meditations")
         .select("id, title, is_public, created_at")
@@ -55,6 +63,12 @@ export default async function AccountPage() {
         .eq("user_id", user.id)
         .not("title", "is", null)
         .order("updated_at", { ascending: false }),
+      listBookmarks(supabase, user.id, { limit: ACCOUNT_BOOKMARK_PAGE }).catch(
+        (err): BookmarkPage | null => {
+          console.error("Could not load bookmarks:", err);
+          return null;
+        },
+      ),
     ]);
   if (meditationsError || chatsError) throw new Error("Could not load your meditations and chats");
 
@@ -98,11 +112,20 @@ export default async function AccountPage() {
         title="Bookmarks"
         description="Meditations you've saved to come back to."
       >
-        <AccountEmptyState message="Meditations you bookmark will be listed here.">
-          <Button asChild variant="outline" size="sm">
-            <Link href="/discover">Browse Discover</Link>
-          </Button>
-        </AccountEmptyState>
+        {bookmarks ? (
+          <AccountBookmarks
+            initial={bookmarks}
+            empty={
+              <AccountEmptyState message="Nothing saved yet. Tap the bookmark on a meditation in Discover to save it for later.">
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/discover">Browse Discover</Link>
+                </Button>
+              </AccountEmptyState>
+            }
+          />
+        ) : (
+          <AccountEmptyState message="Your bookmarks couldn't be loaded. Try again in a moment." />
+        )}
       </AccountSection>
     </div>
   );
