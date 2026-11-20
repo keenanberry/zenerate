@@ -158,7 +158,10 @@ export function SessionPlayer({
     const root = document.documentElement;
     const overflow = root.style.overflow;
     root.style.overflow = "hidden";
-    closeRef.current?.focus();
+    // A rating prompt that moved in from the page (it was showing while the
+    // view was minimized) keeps the focus its own effect gave it.
+    const prompt = dialogRef.current?.querySelector<HTMLElement>("[data-rating-prompt] [role=dialog]");
+    (prompt ?? closeRef.current)?.focus();
     const playButton = playRef.current;
     return () => {
       root.style.overflow = overflow;
