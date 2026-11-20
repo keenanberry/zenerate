@@ -63,7 +63,7 @@ Two unrelated needs converge on the same surface:
 ## Key decisions to make
 
 - **Handles vs. user IDs in URLs.** Handles read better but introduce reservation, profanity, squatting concerns. UUIDs sidestep all of that. A reasonable middle ground: optional handle that defaults to a UUID-derived slug.
-- **Default privacy.** Profiles default-private (opt-in to public) feels safer; opt-out (default public) drives more Discover engagement. Probably default-private with a clear "make profile public" toggle next to the existing "make meditation public" one.
+- **Default privacy.** *Decided 2026-11-20 (ZEN-2): opt-in, default private.* Profiles default-private (opt-in to public) feels safer; opt-out (default public) drives more Discover engagement. Probably default-private with a clear "make profile public" toggle next to the existing "make meditation public" one.
 - **Display name uniqueness.** Probably not required (social-network-ish). But if we link to `/u/handle`, the handle field needs uniqueness even if `display_name` doesn't.
 - **What happens when someone makes their profile private after public meditations exist?** Options: hide all their meditations from Discover, keep meditations visible but anonymize the author, or keep both visible (status quo). Probably option 1 to respect the toggle.
 - **Account deletion semantics.** Hard delete (cascade) vs. soft delete (anonymize but keep meditations on Discover). GDPR/CCPA default expectation is hard delete on request; consider whether public meditations get scrubbed or transferred to an "anonymous" tombstone.
