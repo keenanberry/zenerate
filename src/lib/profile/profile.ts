@@ -26,16 +26,30 @@ export const PROFILE_LIMITS = { displayName: 50, bio: 300, avatarUrl: 2048 } as 
 
 export type ProfileUpdate = Partial<Pick<Profile, "display_name" | "avatar_url" | "bio" | "is_public">>;
 
+/**
+ * Length in characters (code points), as Postgres' char_length counts them,
+ * so an emoji counts once here as it does in the check constraints.
+ */
+const chars = (s: string) => [...s].length;
+
+/** Postgres text cannot hold NUL, and a name has no use for control characters. */
+const NUL = /\u0000/;
+const CONTROL = /[\u0000-\u001f\u007f-\u009f]/;
+
 /** Trimmed text, with blank text read as "clear this field". */
-const optionalText = (max: number) =>
+const optionalText = (max: number, forbidden: RegExp) =>
   z
     .string()
     .transform((s) => s.trim())
-    .pipe(z.string().max(max))
+    .refine((s) => chars(s) <= max, { message: `Must be at most ${max} characters` })
+    .refine((s) => !forbidden.test(s), { message: "Must not contain control characters" })
     .transform((s) => (s === "" ? null : s))
     .nullable()
     .optional();
 
+// The URL check accepts what the browser's URL parser does, which includes
+// "HTTPS://x" and "https:x"; the user_profiles_avatar_url_https constraint
+// wants a literal "https://" prefix, so require that too or the write 500s.
 const avatarUrl = z
   .string()
   .transform((s) => s.trim())
@@ -44,7 +58,10 @@ const avatarUrl = z
       z.literal(""),
       z
         .url({ protocol: /^https$/ })
-        .max(PROFILE_LIMITS.avatarUrl),
+        .startsWith("https://", { message: "Avatar must be an https:// URL" })
+        .refine((s) => chars(s) <= PROFILE_LIMITS.avatarUrl, {
+          message: `Must be at most ${PROFILE_LIMITS.avatarUrl} characters`,
+        }),
     ]),
   )
   .transform((s) => (s === "" ? null : s))
@@ -53,8 +70,8 @@ const avatarUrl = z
 
 const updateSchema = z
   .strictObject({
-    display_name: optionalText(PROFILE_LIMITS.displayName),
-    bio: optionalText(PROFILE_LIMITS.bio),
+    display_name: optionalText(PROFILE_LIMITS.displayName, CONTROL),
+    bio: optionalText(PROFILE_LIMITS.bio, NUL),
     avatar_url: avatarUrl,
     is_public: z.boolean().optional(),
   })

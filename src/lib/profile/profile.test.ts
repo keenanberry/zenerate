@@ -48,6 +48,26 @@ describe("parseProfileUpdate", () => {
     expect(parseProfileUpdate({ bio: "a".repeat(PROFILE_LIMITS.bio) })).toMatchObject({ ok: true });
   });
 
+  it("counts characters as Postgres does, so 50 emoji make a valid name", () => {
+    expect(parseProfileUpdate({ display_name: "🧘".repeat(PROFILE_LIMITS.displayName) })).toMatchObject({ ok: true });
+    expect(parseProfileUpdate({ display_name: "🧘".repeat(PROFILE_LIMITS.displayName + 1) })).toMatchObject({
+      ok: false,
+    });
+  });
+
+  it("refuses text Postgres cannot store, and control characters in a name", () => {
+    expect(parseProfileUpdate({ bio: "a\u0000b" })).toMatchObject({ ok: false });
+    expect(parseProfileUpdate({ display_name: "a\u0000b" })).toMatchObject({ ok: false });
+    expect(parseProfileUpdate({ display_name: "a\u0007b" })).toMatchObject({ ok: false });
+    expect(parseProfileUpdate({ bio: "Line one.\nLine two." })).toMatchObject({ ok: true });
+  });
+
+  it("refuses an https URL the database's https:// check would reject", () => {
+    for (const avatar_url of ["HTTPS://example.com/a.png", "https:example.com/a.png", "https:/example.com/a.png"]) {
+      expect(parseProfileUpdate({ avatar_url })).toMatchObject({ ok: false });
+    }
+  });
+
   it("refuses an avatar that is not an https URL", () => {
     for (const avatar_url of ["http://example.com/a.png", "javascript:alert(1)", "data:image/png;base64,AA", "not a url"]) {
       expect(parseProfileUpdate({ avatar_url })).toMatchObject({ ok: false });
