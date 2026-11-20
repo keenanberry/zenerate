@@ -19,7 +19,6 @@ interface TrackRowProps {
   showIndex: boolean;
   showFavorite: boolean;
   showVisibility: boolean;
-  /** The save-for-later control (card ZEN-8); signed out, a tap goes to sign-in. */
   actions?: React.ReactNode;
 }
 

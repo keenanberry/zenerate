@@ -9,7 +9,6 @@ interface MeditationListViewProps {
   meditations: MeditationWithMeta[];
   showFavorite?: boolean;
   showVisibility?: boolean;
-  /** The save-for-later control (card ZEN-8); Discover shows it. */
 }
 
 export function MeditationListView({

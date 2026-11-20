@@ -12,10 +12,6 @@ interface MeditationCardProps {
   meditation: MeditationWithMeta;
   showFavorite?: boolean;
   showVisibility?: boolean;
-  /**
-   * The save-for-later control (card ZEN-8), on a public, finished meditation.
-   * Signed out it is still shown, and a tap goes to sign-in.
-   */
 }
 
 /**

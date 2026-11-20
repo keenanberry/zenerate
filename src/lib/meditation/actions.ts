@@ -288,11 +288,11 @@ async function markFavorites(
 }
 
 /**
- * Sets is_bookmarked for a signed-in listener (card ZEN-8): one lookup for
- * the whole list through getBookmarkedIds, never one per card. Only the
- * meditation page asks; Discover shows no bookmark (card ZEN-12). Only a public,
- * finished meditation can be bookmarked, so only those are asked about. A
- * failed read leaves every control empty rather than failing the page.
+ * Sets is_bookmarked for a signed-in listener (card ZEN-8) through
+ * getBookmarkedIds. Only the meditation page asks; Discover shows no bookmark
+ * (card ZEN-12). Only a public, finished meditation can be bookmarked, so only
+ * those are asked about. A failed read leaves the control empty rather than
+ * failing the page.
  */
 async function markBookmarks(
   supabase: ServerClient,
