@@ -25,17 +25,24 @@ export const THANKS_MS = 1800;
 export function RatingPrompt({
   title,
   placement,
+  rated = false,
   onRate,
   onClose,
 }: {
   title: string;
   placement: "session" | "page";
+  /**
+   * Already rated through this prompt. Opening the session view moves the
+   * prompt there, which mounts it afresh; this resumes the thank-you rather
+   * than asking again.
+   */
+  rated?: boolean;
   /** Saves the stars; resolves false when the save failed. */
   onRate: (stars: number) => Promise<boolean>;
   /** `rated` is true after the thank-you, false on "Not now" or close. */
   onClose: (rated: boolean) => void;
 }) {
-  const [phase, setPhase] = useState<"ask" | "saving" | "thanks">("ask");
+  const [phase, setPhase] = useState<"ask" | "saving" | "thanks">(rated ? "thanks" : "ask");
   const [chosen, setChosen] = useState<number | null>(null);
   const headingId = useId();
   const panelRef = useRef<HTMLDivElement>(null);

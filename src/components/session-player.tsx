@@ -136,6 +136,7 @@ export function SessionPlayer({
       <RatingPrompt
         title={title}
         placement={placement}
+        rated={ownRating.stars !== null && !ownRating.isPending}
         onRate={ownRating.rate}
         onClose={closePrompt}
       />

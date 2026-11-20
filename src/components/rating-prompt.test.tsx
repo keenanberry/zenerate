@@ -66,4 +66,12 @@ describe("RatingPrompt", () => {
     expect(render("page")).toMatch(/role="dialog" aria-modal="false"/);
     expect(render("page")).toContain("fixed");
   });
+
+  it("resumes the thank-you when it moves into the session view after a rating", () => {
+    const html = renderToStaticMarkup(
+      <RatingPrompt title="Evening Calm" placement="session" rated onRate={async () => true} onClose={noop} />,
+    );
+    expect(html).toContain("Thank you");
+    expect(html).not.toContain("How was this meditation?");
+  });
 });
