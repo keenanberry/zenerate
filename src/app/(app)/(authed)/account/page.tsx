@@ -19,9 +19,10 @@ export const metadata = {
 
 /**
  * The signed-in user's account: their profile (edited through
- * PATCH /api/profile), then their own meditations and chats, each of which
- * they can delete here, then the meditations they have saved for later
- * (card ZEN-8).
+ * PATCH /api/profile), then the meditations they have saved for later
+ * (card ZEN-8), then their own meditations and chats, each of which they can
+ * delete here. Those come last and start closed (card ZEN-11): the studio is
+ * where they are worked on.
  * The (authed) layout has already sent signed-out visitors to /login.
  */
 export default async function AccountPage() {
@@ -90,24 +91,6 @@ export default async function AccountPage() {
       </AccountSection>
 
       <AccountSection
-        id="creations"
-        title="My meditations & chats"
-        description="What you've made in the studio, and the conversations behind it."
-      >
-        <AccountCreations
-          meditations={(meditations ?? []) as AccountMeditation[]}
-          chats={(chats ?? []) as AccountChat[]}
-          empty={
-            <AccountEmptyState message="Your meditations and studio conversations will be listed here.">
-              <Button asChild variant="outline" size="sm">
-                <Link href="/create">Make a meditation</Link>
-              </Button>
-            </AccountEmptyState>
-          }
-        />
-      </AccountSection>
-
-      <AccountSection
         id="bookmarks"
         title="Bookmarks"
         description="Meditations you've saved to come back to."
@@ -126,6 +109,24 @@ export default async function AccountPage() {
         ) : (
           <AccountEmptyState message="Your bookmarks couldn't be loaded. Try again in a moment." />
         )}
+      </AccountSection>
+
+      <AccountSection
+        id="creations"
+        title="My meditations & chats"
+        description="What you've made in the studio, and the conversations behind it."
+      >
+        <AccountCreations
+          meditations={(meditations ?? []) as AccountMeditation[]}
+          chats={(chats ?? []) as AccountChat[]}
+          empty={
+            <AccountEmptyState message="Your meditations and studio conversations will be listed here.">
+              <Button asChild variant="outline" size="sm">
+                <Link href="/create">Make a meditation</Link>
+              </Button>
+            </AccountEmptyState>
+          }
+        />
       </AccountSection>
     </div>
   );
