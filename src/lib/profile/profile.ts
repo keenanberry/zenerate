@@ -50,6 +50,9 @@ const optionalText = (max: number, forbidden: RegExp) =>
 // The URL check accepts what the browser's URL parser does, which includes
 // "HTTPS://x" and "https:x"; the user_profiles_avatar_url_https constraint
 // wants a literal "https://" prefix, so require that too or the write 500s.
+// The parser also percent-encodes or drops control characters and spaces,
+// but zod returns the raw string, so refuse them here: NUL would 500 too.
+const URL_FORBIDDEN = /[\u0000-\u0020\u007f-\u009f]/;
 const avatarUrl = z
   .string()
   .transform((s) => s.trim())
@@ -59,6 +62,7 @@ const avatarUrl = z
       z
         .url({ protocol: /^https$/ })
         .startsWith("https://", { message: "Avatar must be an https:// URL" })
+        .refine((s) => !URL_FORBIDDEN.test(s), { message: "Avatar URL must not contain spaces or control characters" })
         .refine((s) => chars(s) <= PROFILE_LIMITS.avatarUrl, {
           message: `Must be at most ${PROFILE_LIMITS.avatarUrl} characters`,
         }),

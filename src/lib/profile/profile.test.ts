@@ -68,6 +68,13 @@ describe("parseProfileUpdate", () => {
     }
   });
 
+  it("refuses an avatar URL with NUL, other control characters or spaces inside", () => {
+    for (const avatar_url of ["https://example.com/a\u0000b", "https://example.com/a\tb", "https://example.com/a\nb", "https://example.com/a b"]) {
+      expect(parseProfileUpdate({ avatar_url })).toMatchObject({ ok: false });
+    }
+    expect(parseProfileUpdate({ avatar_url: "  https://example.com/a.png\n" })).toMatchObject({ ok: true });
+  });
+
   it("refuses an avatar that is not an https URL", () => {
     for (const avatar_url of ["http://example.com/a.png", "javascript:alert(1)", "data:image/png;base64,AA", "not a url"]) {
       expect(parseProfileUpdate({ avatar_url })).toMatchObject({ ok: false });
