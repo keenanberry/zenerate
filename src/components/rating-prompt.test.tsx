@@ -25,18 +25,17 @@ describe("StarRating", () => {
 });
 
 describe("RatingSummary", () => {
-  it("shows the average and count, with words for screen readers", () => {
+  it("shows the average alone, with the count in words for screen readers", () => {
     const html = renderToStaticMarkup(<RatingSummary stats={{ average: 4.6, count: 128 }} />);
-    expect(html).toContain("4.6 (128)");
+    expect(html).toContain(">4.6<");
+    expect(html).not.toContain("(128)");
     expect(html).toContain("Rated 4.6 out of 5 by 128 listeners");
   });
 
-  it("shows nothing without ratings, unless told what to say", () => {
+  it("shows nothing without ratings", () => {
     expect(renderToStaticMarkup(<RatingSummary stats={undefined} />)).toBe("");
+    expect(renderToStaticMarkup(<RatingSummary stats={null} />)).toBe("");
     expect(renderToStaticMarkup(<RatingSummary stats={{ average: 0, count: 0 }} />)).toBe("");
-    expect(
-      renderToStaticMarkup(<RatingSummary stats={null} empty="No ratings yet" />),
-    ).toContain("No ratings yet");
   });
 });
 
