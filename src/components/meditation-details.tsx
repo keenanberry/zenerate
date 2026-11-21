@@ -6,6 +6,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  BottomSheet,
+  BottomSheetContent,
+  BottomSheetTrigger,
+} from "@/components/ui/bottom-sheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import Link from "next/link";
 import { TagPill } from "@/components/tag-pills";
@@ -19,6 +24,8 @@ import { RatingSummary } from "@/components/rating-summary";
 import type { RatingStats } from "@/lib/meditation/ratings";
 import { hasRatings } from "@/lib/meditation/rating-display";
 import { TAG_GROUPS, TAG_LABELS, isTag, type Tag, type TagGroup } from "@/lib/meditation/tags";
+import { useIsDesktop } from "@/lib/use-is-desktop";
+import { cn } from "@/lib/utils";
 
 const MAX_TAGS = 5;
 
@@ -346,49 +353,69 @@ function AddTagPopover({
   onAdd: (tag: Tag) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const desktop = useIsDesktop();
+
+  const trigger = (
+    <Button
+      type="button"
+      variant="outline"
+      size="xs"
+      disabled={disabled}
+      className="rounded-full"
+    >
+      <Plus />
+      {disabled ? `${MAX_TAGS} tags max` : "Add tag"}
+    </Button>
+  );
+
+  const groups = (Object.keys(TAG_GROUPS) as TagGroup[]).map((group) => {
+    const remaining = TAG_GROUPS[group].filter((tag) => !selected.includes(tag));
+    if (remaining.length === 0) return null;
+    return (
+      <div key={group} className="space-y-2">
+        <p className="text-xs font-medium tracking-[0.06em] text-muted-foreground uppercase">
+          {GROUP_LABELS[group]}
+        </p>
+        <div className={cn("flex flex-wrap", desktop ? "gap-1.5" : "gap-2")}>
+          {remaining.map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => {
+                onAdd(tag);
+                // Close at the cap; otherwise stay open for the next pick.
+                if (selected.length + 1 >= MAX_TAGS) setOpen(false);
+              }}
+              className={cn(
+                "rounded-full border border-border text-xs leading-none font-medium tracking-[0.06em] outline-none hover:bg-menu-hover focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-safe:transition-colors",
+                // A thumb's target on a phone: 40px tall.
+                desktop ? "px-2.5 py-1" : "h-10 px-4",
+              )}
+            >
+              {TAG_LABELS[tag]}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  });
+
+  if (!desktop) {
+    return (
+      <BottomSheet open={open} onOpenChange={setOpen}>
+        <BottomSheetTrigger asChild>{trigger}</BottomSheetTrigger>
+        <BottomSheetContent title="Add tag" followKeyboard>
+          <div className="space-y-5 pt-1">{groups}</div>
+        </BottomSheetContent>
+      </BottomSheet>
+    );
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          size="xs"
-          disabled={disabled}
-          className="rounded-full"
-        >
-          <Plus />
-          {disabled ? `${MAX_TAGS} tags max` : "Add tag"}
-        </Button>
-      </PopoverTrigger>
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent align="start" className="max-h-80 w-80 space-y-4 overflow-y-auto">
-        {(Object.keys(TAG_GROUPS) as TagGroup[]).map((group) => {
-          const remaining = TAG_GROUPS[group].filter((tag) => !selected.includes(tag));
-          if (remaining.length === 0) return null;
-          return (
-            <div key={group} className="space-y-2">
-              <p className="text-xs font-medium tracking-[0.06em] text-muted-foreground uppercase">
-                {GROUP_LABELS[group]}
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {remaining.map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => {
-                      onAdd(tag);
-                      // Close at the cap; otherwise stay open for the next pick.
-                      if (selected.length + 1 >= MAX_TAGS) setOpen(false);
-                    }}
-                    className="rounded-full border border-border px-2.5 py-1 text-xs leading-none font-medium tracking-[0.06em] outline-none hover:bg-menu-hover focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-safe:transition-colors"
-                  >
-                    {TAG_LABELS[tag]}
-                  </button>
-                ))}
-              </div>
-            </div>
-          );
-        })}
+        {groups}
       </PopoverContent>
     </Popover>
   );
