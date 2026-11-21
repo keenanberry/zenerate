@@ -119,6 +119,13 @@ public = false
 file_size_limit = "5MiB"
 allowed_mime_types = ["audio/mpeg"]
 
+# Profile photos. Production gets this bucket (and its storage policies) from
+# migration 20261121000000_avatars_bucket.sql; keep the two in step.
+[storage.buckets.avatars]
+public = true
+file_size_limit = "1MiB"
+allowed_mime_types = ["image/webp"]
+
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]
 enabled = true
