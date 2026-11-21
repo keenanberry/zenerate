@@ -6,12 +6,13 @@ import { useRouter } from "next/navigation";
 import { MoreHorizontal, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { BottomSheetHeader } from "@/components/ui/bottom-sheet";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  ResponsiveMenu,
+  ResponsiveMenuContent,
+  ResponsiveMenuItem,
+  ResponsiveMenuTrigger,
+} from "@/components/ui/responsive-menu";
 import { DeleteDialog, type Deletable } from "@/components/delete-dialog";
 import type { Chat } from "@/lib/meditation/types";
 
@@ -42,6 +43,10 @@ export function DraftChatList({
       <ul className="divide-y border-y">
         {shown.map((chat) => {
           const title = chat.title ?? "New chat";
+          const date = new Date(chat.updated_at).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+          });
           return (
             <li key={chat.id} className="flex items-center gap-2">
               <Link
@@ -53,14 +58,11 @@ export function DraftChatList({
                   dateTime={chat.updated_at}
                   className="shrink-0 text-sm text-muted-foreground tabular-nums"
                 >
-                  {new Date(chat.updated_at).toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                  })}
+                  {date}
                 </time>
               </Link>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+              <ResponsiveMenu>
+                <ResponsiveMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -69,17 +71,21 @@ export function DraftChatList({
                   >
                     <MoreHorizontal className="size-5 sm:size-4" />
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
+                </ResponsiveMenuTrigger>
+                <ResponsiveMenuContent
+                  align="end"
+                  title={`More for ${title}`}
+                  header={<BottomSheetHeader title={title} meta={`Edited ${date}`} />}
+                >
+                  <ResponsiveMenuItem
                     variant="destructive"
                     onSelect={() => setDeleting({ kind: "chat", id: chat.id, title })}
                   >
                     <Trash2 />
                     Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  </ResponsiveMenuItem>
+                </ResponsiveMenuContent>
+              </ResponsiveMenu>
             </li>
           );
         })}
