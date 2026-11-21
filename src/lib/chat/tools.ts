@@ -397,7 +397,10 @@ export const studioTools = {
         const { url } = await storeCover(meditationId, image);
         return { coverUrl: url, remaining: COVER_CAP - (count as number) };
       } catch (failure) {
-        console.error("[cover] generation failed", failure);
+        // Name and message only: an API error carries the request body,
+        // and the subject describes a meditation that may be private.
+        const { name, message } = failure instanceof Error ? failure : { name: "Error", message: String(failure) };
+        console.error("[cover] generation failed", name, message);
         Sentry.captureException(failure, { tags: { area: "cover" } });
         const { error: releaseError } = await service.rpc("release_cover_generation", {
           p_meditation: meditationId,

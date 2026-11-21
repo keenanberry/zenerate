@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import sharp from "sharp";
 import { createClient as createServiceClient } from "@/lib/supabase/service-role";
 import type { GeneratedImage } from "./generate";
 import { UUID } from "./remove";
@@ -37,6 +36,11 @@ export function isOwnCoverPath(path: string | null | undefined, meditationId: st
  * format the provider returned.
  */
 async function encode(bytes: Uint8Array): Promise<{ full: Buffer; thumb: Buffer }> {
+  // Loaded here, not at the top: sharp is a native module, and this file is
+  // reached from the chat route. If its binary failed to load, a top-level
+  // import would take the whole studio down; here it fails one cover, which
+  // makeCover releases like any other failure.
+  const { default: sharp } = await import("sharp");
   const source = sharp(bytes).rotate();
   const { width = FULL_EDGE, height = FULL_EDGE } = await source.metadata();
   const edge = Math.min(width, height, FULL_EDGE);
@@ -89,13 +93,19 @@ export async function storeCover(
       if (error) throw new Error(`Cover upload failed: ${error.message}`);
       uploaded.push(objectPath);
     }
-    const { error: updateError } = await supabase
+    const { data: updated, error: updateError } = await supabase
       .from("meditations")
       .update({ cover_path: path })
-      .eq("id", meditationId);
+      .eq("id", meditationId)
+      .select("id");
     if (updateError) throw new Error(`Saving the cover failed: ${updateError.message}`);
+    // Deleted while the cover was being made: nothing points at the upload.
+    if (!updated?.length) throw new Error("Saving the cover failed: the meditation is gone.");
   } catch (error) {
-    if (uploaded.length > 0) await bucket.remove(uploaded);
+    if (uploaded.length > 0) {
+      const { error: removeError } = await bucket.remove(uploaded);
+      if (removeError) console.error("[cover] removing an unused upload failed", removeError.message);
+    }
     throw error;
   }
 

@@ -11,6 +11,7 @@ const db = vi.hoisted(() => ({
   updates: [] as { values: Record<string, unknown>; id: string }[],
   removed: [] as string[][],
   failUpdate: false,
+  gone: false,
 }));
 
 vi.mock("@/lib/supabase/service-role", () => ({
@@ -20,10 +21,13 @@ vi.mock("@/lib/supabase/service-role", () => ({
         eq: () => ({ single: async () => ({ data: { cover_path: db.previous }, error: null }) }),
       }),
       update: (values: Record<string, unknown>) => ({
-        eq: async (_column: string, id: string) => {
-          db.updates.push({ values, id });
-          return { error: db.failUpdate ? { message: "update refused" } : null };
-        },
+        eq: (_column: string, id: string) => ({
+          select: async () => {
+            db.updates.push({ values, id });
+            if (db.failUpdate) return { data: null, error: { message: "update refused" } };
+            return { data: db.gone ? [] : [{ id }], error: null };
+          },
+        }),
       }),
     }),
     storage: {
@@ -85,6 +89,7 @@ describe("storeCover", () => {
     db.updates = [];
     db.removed = [];
     db.failUpdate = false;
+    db.gone = false;
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://abc.supabase.co");
     png = new Uint8Array(
       await sharp({ create: { width: 1024, height: 1024, channels: 3, background: "#4a6b5d" } }).png().toBuffer(),
@@ -134,6 +139,12 @@ describe("storeCover", () => {
     db.previous = `${MED}/old.webp`;
     db.failUpdate = true;
     await expect(storeCover(MED, { bytes: png, mediaType: "image/png" })).rejects.toThrow(/update refused/);
+    expect(db.removed.map((paths) => [...paths].sort())).toEqual([db.uploads.map((u) => u.path).sort()]);
+  });
+
+  it("removes what it uploaded when the meditation was deleted meanwhile", async () => {
+    db.gone = true;
+    await expect(storeCover(MED, { bytes: png, mediaType: "image/png" })).rejects.toThrow(/meditation is gone/);
     expect(db.removed.map((paths) => [...paths].sort())).toEqual([db.uploads.map((u) => u.path).sort()]);
   });
 
