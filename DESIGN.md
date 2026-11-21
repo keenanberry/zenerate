@@ -644,8 +644,12 @@ to one house look.
 - **The fallback rule.** No `coverUrl`, or a photo that fails to load, draws the
   designed cover in its place, silently. A broken-image box never shows. While the
   photo loads its square holds a Hush (`bg-muted`) field.
-- **Served at its drawn size.** `next/image` serves each cover at 1x and 2x of its
-  `size`, so a 56px row never downloads the 1024px original.
+- **Two stored sizes, served as stored.** Each cover is stored twice as WebP: the
+  full image (1024px) and a 256px thumbnail beside it. A cover drawn at 128px or less
+  loads the thumbnail, so a 56px row never downloads the full image; anything larger
+  loads the full image. Neither goes through Vercel's Image Optimization (its Hobby
+  quota would run out within a few hundred covers). A cover stored without a
+  thumbnail falls back to the full image, then to the designed cover.
 - **Theme-independent.** A photo looks the same in dark and light; it sits on Paper as
   album art does. Nothing recolours it, and nothing is drawn over it outside the
   session view.

@@ -2,7 +2,7 @@ import { createClient as createServiceClient } from "@/lib/supabase/service-role
 import { COVER_BUCKET } from "./url";
 
 /** A meditation id, which is the whole of a cover's folder name. */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Remove every cover object a meditation has: the current one and any an

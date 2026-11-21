@@ -36,7 +36,7 @@ function DraftChip({
   details: Details | null;
   live: boolean;
 }) {
-  const { openCanvas, meditationId } = useStudio();
+  const { openCanvas, meditationId, cover } = useStudio();
 
   if (!draft) {
     // A writeScript the server refused. The agent says why in its reply.
@@ -72,6 +72,9 @@ function DraftChip({
           tags={details?.tags ?? []}
           title={details?.title ?? label}
           size={40}
+          // The meditation's current cover, as on the canvas: on a phone,
+          // where the canvas is a closed sheet, this is where it shows.
+          coverUrl={meditationId ? cover.url : null}
         />
         {writing && (
           <span className="absolute inset-0 flex items-center justify-center">

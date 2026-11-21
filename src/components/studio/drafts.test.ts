@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { StudioUIMessage } from "@/lib/chat/tools";
 import {
   collectDrafts,
+  currentCover,
   currentMeditationId,
   describeChatError,
   latestDetails,
@@ -199,5 +200,68 @@ describe("showsQuickReplies", () => {
   it("only looks at the latest reply", () => {
     expect(showsQuickReplies([request, assistant([draft, reply]), assistant([reply])], false)).toBe(false);
     expect(showsQuickReplies([], false)).toBe(false);
+  });
+});
+
+describe("currentCover", () => {
+  const subject = { subject: "A still lake at dawn." };
+  const made = (id: string, url: string): StudioUIMessage["parts"][number] => ({
+    type: "tool-makeCover",
+    toolCallId: id,
+    state: "output-available",
+    input: subject,
+    output: { coverUrl: url, remaining: 2 },
+  });
+
+  it("is the loaded cover, not pending, when this session made none", () => {
+    expect(currentCover([], [], "https://x/loaded.webp")).toEqual({ url: "https://x/loaded.webp", pending: false });
+    expect(currentCover([], [], null)).toEqual({ url: null, pending: false });
+  });
+
+  it("trusts the loaded cover over the history it was loaded with", () => {
+    // The row is the truth on load: a backfill may have set a newer cover,
+    // or the meditation may be gone (null) and its history covers with it.
+    const history = [assistant([made("c1", "https://x/old.webp")])];
+    expect(currentCover(history, history, "https://x/row.webp").url).toBe("https://x/row.webp");
+    expect(currentCover(history, history, null).url).toBeNull();
+  });
+
+  it("takes the newest cover made in this session", () => {
+    const history = [assistant([made("c1", "https://x/old.webp")])];
+    const messages = [
+      ...history,
+      { id: "u", role: "user" as const, parts: [{ type: "text" as const, text: "a forest instead" }] },
+      { ...assistant([made("c2", "https://x/a.webp"), made("c3", "https://x/b.webp")]), id: "a2" },
+    ];
+    expect(currentCover(messages, history, "https://x/old.webp")).toEqual({ url: "https://x/b.webp", pending: false });
+  });
+
+  it("is pending while the newest makeCover has no result, keeping the cover it has", () => {
+    const messages = [
+      assistant([
+        made("c1", "https://x/a.webp"),
+        { type: "tool-makeCover", toolCallId: "c2", state: "input-available", input: subject },
+      ]),
+    ];
+    expect(currentCover(messages, [], null)).toEqual({ url: "https://x/a.webp", pending: true });
+    const streaming = [
+      assistant([{ type: "tool-makeCover", toolCallId: "c1", state: "input-streaming", input: undefined }]),
+    ];
+    expect(currentCover(streaming, [], null)).toEqual({ url: null, pending: true });
+  });
+
+  it("is not pending once a makeCover has failed", () => {
+    const messages = [
+      assistant([
+        {
+          type: "tool-makeCover",
+          toolCallId: "c1",
+          state: "output-error",
+          input: subject,
+          errorText: "The cover could not be made this time.",
+        },
+      ]),
+    ];
+    expect(currentCover(messages, [], "https://x/row.webp")).toEqual({ url: "https://x/row.webp", pending: false });
   });
 });

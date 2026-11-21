@@ -113,6 +113,46 @@ function writtenIds(messages: StudioUIMessage[]): string[] {
   );
 }
 
+/** The cover the canvas shows, and whether a new one is being made. */
+export type CoverState = { url: string | null; pending: boolean };
+
+/**
+ * The meditation's current cover: the newest one makeCover made in this
+ * session, else the one the page loaded with (`loadedUrl`, from the row).
+ * Covers in the loaded history are never used: the row already reflects the
+ * newest, or something later (a backfill), or the meditation is gone.
+ * `pending` while the newest makeCover call has no result yet; the caller
+ * checks the turn is still live.
+ */
+export function currentCover(
+  messages: StudioUIMessage[],
+  initialMessages: StudioUIMessage[],
+  loadedUrl: string | null,
+): CoverState {
+  const loaded = new Set(
+    initialMessages.flatMap((m) =>
+      m.parts.flatMap((part) => (part.type === "tool-makeCover" ? [part.toolCallId] : [])),
+    ),
+  );
+  let url: string | null = null;
+  let pending = false;
+  let newest = true;
+  for (let m = messages.length - 1; m >= 0 && url === null; m--) {
+    const parts = messages[m].parts;
+    for (let p = parts.length - 1; p >= 0; p--) {
+      const part = parts[p];
+      if (part.type !== "tool-makeCover" || loaded.has(part.toolCallId)) continue;
+      if (newest) pending = part.state === "input-streaming" || part.state === "input-available";
+      newest = false;
+      if (part.state === "output-available") {
+        url = part.output.coverUrl;
+        break;
+      }
+    }
+  }
+  return { url: url ?? loadedUrl, pending };
+}
+
 /**
  * Whether the "Make the audio" and "Change something" replies sit under the
  * latest message: it is the agent's finished reply, it saved a draft, and it

@@ -2,16 +2,21 @@
 
 import { useEffect, useRef, type ReactNode, type Ref } from "react";
 import { ArrowDown, Loader2, TriangleAlert } from "lucide-react";
+import { MeditationCover } from "@/components/meditation-cover";
 import { ScriptViewer } from "@/components/script-viewer";
 import { Button } from "@/components/ui/button";
 import { TAG_LABELS } from "@/lib/meditation/tags";
 import { cn } from "@/lib/utils";
-import { minutesLabel, type Details, type Draft } from "./drafts";
+import { minutesLabel, type CoverState, type Details, type Draft } from "./drafts";
 import { useFollowScroll } from "./use-follow-scroll";
 
 interface ScriptCanvasProps {
   draft: Draft | null;
   details: Details | null;
+  /** The meditation the script saved to; null until the first script saves. */
+  meditationId: string | null;
+  /** Its cover, and whether a new one is being made right now. */
+  cover: CoverState;
   /** A turn is in flight, so an unsaved draft is still on its way. */
   live: boolean;
   /** Sits at the end of the header row: the sheet's close button. */
@@ -55,12 +60,56 @@ function DraftStatus({ draft, live }: { draft: Draft; live: boolean }) {
 }
 
 /**
+ * The meditation's cover beside its title: the generated photo, else the
+ * designed cover. While makeCover runs, a Hush scrim and a spinner sit over
+ * whatever is there, and the new cover replaces it when the tool returns.
+ */
+function CanvasCover({
+  meditationId,
+  details,
+  cover,
+}: {
+  meditationId: string;
+  details: Details | null;
+  cover: CoverState;
+}) {
+  return (
+    <span className="relative shrink-0">
+      <MeditationCover
+        id={meditationId}
+        tags={details?.tags ?? []}
+        title={details?.title ?? ""}
+        size={56}
+        coverUrl={cover.url}
+      />
+      {cover.pending && (
+        <span className="absolute inset-0 flex items-center justify-center rounded-md bg-muted/70">
+          <Loader2 className="size-4 text-foreground motion-safe:animate-spin" aria-hidden />
+        </span>
+      )}
+      <span className="sr-only" aria-live="polite">
+        {cover.pending ? "Making a cover" : ""}
+      </span>
+    </span>
+  );
+}
+
+/**
  * The script as the agent writes it: the newest draft through the real
  * ScriptViewer, followed to its newest line while it streams. A draft is
  * only called saved once the server has written it; until then the status
  * says so.
  */
-export function ScriptCanvas({ draft, details, live, action, className, ref }: ScriptCanvasProps) {
+export function ScriptCanvas({
+  draft,
+  details,
+  meditationId,
+  cover,
+  live,
+  action,
+  className,
+  ref,
+}: ScriptCanvasProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   // A script opened from a reload is read from the top; only one being
@@ -101,16 +150,21 @@ export function ScriptCanvas({ draft, details, live, action, className, ref }: S
             {action}
           </div>
         </div>
-        {details && (
-          <div className="space-y-2.5">
-            <h2 className="font-serif text-xl leading-tight font-medium text-balance">
-              {details.title}
-            </h2>
-            {/* One Dusk line, as on the meditation page (task 54). */}
-            {details.tags.length > 0 && (
-              <p className="text-sm text-muted-foreground">
-                {details.tags.map((tag) => TAG_LABELS[tag]).join(" · ")}
-              </p>
+        {(details || (meditationId && (cover.pending || cover.url))) && (
+          <div className="flex items-center gap-4">
+            {meditationId && <CanvasCover meditationId={meditationId} details={details} cover={cover} />}
+            {details && (
+              <div className="min-w-0 space-y-1.5">
+                <h2 className="font-serif text-xl leading-tight font-medium text-balance">
+                  {details.title}
+                </h2>
+                {/* One Dusk line, as on the meditation page (task 54). */}
+                {details.tags.length > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    {details.tags.map((tag) => TAG_LABELS[tag]).join(" · ")}
+                  </p>
+                )}
+              </div>
             )}
           </div>
         )}

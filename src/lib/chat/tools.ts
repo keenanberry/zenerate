@@ -6,6 +6,7 @@ import {
   type UIMessage,
 } from "ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 import { findMalformedMarkers, parseMeditationText } from "@/lib/meditation/parser";
 import { estimateDuration } from "@/lib/meditation/duration";
@@ -15,6 +16,11 @@ import { MEDITATION_TYPES, TAGS } from "@/lib/meditation/tags";
 import { AMBIENCE_IDS } from "@/lib/meditation/ambience";
 import type { MeditationSettings } from "@/lib/meditation/types";
 import { checkRenderScript } from "@/lib/audio/render-bounds";
+import { generateCover } from "@/lib/cover/generate";
+import { COVER_CAP } from "@/lib/cover/model";
+import { MAX_SUBJECT_CHARS } from "@/lib/cover/prompt";
+import { storeCover } from "@/lib/cover/store";
+import { createClient as createServiceClient } from "@/lib/supabase/service-role";
 import { MAKE_AUDIO_REPLY } from "./replies";
 
 /**
@@ -105,6 +111,20 @@ export const offerAudioInput = z.object({
     ),
 });
 
+export const makeCoverInput = z.object({
+  subject: z
+    .string()
+    .trim()
+    .min(3)
+    .max(MAX_SUBJECT_CHARS)
+    .describe(
+      "What the picture shows, in one or two sentences of your own words: one clear subject and its setting and light. Never the person's words verbatim.",
+    ),
+});
+
+const COVER_FAILED =
+  "The cover could not be made this time, and this try does not count against the cap. The meditation keeps the cover it has. Tell the person in one plain sentence.";
+
 async function linkedMeditationId(ctx: StudioToolContext): Promise<string | null> {
   const { data, error } = await ctx.supabase
     .from("chats")
@@ -133,6 +153,48 @@ function lengthRewriteAsked(messages: ModelMessage[]): boolean {
           (part.output.value as { withinTarget?: unknown } | null)?.withinTarget === false,
       ),
   );
+}
+
+/**
+ * The makeCover calls this chat has made, from its tool results: whether
+ * any exist, whether one was made in this turn, and how many failed.
+ */
+function coverAttempts(messages: ModelMessage[]) {
+  const lastUser = messages.findLastIndex((m) => m.role === "user");
+  let made = false;
+  let thisTurn = false;
+  let failures = 0;
+  messages.forEach((m, i) => {
+    if (m.role !== "tool") return;
+    for (const part of m.content) {
+      if (part.type !== "tool-result" || part.toolName !== "makeCover") continue;
+      made = true;
+      if (i > lastUser) thisTurn = true;
+      if (part.output.type.startsWith("error")) failures += 1;
+    }
+  });
+  return { made, thisTurn, failures };
+}
+
+/**
+ * Whether a revision should ask the agent for a missing cover. Bounded so
+ * it can never nag through a Gateway outage or cover old meditations
+ * nobody asked about:
+ * - only while the meditation has no cover and has spent no generation;
+ * - never twice in one turn: not once makeCover has run in it;
+ * - one retry after a failure: not once two have failed in this chat;
+ * - never for a meditation that already has audio and whose chat never
+ *   tried a cover, which predates covers (the person can still ask).
+ */
+export function asksForCover(
+  meditation: { cover_path?: string | null; cover_generations?: number | null; audio_path?: string | null },
+  messages: ModelMessage[],
+): boolean {
+  if (meditation.cover_path || (meditation.cover_generations ?? 0) > 0) return false;
+  const attempts = coverAttempts(messages);
+  if (attempts.thisTurn || attempts.failures >= 2) return false;
+  if (meditation.audio_path && !attempts.made) return false;
+  return true;
 }
 
 function reviewScript(script: string, durationMinutes: number, rewriteAsked: boolean) {
@@ -203,6 +265,11 @@ export const studioTools = {
       const review = reviewScript(script, durationMinutes, lengthRewriteAsked(messages));
       let meditationId = await linkedMeditationId(ctx);
       let savedAs: "script" | "draft_script" = "script";
+      // A revision of a meditation whose cover never landed (a failed
+      // makeCover, or a turn that ran out of steps) asks for one now, within
+      // asksForCover's bounds. The prompt alone did not get the agent to
+      // retry on the next message.
+      let coverMissing = false;
 
       if (!meditationId) {
         // The first script creates the meditation. Details come from
@@ -233,7 +300,7 @@ export const studioTools = {
         const [{ data: current, error }, { data: draft, error: draftError }] = await Promise.all([
           ctx.supabase
             .from("meditations")
-            .select("audio_path, status, settings")
+            .select("audio_path, status, settings, cover_path, cover_generations")
             .eq("id", meditationId)
             .single(),
           ctx.supabase
@@ -255,6 +322,7 @@ export const studioTools = {
         // render promotes it. A failed render's state carries over to the new
         // revision, so the free retry still applies.
         savedAs = current.audio_path ? "draft_script" : "script";
+        coverMissing = asksForCover(current, messages);
         const now = new Date().toISOString();
         const { error: writeError } =
           savedAs === "draft_script"
@@ -278,7 +346,14 @@ export const studioTools = {
         if (writeError) throw new Error(`Saving the script failed: ${writeError.message}`);
       }
 
-      return { meditationId, savedAs, ...review };
+      return {
+        meditationId,
+        savedAs,
+        ...review,
+        ...(coverMissing && {
+          cover: "This meditation has no cover yet. Once the script is settled in this message, call makeCover once.",
+        }),
+      };
     },
   }),
 
@@ -322,6 +397,69 @@ export const studioTools = {
     },
   }),
 
+  // The one tool that writes on the service role: only it writes covers and
+  // the cap's counter (docs/superpowers/specs/2026-11-21-generated-cover-art-design.md).
+  // Ownership is proved through the owner's own client first.
+  makeCover: tool({
+    description: `Make a new cover picture for the meditation from a subject you write. Call it once after the first script and its details, and again only when the person asks for a different cover. Each call replaces the cover; at most ${COVER_CAP} per meditation. Returns how many are left.`,
+    inputSchema: makeCoverInput,
+    contextSchema: studioContextSchema,
+    execute: async ({ subject }, { context: ctx }) => {
+      const meditationId = await linkedMeditationId(ctx);
+      if (!meditationId) throw new Error("There is no script yet. Call writeScript first.");
+
+      // Read through RLS and filtered to the caller: a public meditation is
+      // readable by anyone, so readable alone would not prove it is theirs.
+      const { data: owned, error } = await ctx.supabase
+        .from("meditations")
+        .select("id")
+        .eq("id", meditationId)
+        .eq("user_id", ctx.userId)
+        .single();
+      if (error || !owned) throw new Error("The meditation could not be found.");
+
+      const service = createServiceClient();
+      const { data: count, error: reserveError } = await service.rpc("reserve_cover_generation", {
+        p_meditation: meditationId,
+      });
+      if (reserveError) {
+        console.error("[cover] reserve failed", reserveError.message);
+        Sentry.captureException(new Error(`Cover reserve failed: ${reserveError.message}`), {
+          tags: { area: "cover" },
+        });
+        throw new Error(COVER_FAILED);
+      }
+      if (count === null) {
+        throw new Error(
+          `This meditation has had its ${COVER_CAP} covers, the most it can have. Tell the person in a sentence that the current cover stays.`,
+        );
+      }
+
+      try {
+        const image = await generateCover(subject);
+        const { url } = await storeCover(meditationId, image);
+        return { coverUrl: url, remaining: COVER_CAP - (count as number) };
+      } catch (failure) {
+        // Name and message only: an API error carries the request body,
+        // and the subject describes a meditation that may be private.
+        const { name, message } = failure instanceof Error ? failure : { name: "Error", message: String(failure) };
+        console.error("[cover] generation failed", name, message);
+        Sentry.captureException(failure, { tags: { area: "cover" } });
+        const { error: releaseError } = await service.rpc("release_cover_generation", {
+          p_meditation: meditationId,
+        });
+        if (releaseError) console.error("[cover] release failed", releaseError.message);
+        throw new Error(COVER_FAILED);
+      }
+    },
+    // The canvas reads the URL from the stored part; the model needs only
+    // the count, and never a URL it might paste into the chat.
+    toModelOutput: ({ output }) => ({
+      type: "json" as const,
+      value: { made: true, remaining: output.remaining },
+    }),
+  }),
+
   // Reads nothing and writes nothing: the files are static, under public/sounds/.
   previewSounds: tool({
     description:
@@ -349,10 +487,10 @@ export const studioTools = {
 };
 
 /**
- * Model calls per turn. Enough for write → fix → details → retry → reply;
- * caps a runaway loop.
+ * Model calls per turn. Enough for write → fix → details → cover → retry →
+ * reply, one tool per step (studioProviderOptions); caps a runaway loop.
  */
-export const MAX_STEPS_PER_TURN = 5;
+export const MAX_STEPS_PER_TURN = 6;
 
 function lastUserText(messages: ModelMessage[]): string | null {
   const last = messages.at(-1);

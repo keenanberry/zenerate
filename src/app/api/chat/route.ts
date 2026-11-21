@@ -210,7 +210,7 @@ export async function POST(req: Request) {
       ignoreIncompleteToolCalls: true,
     }),
     tools: studioTools,
-    toolsContext: { writeScript: toolContext, setDetails: toolContext },
+    toolsContext: { writeScript: toolContext, setDetails: toolContext, makeCover: toolContext },
     stopWhen: isStepCount(MAX_STEPS_PER_TURN),
     prepareStep: (step) => prepareStudioStep(step, { narrowTools: narrowsToolsForAudio(model) }),
     maxOutputTokens: 8000,

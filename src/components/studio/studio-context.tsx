@@ -3,6 +3,7 @@
 import { createContext, useContext } from "react";
 import type { UseChatHelpers } from "@ai-sdk/react";
 import type { StudioUIMessage } from "@/lib/chat/tools";
+import type { CoverState } from "./drafts";
 
 /**
  * What the studio's cards can reach without prop drilling: the chat they sit
@@ -12,6 +13,8 @@ export type StudioContextValue = {
   chatId: string;
   /** Null until the agent's first `writeScript` creates the meditation. */
   meditationId: string | null;
+  /** Its current cover, for the canvas and the chat's draft chips. */
+  cover: CoverState;
   /** Bring the script into view: the sheet on a phone, the canvas column on desktop. */
   openCanvas: () => void;
   addToolOutput: UseChatHelpers<StudioUIMessage>["addToolOutput"];

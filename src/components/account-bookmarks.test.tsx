@@ -73,7 +73,8 @@ describe("AccountBookmarks", () => {
       bookmark("a", "With a cover", { cover_path: "a/x.webp", cover_url: cover }),
       bookmark("b", "Without"),
     ]);
-    expect(html).toContain(encodeURIComponent(cover));
+    // A 56px row draws from the cover's thumbnail.
+    expect(html).toContain(`src="${cover.replace(/\.webp$/, ".thumb.webp")}"`);
     expect(html.match(/<img /g)).toHaveLength(1);
     expect(html.match(/data-motif=/g)).toHaveLength(1);
   });
