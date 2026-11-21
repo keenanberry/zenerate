@@ -223,6 +223,10 @@ export const studioTools = {
       const review = reviewScript(script, durationMinutes, lengthRewriteAsked(messages));
       let meditationId = await linkedMeditationId(ctx);
       let savedAs: "script" | "draft_script" = "script";
+      // A revision of a meditation whose cover never landed (a failed
+      // makeCover, or a turn that ran out of steps) asks for one now. The
+      // prompt alone did not get the agent to retry on the next message.
+      let coverMissing = false;
 
       if (!meditationId) {
         // The first script creates the meditation. Details come from
@@ -253,7 +257,7 @@ export const studioTools = {
         const [{ data: current, error }, { data: draft, error: draftError }] = await Promise.all([
           ctx.supabase
             .from("meditations")
-            .select("audio_path, status, settings")
+            .select("audio_path, status, settings, cover_path")
             .eq("id", meditationId)
             .single(),
           ctx.supabase
@@ -275,6 +279,7 @@ export const studioTools = {
         // render promotes it. A failed render's state carries over to the new
         // revision, so the free retry still applies.
         savedAs = current.audio_path ? "draft_script" : "script";
+        coverMissing = !current.cover_path;
         const now = new Date().toISOString();
         const { error: writeError } =
           savedAs === "draft_script"
@@ -298,7 +303,14 @@ export const studioTools = {
         if (writeError) throw new Error(`Saving the script failed: ${writeError.message}`);
       }
 
-      return { meditationId, savedAs, ...review };
+      return {
+        meditationId,
+        savedAs,
+        ...review,
+        ...(coverMissing && {
+          cover: "This meditation has no cover yet. Once the script is settled in this message, call makeCover once.",
+        }),
+      };
     },
   }),
 

@@ -183,6 +183,32 @@ describe("writeScript", () => {
     expect(db.writes[0].table).toBe("meditations");
   });
 
+  it("asks for a cover on a revision of a meditation that has none", async () => {
+    db = fakeSupabase({
+      chats: { meditation_id: "med-1" },
+      meditations: { audio_path: null, status: "script_ready", settings: {}, cover_path: null },
+    });
+    const result = await run("writeScript", { durationMinutes: 10, script: GOOD_SCRIPT }, context(db.client));
+    expect(result.cover).toMatch(/no cover yet.*call makeCover once/);
+  });
+
+  it("says nothing about the cover once there is one, or on the first script", async () => {
+    db = fakeSupabase({
+      chats: { meditation_id: "med-1" },
+      meditations: { audio_path: null, status: "script_ready", settings: {}, cover_path: "med-1/a.webp" },
+    });
+    const revised = await run("writeScript", { durationMinutes: 10, script: GOOD_SCRIPT }, context(db.client));
+    expect(revised).not.toHaveProperty("cover");
+
+    // The first script: the cover comes after setDetails, by the prompt.
+    const first = await run(
+      "writeScript",
+      { durationMinutes: 10, script: GOOD_SCRIPT },
+      context(fakeSupabase({ chats: { meditation_id: null } }).client),
+    );
+    expect(first).not.toHaveProperty("cover");
+  });
+
   it("writes a revision to the owner-only drafts table once there is audio, leaving the meditation alone", async () => {
     db = fakeSupabase({
       chats: { meditation_id: "med-1" },

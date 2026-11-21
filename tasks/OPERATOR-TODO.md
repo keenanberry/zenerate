@@ -319,7 +319,7 @@ deployment's own OIDC token: no env var to set.
       the agent reported a failure. Note the per-image price there for the paid-credits item.
 - [ ] A week after the merge: Supabase → Usage → Egress and Cached Egress. Covers now load
       straight from Storage: a row or tile up to 128px loads the thumbnail (about 5 KB), a
-      larger card the full image (about 40–80 KB; a real Klein cover re-encoded to 40 KB);
+      larger card the full image (40–180 KB in local tests: a misty lake 40 KB, a pine forest 177 KB);
       browsers keep both for a year. If
       Discover traffic makes this a real share of the 5 GB, a 512px middle size for the
       176–240px cards is the next step.
