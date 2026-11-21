@@ -79,7 +79,7 @@ export async function createMeditation(data: {
     .single();
 
   if (error) throw new Error(error.message);
-  revalidatePath("/library");
+  revalidatePath("/library", "layout");
   return meditation as Meditation;
 }
 
@@ -121,7 +121,7 @@ export async function updateMeditation(id: string, data: { is_public: boolean })
     .select("id");
 
   if (error) throw new Error(error.message);
-  revalidatePath("/library");
+  revalidatePath("/library", "layout");
   revalidatePath(`/meditation/${id}`);
 }
 
@@ -171,7 +171,7 @@ export async function updateMeditationDetails(
   if (error) throw new Error(error.message);
   if (!data?.length) throw new Error("Meditation not found");
 
-  revalidatePath("/library");
+  revalidatePath("/library", "layout");
   revalidatePath("/discover");
   revalidatePath(`/meditation/${id}`);
 }
@@ -190,7 +190,7 @@ export async function deleteMeditation(id: string) {
   }
   if (!outcome.ok) throw new Error("Meditation not found");
 
-  revalidatePath("/library");
+  revalidatePath("/library", "layout");
   revalidatePath("/account");
   revalidatePath("/discover");
 }
@@ -596,7 +596,7 @@ export async function toggleFavorite(meditationId: string) {
     });
   }
 
-  revalidatePath("/library");
+  revalidatePath("/library", "layout");
   revalidatePath("/discover");
   revalidatePath(`/meditation/${meditationId}`);
   return !existing;
@@ -657,7 +657,7 @@ export async function createCollection(data: {
     .single();
 
   if (error) throw new Error(error.message);
-  revalidatePath("/library");
+  revalidatePath("/library", "layout");
   return collection as Collection;
 }
 
@@ -672,7 +672,7 @@ export async function updateCollection(
     .eq("id", id);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/library");
+  revalidatePath("/library", "layout");
   revalidatePath(`/collections/${id}`);
 }
 
@@ -680,7 +680,7 @@ export async function deleteCollection(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("collections").delete().eq("id", id);
   if (error) throw new Error(error.message);
-  revalidatePath("/library");
+  revalidatePath("/library", "layout");
 }
 
 export async function getUserCollections() {
@@ -778,7 +778,7 @@ export async function addToCollection(
     throw new Error(error.message);
   }
 
-  revalidatePath("/library");
+  revalidatePath("/library", "layout");
   revalidatePath(`/collections/${collectionId}`);
 }
 
@@ -795,5 +795,5 @@ export async function removeFromCollection(
 
   if (error) throw new Error(error.message);
   revalidatePath(`/collections/${collectionId}`);
-  revalidatePath("/library");
+  revalidatePath("/library", "layout");
 }

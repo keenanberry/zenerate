@@ -17,7 +17,7 @@ import {
 import type { Bookmark as SavedBookmark, BookmarkPage } from "@/lib/meditation/bookmarks";
 
 /**
- * The listener's bookmarks on /account (card ZEN-8), newest first: the first
+ * The listener's bookmarks on /library/bookmarks (card ZEN-8), newest first: the first
  * page arrives with the page, and "Load more" reads the next from
  * GET /api/bookmarks. Removing one takes it off the list at once and puts it
  * back, with a toast, if the DELETE fails.
