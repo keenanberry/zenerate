@@ -1,8 +1,32 @@
 # Route Model Calls Through Vercel AI Gateway
 
-**Status:** Not started
+**Status:** Not started. The Gateway is already on for the zenerate Vercel project (free
+tier); generated covers use it for images first
+(`docs/superpowers/specs/2026-11-21-generated-cover-art-design.md`).
 **Priority:** Post-ship
 **Related:** [Analytics](./analytics.md), [Error tracking](./error-tracking.md), [Admin dashboard](./admin-dashboard.md)
+
+## What changed (2026-11-21)
+
+The operator's angle now: move the **studio chat agent** (`src/app/api/chat/`,
+`STUDIO_MODEL` in `src/lib/chat/model.ts`) onto the Gateway, keeping their own Anthropic
+key, and use it to **compare other models for script writing**.
+
+- **Bring your own key.** The Anthropic key is added in the Gateway dashboard, so Claude
+  calls bill to it while the Gateway adds per-request logging (tokens, latency, cost,
+  errors): the visibility gap this task was written for. Decide whether
+  `ANTHROPIC_API_KEY` stays in project env as a fallback.
+- **Model comparison.** On the Gateway a model is a string (`anthropic/claude-sonnet-5-5`,
+  `openai/...`, `google/...`). Extend `scripts/measure-studio-rewrites.ts` (task 47) to
+  take Gateway model ids and score **whole studio conversations**, not only script
+  quality: the studio leans on tool calls (`writeScript`, `setDetails`, `offerAudio`,
+  `makeCover`) and on Anthropic prompt caching, which other models handle differently.
+- **Tier.** The free tier is $5 of credit a month, limited to "free tier eligible" models
+  and lower per-model rate limits (5 image requests a minute was observed). Buying
+  credits moves the team to the paid tier and the monthly free credit stops. Cover
+  generation needs paid credits before signups open anyway, so decide both together.
+- **Auth.** Vercel deployments get an OIDC token automatically; local dev uses
+  `vercel env pull` (`VERCEL_OIDC_TOKEN`, about 12h) or an `AI_GATEWAY_API_KEY`.
 
 ## Why it matters
 

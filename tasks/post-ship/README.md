@@ -30,9 +30,10 @@ caps and no billing yet; the task file holds the cost model and what to measure.
 | [Chat deletion](./chat-deletion.md) | **Done 2026-11-20 (ZEN-4).** The owner deletes a chat from the studio or `/account` |
 | [Audio storage on R2](./audio-storage-r2.md) | Move generated MP3s to Cloudflare R2 (10 GB free, free egress) if Supabase's 1 GB fills before sign-ups justify Pro. Trigger: storage at about 0.8 GB, or ElevenLabs past Starter |
 | [Error tracking](./error-tracking.md) | **Moved to ship 51** (2026-10-23). Sentry or similar for production visibility |
-| [AI gateway](./ai-gateway.md) | Route model calls through Vercel AI Gateway for token/cost/latency visibility |
+| [AI gateway](./ai-gateway.md) | Route model calls through Vercel AI Gateway for token/cost/latency visibility. **2026-11-21:** move the studio agent onto it with the operator's own Anthropic key, and compare other models on whole studio conversations |
 | [Agent user memory](./agent-user-memory.md) | Remember user preferences across generations. Unblocked by the chat agent (ship 29) |
-| [Generated cover art](./generated-cover-art.md) | Per-meditation artwork replacing the designed covers from ship task 35 |
+| [Generated cover art](./generated-cover-art.md) | Per-meditation artwork replacing the designed covers from ship task 35. **Designed 2026-11-21** (`docs/superpowers/specs/2026-11-21-generated-cover-art-design.md`); custom uploads still open |
+| [Image moderation](./image-moderation.md) | Check uploaded images (profile photos now, custom covers later) before they are stored; an upload quota; report and takedown. Before signups open |
 | [Breath cues](./breath-cues.md) | An audible in-breath and out-breath after breathing instructions, sized by a `*[BREATH: in 4]*` marker so any rhythm works; samples first, since the risk is how it sounds (2026-10-25) |
 | [Stale audio run recovery](./stale-audio-run-recovery.md) | Unstick `processing_audio` rows whose workflow run died before `markFailed`; ask the run's status, refund the slot, offer the free retry |
 | [Bookmarks](./bookmarks.md) | **Done 2026-11-20: backend ZEN-7, UI ZEN-8; on the meditation page only since ZEN-12.** "Save for later" on a public meditation, separate from favorites: private, counts toward nothing, listed newest first |
