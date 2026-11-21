@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { CollectionArtwork } from "@/components/collection-artwork";
 import { BottomSheetHeader } from "@/components/ui/bottom-sheet";
@@ -27,6 +27,11 @@ interface CollectionCardProps {
 export function CollectionCard({ collection }: CollectionCardProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  // Set by "Edit collection", acted on once the menu has closed. Opened while
+  // the menu is still closing, the form's Name field takes focus and the
+  // menu's focus return to "…" then takes it back, which on a phone drops
+  // the keyboard just as it rose (the meditation menu's collectionsNext).
+  const editNext = useRef(false);
   const [name, setName] = useState(collection.name);
   const [description, setDescription] = useState(collection.description ?? "");
   const [isPending, startTransition] = useTransition();
@@ -100,6 +105,13 @@ export function CollectionCard({ collection }: CollectionCardProps) {
             </ResponsiveMenuTrigger>
             <ResponsiveMenuContent
               align="end"
+              onCloseAutoFocus={(e) => {
+                if (!editNext.current) return;
+                editNext.current = false;
+                // Leave focus to the form, which opens now.
+                e.preventDefault();
+                setEditOpen(true);
+              }}
               title={`More for ${collection.name}`}
               header={
                 <BottomSheetHeader
@@ -119,7 +131,7 @@ export function CollectionCard({ collection }: CollectionCardProps) {
                 onSelect={() => {
                   setName(collection.name);
                   setDescription(collection.description ?? "");
-                  setEditOpen(true);
+                  editNext.current = true;
                 }}
               >
                 <Pencil className="h-4 w-4" />
