@@ -122,14 +122,20 @@ export class StyleMismatchError extends Error {
 
 /**
  * Words that make a photograph's person read as a minor. The rules forbid
- * them; "a young woman in her twenties" got through anyway, so the backfill
- * checks. It over-catches ("a young birch"), which costs one more request.
+ * them; "a young woman in her twenties" got through anyway, so both the
+ * backfill and makeCover check. It over-catches ("a young birch"), which
+ * costs one more request.
  */
 const MINOR_WORDS =
   /\b(child|children|kid|kids|teen|teens|teenage|teenager|teenagers|girl|girls|boy|boys|student|students|schoolgirl|schoolboy|young|little|toddler|baby)\b/i;
 
-/** The word that breaks the photograph rule in `subject`, or null. */
-export function photographMinorWord(subject: string): string | null {
+/**
+ * The word that breaks the adult rule in a cover of `subject` and `style`,
+ * or null. Only a photograph is checked: an illustration may show a child.
+ * The one check for both makeCover and the backfill.
+ */
+export function photographMinorWord(subject: string, style: CoverStyle = "photograph"): string | null {
+  if (style !== "photograph") return null;
   return subject.match(MINOR_WORDS)?.[1]?.toLowerCase() ?? null;
 }
 
@@ -155,7 +161,7 @@ export function parseCoverChoice(raw: unknown, style?: CoverStyle): CoverChoice 
   }
   if (style && parsed.data.style !== style) throw new StyleMismatchError(parsed.data.style, style);
   const subject = cleanSubject(parsed.data.subject);
-  const word = parsed.data.style === "photograph" ? photographMinorWord(subject) : null;
+  const word = photographMinorWord(subject, parsed.data.style);
   if (word) throw new MinorWordError(word);
   return { subject, style: parsed.data.style };
 }

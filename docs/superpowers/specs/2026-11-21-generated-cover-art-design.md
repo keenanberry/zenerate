@@ -178,7 +178,9 @@ Stones" and "Night Sky" look alike at a glance.
   character from a film, book, game, show or brand. Any person in a photograph is an
   adult, never a child, teen, student, girl, boy or kid, never described as young or
   little ("a young ballet dancer" came out as a child); an illustration may show a child,
-  and a photograph of a child asked for becomes an illustration. The rules live in `COVER_SUBJECT_RULES` and
+  and a photograph of a child asked for becomes an illustration. `photographMinorWord`
+  backs the wording in code: `makeCover` refuses a photograph subject with a word for a
+  minor (child, teen, girl, young…) before reserving, and the backfill asks again. The rules live in `COVER_SUBJECT_RULES` and
   `COVER_STYLE_RULES` (`src/lib/cover/subject.ts`), shared byte for byte by the studio
   prompt and the backfill.
 - The canvas shows the cover in its header with a quiet loading state while the tool

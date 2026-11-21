@@ -504,6 +504,32 @@ describe("makeCover", () => {
     expect(cover.generate).toHaveBeenCalledWith(drawn.subject, "illustration");
   });
 
+  it("refuses a photograph of a minor before reserving, and tells the agent how to fix it", async () => {
+    const girl = makeCoverInput.parse({ subject: "A girl mid-pirouette on a stage.", style: "photograph" });
+    await expect(run("makeCover", girl, context(owned().client))).rejects.toThrow(
+      /shows only adults.*says "girl".*Rewrite the subject with an adult.*style "illustration"/,
+    );
+    // The default style is a photograph, so it is refused too.
+    await expect(
+      run("makeCover", makeCoverInput.parse({ subject: "A young dancer in the wings." }), context(owned().client)),
+    ).rejects.toThrow(/says "young"/);
+    expect(cover.rpcs).toEqual([]);
+    expect(cover.generate).not.toHaveBeenCalled();
+  });
+
+  it("allows a girl in an illustration", async () => {
+    const drawn = makeCoverInput.parse({ subject: "A girl hugging a sleepy dragon.", style: "illustration" });
+    await run("makeCover", drawn, context(owned().client));
+    expect(cover.rpcs.map((r) => r.name)).toEqual(["reserve_cover_generation"]);
+    expect(cover.generate).toHaveBeenCalledWith(drawn.subject, "illustration");
+  });
+
+  it("allows an adult in a photograph", async () => {
+    const adult = makeCoverInput.parse({ subject: "A woman in her forties at the start line, seen from behind." });
+    await run("makeCover", adult, context(owned().client));
+    expect(cover.generate).toHaveBeenCalledWith(adult.subject, "photograph");
+  });
+
   it("asks for a script first when the chat has none, and reserves nothing", async () => {
     const db = fakeSupabase({ chats: { meditation_id: null } });
     await expect(run("makeCover", subject, context(db.client))).rejects.toThrow(/writeScript first/);

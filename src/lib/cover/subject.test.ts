@@ -169,6 +169,11 @@ describe("photographMinorWord", () => {
     expect(photographMinorWord("A boyish grin on a man in his forties; kidney beans; studentship.")).toBeNull();
   });
 
+  it("checks only a photograph: an illustration may show a child", () => {
+    expect(photographMinorWord("A girl hugging a dragon.", "photograph")).toBe("girl");
+    expect(photographMinorWord("A girl hugging a dragon.", "illustration")).toBeNull();
+  });
+
   it("is what parseCoverChoice refuses in a photograph, and allows in an illustration", () => {
     expect(() => parseCoverChoice({ subject: "A young dancer in the wings.", style: "photograph" })).toThrow(
       MinorWordError,
