@@ -35,12 +35,14 @@ export function MeditationCard({
         aria-hidden
         className="block motion-safe:transition-opacity hover:opacity-90"
       >
-        {/* Drawn at the column's widest and scaled to fit it. */}
+        {/* Drawn at the column's widest and scaled to fit it: about 314px, in
+            the three-column grid just below lg (sm:grid-cols-3 in max-w-5xl),
+            so a photo there loads the full image rather than the 512px one. */}
         <MeditationCover
           id={meditation.id}
           tags={meditation.tags ?? []}
           title={meditation.title}
-          size={240}
+          size={320}
           coverUrl={meditation.cover_url}
           className="h-auto w-full"
         />

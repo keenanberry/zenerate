@@ -647,8 +647,10 @@ to one house look.
 - **Three stored sizes, served as stored.** Each cover is stored three times as WebP:
   the full image (1024px), a 512px middle size and a 256px thumbnail beside it. A cover
   loads the smallest size that is sharp at 2x: 128px or less the thumbnail (a 56px row),
-  up to 256px the middle size (the 176–240px cards on Discover and in the Library),
-  anything larger the full image (the meditation page, the session view). None goes
+  up to 256px the middle size (the 176px Discover cards, the landing page's 240px ones),
+  anything larger the full image (the Library grids, whose columns reach about 314px
+  just below `lg`, the meditation page, the session view). A cover's `size` is the
+  widest its column gets, not a typical width, so it never loads a size too small. None goes
   through Vercel's Image Optimization (its Hobby quota would run out within a few
   hundred covers). A size a cover was stored without (covers made before the
   thumbnail, or before the middle size) falls back to the next larger, then to the

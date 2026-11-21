@@ -66,7 +66,8 @@ export const THUMB_MAX_SIZE = 128;
 
 /**
  * The largest size (CSS px) a cover is drawn from its middle size, which is
- * twice this: the 176–240px cards on Discover and in the Library. Larger
- * (the meditation page, the session view) loads the full image.
+ * twice this: the 176px Discover cards and the landing page's 240px ones.
+ * Larger (the Library grids, the meditation page, the session view) loads
+ * the full image.
  */
 export const MIDDLE_MAX_SIZE = 256;
