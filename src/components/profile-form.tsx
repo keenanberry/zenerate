@@ -115,7 +115,10 @@ export function ProfileForm({ profile, email }: { profile: Profile; email: strin
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-6">
       <div className="flex items-center gap-4">
+        {/* Keyed by the photo: Radix keeps an unmounted image's "loaded" state,
+            so after Remove the initial would not come back without a fresh Avatar. */}
         <Avatar
+          key={avatarUrl ?? "none"}
           aria-busy={photoWork !== null}
           className={cn("size-16 border motion-safe:transition-opacity", photoWork && "opacity-60")}
         >
