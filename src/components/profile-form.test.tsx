@@ -37,7 +37,26 @@ describe("ProfileForm", () => {
     });
     expect(html).toContain('value="Ada"');
     expect(html).toContain(">Breathwork teacher.</textarea>");
-    expect(html).toContain('value="https://example.com/a.png"');
     expect(html).toMatch(/role="switch"[^>]*aria-checked="true"/);
+  });
+
+  it("has no avatar URL text box: the photo is picked from the device", () => {
+    const html = render(NEW_ACCOUNT);
+    expect(html).not.toContain('id="avatar_url"');
+    expect(html).toMatch(/<input[^>]*type="file"[^>]*accept="image\/\*"/);
+  });
+
+  it("with no photo: Add photo, and nothing to remove", () => {
+    const html = render(NEW_ACCOUNT);
+    expect(html).toContain("Add photo");
+    expect(html).not.toContain("Change photo");
+    expect(html).not.toContain(">Remove<");
+  });
+
+  it("with a photo: Change photo and Remove", () => {
+    const html = render({ ...NEW_ACCOUNT, avatar_url: "https://example.com/a.png" });
+    expect(html).toContain("Change photo");
+    expect(html).toContain(">Remove<");
+    expect(html).not.toContain("Add photo");
   });
 });
