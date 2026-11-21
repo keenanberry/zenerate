@@ -164,6 +164,7 @@ export function Studio({
   const studio: StudioContextValue = {
     chatId,
     meditationId,
+    cover,
     openCanvas,
     addToolOutput,
     status,
