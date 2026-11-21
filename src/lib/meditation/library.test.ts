@@ -101,6 +101,22 @@ describe("getRecentlyPlayed", () => {
     expect(meditations.calls).toContainEqual(["eq", "status", "completed"]);
   });
 
+  it("fills the row from older plays when a newer one is no longer visible", async () => {
+    state.user = { id: "me" };
+    state.results.meditation_plays = {
+      data: [p("gone", "4"), p("a", "3"), p("b", "2"), p("c", "1")],
+      error: null,
+    };
+    const row = (id: string) => ({ id, user_id: "me", title: id, tags: [], settings: {}, status: "completed" });
+    state.results.meditations = { data: [row("c"), row("a"), row("b")], error: null };
+
+    const items = await getRecentlyPlayed(2);
+
+    expect(items.map((m) => m.id)).toEqual(["a", "b"]);
+    const meditations = state.queries.find((q) => q.table === "meditations")!;
+    expect(meditations.calls).toContainEqual(["in", "id", ["gone", "a", "b", "c"]]);
+  });
+
   it("asks for no meditations when nothing has been played", async () => {
     state.user = { id: "me" };
     expect(await getRecentlyPlayed()).toEqual([]);

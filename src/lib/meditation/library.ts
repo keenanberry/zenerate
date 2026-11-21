@@ -38,10 +38,13 @@ const RECENT_COLUMNS = "id, user_id, title, tags, settings, status";
 
 /**
  * The caller's most recently played meditations, newest first, each once.
- * Reads up to five plays per tile so repeats still fill the row, then reads
- * those meditations through the caller's client: RLS drops one that has since
- * gone private (someone else's) or been deleted, so it never appears. A
- * failed read leaves the section empty rather than failing the page.
+ * Reads up to five plays per tile and keeps every distinct meditation among
+ * them, then reads those through the caller's client: RLS drops one that has
+ * since gone private (someone else's) or been deleted, and the status filter
+ * one being re-rendered, so neither appears. Only then is the list cut to
+ * `limit`, so a dropped one is replaced by an older visible play rather than
+ * leaving the grid short. A failed read leaves the section empty rather than
+ * failing the page.
  */
 export async function getRecentlyPlayed(limit = 8): Promise<RecentlyPlayed[]> {
   const user = await getSessionUser();
@@ -59,7 +62,7 @@ export async function getRecentlyPlayed(limit = 8): Promise<RecentlyPlayed[]> {
     return [];
   }
 
-  const ids = latestDistinct(plays ?? [], limit);
+  const ids = latestDistinct(plays ?? [], limit * 5);
   if (ids.length === 0) return [];
 
   const { data, error } = await supabase
@@ -75,6 +78,7 @@ export async function getRecentlyPlayed(limit = 8): Promise<RecentlyPlayed[]> {
   const order = new Map(ids.map((id, i) => [id, i]));
   return ((data ?? []) as (Omit<RecentlyPlayed, "source"> & { user_id: string })[])
     .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0))
+    .slice(0, limit)
     .map(({ user_id, ...m }) => ({ ...m, source: user_id === user.id ? "yours" : "discover" }));
 }
 
