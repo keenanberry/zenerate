@@ -370,6 +370,23 @@ app icon on white, whose corners showed as white slivers in a card.
       Each one's title, description and tags go to Anthropic for the subject, as they do
       for a meditation made in the studio.
 
+### Generated covers: styles, people and variety
+
+No migration. Covers now come in two styles: a photograph (unchanged) or a storybook
+illustration, which the studio and the backfill choose for a children's meditation. A
+person may be the subject when the meditation is about something a person does, and the
+backfill lists the subjects it has already used so covers stop converging on one scene.
+
+- [ ] After the merge, on the iPhone: ask the studio for a bedtime meditation for a child;
+      its cover is a soft illustration. Ask for one before a race or a recital; a person
+      may appear, seen from behind, in silhouette or at a distance.
+- [ ] Optional: regenerate the backfilled covers that converged ("misty forest in golden
+      light") with `--ids <a,b,…> --replace` (steps 3–5 above). Each request lists the
+      subjects already in that review folder, so reuse the production folder.
+      `--style photograph|illustration` fixes the style when Claude's choice is wrong.
+      Swapping a reviewed image for one already committed now commits again with
+      `--ids <id> --replace`; before, that commit was skipped.
+
 ### When a report arrives (53)
 
 A Report link mails `privacy@` with the meditation's title and URL. If it breaks the terms,

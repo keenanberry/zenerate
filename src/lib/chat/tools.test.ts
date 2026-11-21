@@ -467,7 +467,8 @@ describe("asksForCover", () => {
 });
 
 describe("makeCover", () => {
-  const subject = { subject: "A misty pine forest at dawn, light through the trees." };
+  // As the SDK hands it to execute: parsed, so the style's default is filled in.
+  const subject = makeCoverInput.parse({ subject: "A misty pine forest at dawn, light through the trees." });
   const owned = () =>
     fakeSupabase({ chats: { meditation_id: "med-1" }, meditations: { id: "med-1", user_id: "user-1" } });
 
@@ -484,6 +485,20 @@ describe("makeCover", () => {
     expect(makeCoverInput.safeParse({ subject: "ok" }).success).toBe(false);
     expect(makeCoverInput.safeParse({ subject: "a".repeat(301) }).success).toBe(false);
     expect(makeCoverInput.safeParse(subject).success).toBe(true);
+  });
+
+  it("draws a photograph unless the agent asks for an illustration, and takes no other style", () => {
+    expect(makeCoverInput.parse({ subject: "A still lake." }).style).toBe("photograph");
+    expect(makeCoverInput.parse({ subject: "A small dragon asleep.", style: "illustration" }).style).toBe(
+      "illustration",
+    );
+    expect(makeCoverInput.safeParse({ subject: "A still lake.", style: "watercolour" }).success).toBe(false);
+  });
+
+  it("passes the style through to the image", async () => {
+    const drawn = makeCoverInput.parse({ subject: "A small dragon asleep on a cloud.", style: "illustration" });
+    await run("makeCover", drawn, context(owned().client));
+    expect(cover.generate).toHaveBeenCalledWith(drawn.subject, "illustration");
   });
 
   it("asks for a script first when the chat has none, and reserves nothing", async () => {
@@ -507,7 +522,7 @@ describe("makeCover", () => {
     const result = await run("makeCover", subject, context(owned().client));
 
     expect(cover.rpcs).toEqual([{ name: "reserve_cover_generation", args: { p_meditation: "med-1" } }]);
-    expect(cover.generate).toHaveBeenCalledWith(subject.subject);
+    expect(cover.generate).toHaveBeenCalledWith(subject.subject, "photograph");
     expect(cover.store).toHaveBeenCalledWith("med-1", { bytes: new Uint8Array([1]), mediaType: "image/png" });
     expect(result).toEqual({ coverUrl: "https://x/med-1/a.webp", remaining: 2 });
   });

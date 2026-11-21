@@ -204,7 +204,7 @@ describe("showsQuickReplies", () => {
 });
 
 describe("currentCover", () => {
-  const subject = { subject: "A still lake at dawn." };
+  const subject = { subject: "A still lake at dawn.", style: "photograph" as const };
   const made = (id: string, url: string): StudioUIMessage["parts"][number] => ({
     type: "tool-makeCover",
     toolCallId: id,

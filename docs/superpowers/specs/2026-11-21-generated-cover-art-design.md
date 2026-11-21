@@ -139,6 +139,14 @@ Stones" and "Night Sky" look alike at a glance.
   cover image for a guided meditation app.", which FLUX read as an app icon: 7 of 24
   backfill covers came back as a rounded tile on white, whose corners show as white
   slivers in a card. The rest of the line is the comparison's.
+  *Changed in the cover styles PR:* the line above is now the `photograph` style, and
+  `COVER_STYLES.illustration` adds a second: "Full-bleed square illustration filling the
+  whole frame edge to edge. Soft storybook illustration, gentle painterly textures, warm
+  calm colours, friendly and simple shapes, one clear subject with room to breathe. No
+  rounded corners, no frame, no text, no letters, no logos, no borders, no watermark."
+  `makeCover` takes `style` (`photograph` by default); the agent picks `illustration` for
+  a children's meditation or when drawn, cartoon or storybook art is asked for. A
+  photographic "cartoon dragon" looked like a toy.
 - Reads the meditation through the user's client (ownership), reserves a generation with
   the atomic increment, calls `generateImage({ model: gateway.imageModel(COVER_MODEL),
   prompt, aspectRatio: "1:1" })`, uploads with the service client to
@@ -160,6 +168,17 @@ Stones" and "Night Sky" look alike at a glance.
   the person asks for a different cover, rewrite their idea as a subject in your own
   words; decline subjects that are sexual, violent, hateful or depict real people. Do not
   call it again on script revisions unless asked.
+  *Changed in the cover styles PR:* nature stays the default, but a person is welcome
+  when the meditation is about something a person does (a runner at the start line, a
+  dancer mid-pose, a monk meditating), preferably from behind, in silhouette, at a
+  distance or in profile, never a recognisable real person, and with varied age, gender
+  and background. Subjects must be specific and distinctive, not misty forests or
+  golden-hour light (5 of 19 backfilled covers were one misty forest). No numbers,
+  brands, team kits or signs. In a photograph never a child as the main subject, and any
+  person is described as an adult ("a young ballet dancer" came out as a child); an
+  illustration may show a child. The rules live in `COVER_SUBJECT_RULES` and
+  `COVER_STYLE_RULES` (`src/lib/cover/subject.ts`), shared byte for byte by the studio
+  prompt and the backfill.
 - The canvas shows the cover in its header with a quiet loading state while the tool
   runs; the tool's result updates it without a reload.
 
@@ -184,6 +203,12 @@ Stones" and "Night Sky" look alike at a glance.
   subject from title, description and tags, generate with `COVER_MODEL`, write the images
   to a local review folder with an HTML contact sheet, and only on `--commit` upload them
   and set `cover_path` with the service role. Paces to the Gateway rate limit.
+- *Changed in the cover styles PR:* Claude returns a subject and a style as a structured
+  object; `--style` overrides the style for a run. Each request lists the subjects
+  already in the manifest (this run's included, the latest 40) and asks for something
+  clearly different. The manifest records each cover's style (shown on the contact
+  sheet) and the SHA-256 of the file a commit stored, so a reviewed image swapped after
+  its commit is committed again with `--ids <id> --replace`.
 - Operator item: run it against production after the display PR merges, review the
   sheet, then commit.
 

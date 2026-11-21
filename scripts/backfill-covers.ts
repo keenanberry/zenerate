@@ -5,9 +5,12 @@
  * Two steps, and nothing reaches the database until the operator has looked:
  *
  * 1. Generate (the default). For each completed meditation without a cover,
- *    asks Claude (the studio model) for a subject from its title,
- *    description and tags, under the studio's own rules, and makes the image
- *    with COVER_MODEL through AI Gateway. Each image is written to the review
+ *    asks Claude (the studio model) for a subject and a style (photograph, or
+ *    a storybook illustration for children) from its title, description and
+ *    tags, under the studio's own rules, and makes the image with COVER_MODEL
+ *    through AI Gateway. Each request lists the subjects already in the
+ *    manifest, this run's included, so covers do not converge on one scene;
+ *    --style fixes the style for every cover in the run. Each image is written to the review
  *    folder (default .superpowers/cover-backfill/) as `<id>.<ext>`, beside a
  *    manifest.json and an index.html contact sheet. It reads the database and
  *    writes nothing to it or to Storage.
@@ -18,7 +21,9 @@
  * Review by opening index.html and deleting the image file of any cover you
  * reject (the sheet flags one drawn as a framed icon with white corners); running step 1 again makes a new one for it, and skips every id
  * whose file is still there. A meditation that has a cover by the time of the
- * commit (the studio made one) is skipped, unless --replace.
+ * commit (the studio made one) is skipped, unless --replace. A file replaced
+ * after it was committed is committed again with --ids <id> --replace (the
+ * manifest keeps the hash of what was stored).
  *
  * Usage:
  *   npx tsx scripts/backfill-covers.ts                 # public meditations without a cover
@@ -26,6 +31,7 @@
  *   npx tsx scripts/backfill-covers.ts --ids a,b       # just these (public or not)
  *   npx tsx scripts/backfill-covers.ts --ids a --replace   # these, even with a cover
  *   npx tsx scripts/backfill-covers.ts --limit 3       # a trial run
+ *   npx tsx scripts/backfill-covers.ts --ids a --style illustration   # force a style
  *   npx tsx scripts/backfill-covers.ts --commit        # upload what is in the folder
  *
  * Target: NEXT_PUBLIC_SUPABASE_URL with SUPABASE_SERVICE_ROLE_KEY. .env.local
@@ -54,15 +60,22 @@ import { fileURLToPath } from "node:url";
 import { setTimeout as sleep } from "node:timers/promises";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { generateText } from "ai";
+import { generateText, Output } from "ai";
 import { studioModel } from "../src/lib/chat/model";
 import { generateCover } from "../src/lib/cover/generate";
 import { COVER_MODEL } from "../src/lib/cover/model";
 import { CoverChangedError, storeCover } from "../src/lib/cover/store";
-import { cleanSubject, COVER_SUBJECT_SYSTEM, subjectRequest } from "../src/lib/cover/subject";
 import {
+  coverChoiceSchema,
+  COVER_SUBJECT_SYSTEM,
+  parseCoverChoice,
+  subjectRequest,
+} from "../src/lib/cover/subject";
+import {
+  commitAction,
   contactSheet,
   envFileProblem,
+  fileHash,
   fillEnv,
   FRAMED_CORNERS,
   imageExtension,
@@ -70,6 +83,7 @@ import {
   parseArgs,
   targetProblem,
   USAGE,
+  usedSubjects,
   waitBeforeNext,
   whiteCorners,
   type EnvSource,
@@ -189,14 +203,15 @@ async function generate(supabase: SupabaseClient, options: Options, target: stri
   for (const [i, row] of run.entries()) {
     const label = `[${i + 1}/${run.length}] ${row.title} (${row.id})`;
     try {
-      const { text } = await generateText({
+      const { output } = await generateText({
         model: anthropic(model),
         system: COVER_SUBJECT_SYSTEM,
-        prompt: subjectRequest(row),
+        prompt: subjectRequest(row, { used: usedSubjects(manifest), style: options.style ?? undefined }),
+        output: Output.object({ schema: coverChoiceSchema }),
         maxOutputTokens: 2000,
         providerOptions: { anthropic: { thinking: { type: "adaptive" }, effort: "low" } },
       });
-      const subject = cleanSubject(text);
+      const { subject, style } = parseCoverChoice(output, options.style ?? undefined);
 
       const wait = waitBeforeNext(starts, Date.now());
       if (wait > 0) {
@@ -204,7 +219,7 @@ async function generate(supabase: SupabaseClient, options: Options, target: stri
         await sleep(wait);
       }
       starts.push(Date.now());
-      const image = await generateCover(subject);
+      const image = await generateCover(subject, style);
 
       const file = `${row.id}.${imageExtension(image.mediaType)}`;
       await writeFile(join(out, file), image.bytes);
@@ -212,6 +227,7 @@ async function generate(supabase: SupabaseClient, options: Options, target: stri
       manifest.entries[row.id] = {
         title: row.title,
         subject,
+        style,
         file,
         mediaType: image.mediaType,
         isPublic: row.is_public,
@@ -220,7 +236,7 @@ async function generate(supabase: SupabaseClient, options: Options, target: stri
       };
       await saveManifest(out, manifest);
       made++;
-      console.log(`${label}\n  ${subject}${corners >= FRAMED_CORNERS ? "\n  white corners: check it on the sheet" : ""}`);
+      console.log(`${label}\n  ${style}: ${subject}${corners >= FRAMED_CORNERS ? "\n  white corners: check it on the sheet" : ""}`);
     } catch (error) {
       // One failure (a refusal, a rate limit) leaves that meditation for the next run.
       failed++;
@@ -266,17 +282,30 @@ async function commit(supabase: SupabaseClient, options: Options, target: string
       console.log(`${label}: no longer a completed meditation; skipped`);
       continue;
     }
-    if (row.cover_path && row.cover_path === entry.committedPath) continue; // committed by an earlier run
-    if (row.cover_path && !options.replace) {
+    let bytes: Uint8Array;
+    try {
+      bytes = new Uint8Array(await readFile(join(out, entry.file)));
+    } catch (error) {
+      console.error(`${label}: reading ${entry.file} failed: ${(error as Error).message}`);
+      continue;
+    }
+    const hash = fileHash(bytes);
+    const action = commitAction(entry, row.cover_path ?? null, hash, options.replace);
+    if (action === "done") continue; // committed by an earlier run
+    if (action === "replaced-file") {
+      console.log(`${label}: its file changed since it was committed; skipped (pass --ids ${id} --replace to commit it again)`);
+      continue;
+    }
+    if (action === "has-cover") {
       console.log(`${label}: has a cover already; skipped (pass --ids ${id} --replace to replace it)`);
       continue;
     }
     try {
       const mediaType = mediaTypeOf(entry.file) ?? entry.mediaType;
-      const bytes = new Uint8Array(await readFile(join(out, entry.file)));
       // Only while the cover is still what was just read: a studio cover made since is kept.
       const { path } = await storeCover(id, { bytes, mediaType }, { ifCoverIs: row.cover_path ?? null });
       entry.committedPath = path;
+      entry.committedHash = hash;
       await saveManifest(out, manifest);
       stored++;
       console.log(`${label}: stored at ${path}`);
@@ -338,7 +367,9 @@ async function main() {
     options,
   );
   if (problem) fail(problem);
-  if (!options.commit) console.log(`Model: ${COVER_MODEL}; subjects by ${studioModel()}`);
+  if (!options.commit) {
+    console.log(`Model: ${COVER_MODEL}; subjects by ${studioModel()}; style ${options.style ?? "chosen per meditation"}`);
+  }
 
   const supabase = createClient(url!, key!, { auth: { autoRefreshToken: false, persistSession: false } });
   if (options.commit) await commit(supabase, options, url!);
