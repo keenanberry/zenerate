@@ -155,6 +155,48 @@ function lengthRewriteAsked(messages: ModelMessage[]): boolean {
   );
 }
 
+/**
+ * The makeCover calls this chat has made, from its tool results: whether
+ * any exist, whether one was made in this turn, and how many failed.
+ */
+function coverAttempts(messages: ModelMessage[]) {
+  const lastUser = messages.findLastIndex((m) => m.role === "user");
+  let made = false;
+  let thisTurn = false;
+  let failures = 0;
+  messages.forEach((m, i) => {
+    if (m.role !== "tool") return;
+    for (const part of m.content) {
+      if (part.type !== "tool-result" || part.toolName !== "makeCover") continue;
+      made = true;
+      if (i > lastUser) thisTurn = true;
+      if (part.output.type.startsWith("error")) failures += 1;
+    }
+  });
+  return { made, thisTurn, failures };
+}
+
+/**
+ * Whether a revision should ask the agent for a missing cover. Bounded so
+ * it can never nag through a Gateway outage or cover old meditations
+ * nobody asked about:
+ * - only while the meditation has no cover and has spent no generation;
+ * - never twice in one turn: not once makeCover has run in it;
+ * - one retry after a failure: not once two have failed in this chat;
+ * - never for a meditation that already has audio and whose chat never
+ *   tried a cover, which predates covers (the person can still ask).
+ */
+export function asksForCover(
+  meditation: { cover_path?: string | null; cover_generations?: number | null; audio_path?: string | null },
+  messages: ModelMessage[],
+): boolean {
+  if (meditation.cover_path || (meditation.cover_generations ?? 0) > 0) return false;
+  const attempts = coverAttempts(messages);
+  if (attempts.thisTurn || attempts.failures >= 2) return false;
+  if (meditation.audio_path && !attempts.made) return false;
+  return true;
+}
+
 function reviewScript(script: string, durationMinutes: number, rewriteAsked: boolean) {
   const parsed = parseMeditationText(script);
   const segments = { speech: 0, pause: 0, silence: 0, sound: 0 };
@@ -224,8 +266,9 @@ export const studioTools = {
       let meditationId = await linkedMeditationId(ctx);
       let savedAs: "script" | "draft_script" = "script";
       // A revision of a meditation whose cover never landed (a failed
-      // makeCover, or a turn that ran out of steps) asks for one now. The
-      // prompt alone did not get the agent to retry on the next message.
+      // makeCover, or a turn that ran out of steps) asks for one now, within
+      // asksForCover's bounds. The prompt alone did not get the agent to
+      // retry on the next message.
       let coverMissing = false;
 
       if (!meditationId) {
@@ -257,7 +300,7 @@ export const studioTools = {
         const [{ data: current, error }, { data: draft, error: draftError }] = await Promise.all([
           ctx.supabase
             .from("meditations")
-            .select("audio_path, status, settings, cover_path")
+            .select("audio_path, status, settings, cover_path, cover_generations")
             .eq("id", meditationId)
             .single(),
           ctx.supabase
@@ -279,7 +322,7 @@ export const studioTools = {
         // render promotes it. A failed render's state carries over to the new
         // revision, so the free retry still applies.
         savedAs = current.audio_path ? "draft_script" : "script";
-        coverMissing = !current.cover_path;
+        coverMissing = asksForCover(current, messages);
         const now = new Date().toISOString();
         const { error: writeError } =
           savedAs === "draft_script"

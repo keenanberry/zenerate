@@ -23,6 +23,7 @@ vi.mock("@/lib/supabase/service-role", () => ({
 }));
 
 import {
+  asksForCover,
   makeCoverInput,
   offerAudioInput,
   lengthToleranceSeconds,
@@ -412,6 +413,56 @@ describe("setDetails", () => {
   it("asks for a script first when the chat has none", async () => {
     const db = fakeSupabase({ chats: { meditation_id: null } });
     await expect(run("setDetails", details, context(db.client))).rejects.toThrow(/writeScript first/);
+  });
+});
+
+describe("asksForCover", () => {
+  const user = (text: string): ModelMessage => ({ role: "user", content: text });
+  const cover = (id: string, failed: boolean): ModelMessage[] => [
+    { role: "assistant", content: [{ type: "tool-call", toolCallId: id, toolName: "makeCover", input: {} }] },
+    {
+      role: "tool",
+      content: [
+        {
+          type: "tool-result",
+          toolCallId: id,
+          toolName: "makeCover",
+          output: failed
+            ? { type: "error-text", value: "The cover could not be made this time." }
+            : { type: "json", value: { made: true, remaining: 2 } },
+        },
+      ],
+    },
+  ];
+  const fresh = { cover_path: null, cover_generations: 0, audio_path: null };
+
+  it("asks when a meditation never got its cover (a turn that ran out of steps)", () => {
+    expect(asksForCover(fresh, [user("calm"), user("shorter")])).toBe(true);
+  });
+
+  it("does not ask once there is a cover or a generation has been spent", () => {
+    expect(asksForCover({ ...fresh, cover_path: "m/a.webp" }, [user("x")])).toBe(false);
+    // A leaked count with no cover must not make every revision call a refused makeCover.
+    expect(asksForCover({ ...fresh, cover_generations: 3 }, [user("x")])).toBe(false);
+  });
+
+  it("retries once on a later message after a failure, and never twice in one turn", () => {
+    const failedEarlier = [user("calm"), ...cover("c1", true), user("shorter")];
+    expect(asksForCover(fresh, failedEarlier)).toBe(true);
+    // makeCover already ran (and failed) in this turn: a fix-up writeScript does not ask again.
+    expect(asksForCover(fresh, [...failedEarlier, ...cover("c2", true)])).toBe(false);
+  });
+
+  it("stops after two failures in the chat, so an outage is not retried on every revision", () => {
+    const twice = [user("calm"), ...cover("c1", true), user("shorter"), ...cover("c2", true), user("warmer")];
+    expect(asksForCover(fresh, twice)).toBe(false);
+  });
+
+  it("never covers a meditation with audio from before covers, whose chat never tried one", () => {
+    const old = { ...fresh, audio_path: "u/m/a.mp3" };
+    expect(asksForCover(old, [user("make it warmer")])).toBe(false);
+    // One made since covers, whose attempt failed, still gets its one retry.
+    expect(asksForCover(old, [user("calm"), ...cover("c1", true), user("warmer")])).toBe(true);
   });
 });
 
