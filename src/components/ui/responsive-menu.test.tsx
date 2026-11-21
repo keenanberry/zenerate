@@ -6,10 +6,17 @@ const desktop = vi.hoisted(() => ({ value: true }));
 vi.mock("@/lib/use-is-desktop", () => ({ useIsDesktop: () => desktop.value }));
 
 // Each part renders inline as a marker, and the contents record their props.
-const seen = vi.hoisted(() => ({ sheet: {} as Record<string, unknown>, dropdown: {} as Record<string, unknown> }));
+const seen = vi.hoisted(() => ({
+  sheet: {} as Record<string, unknown>,
+  dropdown: {} as Record<string, unknown>,
+  trigger: {} as Record<string, unknown>,
+}));
 vi.mock("@/components/ui/bottom-sheet", () => ({
   BottomSheet: ({ children }: { children?: ReactNode }) => <div data-bottom-sheet>{children}</div>,
-  BottomSheetTrigger: ({ children }: { children?: ReactNode }) => <>{children}</>,
+  BottomSheetTrigger: (props: { children?: ReactNode }) => {
+    seen.trigger = props;
+    return <>{props.children}</>;
+  },
   BottomSheetContent: (props: { title: ReactNode; header?: ReactNode; description?: ReactNode; children?: ReactNode }) => {
     seen.sheet = props;
     return (
@@ -26,7 +33,10 @@ vi.mock("@/components/ui/bottom-sheet", () => ({
 }));
 vi.mock("@/components/ui/dropdown-menu", () => ({
   DropdownMenu: ({ children }: { children?: ReactNode }) => <div data-dropdown>{children}</div>,
-  DropdownMenuTrigger: ({ children }: { children?: ReactNode }) => <>{children}</>,
+  DropdownMenuTrigger: (props: { children?: ReactNode }) => {
+    seen.trigger = props;
+    return <>{props.children}</>;
+  },
   DropdownMenuContent: (props: { children?: ReactNode }) => {
     seen.dropdown = props;
     return <ul data-dropdown-content>{props.children}</ul>;
@@ -78,6 +88,7 @@ function menu(onCloseAutoFocus = () => {}) {
 beforeEach(() => {
   seen.sheet = {};
   seen.dropdown = {};
+  seen.trigger = {};
 });
 
 describe("ResponsiveMenu", () => {
@@ -111,6 +122,23 @@ describe("ResponsiveMenu", () => {
     expect(html).not.toContain("10 min");
     expect(seen.dropdown.onCloseAutoFocus).toBe(spy);
     expect(seen.dropdown.align).toBe("end");
+  });
+});
+
+describe("ResponsiveMenuTrigger", () => {
+  // Add to collection wraps it in a popover's asChild anchor, which hands it
+  // a ref and props to reach the button; dropped, the popover cannot place itself.
+  it.each([true, false])("passes every prop on (desktop: %s)", (mode) => {
+    desktop.value = mode;
+    const ref = { current: null };
+    renderToStaticMarkup(
+      <ResponsiveMenu>
+        <ResponsiveMenuTrigger asChild ref={ref} data-anchor="yes">
+          <button>More</button>
+        </ResponsiveMenuTrigger>
+      </ResponsiveMenu>,
+    );
+    expect(seen.trigger).toMatchObject({ asChild: true, ref, "data-anchor": "yes" });
   });
 });
 

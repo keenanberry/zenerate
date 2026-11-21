@@ -45,15 +45,14 @@ function ResponsiveMenu({
   )
 }
 
-function ResponsiveMenuTrigger({
-  asChild,
-  children,
-}: {
-  asChild?: boolean
-  children?: React.ReactNode
-}) {
+/**
+ * Passes every prop on, `ref` included: wrapped in another layer's
+ * `asChild` anchor (Add to collection's popover), that layer measures the
+ * button through it.
+ */
+function ResponsiveMenuTrigger(props: React.ComponentProps<typeof DropdownMenuTrigger>) {
   const Trigger = React.useContext(DesktopContext) ? DropdownMenuTrigger : BottomSheetTrigger
-  return <Trigger asChild={asChild}>{children}</Trigger>
+  return <Trigger {...props} />
 }
 
 /**
