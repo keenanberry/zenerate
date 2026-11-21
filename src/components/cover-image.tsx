@@ -13,6 +13,10 @@ type CoverImageProps = {
   className: string;
   /** The designed cover, shown instead whenever the photo cannot be. */
   fallback: ReactNode;
+  /** Load it eagerly with high priority: only for an above-the-fold LCP image. */
+  preload?: boolean;
+  /** Told once the photo has failed and the fallback shows. */
+  onFailed?: () => void;
 };
 
 /**
@@ -26,7 +30,14 @@ export function CoverImage(props: CoverImageProps) {
   // Keyed by URL, so a new cover gets a fresh try.
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   return (
-    <CoverImageView {...props} failed={failedSrc === props.src} onError={() => setFailedSrc(props.src)} />
+    <CoverImageView
+      {...props}
+      failed={failedSrc === props.src}
+      onError={() => {
+        setFailedSrc(props.src);
+        props.onFailed?.();
+      }}
+    />
   );
 }
 
@@ -37,6 +48,7 @@ export function CoverImageView({
   alt,
   className,
   fallback,
+  preload,
   failed,
   onError,
 }: CoverImageProps & { failed: boolean; onError: () => void }) {
@@ -47,6 +59,7 @@ export function CoverImageView({
       width={size}
       height={size}
       alt={alt}
+      preload={preload}
       onError={onError}
       className={className}
     />

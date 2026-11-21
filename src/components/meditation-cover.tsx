@@ -236,6 +236,10 @@ type MeditationCoverProps = {
    * absent draws the designed cover, as does a photo that fails to load.
    */
   coverUrl?: string | null;
+  /** Preload the photo: only for the one above-the-fold cover that is the page's LCP. */
+  preload?: boolean;
+  /** Told when a photo fails and the designed cover takes its place. */
+  onImageError?: () => void;
 };
 
 export function MeditationCover({
@@ -247,6 +251,8 @@ export function MeditationCover({
   decorative = true,
   crop = false,
   coverUrl,
+  preload,
+  onImageError,
 }: MeditationCoverProps) {
   const radius = size < 96 ? "rounded-md" : "rounded-xl";
   const designed = (
@@ -272,6 +278,8 @@ export function MeditationCover({
       // object-cover crops the photo to whatever box that is.
       className={cn("shrink-0 overflow-hidden bg-muted object-cover", radius, className)}
       fallback={designed}
+      preload={preload}
+      onFailed={onImageError}
     />
   );
 }
@@ -285,7 +293,10 @@ function DesignedCover({
   decorative,
   crop,
   radius,
-}: Required<Omit<MeditationCoverProps, "coverUrl" | "className">> & { className?: string; radius: string }) {
+}: Required<Omit<MeditationCoverProps, "coverUrl" | "className" | "preload" | "onImageError">> & {
+  className?: string;
+  radius: string;
+}) {
   const { motif, hues, field, mirrored, seed } = coverDesign(id, tags);
   const [lead, second] = hues;
   // Strokes hold a steady, bold weight on screen: 2px in a row, 3px in a

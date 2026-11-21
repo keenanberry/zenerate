@@ -161,6 +161,11 @@ describe.skipIf(!enabled)("meditation covers against local Supabase", () => {
         .upload(`${meditationId}/${randomUUID()}.webp`, webp(), { contentType: "image/webp" });
       expect(uploadError).not.toBeNull();
 
+      const { error: overwriteError } = await owner.storage
+        .from(COVER_BUCKET)
+        .upload(coverPath, webp(), { contentType: "image/webp", upsert: true });
+      expect(overwriteError).not.toBeNull();
+
       await owner.storage.from(COVER_BUCKET).remove([coverPath]);
       const { data } = await service.storage.from(COVER_BUCKET).list(meditationId);
       expect(data!.map((o) => `${meditationId}/${o.name}`)).toEqual([coverPath]);
@@ -168,7 +173,9 @@ describe.skipIf(!enabled)("meditation covers against local Supabase", () => {
   });
 
   it("keeps cover_generations between 0 and 3", async () => {
-    const { error } = await service.from("meditations").update({ cover_generations: 4 }).eq("id", meditationId);
-    expect(error?.code).toBe("23514");
+    for (const value of [4, -1]) {
+      const { error } = await service.from("meditations").update({ cover_generations: value }).eq("id", meditationId);
+      expect(error?.code, String(value)).toBe("23514");
+    }
   });
 });

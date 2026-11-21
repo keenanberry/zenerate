@@ -132,6 +132,8 @@ export default async function MeditationDetailPage({
                 title={meditation.title}
                 size={320}
                 coverUrl={meditation.cover_url}
+                // Full width above the fold on a phone: the page's LCP image.
+                preload
                 className="h-auto w-full sm:size-40"
               />
               <div className="min-w-0 flex-1">

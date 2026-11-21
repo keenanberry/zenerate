@@ -749,9 +749,11 @@ reopens the session.
   through an alpha mask. A designed cover shows clear down to 35% and is gone by 66%.
   A generated photo is brighter and busier than a flat field, so its fade is darker:
   `--night` sits over it at 40% at the top (for the round buttons), eases to 25% by a
-  fifth of the way down so the picture still reads, climbs to 60% by 42% (behind the
-  transport) and is solid by 60%. The title and controls keep their contrast whatever
-  the photo. Round 40px buttons at the top: a down chevron that minimizes
+  fifth of the way down so the picture still reads, climbs to 75% by 42% (behind the
+  transport, where the skip buttons' 10px seconds sit) and is solid by 60%. Measured
+  over FLUX 2 Klein covers, the skip area's worst pixel stays at about 4.3:1 or better;
+  the title and time sit on solid night. A photo that fails to load takes the designed
+  cover's fade along with the designed cover. Round 40px buttons at the top: a down chevron that minimizes
   and "…" (download, favourite, Show script).
 - **Transport.** The gradient play/pause at 84px with the halo behind it, and 15-second
   skips either side (`SEEK_OFFSET_SECONDS`, the lock screen's interval): a circular arrow

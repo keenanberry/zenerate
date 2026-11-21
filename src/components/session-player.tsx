@@ -104,6 +104,10 @@ export function SessionPlayer({
   const { containerRef, isPlaying, currentTime, duration, started, ready, heard } = player;
   const page = useMeditationPage();
   const [open, setOpen] = useState(false);
+  // A photo that failed falls back to the designed cover, which takes the
+  // designed cover's fade.
+  const [failedCover, setFailedCover] = useState<string | null>(null);
+  const photo = !!coverUrl && failedCover !== coverUrl;
   const [menuOpen, setMenuOpen] = useState(false);
   const playRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -305,14 +309,15 @@ export function SessionPlayer({
             size={600}
             crop
             coverUrl={coverUrl}
+            onImageError={() => setFailedCover(coverUrl ?? null)}
             className="absolute inset-x-0 top-0 h-[72%] w-full rounded-none sm:rounded-none"
           />
           <div
             aria-hidden
             className={cn(
               "absolute inset-0 bg-night",
-              coverUrl
-                ? "[mask-image:linear-gradient(to_bottom,rgb(0_0_0/0.4),rgb(0_0_0/0.25)_20%,rgb(0_0_0/0.6)_42%,black_60%)]"
+              photo
+                ? "[mask-image:linear-gradient(to_bottom,rgb(0_0_0/0.4),rgb(0_0_0/0.25)_20%,rgb(0_0_0/0.75)_42%,black_60%)]"
                 : "[mask-image:linear-gradient(to_bottom,transparent_35%,black_66%)]",
             )}
           />

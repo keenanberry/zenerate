@@ -188,6 +188,18 @@ describe("MeditationCover with a generated cover", () => {
     expect(named).toContain('alt="Evening wind-down"');
   });
 
+  it("loads lazily unless it is the page's preloaded LCP image", () => {
+    const lazy = renderToStaticMarkup(
+      <MeditationCover id={ID} tags={[]} title="t" size={320} coverUrl={URL} />,
+    );
+    expect(lazy).toContain('loading="lazy"');
+    const preloaded = renderToStaticMarkup(
+      <MeditationCover id={ID} tags={[]} title="t" size={320} coverUrl={URL} preload />,
+    );
+    expect(preloaded).not.toContain('loading="lazy"');
+    expect(preloaded).toContain('rel="preload"');
+  });
+
   it("keeps the caller's classes, so a cropped cover still fills its box", () => {
     const html = renderToStaticMarkup(
       <MeditationCover id={ID} tags={[]} title="t" size={600} crop coverUrl={URL} className="size-full rounded-none" />,
