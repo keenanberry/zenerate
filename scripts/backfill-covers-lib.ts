@@ -1,8 +1,12 @@
 /**
- * The pure parts of scripts/backfill-covers.ts: its arguments, its pacing,
- * the target check, and the contact sheet. Kept apart so they are tested
- * without a database, a model or the Gateway.
+ * The pure parts of scripts/backfill-covers.ts: its arguments, where its
+ * credentials came from, its pacing, the target check, and the contact
+ * sheet. Kept apart so they are tested without a database, a model or the
+ * Gateway.
  */
+
+import { isAbsolute, relative, resolve } from "node:path";
+import { parseEnv } from "node:util";
 
 /** Where generated covers wait for review. `.superpowers/` is gitignored. */
 export const DEFAULT_OUT = ".superpowers/cover-backfill";
@@ -24,10 +28,12 @@ export type Options = {
   confirmTarget: string | null;
   /** Generate at most this many in one run (a trial run). */
   limit: number | null;
+  /** A file of credentials outside the repository, counted as set explicitly. */
+  envFile: string | null;
 };
 
-export const USAGE = `Usage: npx tsx scripts/backfill-covers.ts [--all | --ids a,b] [--replace] [--limit n] [--out dir]
-       npx tsx scripts/backfill-covers.ts --commit [--ids a,b] [--replace] [--out dir] [--confirm-target <host>]`;
+export const USAGE = `Usage: npx tsx scripts/backfill-covers.ts [--all | --ids a,b] [--replace] [--limit n] [--out dir] [--env-file path]
+       npx tsx scripts/backfill-covers.ts --commit [--ids a,b] [--replace] [--out dir] [--env-file path] [--confirm-target <host>]`;
 
 /** Parses the command line. Throws a message for the operator on anything it cannot act on. */
 export function parseArgs(argv: readonly string[]): Options {
@@ -39,6 +45,7 @@ export function parseArgs(argv: readonly string[]): Options {
     replace: false,
     confirmTarget: null,
     limit: null,
+    envFile: null,
   };
   for (let i = 0; i < argv.length; i++) {
     const [flag, inline] = argv[i].startsWith("--") ? splitOnce(argv[i]) : [argv[i], undefined];
@@ -70,6 +77,9 @@ export function parseArgs(argv: readonly string[]): Options {
       case "--confirm-target":
         options.confirmTarget = value();
         break;
+      case "--env-file":
+        options.envFile = value();
+        break;
       case "--limit": {
         const raw = value();
         const n = Number(raw);
@@ -83,6 +93,9 @@ export function parseArgs(argv: readonly string[]): Options {
   }
   if (options.all && options.ids) throw new Error("Pass either --all or --ids, not both.");
   if (options.replace && !options.ids) throw new Error("Pass --replace only with --ids, so a replacement is always named.");
+  if (options.commit && (options.all || options.limit !== null)) {
+    throw new Error("Pass --all and --limit only when generating; --commit uploads what is in the review folder.");
+  }
   return options;
 }
 
@@ -92,13 +105,13 @@ function splitOnce(arg: string): [string, string | undefined] {
 }
 
 /**
- * The Gateway's free tier allows 5 image requests a minute per team. Sent in
- * a burst of five and then a pause, some were still refused (its limiter
- * refills over the minute rather than counting a sliding window), so
- * requests go out evenly: one every 12s, plus a second for the clock
- * difference between this machine and the Gateway.
+ * The Gateway's free tier allows 5 image requests a minute per team, shared
+ * with the live studio's makeCover. Sent in a burst of five and then a pause,
+ * some were refused (its limiter refills over the minute rather than counting
+ * a sliding window), so requests go out evenly, four a minute: the fifth is
+ * left for anyone making a meditation while the backfill runs.
  */
-export const GATEWAY_INTERVAL_MS = 60_000 / 5 + 1_000;
+export const GATEWAY_INTERVAL_MS = 15_000;
 
 /**
  * How long to wait before the next image request, given when earlier ones
@@ -111,6 +124,44 @@ export function waitBeforeNext(
 ): number {
   if (starts.length === 0) return 0;
   return Math.max(0, Math.max(...starts) + intervalMs - now);
+}
+
+/** Where a variable's value came from. Only `.env.local` is implicit. */
+export type EnvSource = "environment" | "--env-file" | ".env.local";
+
+/**
+ * Fills `env` from dotenv-format layers, in order, setting only keys that are
+ * unset (or empty), and returns where each set key's value came from. What
+ * was already in `env` counts as "environment". Done per key, rather than by
+ * comparing snapshots, so nothing loaded earlier can pass for explicit.
+ */
+export function fillEnv(
+  env: Record<string, string | undefined>,
+  layers: readonly { source: Exclude<EnvSource, "environment">; text: string }[],
+): Map<string, EnvSource> {
+  const sources = new Map<string, EnvSource>();
+  for (const [key, value] of Object.entries(env)) if (value) sources.set(key, "environment");
+  for (const { source, text } of layers) {
+    for (const [key, value] of Object.entries(parseEnv(text))) {
+      if (env[key] || value === undefined) continue;
+      env[key] = value;
+      sources.set(key, source);
+    }
+  }
+  return sources;
+}
+
+/**
+ * Why `--env-file` cannot be read, or null. It must be outside the
+ * repository: production credentials never sit in the working tree, and
+ * pointing it at .env.local would make local values pass for explicit ones.
+ */
+export function envFileProblem(path: string, root: string): string | null {
+  const inside = relative(resolve(root), resolve(path));
+  if (inside === "" || (!inside.startsWith("..") && !isAbsolute(inside))) {
+    return `--env-file must be a file outside the repository (${root}), not ${path}.`;
+  }
+  return null;
 }
 
 /** Whether a Supabase URL is the local stack on this machine. */
@@ -126,20 +177,22 @@ export function isLocalSupabase(url: string): boolean {
 /**
  * Why the script must not run against this target, or null when it may.
  * Local Supabase is always fine. A remote project (production) needs its URL
- * and service-role key set on the command line, never read from .env.local,
- * and a commit to it needs the host typed back with --confirm-target.
+ * and service-role key set explicitly (in the environment or an --env-file),
+ * never read from .env.local, and a commit to it needs the host typed back
+ * with --confirm-target.
  */
 export function targetProblem(
-  target: { url: string | undefined; urlFromCommandLine: boolean; keyFromCommandLine: boolean },
+  target: { url: string | undefined; key: string | undefined; urlExplicit: boolean; keyExplicit: boolean },
   options: Pick<Options, "commit" | "confirmTarget">,
 ): string | null {
   if (!target.url) return "No NEXT_PUBLIC_SUPABASE_URL: set it (and SUPABASE_SERVICE_ROLE_KEY) to the project to read.";
+  if (!target.key) return "No SUPABASE_SERVICE_ROLE_KEY for the project.";
   if (isLocalSupabase(target.url)) return null;
-  if (!target.urlFromCommandLine || !target.keyFromCommandLine) {
+  if (!target.urlExplicit || !target.keyExplicit) {
     return (
       `${target.url} is not local Supabase, and its URL or key came from .env.local. ` +
-      "Production credentials must be set on the command line for this run only, both " +
-      "NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
+      "Production credentials must come from the environment or --env-file for this run " +
+      "only, both NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
     );
   }
   const host = new URL(target.url).hostname;

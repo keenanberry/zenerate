@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   contactSheet,
   DEFAULT_OUT,
+  envFileProblem,
+  fillEnv,
   FRAMED_CORNERS,
   whiteCorners,
   GATEWAY_INTERVAL_MS,
@@ -26,12 +28,23 @@ describe("parseArgs", () => {
       replace: false,
       confirmTarget: null,
       limit: null,
+      envFile: null,
     });
   });
 
   it("reads every flag, in either --flag value or --flag=value form", () => {
     expect(
-      parseArgs(["--ids", `${A},${B}`, "--out=tmp/covers", "--commit", "--replace", "--confirm-target", "abc.supabase.co"]),
+      parseArgs([
+        "--ids",
+        `${A},${B}`,
+        "--out=tmp/covers",
+        "--commit",
+        "--replace",
+        "--confirm-target",
+        "abc.supabase.co",
+        "--env-file",
+        "/Users/me/prod.env",
+      ]),
     ).toEqual({
       all: false,
       ids: [A, B],
@@ -40,6 +53,7 @@ describe("parseArgs", () => {
       replace: true,
       confirmTarget: "abc.supabase.co",
       limit: null,
+      envFile: "/Users/me/prod.env",
     });
     expect(parseArgs(["--all", "--limit=3"])).toMatchObject({ all: true, limit: 3 });
   });
@@ -57,6 +71,9 @@ describe("parseArgs", () => {
     expect(() => parseArgs(["--limit", "two"])).toThrow(/--limit/);
     expect(() => parseArgs(["--yes"])).toThrow(/Unknown option "--yes"/);
     expect(() => parseArgs(["extra"])).toThrow(/Unknown option "extra"/);
+    // Generate-only flags would be silently ignored by a commit.
+    expect(() => parseArgs(["--commit", "--all"])).toThrow(/--all and --limit only when generating/);
+    expect(() => parseArgs(["--commit", "--limit", "2"])).toThrow(/--all and --limit only when generating/);
   });
 });
 
@@ -67,10 +84,10 @@ describe("waitBeforeNext", () => {
     expect(waitBeforeNext([], 1_000)).toBe(0);
   });
 
-  it("spaces requests evenly, five a minute and a margin", () => {
-    expect(GATEWAY_INTERVAL_MS).toBe(13_000);
-    expect(waitBeforeNext([10_000], 15_000)).toBe(8_000);
-    expect(waitBeforeNext([10_000], 23_000)).toBe(0);
+  it("spaces requests evenly, four a minute, leaving the live studio the fifth", () => {
+    expect(GATEWAY_INTERVAL_MS).toBe(15_000);
+    expect(waitBeforeNext([10_000], 15_000)).toBe(10_000);
+    expect(waitBeforeNext([10_000], 25_000)).toBe(0);
     expect(waitBeforeNext([10_000], 40_000)).toBe(0);
   });
 
@@ -78,7 +95,7 @@ describe("waitBeforeNext", () => {
     expect(waitBeforeNext([20_000, 0, 10_000], 25_000, 12_000)).toBe(7_000);
   });
 
-  it("never sends more than five in any minute over a long run", () => {
+  it("never sends more than four in any minute over a long run", () => {
     const starts: number[] = [];
     let now = 0;
     for (let i = 0; i < 23; i++) {
@@ -88,8 +105,46 @@ describe("waitBeforeNext", () => {
     }
     for (const start of starts) {
       const inWindow = starts.filter((s) => s >= start && s < start + MIN);
-      expect(inWindow.length).toBeLessThanOrEqual(5);
+      expect(inWindow.length).toBeLessThanOrEqual(4);
     }
+  });
+});
+
+describe("fillEnv", () => {
+  it("keeps what the environment set and fills only unset keys, layer by layer, recording each key's source", () => {
+    const env: Record<string, string | undefined> = { NEXT_PUBLIC_SUPABASE_URL: "https://shell.supabase.co" };
+    const sources = fillEnv(env, [
+      { source: "--env-file", text: "NEXT_PUBLIC_SUPABASE_URL=https://file.supabase.co\nSUPABASE_SERVICE_ROLE_KEY=file-key\n" },
+      { source: ".env.local", text: "SUPABASE_SERVICE_ROLE_KEY=local-key\nANTHROPIC_API_KEY=local-anthropic\n" },
+    ]);
+    expect(env).toEqual({
+      NEXT_PUBLIC_SUPABASE_URL: "https://shell.supabase.co",
+      SUPABASE_SERVICE_ROLE_KEY: "file-key",
+      ANTHROPIC_API_KEY: "local-anthropic",
+    });
+    expect(sources.get("NEXT_PUBLIC_SUPABASE_URL")).toBe("environment");
+    expect(sources.get("SUPABASE_SERVICE_ROLE_KEY")).toBe("--env-file");
+    expect(sources.get("ANTHROPIC_API_KEY")).toBe(".env.local");
+    expect(sources.get("MISSING")).toBeUndefined();
+  });
+
+  it("treats an empty value in the environment as unset", () => {
+    const env: Record<string, string | undefined> = { SUPABASE_SERVICE_ROLE_KEY: "" };
+    const sources = fillEnv(env, [{ source: ".env.local", text: "SUPABASE_SERVICE_ROLE_KEY=local-key" }]);
+    expect(env.SUPABASE_SERVICE_ROLE_KEY).toBe("local-key");
+    expect(sources.get("SUPABASE_SERVICE_ROLE_KEY")).toBe(".env.local");
+  });
+});
+
+describe("envFileProblem", () => {
+  it("takes a file outside the repository only", () => {
+    expect(envFileProblem("/Users/me/secrets/prod.env", "/Users/me/zenerate")).toBeNull();
+    expect(envFileProblem("/Users/me/zenerate/.env.local", "/Users/me/zenerate")).toMatch(/outside the repository/);
+    expect(envFileProblem("/Users/me/zenerate/.superpowers/prod.env", "/Users/me/zenerate")).toMatch(
+      /outside the repository/,
+    );
+    // A sibling whose name starts with the repo's is outside it.
+    expect(envFileProblem("/Users/me/zenerate-secrets/prod.env", "/Users/me/zenerate")).toBeNull();
   });
 });
 
@@ -106,27 +161,33 @@ describe("isLocalSupabase", () => {
 
 describe("targetProblem", () => {
   const PROD = "https://abc.supabase.co";
-  const explicit = { url: PROD, urlFromCommandLine: true, keyFromCommandLine: true };
+  const explicit = { url: PROD, key: "k", urlExplicit: true, keyExplicit: true };
 
   it("lets any run target local Supabase, credentials from .env.local included", () => {
-    const local = { url: "http://127.0.0.1:54321", urlFromCommandLine: false, keyFromCommandLine: false };
+    const local = { url: "http://127.0.0.1:54321", key: "k", urlExplicit: false, keyExplicit: false };
     expect(targetProblem(local, { commit: false, confirmTarget: null })).toBeNull();
     expect(targetProblem(local, { commit: true, confirmTarget: null })).toBeNull();
   });
 
-  it("needs a URL and key at all", () => {
+  it("needs a URL and a key at all", () => {
     expect(targetProblem({ ...explicit, url: undefined }, { commit: false, confirmTarget: null })).toMatch(
       /NEXT_PUBLIC_SUPABASE_URL/,
     );
+    expect(targetProblem({ ...explicit, key: undefined }, { commit: false, confirmTarget: null })).toMatch(
+      /SUPABASE_SERVICE_ROLE_KEY/,
+    );
+    expect(
+      targetProblem({ ...explicit, url: "http://127.0.0.1:54321", key: "" }, { commit: false, confirmTarget: null }),
+    ).toMatch(/SUPABASE_SERVICE_ROLE_KEY/);
   });
 
   it("refuses a remote project whose URL or key came from .env.local", () => {
     for (const from of [
-      { urlFromCommandLine: false, keyFromCommandLine: true },
-      { urlFromCommandLine: true, keyFromCommandLine: false },
+      { urlExplicit: false, keyExplicit: true },
+      { urlExplicit: true, keyExplicit: false },
     ]) {
       expect(targetProblem({ ...explicit, ...from }, { commit: false, confirmTarget: null })).toMatch(
-        /set on the command line/,
+        /environment or --env-file/,
       );
     }
   });

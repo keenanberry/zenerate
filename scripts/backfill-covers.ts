@@ -30,33 +30,27 @@
  *
  * Target: NEXT_PUBLIC_SUPABASE_URL with SUPABASE_SERVICE_ROLE_KEY. .env.local
  * fills them in for local Supabase only: for any other project (production),
- * both must be set on the command line, a commit must also name the host with
+ * both must come from the environment or from `--env-file <path>` (a file
+ * outside the repository), a commit must also name the host with
  * --confirm-target, and a commit refuses a folder generated from a different
- * project. The target is printed before anything else happens.
+ * project. The target, and where its URL and key came from, is printed
+ * before anything else happens. A commit writes a cover only while the
+ * meditation's cover is still what it was at the check (none, or the one
+ * --replace replaces), in the same statement, so a cover the studio makes
+ * meanwhile is never overwritten.
  *
  * Also needs ANTHROPIC_API_KEY (the subject) and Gateway auth for the image:
  * AI_GATEWAY_API_KEY, or VERCEL_OIDC_TOKEN from
  *   vercel -Q "$HOME/.vercel-personal" env pull .superpowers/gw.env --environment development --yes
  * then `set -a; source .superpowers/gw.env; set +a` (never pull into .env.local).
- * Paced to the Gateway free tier's 5 image requests a minute, one every 13s;
- * a cover that still fails (a refusal, a rate limit) is retried by the next run.
+ * Paced to one image request every 15s: four a minute against the Gateway
+ * free tier's 5, which the live studio shares. A cover that still fails (a
+ * refusal, a rate limit) is retried by the next run.
  */
 
-import { resolve, dirname, join } from "node:path";
+import { mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-// Which credentials the operator set for this run, before .env.local fills in the rest.
-const URL_FROM_COMMAND_LINE = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL);
-const KEY_FROM_COMMAND_LINE = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
-try {
-  // Never overrides a variable already set.
-  process.loadEnvFile(resolve(ROOT, ".env.local"));
-} catch {
-  // No .env.local: the variables must come from the command line.
-}
-
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { setTimeout as sleep } from "node:timers/promises";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
@@ -64,10 +58,12 @@ import { generateText } from "ai";
 import { studioModel } from "../src/lib/chat/model";
 import { generateCover } from "../src/lib/cover/generate";
 import { COVER_MODEL } from "../src/lib/cover/model";
-import { storeCover } from "../src/lib/cover/store";
+import { CoverChangedError, storeCover } from "../src/lib/cover/store";
 import { cleanSubject, COVER_SUBJECT_SYSTEM, subjectRequest } from "../src/lib/cover/subject";
 import {
   contactSheet,
+  envFileProblem,
+  fillEnv,
   FRAMED_CORNERS,
   imageExtension,
   mediaTypeOf,
@@ -76,9 +72,12 @@ import {
   USAGE,
   waitBeforeNext,
   whiteCorners,
+  type EnvSource,
   type Manifest,
   type Options,
 } from "./backfill-covers-lib";
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 type Row = {
   id: string;
@@ -115,7 +114,11 @@ async function readManifest(out: string): Promise<Manifest | null> {
 }
 
 async function saveManifest(out: string, manifest: Manifest) {
-  await writeFile(join(out, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  // Written aside and renamed over, so an interrupted run never leaves a
+  // truncated manifest (and kept covers that can no longer be committed).
+  const path = join(out, "manifest.json");
+  await writeFile(`${path}.tmp`, `${JSON.stringify(manifest, null, 2)}\n`);
+  await rename(`${path}.tmp`, path);
   const files = new Set(await readdir(out));
   await writeFile(join(out, "index.html"), contactSheet(manifest, files));
 }
@@ -140,7 +143,11 @@ async function findMeditations(supabase: SupabaseClient, options: Options): Prom
       if (!found.has(id)) console.log(`  ${id}: not a completed meditation${options.replace ? "" : " without a cover"}; skipped`);
     }
   }
-  if (rows.length === MAX_ROWS) console.log(`More than ${MAX_ROWS} meditations: this run covers the first; run it again for the rest.`);
+  if (rows.length === MAX_ROWS) {
+    // Generated covers keep cover_path null until committed, so a second
+    // generate would select these same rows again.
+    console.log(`${MAX_ROWS} meditations or more: this run covers the first ${MAX_ROWS}. Commit them, then run again for the rest.`);
+  }
   return rows;
 }
 
@@ -244,7 +251,8 @@ async function commit(supabase: SupabaseClient, options: Options, target: string
       console.log(`${label}: rejected in review (file removed); skipped`);
       continue;
     }
-    // Read again now: the meditation may have been deleted, unpublished or given a cover since.
+    // Read again now: the meditation may have been deleted, or given a cover, since generation.
+    // (One made private since keeps its cover: the studio covers private meditations too.)
     const { data: row, error } = await supabase
       .from("meditations")
       .select("id, status, cover_path")
@@ -258,19 +266,25 @@ async function commit(supabase: SupabaseClient, options: Options, target: string
       console.log(`${label}: no longer a completed meditation; skipped`);
       continue;
     }
+    if (row.cover_path && row.cover_path === entry.committedPath) continue; // committed by an earlier run
     if (row.cover_path && !options.replace) {
-      if (row.cover_path !== entry.committedPath) console.log(`${label}: has a cover already; skipped (pass --ids ${id} --replace to replace it)`);
+      console.log(`${label}: has a cover already; skipped (pass --ids ${id} --replace to replace it)`);
       continue;
     }
     try {
       const mediaType = mediaTypeOf(entry.file) ?? entry.mediaType;
       const bytes = new Uint8Array(await readFile(join(out, entry.file)));
-      const { path } = await storeCover(id, { bytes, mediaType });
+      // Only while the cover is still what was just read: a studio cover made since is kept.
+      const { path } = await storeCover(id, { bytes, mediaType }, { ifCoverIs: row.cover_path ?? null });
       entry.committedPath = path;
       await saveManifest(out, manifest);
       stored++;
       console.log(`${label}: stored at ${path}`);
     } catch (error) {
+      if (error instanceof CoverChangedError) {
+        console.log(`${label}: skipped: a cover appeared since generation`);
+        continue;
+      }
       console.error(`${label}: failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -286,22 +300,47 @@ async function main() {
     fail(`${(error as Error).message}\n${USAGE}`);
   }
 
+  // Credentials: what the environment already holds, then --env-file, then
+  // .env.local, each filling only what is still unset. Only .env.local is
+  // implicit, and it may only point at local Supabase.
+  const layers: Parameters<typeof fillEnv>[1][number][] = [];
+  if (options.envFile) {
+    const problem = envFileProblem(options.envFile, ROOT);
+    if (problem) fail(problem);
+    try {
+      layers.push({ source: "--env-file", text: await readFile(options.envFile, "utf8") });
+    } catch (error) {
+      fail(`Reading --env-file ${options.envFile} failed: ${(error as Error).message}`);
+    }
+  }
+  try {
+    layers.push({ source: ".env.local", text: await readFile(resolve(ROOT, ".env.local"), "utf8") });
+  } catch {
+    // No .env.local: everything comes from the environment or --env-file.
+  }
+  const sources = fillEnv(process.env, layers);
+  const from = (name: string) => sources.get(name) ?? "nowhere";
+  const explicit = (source: EnvSource | undefined) => source === "environment" || source === "--env-file";
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, "");
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   console.log(
-    `Target: ${url ?? "(none)"} (URL from ${URL_FROM_COMMAND_LINE ? "the command line" : ".env.local"}, ` +
-      `key from ${KEY_FROM_COMMAND_LINE ? "the command line" : ".env.local"})`,
+    `Target: ${url ?? "(none)"} (URL from ${from("NEXT_PUBLIC_SUPABASE_URL")}, key from ${from("SUPABASE_SERVICE_ROLE_KEY")})`,
   );
   console.log(options.commit ? "Mode: commit reviewed covers" : `Mode: generate into ${options.out} (writes nothing to the target)`);
   const problem = targetProblem(
-    { url, urlFromCommandLine: URL_FROM_COMMAND_LINE, keyFromCommandLine: KEY_FROM_COMMAND_LINE },
+    {
+      url,
+      key,
+      urlExplicit: explicit(sources.get("NEXT_PUBLIC_SUPABASE_URL")),
+      keyExplicit: explicit(sources.get("SUPABASE_SERVICE_ROLE_KEY")),
+    },
     options,
   );
   if (problem) fail(problem);
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!key) fail("SUPABASE_SERVICE_ROLE_KEY is not set.");
   if (!options.commit) console.log(`Model: ${COVER_MODEL}; subjects by ${studioModel()}`);
 
-  const supabase = createClient(url!, key, { auth: { autoRefreshToken: false, persistSession: false } });
+  const supabase = createClient(url!, key!, { auth: { autoRefreshToken: false, persistSession: false } });
   if (options.commit) await commit(supabase, options, url!);
   else await generate(supabase, options, url!);
 }

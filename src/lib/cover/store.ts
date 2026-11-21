@@ -56,18 +56,37 @@ async function encode(bytes: Uint8Array): Promise<{ full: Buffer; middle: Buffer
 }
 
 /**
+ * The meditation's cover was no longer what the caller expected when the row
+ * was written (a studio cover appeared meanwhile, or the meditation is gone).
+ * Nothing was changed: the uploads were removed and the row kept its cover.
+ */
+export class CoverChangedError extends Error {
+  constructor() {
+    super("A cover appeared since generation (or the meditation is gone); it was left as it is.");
+    this.name = "CoverChangedError";
+  }
+}
+
+/**
  * Store a generated cover as a meditation's current cover, on the service
  * role (only it writes covers; the caller has already proved ownership
  * through the owner's client, or the operator runs the backfill). Uploads the
  * full image, its middle size and its thumbnail to
  * `<meditationId>/<random>.webp`, `.md.webp` and `.thumb.webp`, points
  * `cover_path` at it, then removes the previous cover's sizes, but only when
- * it sits in this meditation's own folder. If the row cannot be updated, the new objects are
- * removed and the old cover stays.
+ * it sits in this meditation's own folder. If the row cannot be updated, the
+ * new objects are removed and the old cover stays.
+ *
+ * `ifCoverIs` makes the write conditional, for the backfill: the row is
+ * updated only while its cover_path is still that value (null: no cover), in
+ * the same statement as the update, so a cover the studio made after the
+ * caller looked is never overwritten. Otherwise it throws CoverChangedError
+ * having removed its own uploads.
  */
 export async function storeCover(
   meditationId: string,
   image: GeneratedImage,
+  { ifCoverIs }: { ifCoverIs?: string | null } = {},
 ): Promise<{ path: string; url: string }> {
   if (!UUID.test(meditationId)) throw new Error(`Not a meditation id: "${meditationId}"`);
 
@@ -82,6 +101,9 @@ export async function storeCover(
     .single();
   if (readError || !current) throw new Error(`Reading the meditation failed: ${readError?.message}`);
   const previous = current.cover_path as string | null;
+  const conditional = ifCoverIs !== undefined;
+  // Already changed: nothing to upload.
+  if (conditional && previous !== ifCoverIs) throw new CoverChangedError();
 
   const path = `${meditationId}/${randomUUID()}.webp`;
   const thumbPath = coverThumb(path);
@@ -99,14 +121,18 @@ export async function storeCover(
       if (error) throw new Error(`Cover upload failed: ${error.message}`);
       uploaded.push(objectPath);
     }
-    const { data: updated, error: updateError } = await supabase
-      .from("meditations")
-      .update({ cover_path: path })
-      .eq("id", meditationId)
-      .select("id");
+    let update = supabase.from("meditations").update({ cover_path: path }).eq("id", meditationId);
+    if (conditional) {
+      update = ifCoverIs === null ? update.is("cover_path", null) : update.eq("cover_path", ifCoverIs);
+    }
+    const { data: updated, error: updateError } = await update.select("id");
     if (updateError) throw new Error(`Saving the cover failed: ${updateError.message}`);
-    // Deleted while the cover was being made: nothing points at the upload.
-    if (!updated?.length) throw new Error("Saving the cover failed: the meditation is gone.");
+    // Nothing points at the upload: deleted while the cover was being made,
+    // or (conditional) its cover changed since the caller looked.
+    if (!updated?.length) {
+      if (conditional) throw new CoverChangedError();
+      throw new Error("Saving the cover failed: the meditation is gone.");
+    }
   } catch (error) {
     if (uploaded.length > 0) {
       const { error: removeError } = await bucket.remove(uploaded);

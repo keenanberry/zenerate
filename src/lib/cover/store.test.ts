@@ -4,9 +4,13 @@ import sharp from "sharp";
 type Upload = { path: string; bytes: Buffer; contentType: string };
 
 // The service client storeCover writes through: uploads, the one row update
-// and removals are recorded, and the row's current cover_path is `previous`.
+// and removals are recorded. storeCover reads the row's cover_path as
+// `previous`; by the time it updates the row, the cover may have become
+// `changedTo` (a studio cover made meanwhile).
 const db = vi.hoisted(() => ({
   previous: null as string | null,
+  changedTo: undefined as string | null | undefined,
+  conditions: [] as string[],
   uploads: [] as Upload[],
   updates: [] as { values: Record<string, unknown>; id: string }[],
   removed: [] as string[][],
@@ -20,15 +24,33 @@ vi.mock("@/lib/supabase/service-role", () => ({
       select: () => ({
         eq: () => ({ single: async () => ({ data: { cover_path: db.previous }, error: null }) }),
       }),
-      update: (values: Record<string, unknown>) => ({
-        eq: (_column: string, id: string) => ({
+      update: (values: Record<string, unknown>) => {
+        let id = "";
+        // Each condition on the row's cover_path, checked against what it holds now.
+        const holds: boolean[] = [];
+        const current = () => (db.changedTo === undefined ? db.previous : db.changedTo);
+        const builder = {
+          eq: (column: string, value: string) => {
+            if (column === "id") id = value;
+            else {
+              db.conditions.push(`${column} = ${value}`);
+              holds.push(current() === value);
+            }
+            return builder;
+          },
+          is: (column: string, value: null) => {
+            db.conditions.push(`${column} is ${value}`);
+            holds.push(current() === null);
+            return builder;
+          },
           select: async () => {
             db.updates.push({ values, id });
             if (db.failUpdate) return { data: null, error: { message: "update refused" } };
-            return { data: db.gone ? [] : [{ id }], error: null };
+            return { data: db.gone || holds.includes(false) ? [] : [{ id }], error: null };
           },
-        }),
-      }),
+        };
+        return builder;
+      },
     }),
     storage: {
       from: () => ({
@@ -45,7 +67,7 @@ vi.mock("@/lib/supabase/service-role", () => ({
   }),
 }));
 
-import { isOwnCoverPath, storeCover } from "./store";
+import { CoverChangedError, isOwnCoverPath, storeCover } from "./store";
 
 const MED = "6f1c2a9e-3b7d-4e21-9a0c-5d8f7e6b1a24";
 const OTHER = "0b7a1f3c-2d4e-4f50-8a6b-9c0d1e2f3a4b";
@@ -85,6 +107,8 @@ describe("storeCover", () => {
 
   beforeEach(async () => {
     db.previous = null;
+    db.changedTo = undefined;
+    db.conditions = [];
     db.uploads = [];
     db.updates = [];
     db.removed = [];
@@ -149,6 +173,55 @@ describe("storeCover", () => {
     db.gone = true;
     await expect(storeCover(MED, { bytes: png, mediaType: "image/png" })).rejects.toThrow(/meditation is gone/);
     expect(db.removed.map((paths) => [...paths].sort())).toEqual([db.uploads.map((u) => u.path).sort()]);
+  });
+
+  it("writes unconditionally by default, as the studio does", async () => {
+    await storeCover(MED, { bytes: png, mediaType: "image/png" });
+    expect(db.conditions).toEqual([]);
+  });
+
+  describe("only if the cover is still what the caller saw (the backfill)", () => {
+    it("stores the cover when the meditation still has none", async () => {
+      const { path } = await storeCover(MED, { bytes: png, mediaType: "image/png" }, { ifCoverIs: null });
+      expect(db.conditions).toEqual(["cover_path is null"]);
+      expect(db.updates).toEqual([{ values: { cover_path: path }, id: MED }]);
+      expect(db.removed).toEqual([]);
+    });
+
+    it("keeps a cover that appeared since, and removes its own uploads", async () => {
+      db.changedTo = `${MED}/studio.webp`;
+      await expect(storeCover(MED, { bytes: png, mediaType: "image/png" }, { ifCoverIs: null })).rejects.toThrow(
+        CoverChangedError,
+      );
+      // Only the three it uploaded are removed; the studio's cover is untouched.
+      expect(db.removed.map((paths) => [...paths].sort())).toEqual([db.uploads.map((u) => u.path).sort()]);
+      expect(db.removed.flat()).not.toContain(`${MED}/studio.webp`);
+    });
+
+    it("keeps a cover that appeared even when storeCover's own read already saw it", async () => {
+      // The studio's cover landed before storeCover read the row.
+      db.previous = `${MED}/studio.webp`;
+      await expect(storeCover(MED, { bytes: png, mediaType: "image/png" }, { ifCoverIs: null })).rejects.toThrow(
+        CoverChangedError,
+      );
+      expect(db.removed.flat()).not.toContain(`${MED}/studio.webp`);
+    });
+
+    it("replaces a named cover only while it is still that cover", async () => {
+      db.previous = `${MED}/old.webp`;
+      await storeCover(MED, { bytes: png, mediaType: "image/png" }, { ifCoverIs: `${MED}/old.webp` });
+      expect(db.conditions).toEqual([`cover_path = ${MED}/old.webp`]);
+      expect(db.removed).toEqual([[`${MED}/old.webp`, `${MED}/old.md.webp`, `${MED}/old.thumb.webp`]]);
+
+      db.removed = [];
+      db.uploads = [];
+      db.changedTo = `${MED}/studio.webp`;
+      await expect(
+        storeCover(MED, { bytes: png, mediaType: "image/png" }, { ifCoverIs: `${MED}/old.webp` }),
+      ).rejects.toThrow(CoverChangedError);
+      expect(db.removed.flat()).not.toContain(`${MED}/studio.webp`);
+      expect(db.removed.flat()).not.toContain(`${MED}/old.webp`);
+    });
   });
 
   it("refuses a meditation id that is not an id", async () => {
