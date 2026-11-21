@@ -3,15 +3,12 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PROFILE_COLUMNS, type Profile } from "@/lib/profile/profile";
 import { ProfileForm } from "@/components/profile-form";
-import {
-  AccountCreations,
-  type AccountChat,
-  type AccountMeditation,
-} from "@/components/account-creations";
 import { AccountBookmarks } from "@/components/account-bookmarks";
 import { ACCOUNT_BOOKMARK_PAGE } from "@/lib/meditation/bookmark-state";
 import { listBookmarks, type BookmarkPage } from "@/lib/meditation/bookmarks";
 import { Button } from "@/components/ui/button";
+import { ThemeChoice } from "@/components/theme-choice";
+import { SignOutButton } from "@/components/sign-out-button";
 
 export const metadata = {
   title: "Account | Zenerate",
@@ -19,10 +16,11 @@ export const metadata = {
 
 /**
  * The signed-in user's account: their profile (edited through
- * PATCH /api/profile), then the meditations they have saved for later
- * (card ZEN-8), then their own meditations and chats, each of which they can
- * delete here. Those come last and start closed (card ZEN-11): the studio is
- * where they are worked on.
+ * PATCH /api/profile), the meditations they have saved for later (card
+ * ZEN-8; they move into the Library in the next step of the app shell),
+ * the theme, and Sign out, which left the top bar for here. Their own
+ * meditations are listed and deleted in the Library, their draft chats on
+ * Create.
  * The (authed) layout has already sent signed-out visitors to /login.
  */
 export default async function AccountPage() {
@@ -43,41 +41,20 @@ export default async function AccountPage() {
   // A trigger on auth.users creates the row, so a missing one is a bug.
   if (!profile) throw new Error("Profile not found");
 
-  // Owner-only rows, filtered by owner too: the meditations select policy
-  // also passes everyone's public ones. A chat with no title was never sent
-  // to, so it has nothing to show (as on /create).
   // Bookmarks: the first page, as GET /api/bookmarks would give it; a failed
   // read says so in that section rather than failing the page.
-  const [
-    { data: meditations, error: meditationsError },
-    { data: chats, error: chatsError },
-    bookmarks,
-  ] = await Promise.all([
-      supabase
-        .from("meditations")
-        .select("id, title, is_public, created_at")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("chats")
-        .select("id, title, updated_at")
-        .eq("user_id", user.id)
-        .not("title", "is", null)
-        .order("updated_at", { ascending: false }),
-      listBookmarks(supabase, user.id, { limit: ACCOUNT_BOOKMARK_PAGE }).catch(
-        (err): BookmarkPage | null => {
-          console.error("Could not load bookmarks:", err);
-          return null;
-        },
-      ),
-    ]);
-  if (meditationsError || chatsError) throw new Error("Could not load your meditations and chats");
+  const bookmarks = await listBookmarks(supabase, user.id, {
+    limit: ACCOUNT_BOOKMARK_PAGE,
+  }).catch((err): BookmarkPage | null => {
+    console.error("Could not load bookmarks:", err);
+    return null;
+  });
 
   return (
     <div className="mx-auto max-w-3xl space-y-10">
       <div className="space-y-2">
         <h1 className="font-serif text-2xl font-medium tracking-tight">Account</h1>
-        <p className="text-muted-foreground">Your profile and the things you&apos;ve made and kept.</p>
+        <p className="text-muted-foreground">Your profile and settings.</p>
       </div>
 
       <AccountSection
@@ -112,22 +89,18 @@ export default async function AccountPage() {
       </AccountSection>
 
       <AccountSection
-        id="creations"
-        title="My meditations & chats"
-        description="What you've made in the studio, and the conversations behind it."
+        id="appearance"
+        title="Appearance"
+        description="How Zenerate looks on this device."
       >
-        <AccountCreations
-          meditations={(meditations ?? []) as AccountMeditation[]}
-          chats={(chats ?? []) as AccountChat[]}
-          empty={
-            <AccountEmptyState message="Your meditations and studio conversations will be listed here.">
-              <Button asChild variant="outline" size="sm">
-                <Link href="/create">Make a meditation</Link>
-              </Button>
-            </AccountEmptyState>
-          }
-        />
+        <div className="rounded-xl border bg-card px-6 py-6 sm:px-8 sm:py-8">
+          <ThemeChoice />
+        </div>
       </AccountSection>
+
+      <div className="border-t pt-10">
+        <SignOutButton variant="outline" size="default" />
+      </div>
     </div>
   );
 }
