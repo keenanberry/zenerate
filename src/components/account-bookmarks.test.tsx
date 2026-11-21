@@ -45,13 +45,20 @@ describe("AccountBookmarks", () => {
     expect(html).toContain('href="/meditation/m2"');
     expect(html).toContain('href="/meditation/m1"');
     expect(html).not.toMatch(/aria-label="Play /);
+    // No index column (showIndex={false}): no TrackPlayButton, playable or
+    // not, and no row number.
+    expect(html).not.toContain('role="button"');
+    expect(html).not.toMatch(/aria-label="[^"]*: [^"]*"/);
+    expect(html).not.toMatch(/>[12]</);
     expect(html).toContain('aria-label="Remove Rain &amp; Release from saved"');
     expect(html).toContain('aria-label="Remove Before Sleep from saved"');
     // No heart: the bookmark read does not say what is favourited.
     expect(html).not.toMatch(/aria-label="(Add|Remove) [^"]* (to|from) favorites"/);
-    // The author leads the meta line; without one, it starts at the tag.
-    expect(html).toMatch(/>Alice · Sleep · 10 min · /);
-    expect(html).toMatch(/>Sleep · 10 min · /);
+    // The author leads the meta line; without one, it starts at the tag. No
+    // date, which would not fit a phone.
+    expect(html).toContain(">Alice · Sleep · 10 min<");
+    expect(html).toContain(">Sleep · 10 min<");
+    expect(html).not.toContain("Nov 1");
     expect(html).toContain(">4.5<");
     expect(html).not.toContain("(2)");
     expect(html).not.toContain("Nothing saved");
@@ -63,6 +70,6 @@ describe("AccountBookmarks", () => {
   });
 
   it("shows the empty state when there are none", () => {
-    expect(render([])).toBe("<p>Nothing saved</p>");
+    expect(render([])).toBe('<div tabindex="-1" class="outline-none"><p>Nothing saved</p></div>');
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import { useRouter } from "next/navigation";
 import { Bookmark } from "lucide-react";
 import { toast } from "sonner";
@@ -36,6 +36,21 @@ export function AccountBookmarks({
   const [bookmarks, setBookmarks] = useState<SavedBookmark[]>(initial.bookmarks);
   const [cursor, setCursor] = useState(initial.next_cursor);
   const [loading, setLoading] = useState(false);
+  // Where focus goes once a removed row has left the DOM: the id of the row
+  // whose remove button takes it, null for "no row left", false for nothing
+  // pending. Without this, focus falls to <body> with the button it was on.
+  const focusAfterRemove = useRef<string | null | false>(false);
+  const removeButtons = useRef(new Map<string, HTMLButtonElement>());
+  const loadMoreButton = useRef<HTMLButtonElement>(null);
+  const emptyState = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const target = focusAfterRemove.current;
+    if (target === false) return;
+    focusAfterRemove.current = false;
+    const row = target === null ? undefined : removeButtons.current.get(target);
+    (row ?? loadMoreButton.current ?? emptyState.current)?.focus();
+  }, [bookmarks]);
 
   async function loadMore() {
     if (!cursor) return;
@@ -61,6 +76,8 @@ export function AccountBookmarks({
   async function remove(bookmark: SavedBookmark) {
     const id = bookmark.meditation.id;
     const index = bookmarks.findIndex((b) => b.meditation.id === id);
+    const neighbour = bookmarks[index + 1] ?? bookmarks[index - 1];
+    focusAfterRemove.current = neighbour?.meditation.id ?? null;
     setBookmarks((prev) => prev.filter((b) => b.meditation.id !== id));
     setBookmarkOverride(id, false);
 
@@ -80,7 +97,14 @@ export function AccountBookmarks({
     toast.error("Couldn't remove from saved");
   }
 
-  if (bookmarks.length === 0 && !cursor) return <>{empty}</>;
+  if (bookmarks.length === 0 && !cursor) {
+    return (
+      // Focusable from script only, to take focus when the last row goes.
+      <div ref={emptyState} tabIndex={-1} className="outline-none">
+        {empty}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -98,7 +122,14 @@ export function AccountBookmarks({
               showVisibility={false}
               byline={b.meditation.author?.display_name ?? undefined}
               actions={
-                <RemoveBookmarkButton title={b.meditation.title} onRemove={() => void remove(b)} />
+                <RemoveBookmarkButton
+                  title={b.meditation.title}
+                  onRemove={() => void remove(b)}
+                  buttonRef={(el) => {
+                    if (el) removeButtons.current.set(b.meditation.id, el);
+                    else removeButtons.current.delete(b.meditation.id);
+                  }}
+                />
               }
             />
           ))}
@@ -106,7 +137,13 @@ export function AccountBookmarks({
       )}
       {cursor && (
         <div className="flex justify-center">
-          <Button variant="outline" size="sm" onClick={() => void loadMore()} disabled={loading}>
+          <Button
+            ref={loadMoreButton}
+            variant="outline"
+            size="sm"
+            onClick={() => void loadMore()}
+            disabled={loading}
+          >
             {loading ? "Loading…" : "Load more"}
           </Button>
         </div>
@@ -115,14 +152,17 @@ export function AccountBookmarks({
   );
 }
 
-/** The bookmark's meditation as a track row reads it. A bookmark is always public and completed. */
+/**
+ * The bookmark's meditation as a track row reads it. A bookmark is always
+ * public and completed. No created_at: the row has never shown a date, and
+ * with the author leading the line a date would not fit a phone.
+ */
 function toTrack(m: BookmarkedMeditation): TrackRowMeditation {
   return {
     id: m.id,
     title: m.title,
     tags: m.tags ?? [],
     settings: m.settings ?? {},
-    created_at: m.created_at,
     status: m.status,
     // The bookmark read mints no signed URLs, so rows open the page to play.
     audio_url: null,
@@ -131,11 +171,20 @@ function toTrack(m: BookmarkedMeditation): TrackRowMeditation {
   };
 }
 
-function RemoveBookmarkButton({ title, onRemove }: { title: string; onRemove: () => void }) {
+function RemoveBookmarkButton({
+  title,
+  onRemove,
+  buttonRef,
+}: {
+  title: string;
+  onRemove: () => void;
+  buttonRef: Ref<HTMLButtonElement>;
+}) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
+          ref={buttonRef}
           variant="ghost"
           size="icon"
           onClick={onRemove}

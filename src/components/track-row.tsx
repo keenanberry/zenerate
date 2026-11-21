@@ -13,20 +13,15 @@ import type { MeditationWithMeta } from "@/lib/meditation/types";
 import { Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/** What a row reads from a meditation; any MeditationWithMeta has it. */
+/**
+ * What a row reads from a meditation; any MeditationWithMeta has it. Without
+ * created_at the meta line leaves the date off.
+ */
 export type TrackRowMeditation = Pick<
   MeditationWithMeta,
-  | "id"
-  | "title"
-  | "tags"
-  | "settings"
-  | "created_at"
-  | "status"
-  | "audio_url"
-  | "is_public"
-  | "is_favorited"
-  | "rating"
->;
+  "id" | "title" | "tags" | "settings" | "status" | "audio_url" | "is_public" | "is_favorited" | "rating"
+> &
+  Partial<Pick<MeditationWithMeta, "created_at">>;
 
 interface TrackRowProps {
   meditation: TrackRowMeditation;
