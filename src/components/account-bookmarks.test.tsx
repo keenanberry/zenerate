@@ -1,8 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Bookmark } from "@/lib/meditation/bookmarks";
 import { AccountBookmarks } from "./account-bookmarks";
+
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => {} }) }));
 
 function bookmark(id: string, title: string, extra: Partial<Bookmark["meditation"]> = {}): Bookmark {
   return {

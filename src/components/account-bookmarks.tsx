@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Bookmark, Play } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import {
 import type { Bookmark as SavedBookmark, BookmarkPage } from "@/lib/meditation/bookmarks";
 
 /**
- * The listener's bookmarks on /account (card ZEN-8), newest first: the first
+ * The listener's bookmarks on /library/bookmarks (card ZEN-8), newest first: the first
  * page arrives with the page, and "Load more" reads the next from
  * GET /api/bookmarks. Removing one takes it off the list at once and puts it
  * back, with a toast, if the DELETE fails.
@@ -30,6 +31,7 @@ export function AccountBookmarks({
   /** Shown when there are none, or none left. */
   empty: ReactNode;
 }) {
+  const router = useRouter();
   const [bookmarks, setBookmarks] = useState<SavedBookmark[]>(initial.bookmarks);
   const [cursor, setCursor] = useState(initial.next_cursor);
   const [loading, setLoading] = useState(false);
@@ -61,7 +63,12 @@ export function AccountBookmarks({
     setBookmarks((prev) => prev.filter((b) => b.meditation.id !== id));
     setBookmarkOverride(id, false);
 
-    if ((await setBookmark(id, false)) === "ok") return;
+    if ((await setBookmark(id, false)) === "ok") {
+      // Clears the client router cache, so a Back to the Library shows the
+      // new count; this list keeps its own state.
+      router.refresh();
+      return;
+    }
     setBookmarkOverride(id, true);
     setBookmarks((prev) => {
       if (prev.some((b) => b.meditation.id === id)) return prev;

@@ -1,8 +1,9 @@
 # Bookmarks ("save for later")
 
 **Status:** Backend done (card ZEN-7, 2026-11-20). UI done (card ZEN-8, 2026-11-20): a save
-control on the meditation page (`BookmarkButton`), and the list on `/account#bookmarks`
-(`AccountBookmarks`). Discover showed it too until card ZEN-12 (2026-11-20) took it off, so a
+control on the meditation page (`BookmarkButton`), and the list, first on `/account` and
+since the app shell's Library (2026-11-21) at `/library/bookmarks` (`AccountBookmarks`),
+with its count on the Library's Bookmarks row. Discover showed it too until card ZEN-12 (2026-11-20) took it off, so a
 listener opens a meditation and learns about it before saving it.
 **Related:** `favorites` (`supabase/migrations/20250221000000_create_meditations.sql`,
 `src/components/favorite-button.tsx`, `toggleFavorite` in `src/lib/meditation/actions.ts`),

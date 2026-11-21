@@ -55,7 +55,14 @@ export function useBookmark(meditationId: string, initialBookmarked: boolean, is
     setBookmarkPending(meditationId, true);
     const result = await setBookmark(meditationId, next);
     setBookmarkPending(meditationId, false);
-    if (result === "ok") return;
+    if (result === "ok") {
+      // The route handler's change never reaches the client router cache, so
+      // a Back to the Library would show the old Bookmarks count. A refresh
+      // clears that cache; the player keeps its audio in state, so playback
+      // is not interrupted.
+      router.refresh();
+      return;
+    }
 
     setBookmarkOverride(meditationId, isBookmarked);
     if (result === "signed_out") {
