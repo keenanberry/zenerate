@@ -1,6 +1,10 @@
 # Generated Cover Art
 
-**Status:** Not started
+**Status:** Generated covers designed 2026-11-21:
+`docs/superpowers/specs/2026-11-21-generated-cover-art-design.md` (unique realistic covers
+per meditation, FLUX 2 Klein through AI Gateway, a `makeCover` studio tool, a reviewed
+backfill). Custom uploads below are still open and wait on
+[image moderation](./image-moderation.md).
 **Priority:** Post-ship
 **Related:** `tasks/ship/35-cover-system.md` (the designed covers this replaces where art exists),
 `docs/superpowers/specs/2026-10-20-agentic-studio-design.md`
