@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { getViewer } from "@/lib/profile/viewer";
 import { Nav } from "@/components/nav";
 import { BottomBar } from "@/components/bottom-bar";
 import { SiteFooter } from "@/components/site-footer";
@@ -17,23 +17,11 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // The avatar's initials. A failed read falls back to the email's letter
-  // rather than failing every page.
-  let avatar: { initials: string } | null = null;
-  if (user) {
-    const { data: profile, error } = await supabase
-      .from("user_profiles")
-      .select("display_name")
-      .eq("id", user.id)
-      .maybeSingle<{ display_name: string | null }>();
-    if (error) console.error("Could not read the display name for the avatar:", error);
-    avatar = { initials: initials(profile?.display_name ?? null, user.email ?? null) };
-  }
+  // Shared with the page through React's cache (the Library's header reads
+  // it too). A failed display-name read is logged there and falls back to the
+  // email's letter rather than failing every page.
+  const { user, displayName } = await getViewer();
+  const avatar = user ? { initials: initials(displayName, user.email ?? null) } : null;
 
   return (
     // The studio (`[data-studio]`) is an app surface, not a page. There the
