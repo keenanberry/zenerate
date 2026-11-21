@@ -172,6 +172,17 @@ After the app shell's navigation merges (app shell PR 1,
       `/library` with no redirect: if the installed app opens to "not found", remove it
       from the Home Screen and add it again from Safari.
 
+After the bottom sheets merge (app shell PR 3, same plan):
+
+- [ ] iPhone, in Safari and the installed app: drag a sheet closed by its handle (the
+      meditation "…", say), and a short drag springs back; Add tag, Edit collection, and
+      New collection inside Add to collection keep the field above the keyboard; "Add to
+      collection" from the meditation "…" closes the menu and then opens the collection
+      sheet; with the theme on Light, the session player's "…" sheet is dark.
+- [ ] iPhone: on Library → Collections, a collection's "…" → Edit collection opens the
+      Edit sheet with the keyboard up on Name, and the keyboard stays up (it must not drop
+      a moment later as the menu sheet finishes closing).
+
 ## 5. Production checks (after seeding)
 
 - [x] 2026-11-08: revised Listening with the Heart (public, 23 min) in the studio, re-rendered
