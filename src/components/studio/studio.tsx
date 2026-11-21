@@ -12,7 +12,13 @@ import { useSheetDrag } from "@/components/ui/sheet-drag";
 import type { StudioUIMessage } from "@/lib/chat/tools";
 import { Chat } from "./chat";
 import { ChatHeader } from "./chat-header";
-import { collectDrafts, currentMeditationId, describeChatError, latestDetails } from "./drafts";
+import {
+  collectDrafts,
+  currentCover,
+  currentMeditationId,
+  describeChatError,
+  latestDetails,
+} from "./drafts";
 import { ScriptCanvas } from "./script-canvas";
 import { firstMessageKey, StudioProvider, type StudioContextValue } from "./studio-context";
 import { useVisualViewport } from "./use-visual-viewport";
@@ -37,11 +43,19 @@ interface StudioProps {
   chatId: string;
   initialMessages: StudioUIMessage[];
   initialMeditationId: string | null;
+  /** The meditation's cover as the page loaded it (its row's cover_url). */
+  initialCoverUrl: string | null;
   /** The chat's title as last saved; the route names it after the first request. */
   title: string | null;
 }
 
-export function Studio({ chatId, initialMessages, initialMeditationId, title }: StudioProps) {
+export function Studio({
+  chatId,
+  initialMessages,
+  initialMeditationId,
+  initialCoverUrl,
+  title,
+}: StudioProps) {
   const transport = useMemo(
     () =>
       new DefaultChatTransport<StudioUIMessage>({
@@ -73,6 +87,12 @@ export function Studio({ chatId, initialMessages, initialMeditationId, title }: 
     () => currentMeditationId(messages, initialMessages, initialMeditationId),
     [messages, initialMessages, initialMeditationId],
   );
+
+  // A makeCover left without a result by a turn that ended is not pending.
+  const cover = useMemo(() => {
+    const state = currentCover(messages, initialMessages, initialCoverUrl);
+    return { url: state.url, pending: state.pending && live };
+  }, [messages, initialMessages, initialCoverUrl, live]);
 
   // The heading: the saved title, or what the route will save once this
   // session's first turn lands (setDetails' title, else the first request).
@@ -210,6 +230,8 @@ export function Studio({ chatId, initialMessages, initialMeditationId, title }: 
           ref={canvasRef}
           draft={draft}
           details={details}
+          meditationId={meditationId}
+          cover={cover}
           live={live}
           className="hidden md:flex"
         />
@@ -228,6 +250,8 @@ export function Studio({ chatId, initialMessages, initialMeditationId, title }: 
           <ScriptCanvas
             draft={draft}
             details={details}
+            meditationId={meditationId}
+            cover={cover}
             live={live}
             className="flex-1 rounded-none border-0 bg-background"
             action={

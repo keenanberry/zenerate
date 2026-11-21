@@ -429,10 +429,10 @@ export const studioTools = {
 };
 
 /**
- * Model calls per turn. Enough for write → fix → details → retry → reply;
- * caps a runaway loop.
+ * Model calls per turn. Enough for write → fix → details → cover → retry →
+ * reply, one tool per step (studioProviderOptions); caps a runaway loop.
  */
-export const MAX_STEPS_PER_TURN = 5;
+export const MAX_STEPS_PER_TURN = 6;
 
 function lastUserText(messages: ModelMessage[]): string | null {
   const last = messages.at(-1);

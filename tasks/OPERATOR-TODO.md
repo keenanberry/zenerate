@@ -290,10 +290,39 @@ generates yet, so nothing changes visibly
       returns 200, and `GET /meditations?select=cover_generations&limit=1` returns 42501.
 - [ ] Supabase → Storage: `meditation-covers` exists, public, 2 MB limit, WebP, JPEG and
       PNG, with no policies on it (only the service role writes covers).
-- [ ] Once covers exist (after PR 3's backfill): Vercel → Usage → Image Optimization.
-      Covers are the app's first `next/image` remote images, served at 1x and 2x of each
-      size they are drawn at and cached for a month; check the plan's included
-      transformations still cover it.
+- [ ] ~~Once covers exist: Vercel → Usage → Image Optimization.~~ Superseded by PR 2:
+      covers are no longer optimized by Vercel (the Hobby quota would run out within a
+      few hundred covers). Each is stored as a 1024px WebP and a 256px thumbnail and
+      served from Supabase as stored; the egress item under PR 2 replaces this one.
+
+### Generated covers: the studio tool (cover art PR 2)
+
+Merging PR 2 applies `20261121020000_cover_generation_rpc.sql` to production: two new
+functions, `reserve_cover_generation` and `release_cover_generation`, executable by the
+service role only. The studio agent then makes a cover after each new meditation's first
+script, through Vercel AI Gateway (`bfl/flux-2-klein-9b`), authenticated by the
+deployment's own OIDC token: no env var to set.
+
+- [ ] Right after the merge: Supabase → Database → Migrations shows
+      `20261121020000_cover_generation_rpc` as applied. If it has not, every `makeCover`
+      fails (the designed cover stays and the agent says so) but nothing else breaks.
+- [ ] Right after the merge, in the site's DevTools console with the publishable key, signed
+      out and then signed in: `POST /rest/v1/rpc/reserve_cover_generation` with
+      `{"p_meditation":"<any meditation id>"}` returns 42501 both times, and that
+      meditation's cover count does not change.
+- [ ] On the iPhone: make a new meditation in the studio. "Making a cover" shows in the chat
+      after the details, the canvas (open the sheet) shows the new photo beside the title
+      within about 10 seconds, and after the audio the meditation's page and Library row
+      show it. Then ask for a different cover ("make the cover a misty pine forest"): it
+      changes. A fourth request is refused in a sentence.
+- [ ] Vercel → AI Gateway → Usage: one image request per cover, and a failed one only when
+      the agent reported a failure. Note the per-image price there for the paid-credits item.
+- [ ] A week after the merge: Supabase → Usage → Egress and Cached Egress. Covers now load
+      straight from Storage: a row or tile up to 128px loads the thumbnail (about 5 KB), a
+      larger card the full image (about 40–80 KB; a real Klein cover re-encoded to 40 KB);
+      browsers keep both for a year. If
+      Discover traffic makes this a real share of the 5 GB, a 512px middle size for the
+      176–240px cards is the next step.
 
 ### When a report arrives (53)
 
@@ -390,6 +419,10 @@ account (`/terms`, "Be decent") if it comes back.
 - [x] 2026-11-06: Supabase → Authentication → Rate Limits: raise **emails per hour** from 25 to about
       100. Every email sign-in now sends a code (57), so 25 an hour runs out on a busy day.
       Check Resend's plan limits too: the free plan allows 100 a day and 3,000 a month.
+- [ ] Vercel → AI Gateway: move to paid credits before signups open (cover art PR 2). The
+      free tier allows 5 image requests a minute and $5 a month, so a burst of new
+      meditations drops covers: each gets the designed cover, and the agent retries once
+      on that chat's next message.
 - [ ] Supabase → Auth → enable signups.
 
 ## 9. After signups open

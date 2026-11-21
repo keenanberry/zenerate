@@ -64,6 +64,17 @@ export default function PrivacyPage() {
           many there are.
         </li>
         <li>
+          <strong>Cover pictures:</strong> the agent can have a cover picture
+          generated for a meditation, from a short description it writes of
+          what the picture shows. The picture is stored and shown wherever
+          the meditation is: to you, and to anyone once the meditation is
+          public. The description is not stored with the meditation; it stays
+          in your conversation. Like a profile photo, a cover is stored at an
+          unlisted web address, so someone who already has that address can
+          open it while the meditation is private. A new cover replaces the
+          old one, and deleting the meditation deletes its cover.
+        </li>
+        <li>
           <strong>Conversations:</strong> your conversations with the
           meditation agent, the chat where you make and revise meditations.
           The messages you send and the agent&rsquo;s replies are stored so
@@ -147,8 +158,10 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>Vercel</strong>: hosts the website and runs the audio
-          processing. Receives technical data with every request, and your
-          script while audio is being produced. (
+          processing, and its AI Gateway passes cover descriptions to the
+          image model. Receives technical data with every request, your script
+          while audio is being produced, and the agent&rsquo;s description of
+          each cover picture. (
           <a href="https://vercel.com/legal/privacy-policy">
             Vercel privacy policy
           </a>
@@ -160,6 +173,16 @@ export default function PrivacyPage() {
           scripts it has written, each time it generates a reply. (
           <a href="https://www.anthropic.com/legal/privacy">
             Anthropic privacy policy
+          </a>
+          )
+        </li>
+        <li>
+          <strong>Black Forest Labs</strong>: the image model that makes cover
+          pictures, reached through Vercel&rsquo;s AI Gateway. Receives only
+          the short description of the picture the agent writes, never your
+          messages or script. (
+          <a href="https://bfl.ai/legal/privacy-policy">
+            Black Forest Labs privacy policy
           </a>
           )
         </li>
@@ -184,8 +207,8 @@ export default function PrivacyPage() {
         </li>
       </ul>
       <p>
-        Your email address and password are never sent to Anthropic,
-        ElevenLabs or Sentry. Even so, please do not include sensitive personal
+        Your email address and password are never sent to Anthropic, Black
+        Forest Labs, ElevenLabs or Sentry. Even so, please do not include sensitive personal
         information, such as health details or other people&rsquo;s private
         information, in your messages to the agent.
       </p>
@@ -199,7 +222,8 @@ export default function PrivacyPage() {
         Meditations are private by default. If you make one public, anyone,
         including people without an account, can see and play its title,
         description, tags, script and audio, along with the settings it was
-        made with, such as its length, and a cover drawn from those details.
+        made with, such as its length, and its cover: the picture made for
+        it, or one drawn from those details.
         It may be indexed by search engines. Your conversation with the agent,
         your earlier versions and any revision still in progress stay visible
         only to you. Your email address is never shown. You can make a meditation private again
