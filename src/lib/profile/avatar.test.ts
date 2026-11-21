@@ -33,6 +33,10 @@ describe("avatarPath", () => {
   it("is the user's folder and a random WebP name", () => {
     expect(avatarPath("u1", "abc")).toBe("u1/abc.webp");
   });
+
+  it("a JPEG (Safari's fallback) is stored as .jpg", () => {
+    expect(avatarPath("u1", "abc", "image/jpeg")).toBe("u1/abc.jpg");
+  });
 });
 
 describe("ownAvatarPath", () => {

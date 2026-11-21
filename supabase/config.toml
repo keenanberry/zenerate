@@ -124,7 +124,7 @@ allowed_mime_types = ["audio/mpeg"]
 [storage.buckets.avatars]
 public = true
 file_size_limit = "1MiB"
-allowed_mime_types = ["image/webp"]
+allowed_mime_types = ["image/webp", "image/jpeg"]
 
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]

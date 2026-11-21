@@ -1,7 +1,8 @@
 /**
  * Profile photos (docs/superpowers/specs/2026-11-21-avatar-upload-design.md).
- * The browser centre-crops a picked photo to one 512px WebP square and
- * uploads it to the public `avatars` bucket at `<user id>/<random>.webp`;
+ * The browser centre-crops a picked photo to one 512px WebP square (JPEG on
+ * Safari, which cannot encode WebP) and uploads it to the public `avatars`
+ * bucket at `<user id>/<random>.webp` (or `.jpg`);
  * the storage policies in the avatars_bucket migration let a user write only
  * under their own folder. Pure helpers here; the canvas step is
  * resize-avatar.ts.
@@ -24,9 +25,13 @@ export function centreSquare(width: number, height: number): { sx: number; sy: n
   return { sx: Math.floor((width - size) / 2), sy: Math.floor((height - size) / 2), size };
 }
 
+/** What the bucket accepts, and the extension each is stored under. */
+export const AVATAR_TYPES = { "image/webp": "webp", "image/jpeg": "jpg" } as const;
+export type AvatarType = keyof typeof AVATAR_TYPES;
+
 /** Where a new photo goes: the user's folder (what the storage policies check) and a fresh name. */
-export function avatarPath(userId: string, random: string): string {
-  return `${userId}/${random}.webp`;
+export function avatarPath(userId: string, random: string, type: AvatarType = "image/webp"): string {
+  return `${userId}/${random}.${AVATAR_TYPES[type]}`;
 }
 
 /** The prefix of every public URL in the bucket, from the Supabase project URL. */

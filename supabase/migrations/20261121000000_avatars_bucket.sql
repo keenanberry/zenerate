@@ -1,7 +1,8 @@
 -- Profile photos (docs/superpowers/specs/2026-11-21-avatar-upload-design.md).
 --
--- The browser centre-crops a picked photo to a 512px WebP square and uploads
--- it with the person's own session to avatars/<user id>/<random>.webp, then
+-- The browser centre-crops a picked photo to a 512px WebP (or JPEG) square
+-- and uploads it with the person's own session to
+-- avatars/<user id>/<random>.webp (or .jpg), then
 -- saves the object's public URL as user_profiles.avatar_url through
 -- PATCH /api/profile, then deletes the photo it replaced.
 --
@@ -11,7 +12,11 @@
 -- the bucket from this insert; config.toml mirrors it. on conflict do nothing
 -- keeps a bucket that already exists (local, from config.toml) as it is.
 --
--- Bucket limits are enforced by Storage on every upload: WebP only, 1 MB.
+-- Bucket limits are enforced by Storage on every upload: WebP or JPEG, 1 MB.
+-- WebP is the format the app asks for; JPEG is there because Safari, which
+-- is every iPhone, cannot encode WebP from a canvas and hands back PNG, so
+-- the app falls back to JPEG there. Both are re-encodes, so neither carries
+-- the photo's EXIF (GPS) metadata.
 --
 -- Policies, all for authenticated and all scoped to this bucket, so they
 -- grant nothing anywhere else:
@@ -29,7 +34,7 @@
 -- Additive only: a bucket row and four policies on storage.objects.
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('avatars', 'avatars', true, 1048576, array['image/webp'])
+values ('avatars', 'avatars', true, 1048576, array['image/webp', 'image/jpeg'])
 on conflict (id) do nothing;
 
 create policy "avatars: owner reads own folder"

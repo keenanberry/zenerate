@@ -72,10 +72,10 @@ describe.skipIf(!enabled)("avatars bucket against local Supabase", () => {
     }
   });
 
-  it("is public, WebP only, 1 MB", async () => {
+  it("is public, WebP or JPEG, 1 MB", async () => {
     const { data, error } = await service.storage.getBucket(AVATAR_BUCKET);
     expect(error).toBeNull();
-    expect(data).toMatchObject({ public: true, file_size_limit: 1048576, allowed_mime_types: ["image/webp"] });
+    expect(data).toMatchObject({ public: true, file_size_limit: 1048576, allowed_mime_types: ["image/webp", "image/jpeg"] });
   });
 
   it("a user uploads to their own folder, and anyone can fetch it by its public URL", async () => {
@@ -91,6 +91,15 @@ describe.skipIf(!enabled)("avatars bucket against local Supabase", () => {
     const res = await fetch(data.publicUrl);
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toBe("image/webp");
+  });
+
+  it("a JPEG (Safari's fallback) uploads too", async () => {
+    const path = avatarPath(alice.id, randomUUID(), "image/jpeg");
+    const { error } = await alice.client.storage
+      .from(AVATAR_BUCKET)
+      .upload(path, new Blob([WEBP], { type: "image/jpeg" }), { contentType: "image/jpeg" });
+    expect(error).toBeNull();
+    expect(await exists(path)).toBe(true);
   });
 
   it("cannot upload to another user's folder", async () => {
@@ -119,7 +128,7 @@ describe.skipIf(!enabled)("avatars bucket against local Supabase", () => {
     expect(await exists(path)).toBe(false);
   });
 
-  it("refuses a type other than WebP, and a file over 1 MB", async () => {
+  it("refuses a type other than WebP or JPEG, and a file over 1 MB", async () => {
     const png = await alice.client.storage
       .from(AVATAR_BUCKET)
       .upload(`${alice.id}/${randomUUID()}.png`, new Blob([WEBP], { type: "image/png" }), {
