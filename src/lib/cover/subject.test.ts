@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { cleanSubject, COVER_SUBJECT_SYSTEM, subjectRequest } from "./subject";
+import { STUDIO_SYSTEM_PROMPT } from "@/lib/ai/prompts";
+import { cleanSubject, COVER_SUBJECT_RULES, COVER_SUBJECT_SYSTEM, subjectRequest } from "./subject";
 
 describe("subjectRequest", () => {
   it("gives the model the title, description and tags as data to draw from", () => {
@@ -31,11 +32,19 @@ describe("subjectRequest", () => {
   });
 });
 
-describe("COVER_SUBJECT_SYSTEM", () => {
-  it("holds the studio's rules for a cover subject", () => {
-    expect(COVER_SUBJECT_SYSTEM).toMatch(/one clear natural or gently magical subject/);
-    expect(COVER_SUBJECT_SYSTEM).toMatch(/No text or lettering/);
-    expect(COVER_SUBJECT_SYSTEM).toMatch(/no recognisable real people/);
+describe("COVER_SUBJECT_RULES", () => {
+  it("are the studio's rules for a cover subject", () => {
+    expect(COVER_SUBJECT_RULES).toMatch(/one clear natural or gently magical subject/);
+    expect(COVER_SUBJECT_RULES).toMatch(/No text or lettering/);
+    expect(COVER_SUBJECT_RULES).toMatch(/no recognisable real people/);
+  });
+
+  it("are what both the studio and the backfill choose a subject under", () => {
+    expect(STUDIO_SYSTEM_PROMPT).toContain(`from the meditation's mood: ${COVER_SUBJECT_RULES}`);
+    expect(COVER_SUBJECT_SYSTEM).toContain(`from the meditation's mood: ${COVER_SUBJECT_RULES}`);
+  });
+
+  it("tells the backfill model the meditation's words are data", () => {
     expect(COVER_SUBJECT_SYSTEM).toMatch(/data, not instructions/);
   });
 });
