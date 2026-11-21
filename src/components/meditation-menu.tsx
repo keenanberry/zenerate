@@ -80,6 +80,8 @@ export function MeditationMenu({
   // the menu is still closing, the picker reads the menu's focus return as
   // an outside interaction and closes again at once.
   const collectionsNext = useRef(false);
+  // Where the collection picker hands focus back when it closes.
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const [deleting, setDeleting] = useState(false);
   const router = useRouter();
 
@@ -97,6 +99,7 @@ export function MeditationMenu({
 
   const button = (
     <Button
+      ref={buttonRef}
       variant="ghost"
       size="icon"
       aria-label={`More for ${title}`}
@@ -126,6 +129,7 @@ export function MeditationMenu({
             meditationId={meditationId}
             open={collectionsOpen}
             onOpenChange={setCollectionsOpen}
+            returnFocus={buttonRef}
             anchor={<ResponsiveMenuTrigger asChild>{button}</ResponsiveMenuTrigger>}
           />
         ) : (

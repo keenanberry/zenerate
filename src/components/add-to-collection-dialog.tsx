@@ -37,6 +37,11 @@ interface AddToCollectionDialogProps {
   anchor?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /**
+   * Where focus goes when it closes. Opened from a menu item it has no
+   * trigger of its own, so without this focus would fall to <body>.
+   */
+  returnFocus?: React.RefObject<HTMLElement | null>;
 }
 
 export function AddToCollectionDialog({
@@ -45,6 +50,7 @@ export function AddToCollectionDialog({
   anchor,
   open: controlledOpen,
   onOpenChange,
+  returnFocus,
 }: AddToCollectionDialogProps) {
   const [ownOpen, setOwnOpen] = useState(false);
   const open = controlledOpen ?? ownOpen;
@@ -194,7 +200,7 @@ export function AddToCollectionDialog({
                 disabled={isPending}
                 aria-pressed={checked}
                 className={cn(
-                  "flex w-full items-center transition-colors outline-none hover:bg-menu-hover focus-visible:bg-menu-hover disabled:opacity-50",
+                  "flex w-full items-center outline-none motion-safe:transition-colors hover:bg-menu-hover focus-visible:bg-menu-hover disabled:opacity-50",
                   row,
                 )}
               >
@@ -244,7 +250,7 @@ export function AddToCollectionDialog({
           <button
             onClick={() => setShowNew(true)}
             className={cn(
-              "flex w-full items-center text-muted-foreground transition-colors outline-none hover:bg-menu-hover hover:text-foreground focus-visible:bg-menu-hover",
+              "flex w-full items-center text-muted-foreground outline-none motion-safe:transition-colors hover:bg-menu-hover hover:text-foreground focus-visible:bg-menu-hover",
               row,
             )}
           >
@@ -255,6 +261,12 @@ export function AddToCollectionDialog({
       </div>
     </>
   );
+
+  function focusReturn(e: Event) {
+    if (!returnFocus?.current) return;
+    e.preventDefault();
+    returnFocus.current.focus();
+  }
 
   const ownTrigger = trigger ?? (
     <Button variant="ghost" size="sm" className="gap-2">
@@ -267,7 +279,11 @@ export function AddToCollectionDialog({
     // A sheet of its own. Opened from a menu, the anchor is that menu's
     // trigger and stays outside this sheet, so it still opens the menu.
     const sheet = (
-      <BottomSheetContent title="Add to collection" followKeyboard>
+      <BottomSheetContent
+        title="Add to collection"
+        followKeyboard
+        onCloseAutoFocus={focusReturn}
+      >
         {body}
       </BottomSheetContent>
     );
@@ -293,7 +309,7 @@ export function AddToCollectionDialog({
       ) : (
         <PopoverTrigger asChild>{ownTrigger}</PopoverTrigger>
       )}
-      <PopoverContent align="end" className="w-64 p-0">
+      <PopoverContent align="end" className="w-64 p-0" onCloseAutoFocus={focusReturn}>
         <div className="border-b px-3 py-2">
           <p className="text-xs font-medium tracking-[0.06em] text-muted-foreground uppercase">Collections</p>
         </div>
