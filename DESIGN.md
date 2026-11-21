@@ -325,7 +325,7 @@ The shell (`src/app/(app)/layout.tsx`) centres content at `max-w-5xl` (64rem) wi
 16px gutter (24px from `sm`). That width is the widest column, sized for card grids;
 every other content type narrows itself inside the shell:
 
-- Grids and tabular lists of meditations or collections (`/dashboard`, `/discover`,
+- Grids and tabular lists of meditations or collections (`/library`, `/discover`,
   `/collections/[id]`): the full 64rem.
 - A meditation (`/meditation/[id]`): 48rem (`max-w-3xl`). On a phone the cover runs the
   full width, then the meta line, the title with the heart and "…", one full-width Play,

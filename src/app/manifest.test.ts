@@ -11,7 +11,7 @@ describe("web app manifest", () => {
   it("installs as a standalone app that opens to the library", () => {
     expect(m.name).toBe("Zenerate");
     expect(m.display).toBe("standalone");
-    expect(m.start_url).toBe("/dashboard");
+    expect(m.start_url).toBe("/library");
   });
 
   it("has a short name that fits under a home-screen icon", () => {

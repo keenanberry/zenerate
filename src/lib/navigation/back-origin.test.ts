@@ -124,7 +124,7 @@ describe("parseBackOrigin", () => {
 
 describe("backTarget", () => {
   it("falls back to the owner's Library or Discover without a record", () => {
-    expect(backTarget(null, true)).toEqual({ href: "/dashboard", label: "Library" });
+    expect(backTarget(null, true)).toEqual({ href: "/library", label: "Library" });
     expect(backTarget(null, false)).toEqual({ href: "/discover", label: "Discover" });
   });
 
@@ -154,8 +154,8 @@ describe("the flows", () => {
   });
 
   it("returns to the Library tab it was opened from", () => {
-    const back = roundTrip(memoryStorage(), ["/meditation/a", "/dashboard?tab=favorites", "Library"]);
-    expect(back("a", true)).toEqual({ href: "/dashboard?tab=favorites", label: "Library" });
+    const back = roundTrip(memoryStorage(), ["/meditation/a", "/library?tab=favorites", "Library"]);
+    expect(back("a", true)).toEqual({ href: "/library?tab=favorites", label: "Library" });
   });
 
   it("returns to a collection by name", () => {
@@ -167,11 +167,11 @@ describe("the flows", () => {
     const back = roundTrip(
       memoryStorage(),
       ["/meditation/a", "/discover", "Discover"],
-      ["/meditation/b", "/dashboard", "Library"],
+      ["/meditation/b", "/library", "Library"],
     );
-    expect(back("b", false)).toEqual({ href: "/dashboard", label: "Library" });
+    expect(back("b", false)).toEqual({ href: "/library", label: "Library" });
     expect(back("a", false)).toEqual({ href: "/discover", label: "Discover" });
-    expect(back("a", true)).toEqual({ href: "/dashboard", label: "Library" });
+    expect(back("a", true)).toEqual({ href: "/library", label: "Library" });
   });
 
   it("a meditation opened from an unlabelled page forgets the earlier record", () => {
@@ -180,7 +180,7 @@ describe("the flows", () => {
       ["/meditation/a", "/discover?q=calm", "Discover"],
       ["/meditation/a", "/", null],
     );
-    expect(back("a", true)).toEqual({ href: "/dashboard", label: "Library" });
+    expect(back("a", true)).toEqual({ href: "/library", label: "Library" });
   });
 
   it("falls back with no record: a shared link or a fresh tab", () => {

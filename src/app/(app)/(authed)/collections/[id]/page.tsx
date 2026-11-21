@@ -40,7 +40,7 @@ export default async function CollectionDetailPage({
     // collection by name (src/components/back-origin.tsx).
     <div data-back-label={collection.name} className="space-y-10">
       <div className="space-y-3">
-        <ParentLink href="/dashboard?tab=collections">Collections</ParentLink>
+        <ParentLink href="/library?tab=collections">Collections</ParentLink>
 
         {/* Laid out as the meditation page is: artwork, then the details. */}
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end">

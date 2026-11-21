@@ -207,7 +207,7 @@ export function MeditationMenu({
             setDeleting(false);
             toast.success("Meditation deleted");
             // Its page is gone; the Library is where the owner's others are.
-            router.replace("/dashboard");
+            router.replace("/library");
             router.refresh();
           }}
         />

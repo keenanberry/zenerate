@@ -12,7 +12,7 @@ export default async function LoginPage({
   const { next, error } = await searchParams;
   return (
     <LoginForm
-      next={safeNextPath(next ?? null, "/dashboard")}
+      next={safeNextPath(next ?? null, "/library")}
       initialError={loginErrorMessage(error ?? null)}
     />
   );

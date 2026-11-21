@@ -16,7 +16,7 @@ export default function manifest(): MetadataRoute.Manifest {
     // The locked pitch from PRODUCT.md, verbatim.
     description: "Meditations composed for you, not picked from a catalogue.",
     // An installed app opens to the library, not the marketing page.
-    start_url: "/dashboard",
+    start_url: "/library",
     scope: "/",
     display: "standalone",
     // Dark is the design target, and the icons sit on the same Midnight.

@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { MeditationListView } from "@/components/meditation-list-view";
 import { DashboardTabs } from "@/components/dashboard-tabs";
 import { CollectionCard } from "@/components/collection-card";
+import { AccountAvatarLink } from "@/components/account-avatar-link";
+import { createClient } from "@/lib/supabase/server";
+import { initials } from "@/lib/navigation/app-tabs";
 import {
   getUserMeditations,
   getFavoriteMeditations,
@@ -95,12 +98,27 @@ function Loading() {
   );
 }
 
-export default async function DashboardPage({
+export default async function LibraryPage({
   searchParams,
 }: {
   searchParams: Promise<{ tab?: string }>;
 }) {
   const { tab } = await searchParams;
+
+  // The phone's way to Account (from md it is in the top bar). The (authed)
+  // layout has already sent signed-out visitors to /login.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: profile } = user
+    ? await supabase
+        .from("user_profiles")
+        .select("display_name")
+        .eq("id", user.id)
+        .maybeSingle<{ display_name: string | null }>()
+    : { data: null };
+  const avatar = initials(profile?.display_name ?? null, user?.email ?? null);
 
   return (
     // `data-back-label`: a meditation opened from either tab links back to
@@ -113,13 +131,16 @@ export default async function DashboardPage({
             Your meditations, favorites, and collections.
           </p>
         </div>
-        <Link href="/create" className="shrink-0">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            <span className="sm:hidden">New</span>
-            <span className="hidden sm:inline">New meditation</span>
-          </Button>
-        </Link>
+        <div className="flex shrink-0 items-center gap-3">
+          <Link href="/create">
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" />
+              <span className="sm:hidden">New</span>
+              <span className="hidden sm:inline">New meditation</span>
+            </Button>
+          </Link>
+          <AccountAvatarLink initials={avatar} className="md:hidden" />
+        </div>
       </div>
 
       <DashboardTabs

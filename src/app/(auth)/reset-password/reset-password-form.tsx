@@ -32,7 +32,7 @@ export function ResetPasswordForm() {
       return;
     }
 
-    router.push("/dashboard");
+    router.push("/library");
     router.refresh();
   }
 

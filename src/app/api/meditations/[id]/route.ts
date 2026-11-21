@@ -45,7 +45,7 @@ export async function DELETE(
   if (!outcome.ok) return json({ error: "Meditation not found" }, 404);
 
   // Gone from every list it was on, Discover included.
-  revalidatePath("/dashboard");
+  revalidatePath("/library");
   revalidatePath("/account");
   revalidatePath("/discover");
   revalidatePath(`/meditation/${id}`);

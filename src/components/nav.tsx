@@ -11,7 +11,7 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/dashboard", label: "Library", icon: Library, authed: true },
+  { href: "/library", label: "Library", icon: Library, authed: true },
   { href: "/create", label: "Create", icon: Plus, authed: true },
   { href: "/discover", label: "Discover", icon: Compass, authed: false },
 ];
@@ -42,7 +42,7 @@ export function Nav({
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
         <div className="flex items-center gap-3 sm:gap-8">
           <Link
-            href={isSignedIn ? "/dashboard" : "/"}
+            href={isSignedIn ? "/library" : "/"}
             className="flex items-center gap-2 text-lg font-bold tracking-tight"
           >
             {/* Decorative: the wordmark beside it is the link's name. Bold tier at

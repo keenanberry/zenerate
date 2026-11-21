@@ -39,7 +39,7 @@ export async function updateSession(request: NextRequest) {
 
   // GET only: a server action posted from /login must reach its handler.
   if (request.method === "GET" && request.nextUrl.pathname === "/login" && signedIn) {
-    const next = safeNextPath(request.nextUrl.searchParams.get("next"), "/dashboard");
+    const next = safeNextPath(request.nextUrl.searchParams.get("next"), "/library");
     const url = new URL(next, request.nextUrl);
     // Next reports 127.0.0.1 as localhost, where the session cookie isn't set, so redirect
     // to the host the browser used (as the auth callback does).

@@ -68,7 +68,7 @@ export function backTarget(
   // The owner came from their library; everyone else, including a signed-in
   // visitor on a shared link, belongs to Discover.
   return isOwner
-    ? { href: "/dashboard", label: "Library" }
+    ? { href: "/library", label: "Library" }
     : { href: "/discover", label: "Discover" };
 }
 

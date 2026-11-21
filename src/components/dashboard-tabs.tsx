@@ -40,7 +40,7 @@ function TabsInner({
         params.set("tab", tab);
       }
       const qs = params.toString();
-      router.replace(`/dashboard${qs ? `?${qs}` : ""}`, { scroll: false });
+      router.replace(`/library${qs ? `?${qs}` : ""}`, { scroll: false });
     },
     [router, searchParams],
   );
