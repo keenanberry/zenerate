@@ -277,6 +277,12 @@ Merging PR 1 applies `20261121010000_meditation_covers.sql` to production: the p
 generates yet, so nothing changes visibly
 (`docs/superpowers/plans/2026-11-21-generated-cover-art.md`).
 
+- [ ] Right after the merge, before anything else: Supabase → Integrations (GitHub) or
+      Database → Migrations shows `20261121010000_meditation_covers` as applied. This
+      deploy's code selects `cover_path` on every meditation read, so if the migration
+      failed (or has not applied yet), every meditation page errors and Discover, the
+      Library and the landing row come up empty (Postgres 42703). If it failed: in Vercel,
+      promote the previous production deployment until the migration is fixed and applied.
 - [ ] Right after the merge, signed out: `/discover` and the landing page still load with
       their shelves (the two functions were dropped and recreated). Then in the site's
       DevTools console with the publishable key against
