@@ -2,10 +2,14 @@ import { describe, expect, it } from "vitest";
 import { COVER_STYLE, coverPrompt, MAX_SUBJECT_CHARS } from "./prompt";
 
 describe("coverPrompt", () => {
-  it("is the exact style line the model comparison used", () => {
+  it("is the exact approved style line", () => {
     expect(COVER_STYLE).toBe(
-      "Square cover image for a guided meditation app. Photographic and realistic, natural light, calm, uncluttered composition with one clear subject and room to breathe. No text, no letters, no logos, no borders, no watermark.",
+      "Full-bleed square photograph filling the whole frame edge to edge. Photographic and realistic, natural light, calm, uncluttered composition with one clear subject and room to breathe. No rounded corners, no frame, no text, no letters, no logos, no borders, no watermark.",
     );
+  });
+
+  it("never frames the picture as an app or an icon, which FLUX draws as a rounded tile on white", () => {
+    expect(COVER_STYLE).not.toMatch(/\bapp\b|icon/i);
   });
 
   it("puts the trimmed subject first and the style line after it", () => {

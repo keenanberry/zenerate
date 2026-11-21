@@ -132,9 +132,13 @@ Stones" and "Night Sky" look alike at a glance.
   write the script first. Refuses past the cap (**3 per meditation**) with a message the
   agent relays.
 - Prompt = `subject` + one shared style line (in `src/lib/cover/prompt.ts`):
-  "Square cover image for a guided meditation app. Photographic and realistic, natural
-  light, calm, uncluttered composition with one clear subject and room to breathe. No
-  text, no letters, no logos, no borders, no watermark." (the line the comparison used).
+  "Full-bleed square photograph filling the whole frame edge to edge. Photographic and
+  realistic, natural light, calm, uncluttered composition with one clear subject and room
+  to breathe. No rounded corners, no frame, no text, no letters, no logos, no borders, no
+  watermark." *Changed in cover art PR 3:* the line the comparison used opened "Square
+  cover image for a guided meditation app.", which FLUX read as an app icon: 7 of 24
+  backfill covers came back as a rounded tile on white, whose corners show as white
+  slivers in a card. The rest of the line is the comparison's.
 - Reads the meditation through the user's client (ownership), reserves a generation with
   the atomic increment, calls `generateImage({ model: gateway.imageModel(COVER_MODEL),
   prompt, aspectRatio: "1:1" })`, uploads with the service client to

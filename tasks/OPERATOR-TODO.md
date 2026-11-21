@@ -325,9 +325,44 @@ deployment's own OIDC token: no env var to set.
 - [ ] A week after the merge: Supabase → Usage → Egress and Cached Egress. Covers now load
       straight from Storage: a row or tile up to 128px loads the thumbnail (about 5 KB), a
       larger card the full image (40–180 KB in local tests: a misty lake 40 KB, a pine forest 177 KB);
-      browsers keep both for a year. If
-      Discover traffic makes this a real share of the 5 GB, a 512px middle size for the
-      176–240px cards is the next step.
+      browsers keep both for a year. PR 3 adds the 512px middle size for the 176–240px
+      cards (below).
+
+### Generated covers: the backfill (cover art PR 3)
+
+PR 3 has no migration. Every cover stored from now on has a 512px middle size, which the
+176–240px cards load instead of the full image (in a local run of 24 covers: thumbnail
+9 KB, middle 27 KB, full 85 KB on average). A cover the studio made before PR 3 has no
+middle size; its cards try it, get a 404, and load the full image as before. It also
+changes the style line every cover is generated with: the old one opened "Square cover
+image for a guided meditation app.", and FLUX drew about one cover in three as a rounded
+app icon on white, whose corners showed as white slivers in a card.
+
+- [ ] After the merge, on the iPhone: make a meditation in the studio; its cover fills the
+      square to the corners, with no white around the picture.
+- [ ] Backfill production's public meditations, from the repo on the Mac. Nothing reaches
+      production until the commit step, and the script prints the project it targets
+      first: check that line every time.
+      1. Gateway auth: `vercel -Q "$HOME/.vercel-personal" env pull .superpowers/gw.env
+         --environment development --yes`, then `set -a; source .superpowers/gw.env; set +a`
+         (it holds only `VERCEL_OIDC_TOKEN`, good for about 12 hours).
+      2. Generate, with production's URL and service-role key (Supabase → Project Settings →
+         API) on the command line, never in `.env.local`:
+         `NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co SUPABASE_SERVICE_ROLE_KEY=<key>
+         STUDIO_MODEL=claude-sonnet-5-5 npx tsx scripts/backfill-covers.ts --out
+         .superpowers/cover-backfill-prod`. It paces itself to one image every 13 seconds
+         (the Gateway free tier's 5 a minute), so 50 meditations take about 11 minutes. A
+         cover that fails is listed; run the same command again for it.
+      3. Review: `open .superpowers/cover-backfill-prod/index.html`. Delete the image file
+         of every cover you do not want (look hardest at any marked "White corners"), and
+         run step 2 again to make new ones for them. Repeat until every cover is one you
+         want.
+      4. Commit, the same command with `--commit --confirm-target <ref>.supabase.co`
+         added. It skips a meditation that got a cover meanwhile, and is safe to run twice.
+      5. Signed out, `/discover` shows the photos; on a phone too.
+- [ ] Decide whether private meditations get backfilled covers too (`--all` in step 2).
+      Each one's title, description and tags go to Anthropic for the subject, as they do
+      for a meditation made in the studio.
 
 ### When a report arrives (53)
 

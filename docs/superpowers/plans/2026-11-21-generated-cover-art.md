@@ -17,7 +17,7 @@
 - Only the **service role** writes cover objects, `cover_path` and `cover_generations`. No storage insert/delete policy for `authenticated`; no update grant on those columns for `authenticated`.
 - `cover_path` must be added to the `anon` column grant on `meditations` **and** to the return lists of `discover_meditations` and `profile_meditations` (see `supabase/migrations/20261030000058_launch_security.sql`, `20261120000000_user_profiles.sql`). `cover_generations` is not granted to `anon`.
 - Cap: **3** `makeCover` generations per meditation; a failed generation does not count.
-- Style line (exact): "Square cover image for a guided meditation app. Photographic and realistic, natural light, calm, uncluttered composition with one clear subject and room to breathe. No text, no letters, no logos, no borders, no watermark."
+- Style line (exact): "Full-bleed square photograph filling the whole frame edge to edge. Photographic and realistic, natural light, calm, uncluttered composition with one clear subject and room to breathe. No rounded corners, no frame, no text, no letters, no logos, no borders, no watermark." (Changed in PR 3 from the comparison's "Square cover image for a guided meditation app. …", which FLUX drew as an app icon on white in about one cover in three; see the spec.)
 - Migrations deploy to production on merge. Additive only; no destructive statements.
 - Visible changes follow the `zenerate-design` skill's verification order; list what was checked in each PR body.
 - CI: `npm run lint`, `npx tsc --noEmit`, `npm test`, `npm run build`. Revert any `package-lock.json` change.
