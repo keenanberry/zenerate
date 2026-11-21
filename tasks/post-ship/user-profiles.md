@@ -13,9 +13,13 @@ meditations and studio chats, each with a Delete behind a confirmation (`DELETE
 /api/meditations/[id]`, `DELETE /api/chats/[id]`). Bookmarks is still a placeholder; when it
 lands, its table's `meditation_id` must be `on delete cascade`, as `favorites` is, and
 `src/test/owner-delete.db.test.ts` should check it empties. Usage, email/password and account
-deletion are not on the page yet. Still to do: the `/u/[id]` page,
-the author line on Discover cards and the meditation page, avatar upload, follows, account
-deletion. (Scope refreshed 2026-10-22.)
+deletion are not on the page yet. Avatar upload landed 2026-11-21
+(`docs/superpowers/specs/2026-11-21-avatar-upload-design.md`): the URL box became Add/Change
+photo and Remove, photos are cropped in the browser to a 512px square in the public `avatars`
+bucket, and the photo shows in the account avatar (desktop top bar, Library header). Account
+deletion must also empty the user's `avatars/<user id>/` folder. Still to do: the `/u/[id]`
+page, the author line on Discover cards and the meditation page (it can use the photo),
+follows, account deletion. (Scope refreshed 2026-10-22.)
 **Priority:** Post-ship. One of the three "next up" candidates in the README.
 
 > **What changed since this was written (2026-10-22).**

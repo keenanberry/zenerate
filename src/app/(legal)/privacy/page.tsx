@@ -15,7 +15,7 @@ export default function PrivacyPage() {
   return (
     <>
       <h1>Privacy Policy</h1>
-      <p className="text-muted-foreground">Last updated: November 20, 2026</p>
+      <p className="text-muted-foreground">Last updated: November 21, 2026</p>
 
       <p>
         Zenerate is operated by Keenan Berry, an individual based in Missouri,
@@ -41,6 +41,17 @@ export default function PrivacyPage() {
           Zenerate uses only your email address and never shows your name or
           picture. Google learns that you signed in to Zenerate, under
           Google&rsquo;s own privacy policy.
+        </li>
+        <li>
+          <strong>Your profile:</strong> if you fill it in, a display name, a
+          short bio and a profile photo. A photo you upload is cropped to a
+          small square in your browser before it is sent, so the stored copy
+          carries none of the original&rsquo;s metadata, such as where it was
+          taken. Your profile is private until you make it public; then anyone
+          can see your name, photo and bio. The photo is stored at an
+          unlisted web address, so someone who already has that address can
+          still open it while your profile is private. Replacing or removing
+          your photo deletes the stored copy.
         </li>
         <li>
           <strong>Your content:</strong> the meditations you make, with their
@@ -120,7 +131,7 @@ export default function PrivacyPage() {
       <ul>
         <li>
           <strong>Supabase</strong>: database, authentication and file
-          storage. Holds your account data, your content, your conversations,
+          storage. Holds your account data, your profile and photo, your content, your conversations,
           generated audio, plays and usage records. (
           <a href="https://supabase.com/privacy">Supabase privacy policy</a>)
         </li>

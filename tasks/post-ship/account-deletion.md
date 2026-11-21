@@ -36,6 +36,10 @@ Audio rendered before task 32 sat at the bucket root as `<meditation_id>.mp3` (t
 was wiped on 2026-10-21, so production should hold none), and is found through the user's
 meditation ids.
 
+Profile photos (2026-11-21) are a second bucket with the same trap: `avatars/<user_id>/`,
+one level, normally a single file. Remove everything listed under the user's folder there
+too, before deleting the user.
+
 **Until this ships, a manual deletion must do all three:** remove everything under the user's
 prefix (plus any root-level `<meditation_id>.mp3` of theirs), *then* delete the user,
 *then* record the deletion so a backup restore deletes them again
