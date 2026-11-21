@@ -1,33 +1,41 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Compass, LayoutDashboard, Plus, LogIn, LogOut, UserRound } from "lucide-react";
+import { Compass, Library, Plus, LogIn, LogOut, UserRound } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AccountAvatarLink } from "@/components/account-avatar-link";
+import { SignOutButton } from "@/components/sign-out-button";
 import { cn } from "@/lib/utils";
-import { resetBookmarkOverrides } from "@/lib/meditation/bookmark-state";
 
 const navItems = [
-  { href: "/dashboard", label: "Library", icon: LayoutDashboard, authed: true },
+  { href: "/dashboard", label: "Library", icon: Library, authed: true },
   { href: "/create", label: "Create", icon: Plus, authed: true },
   { href: "/discover", label: "Discover", icon: Compass, authed: false },
 ];
 
-export function Nav({ isSignedIn }: { isSignedIn: boolean }) {
+/**
+ * The top bar. `"site"` (the landing page and the legal layout) is the full
+ * bar at every width: section links, theme toggle, account and sign in/out.
+ * `"app"` (the in-app shell) is that bar for a signed-out visitor; signed in,
+ * it is the wordmark alone below `md`, where the bottom bar carries the
+ * sections, and from `md` the labelled sections with an avatar to Account,
+ * which now holds the theme and Sign out.
+ */
+export function Nav({
+  isSignedIn,
+  variant = "site",
+  avatar,
+}: {
+  isSignedIn: boolean;
+  variant?: "site" | "app";
+  avatar?: { initials: string } | null;
+}) {
   const pathname = usePathname();
-  const router = useRouter();
-  const supabase = createClient();
+  const appShell = variant === "app" && isSignedIn;
   const visibleItems = navItems.filter((item) => isSignedIn || !item.authed);
-
-  async function handleSignOut() {
-    await supabase.auth.signOut();
-    resetBookmarkOverrides();
-    router.push("/");
-    router.refresh();
-  }
 
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -42,62 +50,69 @@ export function Nav({ isSignedIn }: { isSignedIn: boolean }) {
             <BrandMark bold className="size-5.5 shrink-0 text-primary" />
             zenerate
           </Link>
-          <nav className="flex items-center gap-1 sm:gap-2">
-            {visibleItems.map((item) => (
-              <Button
-                key={item.href}
-                asChild
-                variant={pathname.startsWith(item.href) ? "secondary" : "ghost"}
-                size="sm"
-                className={cn(
-                  "gap-2",
-                  pathname.startsWith(item.href) && "font-medium"
-                )}
-              >
-                <Link
-                  href={item.href}
-                  aria-current={pathname.startsWith(item.href) ? "page" : undefined}
+          <nav
+            aria-label="Primary"
+            className={cn("items-center gap-1 sm:gap-2", appShell ? "hidden md:flex" : "flex")}
+          >
+            {visibleItems.map((item) => {
+              const current = pathname.startsWith(item.href);
+              return (
+                <Button
+                  key={item.href}
+                  asChild
+                  variant={current ? "secondary" : "ghost"}
+                  size="sm"
+                  className={cn("gap-2", current && "font-medium")}
                 >
-                  <item.icon className="h-4 w-4" aria-hidden />
-                  {/* Icons only below sm; the label stays for screen readers. */}
-                  <span className="sr-only sm:not-sr-only">{item.label}</span>
-                </Link>
-              </Button>
-            ))}
+                  <Link href={item.href} aria-current={current ? "page" : undefined}>
+                    <item.icon className="h-4 w-4" aria-hidden />
+                    {/* Icons only below sm; the label stays for screen readers.
+                        The app shell shows this row from md only, labelled. */}
+                    <span className={appShell ? undefined : "sr-only sm:not-sr-only"}>
+                      {item.label}
+                    </span>
+                  </Link>
+                </Button>
+              );
+            })}
           </nav>
         </div>
-        <div className="flex items-center gap-1 sm:gap-2">
-          <ThemeToggle />
-          {isSignedIn && (
-            <Button
-              asChild
-              variant={pathname.startsWith("/account") ? "secondary" : "ghost"}
-              size="icon"
-              className="size-8"
-            >
-              <Link
-                href="/account"
-                aria-label="Account"
-                aria-current={pathname.startsWith("/account") ? "page" : undefined}
+        {appShell ? (
+          avatar && <AccountAvatarLink initials={avatar.initials} className="hidden md:flex" />
+        ) : (
+          <div className="flex items-center gap-1 sm:gap-2">
+            <ThemeToggle />
+            {isSignedIn && (
+              <Button
+                asChild
+                variant={pathname.startsWith("/account") ? "secondary" : "ghost"}
+                size="icon"
+                className="size-8"
               >
-                <UserRound className="h-4 w-4" aria-hidden />
-              </Link>
-            </Button>
-          )}
-          {isSignedIn ? (
-            <Button variant="ghost" size="sm" onClick={handleSignOut} className="gap-2">
-              <LogOut className="h-4 w-4" aria-hidden />
-              <span className="sr-only sm:not-sr-only">Sign out</span>
-            </Button>
-          ) : (
-            <Button asChild variant="ghost" size="sm" className="gap-2">
-              <Link href="/login">
-                <LogIn className="h-4 w-4" aria-hidden />
-                <span className="sr-only sm:not-sr-only">Sign in</span>
-              </Link>
-            </Button>
-          )}
-        </div>
+                <Link
+                  href="/account"
+                  aria-label="Account"
+                  aria-current={pathname.startsWith("/account") ? "page" : undefined}
+                >
+                  <UserRound className="h-4 w-4" aria-hidden />
+                </Link>
+              </Button>
+            )}
+            {isSignedIn ? (
+              <SignOutButton className="gap-2">
+                <LogOut className="h-4 w-4" aria-hidden />
+                <span className="sr-only sm:not-sr-only">Sign out</span>
+              </SignOutButton>
+            ) : (
+              <Button asChild variant="ghost" size="sm" className="gap-2">
+                <Link href="/login">
+                  <LogIn className="h-4 w-4" aria-hidden />
+                  <span className="sr-only sm:not-sr-only">Sign in</span>
+                </Link>
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </header>
   );
