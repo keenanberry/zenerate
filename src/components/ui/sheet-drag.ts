@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useState } from "react";
 
 /** A finger position at a moment: px from the top, ms. */
 type Sample = { y: number; t: number };
@@ -54,6 +54,52 @@ function reducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
+/** One drag in progress: the sheet it moves and where the finger has been. */
+export type ActiveDrag<T> = {
+  sheet: T;
+  pointerId: number;
+  startY: number;
+  offset: number;
+  samples: Sample[];
+};
+
+/**
+ * The drag's bookkeeping, apart from the DOM so it can be tested alone. One
+ * pointer drags at a time. A drag can end without its pointerup: the sheet
+ * closed from outside while the finger was down (a second finger on the
+ * overlay, a delete finishing) and unmounted, taking the captured pointer's
+ * events with it. A drag whose sheet is no longer in the document is
+ * dropped when the next one starts, so the handle never goes dead.
+ */
+export class SheetDragTracker<T extends { isConnected: boolean }> {
+  private active: ActiveDrag<T> | null = null;
+
+  /** Begin a drag; false while another drag still holds a live sheet. */
+  start(sheet: T, pointerId: number, y: number, t: number): boolean {
+    if (this.active?.sheet.isConnected) return false;
+    this.active = { sheet, pointerId, startY: y, offset: 0, samples: [{ y, t }] };
+    return true;
+  }
+
+  /** Follow the finger; the drag it moved, or null for another pointer. */
+  move(pointerId: number, y: number, t: number): ActiveDrag<T> | null {
+    const current = this.active;
+    if (!current || current.pointerId !== pointerId) return null;
+    current.offset = y - current.startY;
+    current.samples.push({ y, t });
+    if (current.samples.length > 20) current.samples.shift();
+    return current;
+  }
+
+  /** Finish the drag (release, cancel or lost capture); null if none was running. */
+  end(pointerId: number): ActiveDrag<T> | null {
+    const current = this.active;
+    if (!current || current.pointerId !== pointerId) return null;
+    this.active = null;
+    return current;
+  }
+}
+
 /**
  * Drag a bottom sheet down to close it. Spread `handleProps` on the grab
  * handle and the sheet's header; the sheet follows the finger (never above
@@ -68,13 +114,8 @@ function reducedMotion() {
 export function useSheetDrag(onClose: () => void): {
   handleProps: React.HTMLAttributes<HTMLElement>;
 } {
-  const drag = useRef<{
-    sheet: HTMLElement;
-    pointerId: number;
-    startY: number;
-    offset: number;
-    samples: Sample[];
-  } | null>(null);
+  // One tracker for the life of the component; it is never replaced.
+  const [tracker] = useState(() => new SheetDragTracker<HTMLElement>());
 
   function move(sheet: HTMLElement, offset: number) {
     sheet.style.transition = "none";
@@ -99,9 +140,8 @@ export function useSheetDrag(onClose: () => void): {
   }
 
   function end(e: React.PointerEvent<HTMLElement>, cancelled: boolean) {
-    const current = drag.current;
-    if (!current || current.pointerId !== e.pointerId) return;
-    drag.current = null;
+    const current = tracker.end(e.pointerId);
+    if (!current) return;
     const { sheet, offset, samples } = current;
     const outcome = cancelled
       ? "restore"
@@ -129,29 +169,23 @@ export function useSheetDrag(onClose: () => void): {
       // The page must not scroll, or pull to refresh, under the drag.
       style: { touchAction: "none" },
       onPointerDown(e) {
-        if (e.button !== 0 || drag.current) return;
+        if (e.button !== 0) return;
         if (e.target instanceof Element && e.target.closest(INTERACTIVE)) return;
         const sheet = e.currentTarget.closest<HTMLElement>("[data-slot=sheet-content]");
         if (!sheet) return;
+        if (!tracker.start(sheet, e.pointerId, e.clientY, e.timeStamp)) return;
         e.currentTarget.setPointerCapture(e.pointerId);
-        drag.current = {
-          sheet,
-          pointerId: e.pointerId,
-          startY: e.clientY,
-          offset: 0,
-          samples: [{ y: e.clientY, t: e.timeStamp }],
-        };
       },
       onPointerMove(e) {
-        const current = drag.current;
-        if (!current || current.pointerId !== e.pointerId) return;
-        current.offset = e.clientY - current.startY;
-        current.samples.push({ y: e.clientY, t: e.timeStamp });
-        if (current.samples.length > 20) current.samples.shift();
-        move(current.sheet, current.offset);
+        const current = tracker.move(e.pointerId, e.clientY, e.timeStamp);
+        if (current) move(current.sheet, current.offset);
       },
       onPointerUp: (e) => end(e, false),
       onPointerCancel: (e) => end(e, true),
+      // Capture lost without a pointerup (the browser took the gesture, or
+      // the handle left the page): the drag ends and the sheet springs back.
+      // After an ordinary release the drag has already ended, so this is a no-op.
+      onLostPointerCapture: (e) => end(e, true),
     },
   };
 }
