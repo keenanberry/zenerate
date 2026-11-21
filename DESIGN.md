@@ -344,16 +344,32 @@ every other content type narrows itself inside the shell:
 - Legal pages: the 48rem `(legal)` column with the article itself at 60ch in Body type.
 - Descriptions under a title (meditation prompt, collection description): 60ch.
 
-The navigation is a single 64px bar with the lowercase wordmark on the left, section links
-beside it (icons only below `sm`), and theme toggle plus sign-in/out on the right. One
-component (`src/components/nav.tsx`) renders it for the app shell, the landing page and
-the legal layout (task 22).
+The navigation is a single 64px top bar with the lowercase wordmark on the left. One
+component (`src/components/nav.tsx`) renders it in two variants. The landing page and the
+legal layout use `"site"` (task 22) at every width, signed in or out: section links beside
+the wordmark (icons only below `sm`), and theme toggle plus account and sign-in/out on the
+right. The in-app shell (`src/app/(app)/layout.tsx`) uses `"app"`, which is the same bar
+for a signed-out visitor; signed in, it is the wordmark alone below `md`, and from `md`
+the wordmark with labelled Library, Create and Discover on the left and a round initials
+avatar to Account on the right (`src/components/account-avatar-link.tsx`). The theme and
+Sign out live on Account.
+
+Signed in and below `md`, the sections move to a bottom tab bar
+(`src/components/bottom-bar.tsx`): Library, Discover and Create, an icon over an 11px
+label, the current one in Foreground with a Primary icon and `aria-current="page"`, the
+others in Dusk. It is fixed at `z-40` (the session player and sheets sit above it), on the
+Sidebar surface at 95% with backdrop blur and a Hairline top border, and no shadow. The
+shell pads its bottom by the bar's height so the last row and the footer scroll clear of
+it. The bar is absent in the studio (`/create/[chatId]`), whose composer owns the bottom
+of the screen; the studio header carries a back link to Create there instead. On a phone
+the avatar to Account sits in the Library's header, as in Apple Music.
 
 Vertical rhythm, as settled in task 21:
 
 | Step | Value |
 |---|---|
 | Nav bar | 64px (`h-16`) |
+| Bottom bar (signed in, below `md`) | 64px + safe-area inset (`h-16`, `pb-[env(safe-area-inset-bottom,0px)]`) |
 | Shell to content | 40px on a phone, 56px from `sm` (`py-10 sm:py-14`) |
 | Between page sections (header, player, script, tabs) | 40px (`space-y-10`) |
 | Title to its description | 8px (`space-y-2`) |
@@ -520,8 +536,13 @@ picker):
 - A 64px bar, `border-b`, 95% Midnight with backdrop blur. Wordmark `zenerate` in bold
   tracking-tight at 1.125rem. Items are ghost buttons (`asChild` links) with a 16px icon
   and a label that is `sr-only` below `sm`, never `hidden`, so the icon-only items keep an
-  accessible name; the active item is `secondary` with `aria-current="page"`. The theme toggle is an icon button whose sun
-  and moon cross-fade with a rotate.
+  accessible name; the active item is `secondary` with `aria-current="page"`. In the
+  signed-in app shell the items show from `md` only, always labelled, and the right side
+  is the account avatar: a 36px round `bg-card` chip with a Hairline border and the
+  initials in UI type, its border Primary while on Account. On the landing and legal bars
+  the theme toggle is an icon button whose sun and moon cross-fade with a rotate; in the
+  app the theme is a System/Light/Dark radio group on Account
+  (`src/components/theme-choice.tsx`).
 - The wordmark has the Brand Mark beside it at 22px, in `text-primary`, bold tier.
 - A page that belongs to a section (a meditation, a collection) carries an eyebrow
   above its title (`src/components/parent-link.tsx`): a Label-type link in Dusk with a

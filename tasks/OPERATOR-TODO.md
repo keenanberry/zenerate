@@ -4,7 +4,7 @@ Everything left before signups open that only the operator can do: a phone, a da
 account, or a judgment call. Agents keep this file current. When you finish an item, tick it
 and add the date, or tell an agent and it will. Each item names the task file with the detail.
 
-Last updated: 2026-11-16. Sections are in the order to do them. Live sandbox snapshot: `snap_sXOy59qkIhIo95G7Y9N33oAaAPMY` (2026-11-16, task 60: peaks, 128 kbps), the only one; the two before it were deleted once it had rendered in production.
+Last updated: 2026-11-21. Sections are in the order to do them. Live sandbox snapshot: `snap_sXOy59qkIhIo95G7Y9N33oAaAPMY` (2026-11-16, task 60: peaks, 128 kbps), the only one; the two before it were deleted once it had rendered in production.
 
 ## 1. Protect the spend (do first)
 
@@ -161,6 +161,16 @@ After the redesign merges (these replace the old 35, 42 and 43 checks):
       the email provider (section 2). 2026-11-16: production lists `google` and `email`,
       and Continue with Google signs in on the desktop browser and in the installed iPhone
       app. Signups were still off, so the sign-in linked Google to the existing account.
+
+After the app shell's navigation merges (app shell PR 1,
+`docs/superpowers/plans/2026-11-21-app-shell-navigation.md`):
+
+- [ ] Installed app on iPhone: the bottom bar (Library, Discover, Create) sits above the
+      home indicator; the last row of a long list (Library, Discover) and the footer
+      scroll clear of it; in the studio the bar is gone and the back chevron beside the
+      chat title returns to Create. The app's start page moved from `/dashboard` to
+      `/library` with no redirect: if the installed app opens to "not found", remove it
+      from the Home Screen and add it again from Safari.
 
 ## 5. Production checks (after seeding)
 
