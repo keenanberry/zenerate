@@ -17,16 +17,19 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { BottomSheetHeader } from "@/components/ui/bottom-sheet";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  ResponsiveMenu,
+  ResponsiveMenuContent,
+  ResponsiveMenuItem,
+  ResponsiveMenuSeparator,
+  ResponsiveMenuTrigger,
+} from "@/components/ui/responsive-menu";
 import { AddToCollectionDialog } from "@/components/add-to-collection-dialog";
 import { DeleteDialog } from "@/components/delete-dialog";
+import { MeditationCover } from "@/components/meditation-cover";
 import { shareMeditation, sharePayload } from "@/lib/meditation/share";
+import { TAG_LABELS, isTag } from "@/lib/meditation/tags";
 
 export type MeditationMenuProps = {
   meditationId: string;
@@ -61,8 +64,14 @@ export function MeditationMenu({
   siteUrl,
   onEdit,
   visibility,
+  tags = [],
+  meta,
 }: MeditationMenuProps & {
   onEdit: () => void;
+  /** For the phone sheet's header: the cover, and the first tag on the meta line. */
+  tags?: string[];
+  /** The length, e.g. "20 min", after the tag on the sheet's meta line. */
+  meta?: string;
   /** The owner's visibility, held by the header so its meta line agrees. */
   visibility: { isPublic: boolean; isPending: boolean; toggle: () => void } | null;
 }) {
@@ -97,22 +106,34 @@ export function MeditationMenu({
     </Button>
   );
 
+  const tag = tags.find(isTag);
+  const header = (
+    <BottomSheetHeader
+      art={<MeditationCover id={meditationId} tags={tags} title={title} size={48} />}
+      title={title}
+      meta={[tag && TAG_LABELS[tag], meta].filter(Boolean).join(" · ")}
+    />
+  );
+
   return (
     <>
-      <DropdownMenu>
+      <ResponsiveMenu>
         {isSignedIn ? (
-          // The collection picker opens from a menu item, so it anchors to the
-          // menu's button once the menu has closed.
+          // The collection picker opens from a menu item: on desktop it
+          // anchors to the menu's button once the menu has closed; on a phone
+          // it is a sheet of its own, risen once the menu's sheet has gone.
           <AddToCollectionDialog
             meditationId={meditationId}
             open={collectionsOpen}
             onOpenChange={setCollectionsOpen}
-            anchor={<DropdownMenuTrigger asChild>{button}</DropdownMenuTrigger>}
+            anchor={<ResponsiveMenuTrigger asChild>{button}</ResponsiveMenuTrigger>}
           />
         ) : (
-          <DropdownMenuTrigger asChild>{button}</DropdownMenuTrigger>
+          <ResponsiveMenuTrigger asChild>{button}</ResponsiveMenuTrigger>
         )}
-        <DropdownMenuContent
+        <ResponsiveMenuContent
+          title={`More for ${title}`}
+          header={header}
           align="end"
           className="min-w-52"
           onCloseAutoFocus={(e) => {
@@ -125,44 +146,44 @@ export function MeditationMenu({
         >
           {isOwner && (
             <>
-              <DropdownMenuItem onSelect={onEdit}>
+              <ResponsiveMenuItem onSelect={onEdit}>
                 <Pencil />
                 Edit details
-              </DropdownMenuItem>
+              </ResponsiveMenuItem>
               {chatId && (
-                <DropdownMenuItem asChild>
+                <ResponsiveMenuItem asChild>
                   <Link href={`/create/${chatId}`}>
                     <MessageSquare />
                     Continue in chat
                   </Link>
-                </DropdownMenuItem>
+                </ResponsiveMenuItem>
               )}
               {visibility && (
-                <DropdownMenuItem
+                <ResponsiveMenuItem
                   disabled={visibility.isPending}
                   onSelect={visibility.toggle}
                 >
                   {visibility.isPublic ? <Lock /> : <Globe />}
                   {visibility.isPublic ? "Make private" : "Make public"}
-                </DropdownMenuItem>
+                </ResponsiveMenuItem>
               )}
-              {visitorItems && <DropdownMenuSeparator />}
+              {visitorItems && <ResponsiveMenuSeparator />}
             </>
           )}
           {canShare && (
-            <DropdownMenuItem onSelect={share}>
+            <ResponsiveMenuItem onSelect={share}>
               <Share />
               Share
-            </DropdownMenuItem>
+            </ResponsiveMenuItem>
           )}
           {isSignedIn && (
-            <DropdownMenuItem onSelect={() => (collectionsNext.current = true)}>
+            <ResponsiveMenuItem onSelect={() => (collectionsNext.current = true)}>
               <FolderPlus />
               Add to collection
-            </DropdownMenuItem>
+            </ResponsiveMenuItem>
           )}
           {hasAudio && (
-            <DropdownMenuItem asChild>
+            <ResponsiveMenuItem asChild>
               {isSignedIn ? (
                 <a href={`/api/audio/${meditationId}/download`}>
                   <Download />
@@ -174,30 +195,30 @@ export function MeditationMenu({
                   Sign in to download
                 </Link>
               )}
-            </DropdownMenuItem>
+            </ResponsiveMenuItem>
           )}
           {reportHref && (
             <>
-              {visitorItems && <DropdownMenuSeparator />}
-              <DropdownMenuItem asChild>
+              {visitorItems && <ResponsiveMenuSeparator />}
+              <ResponsiveMenuItem asChild>
                 <a href={reportHref}>
                   <Flag />
                   Report
                 </a>
-              </DropdownMenuItem>
+              </ResponsiveMenuItem>
             </>
           )}
           {isOwner && (
             <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onSelect={() => setDeleting(true)}>
+              <ResponsiveMenuSeparator />
+              <ResponsiveMenuItem variant="destructive" onSelect={() => setDeleting(true)}>
                 <Trash2 />
                 Delete
-              </DropdownMenuItem>
+              </ResponsiveMenuItem>
             </>
           )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </ResponsiveMenuContent>
+      </ResponsiveMenu>
       {isOwner && (
         <DeleteDialog
           item={deleting ? { kind: "meditation", id: meditationId, title } : null}

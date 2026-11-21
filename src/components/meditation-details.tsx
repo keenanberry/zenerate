@@ -123,6 +123,8 @@ export function MeditationDetails({
             <MeditationMenu
               {...menu}
               title={saved.title}
+              tags={saved.tags}
+              meta={meta}
               onEdit={() => setEditing(true)}
               visibility={visibility}
             />

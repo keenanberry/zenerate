@@ -204,6 +204,32 @@ function BottomSheetItem({
   )
 }
 
+/**
+ * The head of a menu sheet, naming what its rows act on: the artwork at 48px
+ * where there is one, the title in Lora, and a Dusk meta line.
+ */
+function BottomSheetHeader({
+  art,
+  title,
+  meta,
+}: {
+  art?: React.ReactNode
+  title: React.ReactNode
+  meta?: React.ReactNode
+}) {
+  return (
+    <div className="flex min-w-0 items-center gap-3">
+      {art && <div className="size-12 shrink-0 overflow-hidden rounded-md">{art}</div>}
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-serif text-base leading-snug font-medium">{title}</p>
+        {meta && (
+          <p className="truncate text-sm text-muted-foreground tabular-nums">{meta}</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
 /** A Hairline between groups of rows. */
 function BottomSheetSeparator({ className }: { className?: string }) {
   return <div role="separator" className={cn("my-1 h-px bg-border", className)} />
@@ -216,6 +242,7 @@ export {
   BottomSheet,
   BottomSheetTrigger,
   BottomSheetContent,
+  BottomSheetHeader,
   BottomSheetItem,
   BottomSheetSeparator,
   SheetHandle,
