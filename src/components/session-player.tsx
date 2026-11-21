@@ -175,10 +175,16 @@ export function SessionPlayer({
   useEffect(() => {
     if (!open || menuOpen) return;
     function onKeyDown(e: KeyboardEvent) {
-      // The "…" menu handles its own keys; its Escape closes only the menu.
-      // By the time this runs the menu may already have closed, so ask the
-      // event where it came from rather than the menu's state.
-      if (e.target instanceof Element && e.target.closest("[role=menu]")) return;
+      // The "…" menu (a dropdown, or a bottom sheet on a phone) handles its
+      // own keys; its Escape closes only the menu. By the time this runs the
+      // menu may already have closed, so ask the event where it came from
+      // rather than the menu's state.
+      if (
+        e.target instanceof Element &&
+        e.target.closest("[role=menu], [data-slot=sheet-content]")
+      ) {
+        return;
+      }
       // The rating prompt over the view keeps Tab inside itself and handles
       // its own Escape.
       const ratingPrompt = dialogRef.current?.querySelector<HTMLElement>("[data-rating-prompt]");
