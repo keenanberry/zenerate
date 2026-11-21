@@ -32,6 +32,11 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--border-radius": "var(--radius)",
         } as React.CSSProperties
       }
+      // Clear of the phone's bottom tab bar while it shows: globals.css sets
+      // --bottom-bar-clearance from it (0 otherwise). Both offsets, because
+      // Sonner switches to its mobile layout at 600px and the bar shows to 768px.
+      offset={{ bottom: "calc(var(--bottom-bar-clearance, 0px) + 24px)" }}
+      mobileOffset={{ bottom: "calc(var(--bottom-bar-clearance, 0px) + 16px)" }}
       {...props}
     />
   )

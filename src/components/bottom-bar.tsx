@@ -30,6 +30,8 @@ export function BottomBar() {
   return (
     <nav
       aria-label="Primary"
+      // Read by globals.css to lift toasts clear of the bar.
+      data-bottom-bar
       // Border-box: the Hairline and the inset are inside this height,
       // which is exactly the padding the shell leaves for it.
       className="fixed inset-x-0 bottom-0 z-40 h-[calc(4rem+env(safe-area-inset-bottom,0px))] border-t bg-sidebar/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur md:hidden"

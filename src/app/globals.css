@@ -299,6 +299,15 @@
   --shadow-2xl: 1px 2px 5px 1px hsl(0 0% 0% / 0.15);
 }
 
+/* The phone's bottom tab bar (src/components/bottom-bar.tsx) renders only
+   while it shows, and is hidden from md. Toasts (src/components/ui/sonner.tsx)
+   sit this far above their usual offset so they never cover it. */
+@media (width < 48rem) {
+  :root:has([data-bottom-bar]) {
+    --bottom-bar-clearance: calc(4rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* The halo behind the audio player: a radial glow in dark, a flat tint in
    light. The value lives in --player-halo so the theme decides which. */
 @utility player-halo {

@@ -369,7 +369,7 @@ Vertical rhythm, as settled in task 21:
 | Step | Value |
 |---|---|
 | Nav bar | 64px (`h-16`) |
-| Bottom bar (signed in, below `md`) | 64px + safe-area inset (`h-16`, `pb-[env(safe-area-inset-bottom,0px)]`) |
+| Bottom bar (signed in, below `md`) | 64px + safe-area inset, border included (`h-[calc(4rem+env(safe-area-inset-bottom,0px))]`); the shell's bottom padding and the toasts' lift match it |
 | Shell to content | 40px on a phone, 56px from `sm` (`py-10 sm:py-14`) |
 | Between page sections (header, player, script, tabs) | 40px (`space-y-10`) |
 | Title to its description | 8px (`space-y-2`) |
