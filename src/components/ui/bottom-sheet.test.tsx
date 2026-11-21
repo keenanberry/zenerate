@@ -7,6 +7,7 @@ vi.mock("@/components/ui/sheet", () => {
   const Pass = ({ children }: { children?: ReactNode }) => <>{children}</>;
   return {
     Sheet: Pass,
+    SheetTrigger: Pass,
     SheetContent: ({ children, className }: { children?: ReactNode; className?: string }) => (
       <section data-sheet className={className}>
         {children}

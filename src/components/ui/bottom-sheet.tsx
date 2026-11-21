@@ -10,6 +10,7 @@ import {
   SheetContent,
   SheetDescription,
   SheetTitle,
+  SheetTrigger,
 } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 
@@ -208,8 +209,12 @@ function BottomSheetSeparator({ className }: { className?: string }) {
   return <div role="separator" className={cn("my-1 h-px bg-border", className)} />
 }
 
+/** Opens the sheet it sits in; the Radix trigger, `asChild` as usual. */
+const BottomSheetTrigger = SheetTrigger
+
 export {
   BottomSheet,
+  BottomSheetTrigger,
   BottomSheetContent,
   BottomSheetItem,
   BottomSheetSeparator,
