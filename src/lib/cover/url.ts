@@ -28,17 +28,32 @@ export function withCoverUrl<T extends { cover_path?: string | null }>(row: T): 
 }
 
 /**
- * Where a cover's 256px thumbnail lives, by convention beside the full image:
- * `<id>/<random>.webp` has `<id>/<random>.thumb.webp`. Takes a path or a URL
- * and changes only the file name. storeCover writes both; a cover set before
- * thumbnails existed has none, and MeditationCover falls back to the full
- * image when the thumbnail fails to load.
+ * A smaller size of a cover, by convention beside the full image:
+ * `<id>/<random>.webp` has `<id>/<random>.<size>.webp`. Takes a path or a
+ * URL and changes only the file name.
  */
-export function coverThumb(pathOrUrl: string): string {
+function coverSize(pathOrUrl: string, size: "thumb" | "md"): string {
   const slash = pathOrUrl.lastIndexOf("/");
   const dot = pathOrUrl.lastIndexOf(".");
-  if (dot <= slash) return `${pathOrUrl}.thumb`;
-  return `${pathOrUrl.slice(0, dot)}.thumb${pathOrUrl.slice(dot)}`;
+  if (dot <= slash) return `${pathOrUrl}.${size}`;
+  return `${pathOrUrl.slice(0, dot)}.${size}${pathOrUrl.slice(dot)}`;
+}
+
+/**
+ * Where a cover's 256px thumbnail lives: `<id>/<random>.thumb.webp`.
+ * storeCover writes it; a cover set before thumbnails existed has none, and
+ * MeditationCover moves on to the next larger size when it fails to load.
+ */
+export function coverThumb(pathOrUrl: string): string {
+  return coverSize(pathOrUrl, "thumb");
+}
+
+/**
+ * Where a cover's 512px middle size lives: `<id>/<random>.md.webp`. Covers
+ * stored before cover art PR 3 have none and fall back to the full image.
+ */
+export function coverMiddle(pathOrUrl: string): string {
+  return coverSize(pathOrUrl, "md");
 }
 
 /**
@@ -48,3 +63,10 @@ export function coverThumb(pathOrUrl: string): string {
  * quota would run out within a few hundred covers.
  */
 export const THUMB_MAX_SIZE = 128;
+
+/**
+ * The largest size (CSS px) a cover is drawn from its middle size, which is
+ * twice this: the 176–240px cards on Discover and in the Library. Larger
+ * (the meditation page, the session view) loads the full image.
+ */
+export const MIDDLE_MAX_SIZE = 256;

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { coverThumb, coverUrl, withCoverUrl } from "./url";
+import { coverMiddle, coverThumb, coverUrl, withCoverUrl } from "./url";
 
 const BASE = "https://abc.supabase.co";
 
@@ -62,5 +62,19 @@ describe("coverThumb", () => {
   it("touches only the file name, never a dot earlier in the path or host", () => {
     expect(coverThumb("https://abc.supabase.co/x/m1/abc")).toBe("https://abc.supabase.co/x/m1/abc.thumb");
     expect(coverThumb("m1/a.b.jpg")).toBe("m1/a.b.thumb.jpg");
+  });
+});
+
+describe("coverMiddle", () => {
+  it("names the 512px middle size beside the full image", () => {
+    expect(coverMiddle("m1/a.webp")).toBe("m1/a.md.webp");
+    expect(coverMiddle(`${BASE}/storage/v1/object/public/meditation-covers/m1/a.webp`)).toBe(
+      `${BASE}/storage/v1/object/public/meditation-covers/m1/a.md.webp`,
+    );
+  });
+
+  it("touches only the file name, like the thumbnail", () => {
+    expect(coverMiddle("https://abc.supabase.co/x/m1/abc")).toBe("https://abc.supabase.co/x/m1/abc.md");
+    expect(coverMiddle("m1/a.b.jpg")).toBe("m1/a.b.md.jpg");
   });
 });

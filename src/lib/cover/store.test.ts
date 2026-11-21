@@ -96,35 +96,38 @@ describe("storeCover", () => {
     );
   });
 
-  it("writes a 1024px WebP and a 256px WebP thumbnail beside it", async () => {
+  it("writes a 1024px WebP with a 512px middle size and a 256px thumbnail beside it", async () => {
     const { path, url } = await storeCover(MED, { bytes: png, mediaType: "image/png" });
 
     expect(path).toMatch(new RegExp(`^${MED}/[0-9a-f-]{36}\\.webp$`));
     expect(url).toBe(`https://abc.supabase.co/storage/v1/object/public/meditation-covers/${path}`);
     const byPath = new Map(db.uploads.map((u) => [u.path, u]));
     const full = byPath.get(path)!;
+    const middle = byPath.get(path.replace(/\.webp$/, ".md.webp"))!;
     const thumb = byPath.get(path.replace(/\.webp$/, ".thumb.webp"))!;
-    expect(db.uploads).toHaveLength(2);
-    for (const [upload, edge] of [[full, 1024], [thumb, 256]] as const) {
+    expect(db.uploads).toHaveLength(3);
+    // The full image last: the smaller sizes exist before anything could point at it.
+    expect(db.uploads.at(-1)!.path).toBe(path);
+    for (const [upload, edge] of [[full, 1024], [middle, 512], [thumb, 256]] as const) {
       expect(upload.contentType).toBe("image/webp");
       const meta = await sharp(upload.bytes).metadata();
       expect([meta.format, meta.width, meta.height]).toEqual(["webp", edge, edge]);
     }
-    // Only once both exist does the row point at the new cover.
+    // Only once all three exist does the row point at the new cover.
     expect(db.updates).toEqual([{ values: { cover_path: path }, id: MED }]);
   });
 
   it("crops a picture that is not square to a square", async () => {
     const wide = await sharp({ create: { width: 1200, height: 800, channels: 3, background: "#123456" } }).jpeg().toBuffer();
     await storeCover(MED, { bytes: new Uint8Array(wide), mediaType: "image/jpeg" });
-    const meta = await sharp(db.uploads.find((u) => !u.path.includes(".thumb."))!.bytes).metadata();
+    const meta = await sharp(db.uploads.find((u) => !/\.(thumb|md)\./.test(u.path))!.bytes).metadata();
     expect([meta.width, meta.height]).toEqual([800, 800]);
   });
 
-  it("removes the previous cover and its thumbnail when they are this meditation's", async () => {
+  it("removes the previous cover and its smaller sizes when they are this meditation's", async () => {
     db.previous = `${MED}/old.webp`;
     await storeCover(MED, { bytes: png, mediaType: "image/png" });
-    expect(db.removed).toEqual([[`${MED}/old.webp`, `${MED}/old.thumb.webp`]]);
+    expect(db.removed).toEqual([[`${MED}/old.webp`, `${MED}/old.md.webp`, `${MED}/old.thumb.webp`]]);
   });
 
   it("never removes anything outside the meditation's own folder", async () => {
