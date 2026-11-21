@@ -38,6 +38,11 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 import { GET, PATCH } from "./route";
+import { avatarPublicBase } from "@/lib/profile/avatar";
+
+// Production's project URL is https; the route builds the avatars base from it.
+vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://proj.supabase.co");
+const AVATARS = avatarPublicBase("https://proj.supabase.co");
 
 const USER = "user-1";
 const PROFILE = {
@@ -120,6 +125,41 @@ describe("PATCH /api/profile", () => {
     expect((await patch({ id: "user-2" })).status).toBe(400);
     expect((await patch({ avatar_url: "http://example.com/a.png" })).status).toBe(400);
     expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("accepts a photo uploaded to the caller's own avatars folder, and clearing it", async () => {
+    const url = `${AVATARS}${USER}/abc.webp`;
+    const res = await patch({ avatar_url: url });
+    expect(res.status).toBe(200);
+    expect(mockUpdate.mock.calls[0][0].avatar_url).toBe(url);
+
+    expect((await patch({ avatar_url: null })).status).toBe(200);
+    expect(mockUpdate.mock.calls[1][0].avatar_url).toBeNull();
+  });
+
+  it("refuses an avatar that is not an upload in the caller's own folder", async () => {
+    for (const avatar_url of [
+      "https://example.com/a.png",
+      `${AVATARS}user-2/abc.webp`,
+      `${AVATARS}${USER}/nested/abc.webp`,
+      `${AVATARS.replace("/avatars/", "/meditation-audio/")}${USER}/abc.mp3`,
+    ]) {
+      const res = await patch({ avatar_url });
+      expect(res.status).toBe(400);
+      expect((await res.json()).error).toMatch(/photo/i);
+    }
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("leaves a stored external avatar alone when other fields change", async () => {
+    mockUpdate.mockImplementationOnce(async (values: object) => ({
+      data: { ...PROFILE, avatar_url: "https://example.com/old.png", ...values },
+      error: null,
+    }));
+    const res = await patch({ bio: "Hi" });
+    expect(res.status).toBe(200);
+    expect(mockUpdate.mock.calls[0][0]).not.toHaveProperty("avatar_url");
+    expect((await res.json()).avatar_url).toBe("https://example.com/old.png");
   });
 
   it("answers 500 without leaking the database error", async () => {

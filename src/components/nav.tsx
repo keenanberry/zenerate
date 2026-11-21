@@ -32,7 +32,7 @@ export function Nav({
 }: {
   isSignedIn: boolean;
   variant?: "site" | "app";
-  avatar?: { initials: string } | null;
+  avatar?: { initials: string; avatarUrl?: string | null } | null;
 }) {
   const pathname = usePathname();
   const appShell = variant === "app" && isSignedIn;
@@ -83,7 +83,13 @@ export function Nav({
           </nav>
         </div>
         {appShell ? (
-          avatar && <AccountAvatarLink initials={avatar.initials} className="hidden md:flex" />
+          avatar && (
+            <AccountAvatarLink
+              initials={avatar.initials}
+              avatarUrl={avatar.avatarUrl}
+              className="hidden md:flex"
+            />
+          )
         ) : (
           <div className="flex items-center gap-1 sm:gap-2">
             <ThemeToggle />

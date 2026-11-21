@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // the props they were given.
 let user: { id: string; email: string } | null = null;
 let displayName: string | null = null;
+let avatarUrl: string | null = null;
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
@@ -12,18 +13,23 @@ vi.mock("@/lib/supabase/server", () => ({
     from: () => ({
       select: () => ({
         eq: () => ({
-          maybeSingle: async () => ({ data: { display_name: displayName }, error: null }),
+          maybeSingle: async () => ({ data: { display_name: displayName, avatar_url: avatarUrl }, error: null }),
         }),
       }),
     }),
   }),
 }));
 vi.mock("@/components/nav", () => ({
-  Nav: (props: { isSignedIn: boolean; variant?: string; avatar?: { initials: string } | null }) => (
+  Nav: (props: {
+    isSignedIn: boolean;
+    variant?: string;
+    avatar?: { initials: string; avatarUrl?: string | null } | null;
+  }) => (
     <header
       data-variant={props.variant}
       data-signed-in={String(props.isSignedIn)}
       data-initials={props.avatar?.initials ?? ""}
+      data-avatar-url={props.avatar?.avatarUrl ?? ""}
     />
   ),
 }));
@@ -47,6 +53,7 @@ describe("AppLayout", () => {
   beforeEach(() => {
     user = null;
     displayName = null;
+    avatarUrl = null;
   });
 
   it("signed in: the app top bar with the avatar, the bottom bar, and room for it", async () => {
@@ -61,6 +68,12 @@ describe("AppLayout", () => {
     // Not from md, where the bar is hidden, nor in the studio, where it is gone.
     expect(classes).toContain("md:pb-0");
     expect(classes).toContain("has-[[data-studio]]:pb-0");
+  });
+
+  it("signed in with a photo: the top bar's avatar gets it", async () => {
+    user = { id: "u1", email: "ada@example.com" };
+    avatarUrl = "https://example.com/a.webp";
+    expect(await render()).toContain('data-avatar-url="https://example.com/a.webp"');
   });
 
   it("signed in without a display name: the avatar falls back to the email", async () => {

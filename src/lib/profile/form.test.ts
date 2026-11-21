@@ -2,11 +2,11 @@ import { describe, it, expect, vi } from "vitest";
 import { changedFields, fieldErrors, saveProfile, toFormValues } from "./form";
 import { PROFILE_LIMITS } from "./profile";
 
-const EMPTY = toFormValues({ display_name: null, bio: null, avatar_url: null, is_public: false });
+const EMPTY = toFormValues({ display_name: null, bio: null, is_public: false });
 
 describe("toFormValues", () => {
   it("reads a new account's empty, private profile as blank fields and the switch off", () => {
-    expect(EMPTY).toEqual({ display_name: "", bio: "", avatar_url: "", is_public: false });
+    expect(EMPTY).toEqual({ display_name: "", bio: "", is_public: false });
   });
 });
 
@@ -32,17 +32,16 @@ describe("changedFields", () => {
 describe("fieldErrors", () => {
   it("names each field the API would refuse", () => {
     const errors = fieldErrors({
-      display_name: "Ada",
+      display_name: "Ada\u0007",
       bio: "a".repeat(PROFILE_LIMITS.bio + 1),
-      avatar_url: "http://example.com/a.png",
     });
-    expect(Object.keys(errors).sort()).toEqual(["avatar_url", "bio"]);
+    expect(Object.keys(errors).sort()).toEqual(["bio", "display_name"]);
     expect(errors.bio).toContain(`${PROFILE_LIMITS.bio}`);
-    expect(errors.avatar_url).toBe("Avatar must be an https:// URL");
+    expect(errors.display_name).toBe("Must not contain control characters");
   });
 
   it("finds nothing wrong with valid fields", () => {
-    expect(fieldErrors({ display_name: "Ada", avatar_url: "https://example.com/a.png", is_public: true })).toEqual({});
+    expect(fieldErrors({ display_name: "Ada", bio: "Breathwork teacher.", is_public: true })).toEqual({});
   });
 });
 

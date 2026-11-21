@@ -182,6 +182,11 @@ After the bottom sheets merge (app shell PR 3, same plan):
 - [ ] iPhone: on Library → Collections, a collection's "…" → Edit collection opens the
       Edit sheet with the keyboard up on Name, and the keyboard stays up (it must not drop
       a moment later as the menu sheet finishes closing).
+- [ ] iPhone, after the avatar upload PR merges: on Account, Add photo → pick a photo from the
+      library (and once from the camera). The circle shows the middle of the photo and the
+      Library header's avatar shows it too. Change photo to a different one, then Remove; each
+      time the avatar updates without a reload of your own. Safari cannot encode WebP, so the
+      stored file is a JPEG there (`docs/superpowers/specs/2026-11-21-avatar-upload-design.md`).
 
 ## 5. Production checks (after seeding)
 
@@ -276,6 +281,16 @@ update public.meditations set is_public = false, is_featured = false where id = 
 It leaves `/discover` and its page at once; the sitemap drops it within the hour. The owner
 can make it public again from the "…" menu, so email them, and delete the meditation or the
 account (`/terms`, "Be decent") if it comes back.
+
+- [ ] After the avatar upload PR merges (its migration deploys with it): Supabase → Storage
+      shows an `avatars` bucket, public, 1 MB limit, `image/webp` and `image/jpeg` allowed,
+      with four policies on `storage.objects` named `avatars: owner …` (read, upload, update,
+      delete). After the iPhone check in section 4, the bucket holds one file in your user's
+      folder (the replaced and removed ones are gone). Signed out, listing the bucket root
+      returns nothing (local Storage did; production's may be a newer version). With the
+      project URL and the anon key from Supabase → Settings → API:
+      `curl -s -X POST "$URL/storage/v1/object/list/avatars" -H "apikey: $ANON" -H "Authorization: Bearer $ANON" -H "Content-Type: application/json" -d '{"prefix":""}'`
+      prints `[]`.
 
 ## 6. Backups
 

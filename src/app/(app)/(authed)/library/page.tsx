@@ -18,7 +18,7 @@ export const metadata = {
  */
 export default async function LibraryPage() {
   // getViewer is the (app) layout's own read, shared through React's cache.
-  const [{ user, displayName }, counts, recent] = await Promise.all([
+  const [{ user, displayName, avatarUrl }, counts, recent] = await Promise.all([
     getViewer(),
     getLibraryCounts(),
     getRecentlyPlayed(),
@@ -33,6 +33,7 @@ export default async function LibraryPage() {
         {/* The phone's way to Account; from md it is in the top bar. */}
         <AccountAvatarLink
           initials={initials(displayName, user?.email ?? null)}
+          avatarUrl={avatarUrl}
           className="md:hidden"
         />
       </div>

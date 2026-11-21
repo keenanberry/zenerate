@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
+import { AVATAR_BUCKET, avatarPublicBase } from "@/lib/profile/avatar";
+import { changeAvatar, removeAvatar, type AvatarDeps } from "@/lib/profile/avatar-flow";
+import { resizeAvatar } from "@/lib/profile/resize-avatar";
 import { PROFILE_LIMITS, type Profile } from "@/lib/profile/profile";
 import {
   changedFields,
@@ -20,16 +26,40 @@ import {
 } from "@/lib/profile/form";
 
 /**
- * The owner's profile on /account: name, bio, avatar URL and the opt-in
- * public switch, saved together through PATCH /api/profile. Seeded from the
- * server; a save replaces the seed with what the API stored.
+ * The owner's profile on /account: name, bio and the opt-in public switch,
+ * saved together through PATCH /api/profile, and the photo, which saves on
+ * its own as soon as it is picked or removed (src/lib/profile/avatar-flow.ts).
+ * Seeded from the server; a save replaces the seed with what the API stored.
  */
+
+/** The browser's pieces of the photo flow: its Supabase session, canvas and PATCH. */
+function browserAvatarDeps(userId: string): AvatarDeps {
+  const bucket = createClient().storage.from(AVATAR_BUCKET);
+  return {
+    userId,
+    publicBase: avatarPublicBase(process.env.NEXT_PUBLIC_SUPABASE_URL!),
+    storage: {
+      upload: (path, body, options) => bucket.upload(path, body, options),
+      remove: (paths) => bucket.remove(paths),
+      publicUrl: (path) => bucket.getPublicUrl(path).data.publicUrl,
+    },
+    save: (body) => saveProfile(body),
+    resize: resizeAvatar,
+    random: () => crypto.randomUUID(),
+  };
+}
+
 export function ProfileForm({ profile, email }: { profile: Profile; email: string | null }) {
   const [saved, setSaved] = useState(() => toFormValues(profile));
   const [values, setValues] = useState(saved);
   const [errors, setErrors] = useState<Partial<Record<ProfileField, string>>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url);
+  const [photoWork, setPhotoWork] = useState<"change" | "remove" | null>(null);
+  // Set synchronously, so a second press during the same render is refused.
+  const photoBusy = useRef(false);
+  const fileInput = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   const body = changedFields(saved, values);
@@ -57,10 +87,31 @@ export function ProfileForm({ profile, email }: { profile: Profile; email: strin
       const next = toFormValues(result.profile);
       setSaved(next);
       setValues(next);
+      setAvatarUrl(result.profile.avatar_url);
       toast.success("Profile saved");
       // The (app) layout reads the display name for the avatar's initials.
       router.refresh();
     });
+  }
+
+  async function onPhoto(work: "change" | "remove", file?: File) {
+    if (photoBusy.current) return;
+    photoBusy.current = true;
+    setPhotoWork(work);
+    const deps = browserAvatarDeps(profile.id);
+    const result =
+      work === "change" && file ? await changeAvatar(file, avatarUrl, deps) : await removeAvatar(avatarUrl, deps);
+    photoBusy.current = false;
+    setPhotoWork(null);
+    // A failure leaves the old photo showing; the toast says why.
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    setAvatarUrl(result.profile.avatar_url);
+    toast.success(work === "change" ? "Photo updated" : "Photo removed");
+    // The (app) layout's avatar in the top bar and the Library header.
+    router.refresh();
   }
 
   const name = saved.display_name || email || "";
@@ -69,15 +120,65 @@ export function ProfileForm({ profile, email }: { profile: Profile; email: strin
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-6">
       <div className="flex items-center gap-4">
-        <Avatar className="size-16 border">
-          {saved.avatar_url && <AvatarImage src={saved.avatar_url} alt="" />}
-          <AvatarFallback className="font-serif text-xl">
-            {name.slice(0, 1).toUpperCase() || "?"}
-          </AvatarFallback>
-        </Avatar>
-        <div className="min-w-0">
-          <p className="truncate font-medium">{saved.display_name || "No name yet"}</p>
-          {email && <p className="truncate text-sm text-muted-foreground">{email}</p>}
+        <ProfilePhoto url={avatarUrl} initial={name.slice(0, 1).toUpperCase() || "?"} dim={photoWork !== null} />
+        <div className="min-w-0 space-y-2">
+          <div className="min-w-0">
+            <p className="truncate font-medium">{saved.display_name || "No name yet"}</p>
+            {email && <p className="truncate text-sm text-muted-foreground">{email}</p>}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {/* While a photo saves, both buttons stay at full strength and keep
+                focus (DESIGN.md, Starting a render): aria-busy on the one at work,
+                no pointer events, and `photoBusy` refuses a second press, which a
+                keyboard can still make. `disabled` would also drop focus to the
+                page once the picker closes. */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              aria-busy={photoWork === "change" || undefined}
+              aria-disabled={photoWork !== null || undefined}
+              className={cn(photoWork && "pointer-events-none")}
+              onClick={() => {
+                if (!photoBusy.current) fileInput.current?.click();
+              }}
+            >
+              {photoWork === "change" ? (
+                <Loader2 className="motion-safe:animate-spin" aria-hidden />
+              ) : (
+                <Camera aria-hidden />
+              )}
+              {photoWork === "change" ? "Saving photo…" : avatarUrl ? "Change photo" : "Add photo"}
+            </Button>
+            {avatarUrl && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                aria-label={photoWork === "remove" ? "Removing photo" : "Remove photo"}
+                aria-busy={photoWork === "remove" || undefined}
+                aria-disabled={photoWork !== null || undefined}
+                className={cn(photoWork && "pointer-events-none")}
+                onClick={() => void onPhoto("remove")}
+              >
+                {photoWork === "remove" && <Loader2 className="motion-safe:animate-spin" aria-hidden />}
+                {photoWork === "remove" ? "Removing…" : "Remove"}
+              </Button>
+            )}
+          </div>
+          {/* Opened by the button above: on a phone, the photo library or the camera. */}
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              // Cleared so picking the same file again still fires a change.
+              e.target.value = "";
+              if (file) void onPhoto("change", file);
+            }}
+          />
         </div>
       </div>
 
@@ -109,29 +210,11 @@ export function ProfileForm({ profile, email }: { profile: Profile; email: strin
         />
       </Field>
 
-      <Field
-        id="avatar_url"
-        label="Avatar URL"
-        error={errors.avatar_url}
-        hint="An https:// link to an image."
-      >
-        <Input
-          id="avatar_url"
-          type="url"
-          inputMode="url"
-          value={values.avatar_url}
-          onChange={(e) => set("avatar_url", e.target.value)}
-          placeholder="https://"
-          aria-invalid={!!errors.avatar_url}
-          aria-describedby={errors.avatar_url ? "avatar_url-error" : "avatar_url-hint"}
-        />
-      </Field>
-
       <div className="flex items-start justify-between gap-6 border-t pt-6">
         <div className="space-y-1.5">
           <Label htmlFor="is_public">Public profile</Label>
           <p id="is_public-hint" className="max-w-[60ch] text-sm text-muted-foreground">
-            Show your name, avatar and bio beside the meditations you make public. Off
+            Show your name, photo and bio beside the meditations you make public. Off
             until you turn it on.
           </p>
         </div>
@@ -170,6 +253,21 @@ export function ProfileForm({ profile, email }: { profile: Profile; email: strin
         </Button>
       </div>
     </form>
+  );
+}
+
+/**
+ * The profile photo, or the initial when there is none. Keyed by the photo:
+ * Radix's Avatar keeps an unmounted image's "loaded" state, so after Remove a
+ * reused Avatar would show an empty circle instead of the initial (a11700f).
+ * A new key mounts a fresh Avatar whose fallback shows until a new photo loads.
+ */
+export function ProfilePhoto({ url, initial, dim }: { url: string | null; initial: string; dim: boolean }) {
+  return (
+    <Avatar key={url ?? "none"} className={cn("size-16 border motion-safe:transition-opacity", dim && "opacity-60")}>
+      {url && <AvatarImage src={url} alt="" className="object-cover" />}
+      <AvatarFallback className="font-serif text-xl">{initial}</AvatarFallback>
+    </Avatar>
   );
 }
 

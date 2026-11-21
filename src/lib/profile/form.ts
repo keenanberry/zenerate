@@ -1,10 +1,13 @@
 import { parseProfileUpdate, type Profile, type ProfileUpdate } from "./profile";
 
-/** What the account page's profile form holds: text as typed, plus the switch. */
+/**
+ * What the account page's profile form holds: text as typed, plus the switch.
+ * The photo is not a field: it saves on its own as soon as it is picked
+ * (avatar-flow.ts), still through the same PATCH.
+ */
 export interface ProfileFormValues {
   display_name: string;
   bio: string;
-  avatar_url: string;
   is_public: boolean;
 }
 
@@ -14,12 +17,11 @@ export function toFormValues(profile: Pick<Profile, ProfileField>): ProfileFormV
   return {
     display_name: profile.display_name ?? "",
     bio: profile.bio ?? "",
-    avatar_url: profile.avatar_url ?? "",
     is_public: profile.is_public,
   };
 }
 
-const TEXT_FIELDS = ["display_name", "bio", "avatar_url"] as const;
+const TEXT_FIELDS = ["display_name", "bio"] as const;
 
 /**
  * The fields that differ from what was last saved, as a PATCH body for
@@ -41,8 +43,7 @@ export function changedFields(
 /**
  * Each field's problem, checked one field at a time by the same parser the
  * API runs, so the form names the field and refuses exactly what the server
- * would. Only the last, most specific message is kept: a bad avatar fails
- * both the URL check and the https:// one.
+ * would. Only the last, most specific message is kept.
  */
 export function fieldErrors(body: Partial<ProfileFormValues>): Partial<Record<ProfileField, string>> {
   const errors: Partial<Record<ProfileField, string>> = {};

@@ -18,10 +18,10 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   // Shared with the page through React's cache (the Library's header reads
-  // it too). A failed display-name read is logged there and falls back to the
+  // it too). A failed profile read is logged there and falls back to the
   // email's letter rather than failing every page.
-  const { user, displayName } = await getViewer();
-  const avatar = user ? { initials: initials(displayName, user.email ?? null) } : null;
+  const { user, displayName, avatarUrl } = await getViewer();
+  const avatar = user ? { initials: initials(displayName, user.email ?? null), avatarUrl } : null;
 
   return (
     // The studio (`[data-studio]`) is an app surface, not a page. There the

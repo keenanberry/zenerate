@@ -20,24 +20,26 @@ export interface Viewer {
   user: User | null;
   /** user_profiles.display_name; null when unset, signed out, or unreadable. */
   displayName: string | null;
+  /** user_profiles.avatar_url, the profile photo; null on the same terms. */
+  avatarUrl: string | null;
 }
 
 /**
- * The signed-in user and their display name, once per server render: the
- * layout's avatar and the Library header's both read it. A failed profile
- * read is logged and leaves displayName null, so the avatar falls back to the
+ * The signed-in user, their display name and photo, once per server render:
+ * the layout's avatar and the Library header's both read it. A failed profile
+ * read is logged and leaves both null, so the avatar falls back to the
  * email's letter (`initials`) rather than failing every page.
  */
 export const getViewer = cache(async (): Promise<Viewer> => {
   const user = await getSessionUser();
-  if (!user) return { user: null, displayName: null };
+  if (!user) return { user: null, displayName: null, avatarUrl: null };
 
   const supabase = await createClient();
   const { data: profile, error } = await supabase
     .from("user_profiles")
-    .select("display_name")
+    .select("display_name, avatar_url")
     .eq("id", user.id)
-    .maybeSingle<{ display_name: string | null }>();
-  if (error) console.error("Could not read the display name for the avatar:", error);
-  return { user, displayName: profile?.display_name ?? null };
+    .maybeSingle<{ display_name: string | null; avatar_url: string | null }>();
+  if (error) console.error("Could not read the profile for the avatar:", error);
+  return { user, displayName: profile?.display_name ?? null, avatarUrl: profile?.avatar_url ?? null };
 });
