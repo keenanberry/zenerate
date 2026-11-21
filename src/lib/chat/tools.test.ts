@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { ModelMessage } from "ai";
 import { z } from "zod";
+import { COVER_STYLE_RULES } from "@/lib/cover/subject";
 // makeCover's collaborators: the image model, the store and the service
 // role's reserve/release. Every other tool touches none of them.
 const cover = vi.hoisted(() => ({
@@ -493,6 +494,8 @@ describe("makeCover", () => {
       "illustration",
     );
     expect(makeCoverInput.safeParse({ subject: "A still lake.", style: "watercolour" }).success).toBe(false);
+    // The agent is told when to pick which in the shared words the prompt uses.
+    expect(makeCoverInput.shape.style.description).toBe(`How it is drawn. ${COVER_STYLE_RULES}`);
   });
 
   it("passes the style through to the image", async () => {

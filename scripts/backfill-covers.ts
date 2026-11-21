@@ -10,7 +10,8 @@
  *    tags, under the studio's own rules, and makes the image with COVER_MODEL
  *    through AI Gateway. Each request lists the subjects already in the
  *    manifest, this run's included, so covers do not converge on one scene;
- *    --style fixes the style for every cover in the run. Each image is written to the review
+ *    --style fixes the style for every cover in the run (an answer in the
+ *    other style is asked again for a new subject, never converted). Each image is written to the review
  *    folder (default .superpowers/cover-backfill/) as `<id>.<ext>`, beside a
  *    manifest.json and an index.html contact sheet. It reads the database and
  *    writes nothing to it or to Storage.
@@ -68,8 +69,7 @@ import { CoverChangedError, storeCover } from "../src/lib/cover/store";
 import {
   coverChoiceSchema,
   COVER_SUBJECT_SYSTEM,
-  parseCoverChoice,
-  subjectRequest,
+  chooseCover,
 } from "../src/lib/cover/subject";
 import {
   commitAction,
@@ -203,15 +203,22 @@ async function generate(supabase: SupabaseClient, options: Options, target: stri
   for (const [i, row] of run.entries()) {
     const label = `[${i + 1}/${run.length}] ${row.title} (${row.id})`;
     try {
-      const { output } = await generateText({
-        model: anthropic(model),
-        system: COVER_SUBJECT_SYSTEM,
-        prompt: subjectRequest(row, { used: usedSubjects(manifest), style: options.style ?? undefined }),
-        output: Output.object({ schema: coverChoiceSchema }),
-        maxOutputTokens: 2000,
-        providerOptions: { anthropic: { thinking: { type: "adaptive" }, effort: "low" } },
+      const ask = async (request: string) => {
+        const { output } = await generateText({
+          model: anthropic(model),
+          system: COVER_SUBJECT_SYSTEM,
+          prompt: request,
+          output: Output.object({ schema: coverChoiceSchema }),
+          maxOutputTokens: 2000,
+          providerOptions: { anthropic: { thinking: { type: "adaptive" }, effort: "low" } },
+        });
+        return output;
+      };
+      // With --style, an answer in the other style is asked again, never converted.
+      const { subject, style } = await chooseCover(ask, row, {
+        used: usedSubjects(manifest),
+        style: options.style ?? undefined,
       });
-      const { subject, style } = parseCoverChoice(output, options.style ?? undefined);
 
       const wait = waitBeforeNext(starts, Date.now());
       if (wait > 0) {

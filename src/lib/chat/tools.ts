@@ -20,6 +20,7 @@ import { generateCover } from "@/lib/cover/generate";
 import { COVER_CAP } from "@/lib/cover/model";
 import { COVER_STYLE_NAMES, MAX_SUBJECT_CHARS } from "@/lib/cover/prompt";
 import { storeCover } from "@/lib/cover/store";
+import { COVER_STYLE_RULES } from "@/lib/cover/subject";
 import { createClient as createServiceClient } from "@/lib/supabase/service-role";
 import { MAKE_AUDIO_REPLY } from "./replies";
 
@@ -123,9 +124,7 @@ export const makeCoverInput = z.object({
   style: z
     .enum(COVER_STYLE_NAMES)
     .default("photograph")
-    .describe(
-      'How it is drawn: "illustration" (a soft storybook picture) for a children\'s meditation or when drawn, cartoon or storybook art is asked for; otherwise "photograph".',
-    ),
+    .describe(`How it is drawn. ${COVER_STYLE_RULES}`),
 });
 
 const COVER_FAILED =
