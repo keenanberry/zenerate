@@ -126,6 +126,14 @@ public = true
 file_size_limit = "1MiB"
 allowed_mime_types = ["image/webp", "image/jpeg"]
 
+# Generated meditation covers, written only by the service role. Production
+# gets this bucket from migration 20261121010000_meditation_covers.sql; keep
+# the two in step.
+[storage.buckets.meditation-covers]
+public = true
+file_size_limit = "2MiB"
+allowed_mime_types = ["image/webp", "image/jpeg", "image/png"]
+
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]
 enabled = true

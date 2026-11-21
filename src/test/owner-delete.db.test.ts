@@ -16,6 +16,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
 import { deleteOwnMeditation } from "@/lib/meditation/delete";
 import { deleteOwnChat } from "@/lib/chat/delete";
+import { COVER_BUCKET } from "@/lib/cover/url";
 
 const enabled = process.env.SUPABASE_DB_TESTS === "1";
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -23,6 +24,9 @@ const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 const options = { auth: { autoRefreshToken: false, persistSession: false } };
+
+// The smallest valid WebP (a 1×1 lossless image), standing in for a cover.
+const COVER = Buffer.from("UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==", "base64");
 
 describe.skipIf(!enabled)("owner deletion against local Supabase", () => {
   let service: SupabaseClient;
@@ -57,6 +61,12 @@ describe.skipIf(!enabled)("owner deletion against local Supabase", () => {
     return count;
   }
 
+  async function covers() {
+    const { data, error } = await service.storage.from(COVER_BUCKET).list(meditationId);
+    if (error) throw error;
+    return data.map((o) => o.name).sort();
+  }
+
   async function onDiscover(client: SupabaseClient) {
     const { data, error } = await client.rpc("discover_meditations", {});
     if (error) throw error;
@@ -77,9 +87,16 @@ describe.skipIf(!enabled)("owner deletion against local Supabase", () => {
       .single();
     if (error) throw error;
     meditationId = med.id;
+    // Two cover objects: the current one, and one an earlier makeCover left.
+    for (const name of ["old.webp", "now.webp"]) {
+      const { error: coverError } = await service.storage
+        .from(COVER_BUCKET)
+        .upload(`${meditationId}/${name}`, new Blob([COVER], { type: "image/webp" }), { contentType: "image/webp" });
+      if (coverError) throw coverError;
+    }
     await service
       .from("meditations")
-      .update({ status: "completed", audio_path: `${ownerId}/${meditationId}/r.mp3` })
+      .update({ status: "completed", audio_path: `${ownerId}/${meditationId}/r.mp3`, cover_path: `${meditationId}/now.webp` })
       .eq("id", meditationId);
     await owner.from("meditations").update({ is_public: true }).eq("id", meditationId);
 
@@ -131,6 +148,7 @@ describe.skipIf(!enabled)("owner deletion against local Supabase", () => {
       const { data } = await other.from("meditations").delete().eq("id", meditationId).select("id");
       expect(data ?? []).toHaveLength(0);
       expect(await count("meditations", "id", meditationId)).toBe(1);
+      expect(await covers()).toEqual(["now.webp", "old.webp"]);
     });
 
     it("cannot delete the meditation signed out", async () => {
@@ -162,6 +180,10 @@ describe.skipIf(!enabled)("owner deletion against local Supabase", () => {
       for (const table of ["meditation_versions", "meditation_drafts", "meditation_plays", "favorites", "collection_items", "meditation_ratings", "meditation_bookmarks"]) {
         expect(await count(table, "meditation_id", meditationId), table).toBe(0);
       }
+    });
+
+    it("removes every cover object the meditation had", async () => {
+      expect(await covers()).toEqual([]);
     });
 
     it("keeps the chat it was made in, unlinked, so it can make it again", async () => {
