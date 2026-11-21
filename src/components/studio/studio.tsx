@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from "ai";
-import { FileText, Loader2, X } from "lucide-react";
+import Link from "next/link";
+import { ChevronLeft, FileText, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import type { StudioUIMessage } from "@/lib/chat/tools";
@@ -159,7 +160,25 @@ export function Studio({ chatId, initialMessages, initialMeditationId, title }: 
           thinking={thinking}
           error={error ? describeChatError(error) : null}
           unanswered={unanswered}
-          header={<ChatHeader chatId={chatId} title={headerTitle} live={live} />}
+          header={
+            // On a phone the bottom bar is hidden here and the installed app
+            // has no browser back button, so the header carries the way out.
+            <div className="flex items-start gap-1">
+              <Button
+                asChild
+                variant="ghost"
+                size="icon"
+                className="-ml-2 h-10 w-10 shrink-0 text-muted-foreground md:hidden"
+              >
+                <Link href="/create" aria-label="Back to Create">
+                  <ChevronLeft className="size-5" aria-hidden />
+                </Link>
+              </Button>
+              <div className="min-w-0 flex-1">
+                <ChatHeader chatId={chatId} title={headerTitle} live={live} />
+              </div>
+            </div>
+          }
           onSend={(text) => void sendMessage({ text })}
           onRetry={() => void regenerate()}
           onStop={() => void stop()}

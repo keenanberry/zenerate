@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { NewChatForm } from "@/components/studio/new-chat-form";
+import { DraftChatList } from "@/components/studio/draft-chat-list";
 import { listDraftChats } from "@/lib/chat/actions";
 
 export const metadata = {
@@ -26,34 +26,7 @@ export default async function CreatePage() {
         <NewChatForm />
       </div>
 
-      {drafts.length > 0 && (
-        <section className="space-y-4">
-          <h2 className="text-xs font-medium tracking-[0.06em] text-muted-foreground uppercase">
-            Recent
-          </h2>
-          <ul className="divide-y border-y">
-            {drafts.map((chat) => (
-              <li key={chat.id}>
-                <Link
-                  href={`/create/${chat.id}`}
-                  className="flex items-baseline justify-between gap-4 py-3.5 hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                >
-                  <span className="truncate font-serif text-base">{chat.title}</span>
-                  <time
-                    dateTime={chat.updated_at}
-                    className="shrink-0 text-sm text-muted-foreground tabular-nums"
-                  >
-                    {new Date(chat.updated_at).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </time>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {drafts.length > 0 && <DraftChatList chats={drafts} />}
     </div>
   );
 }
