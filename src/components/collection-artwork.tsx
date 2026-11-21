@@ -28,6 +28,7 @@ export function CollectionArtwork({
         tags={first?.tags ?? []}
         title={first?.title ?? ""}
         size={size}
+        coverUrl={first?.cover_url}
         className={cn("h-auto w-full", className)}
       />
     );
@@ -41,6 +42,7 @@ export function CollectionArtwork({
       tags={cover.tags ?? []}
       title={cover.title}
       size={cellSize}
+      coverUrl={cover.cover_url}
       crop
       className={cn("size-full rounded-none", extra)}
     />

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/lib/profile/viewer";
+import { withCoverUrl } from "@/lib/cover/url";
 import type { Meditation } from "./types";
 
 /**
@@ -29,12 +30,12 @@ export function latestDistinct(
 }
 
 /** What a Recently played tile draws: a cover, the title and one meta line. */
-export type RecentlyPlayed = Pick<Meditation, "id" | "title" | "tags" | "settings" | "status"> & {
+export type RecentlyPlayed = Pick<Meditation, "id" | "title" | "tags" | "settings" | "status" | "cover_url"> & {
   /** "yours" when the caller made it; anything else came from Discover. */
   source: "yours" | "discover";
 };
 
-const RECENT_COLUMNS = "id, user_id, title, tags, settings, status";
+const RECENT_COLUMNS = "id, user_id, title, tags, settings, status, cover_path";
 
 /**
  * The caller's most recently played meditations, newest first, each once.
@@ -76,10 +77,13 @@ export async function getRecentlyPlayed(limit = 8): Promise<RecentlyPlayed[]> {
   }
 
   const order = new Map(ids.map((id, i) => [id, i]));
-  return ((data ?? []) as (Omit<RecentlyPlayed, "source"> & { user_id: string })[])
+  return ((data ?? []) as (Omit<RecentlyPlayed, "source" | "cover_url"> & { user_id: string; cover_path: string | null })[])
     .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0))
     .slice(0, limit)
-    .map(({ user_id, ...m }) => ({ ...m, source: user_id === user.id ? "yours" : "discover" }));
+    .map(({ user_id, cover_path, ...m }) => ({
+      ...withCoverUrl({ ...m, cover_path }),
+      source: user_id === user.id ? "yours" : "discover",
+    }));
 }
 
 /** A place's count, or null when it could not be read (the row then shows none). */

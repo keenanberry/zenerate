@@ -9,6 +9,7 @@ import {
   ROUND_MOTIFS,
   TAG_HUES,
 } from "./meditation-cover";
+import { CoverImageView } from "./cover-image";
 
 const ID = "6f1c2a9e-3b7d-4e21-9a0c-5d8f7e6b1a24";
 
@@ -142,5 +143,82 @@ describe("MeditationCover", () => {
         }
       }
     }
+  });
+});
+
+describe("MeditationCover with a generated cover", () => {
+  const URL = "https://abc.supabase.co/storage/v1/object/public/meditation-covers/m1/a.webp";
+
+  it("leaves a cover without coverUrl exactly as it was", () => {
+    const designed = render(ID, ["sleep"], 160);
+    for (const coverUrl of [undefined, null, ""]) {
+      expect(
+        renderToStaticMarkup(
+          <MeditationCover id={ID} tags={["sleep"]} title="Evening wind-down" size={160} coverUrl={coverUrl} />,
+        ),
+      ).toBe(designed);
+    }
+  });
+
+  it("draws the photo, not the designed cover, at the same size and radius", () => {
+    const html = renderToStaticMarkup(
+      <MeditationCover id={ID} tags={["sleep"]} title="Evening wind-down" size={56} coverUrl={URL} />,
+    );
+    expect(html).toMatch(/^<img /);
+    expect(html).toContain(encodeURIComponent(URL));
+    expect(html).not.toContain("data-motif");
+    expect(html).toContain('width="56"');
+    expect(html).toContain('height="56"');
+    expect(html).toContain("rounded-md");
+    expect(html).toContain("object-cover");
+    // A 56px thumbnail is served at 1x and 2x, never the 1024px original.
+    expect(html).not.toMatch(/[?&]w=(1024|1080|1200|1920|2048|3840)\b/);
+  });
+
+  it("is decorative by default and named by the title where it stands alone", () => {
+    const decorative = renderToStaticMarkup(
+      <MeditationCover id={ID} tags={[]} title="Evening wind-down" size={160} coverUrl={URL} />,
+    );
+    expect(decorative).toContain('alt=""');
+    expect(decorative).toContain("rounded-xl");
+
+    const named = renderToStaticMarkup(
+      <MeditationCover id={ID} tags={[]} title="Evening wind-down" size={160} coverUrl={URL} decorative={false} />,
+    );
+    expect(named).toContain('alt="Evening wind-down"');
+  });
+
+  it("loads lazily unless it is the page's preloaded LCP image", () => {
+    const lazy = renderToStaticMarkup(
+      <MeditationCover id={ID} tags={[]} title="t" size={320} coverUrl={URL} />,
+    );
+    expect(lazy).toContain('loading="lazy"');
+    const preloaded = renderToStaticMarkup(
+      <MeditationCover id={ID} tags={[]} title="t" size={320} coverUrl={URL} preload />,
+    );
+    expect(preloaded).not.toContain('loading="lazy"');
+    expect(preloaded).toContain('rel="preload"');
+  });
+
+  it("keeps the caller's classes, so a cropped cover still fills its box", () => {
+    const html = renderToStaticMarkup(
+      <MeditationCover id={ID} tags={[]} title="t" size={600} crop coverUrl={URL} className="size-full rounded-none" />,
+    );
+    expect(html).toContain("size-full");
+    expect(html).toContain("rounded-none");
+    expect(html).toContain("object-cover");
+  });
+
+  it("falls back to the designed cover once the photo fails", () => {
+    const designed = <svg data-motif="moon" />;
+    const failed = renderToStaticMarkup(
+      <CoverImageView src={URL} size={56} alt="" className="" failed onError={() => {}} fallback={designed} />,
+    );
+    expect(failed).toBe('<svg data-motif="moon"></svg>');
+
+    const loaded = renderToStaticMarkup(
+      <CoverImageView src={URL} size={56} alt="" className="" failed={false} onError={() => {}} fallback={designed} />,
+    );
+    expect(loaded).toMatch(/^<img /);
   });
 });

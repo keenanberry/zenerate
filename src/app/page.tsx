@@ -193,13 +193,21 @@ function HearOneFirst({ row }: { row: LandingRow }) {
                 href={`/meditation/${m.id}`}
                 className="group flex items-center gap-4 rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:flex-col sm:items-stretch sm:gap-3"
               >
-                <MeditationCover id={m.id} tags={m.tags ?? []} title={m.title} size={72} className="sm:hidden" />
+                <MeditationCover
+                  id={m.id}
+                  tags={m.tags ?? []}
+                  title={m.title}
+                  size={72}
+                  coverUrl={m.cover_url}
+                  className="sm:hidden"
+                />
                 {/* Drawn at the column's widest and scaled to fit it. */}
                 <MeditationCover
                   id={m.id}
                   tags={m.tags ?? []}
                   title={m.title}
                   size={240}
+                  coverUrl={m.cover_url}
                   className="hidden h-auto w-full sm:block"
                 />
                 <div className="min-w-0 space-y-1">

@@ -17,6 +17,8 @@ function bookmark(id: string, title: string, extra: Partial<Bookmark["meditation
       settings: { duration: 10 },
       status: "completed",
       created_at: "2026-11-01T12:00:00Z",
+      cover_path: null,
+      cover_url: null,
       author: null,
       rating: null,
       ...extra,
@@ -63,6 +65,17 @@ describe("AccountBookmarks", () => {
     expect(html).not.toContain("(2)");
     expect(html).not.toContain("Nothing saved");
     expect(html).not.toContain("Load more");
+  });
+
+  it("draws a bookmark's generated cover, and the designed one without", () => {
+    const cover = "https://abc.supabase.co/storage/v1/object/public/meditation-covers/a/x.webp";
+    const html = render([
+      bookmark("a", "With a cover", { cover_path: "a/x.webp", cover_url: cover }),
+      bookmark("b", "Without"),
+    ]);
+    expect(html).toContain(encodeURIComponent(cover));
+    expect(html.match(/<img /g)).toHaveLength(1);
+    expect(html.match(/data-motif=/g)).toHaveLength(1);
   });
 
   it("offers Load more while there is a next page", () => {

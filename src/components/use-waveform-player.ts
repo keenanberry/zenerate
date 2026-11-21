@@ -155,6 +155,7 @@ export function useWaveformPlayer({
   refreshUrl,
   title,
   meditationId,
+  coverUrl,
   trackPlays,
   shape,
   hover,
@@ -175,6 +176,8 @@ export function useWaveformPlayer({
   /** Shown on the lock screen and in the OS media controls. */
   title: string;
   meditationId: string;
+  /** The generated cover, for the lock screen; without one it shows the app's icon. */
+  coverUrl?: string | null;
   /**
    * Count plays past 30 seconds toward Popular. Only for a signed-in
    * listener: signed out, nothing is recorded or sent.
@@ -208,7 +211,7 @@ export function useWaveformPlayer({
   // resumes once a fresh one loads.
   const playRequestedAtRef = useRef(-Infinity);
 
-  useMediaSession(media, title);
+  useMediaSession(media, title, coverUrl);
 
   // True once a play has passed the listening threshold on this page, so a
   // seek to the end does not count as having listened (the rating prompt).

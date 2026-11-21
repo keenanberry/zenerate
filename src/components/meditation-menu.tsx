@@ -46,6 +46,8 @@ export type MeditationMenuProps = {
   isPublic: boolean;
   /** The site's origin, for the canonical link Share hands out (task 59). */
   siteUrl: string;
+  /** The generated cover for the phone sheet's header; null draws the designed one. */
+  coverUrl?: string | null;
 };
 
 /**
@@ -62,6 +64,7 @@ export function MeditationMenu({
   reportHref,
   isPublic,
   siteUrl,
+  coverUrl,
   onEdit,
   visibility,
   tags = [],
@@ -112,7 +115,7 @@ export function MeditationMenu({
   const tag = tags.find(isTag);
   const header = (
     <BottomSheetHeader
-      art={<MeditationCover id={meditationId} tags={tags} title={title} size={48} />}
+      art={<MeditationCover id={meditationId} tags={tags} title={title} size={48} coverUrl={coverUrl} />}
       title={title}
       meta={[tag && TAG_LABELS[tag], meta].filter(Boolean).join(" · ")}
     />

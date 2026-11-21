@@ -40,8 +40,17 @@ Profile photos (2026-11-21) are a second bucket with the same trap: `avatars/<us
 one level, normally a single file. Remove everything listed under the user's folder there
 too, before deleting the user.
 
+Generated meditation covers (2026-11-21, cover art PR 1) are a third bucket, and **not
+keyed by user**: `meditation-covers/<meditation_id>/<random>.<ext>`, so that a public
+cover URL never groups an author's meditations. Listing the user's prefix finds none of
+them. Read the user's meditation ids *before* the cascade deletes the rows, then call
+`removeMeditationCovers(id)` (`src/lib/cover/remove.ts`) for each. Covers of private
+meditations sit in this public bucket too, reachable by their random URL, so leaving them
+behind breaks the promise as surely as leftover audio.
+
 **Until this ships, a manual deletion must do all three:** remove everything under the user's
-prefix (plus any root-level `<meditation_id>.mp3` of theirs), *then* delete the user,
+prefix (plus any root-level `<meditation_id>.mp3` of theirs, and every
+`meditation-covers/<meditation_id>/` folder of their meditations), *then* delete the user,
 *then* record the deletion so a backup restore deletes them again
 (`docs/runbooks/backup-restore.md`, "Deletion records"). A self-serve deletion needs a
 record of its own that a restore cannot roll back, so not a row in the same database.

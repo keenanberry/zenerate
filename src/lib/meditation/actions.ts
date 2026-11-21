@@ -15,6 +15,7 @@ import {
   type DiscoverFilters,
 } from "./discover";
 import { removeAudio } from "@/lib/audio/storage";
+import { withCoverUrl } from "@/lib/cover/url";
 import { deleteOwnMeditation } from "./delete";
 import { getBookmarkedIds } from "./bookmarks";
 import { canBookmark } from "./bookmark-state";
@@ -35,10 +36,11 @@ import type {
  * meditation needs. Signed out, `select("*")` is refused outright, so every
  * read a signed-out visitor can reach names these. user_id, prompt,
  * audio_path, audio_url and generation_meta stay out; hydrateAudioUrls signs
- * the audio of a public row without the path ever joining it.
+ * the audio of a public row without the path ever joining it. cover_path is
+ * public (20261121010000): a generated cover is shown by its public URL.
  */
 const PUBLIC_COLUMNS =
-  "id, title, description, tags, script, status, is_public, is_featured, settings, created_at, updated_at";
+  "id, title, description, tags, script, status, is_public, is_featured, settings, created_at, updated_at, cover_path";
 
 /**
  * A signed-in read's columns: every column but three. generation_meta
@@ -48,7 +50,16 @@ const PUBLIC_COLUMNS =
  * a signed URL anyway. Every byte read from Supabase counts toward its egress.
  */
 const ROW_COLUMNS =
-  "id, user_id, title, prompt, description, tags, script, status, is_public, is_featured, settings, audio_path, created_at, updated_at";
+  "id, user_id, title, prompt, description, tags, script, status, is_public, is_featured, settings, audio_path, cover_path, created_at, updated_at";
+
+/**
+ * Every read that returns meditations to a page: the audio signed (see
+ * hydrateAudioUrls for the invariant the rows must meet) and the generated
+ * cover's public URL added.
+ */
+async function hydrate<T extends MeditationWithMeta | Meditation>(rows: T[]) {
+  return (await hydrateAudioUrls(rows)).map(withCoverUrl);
+}
 
 export async function createMeditation(data: {
   title: string;
@@ -235,7 +246,7 @@ export async function getMeditation(id: string) {
   // The page's player draws the waveform from these peaks and streams the
   // audio on play (task 60). Signed out, generation_meta is not readable and
   // the peaks are looked up with the signed URL.
-  return hydrateAudioUrl(meditation, { waveform: true });
+  return withCoverUrl(await hydrateAudioUrl(meditation, { waveform: true }));
 }
 
 export async function getUserMeditations() {
@@ -265,7 +276,7 @@ export async function getUserMeditations() {
     m.is_favorited = favSet.has(m.id);
   });
 
-  return hydrateAudioUrls(meditations);
+  return hydrate(meditations);
 }
 
 type ServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -332,7 +343,7 @@ export async function getPublicMeditations(filters: DiscoverFilters = {}) {
 
   const meditations = (data ?? []) as MeditationWithMeta[];
   await markFavorites(supabase, user?.id, meditations);
-  return hydrateAudioUrls(meditations);
+  return hydrate(meditations);
 }
 
 /** The house picks, newest first. The fallback for both Discover rows. */
@@ -391,7 +402,7 @@ export async function getPopularMeditations() {
 
   const row = fillRow(popular, featured);
   await markFavorites(supabase, user?.id, row);
-  return hydrateAudioUrls(row);
+  return hydrate(row);
 }
 
 /**
@@ -438,7 +449,7 @@ export async function getPickedForYou() {
   const featured = await getFeaturedMeditations(supabase, user?.id);
   const row = fillRow(picked, featured);
   await markFavorites(supabase, user?.id, row);
-  return hydrateAudioUrls(row);
+  return hydrate(row);
 }
 
 /**
@@ -631,7 +642,7 @@ export async function getFavoriteMeditations() {
   const idOrder = new Map(ids.map((id, i) => [id, i]));
   meditations.sort((a, b) => (idOrder.get(a.id) ?? 0) - (idOrder.get(b.id) ?? 0));
 
-  return hydrateAudioUrls(meditations);
+  return hydrate(meditations);
 }
 
 // ── Collections ──
@@ -694,7 +705,7 @@ export async function getUserCollections() {
   // the first four covers its artwork is built from (task 54).
   const { data: collections, error } = await supabase
     .from("collections")
-    .select("*, collection_items(position, meditations(id, title, tags))")
+    .select("*, collection_items(position, meditations(id, title, tags, cover_path))")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .order("position", { referencedTable: "collection_items" });
@@ -708,7 +719,7 @@ export async function getUserCollections() {
     // RLS hides a meditation its owner has since made private, leaving its
     // item with no meditation. Count only the ones the caller can see, as the
     // collection page does.
-    const visible = items.flatMap((item) => item.meditations ?? []);
+    const visible = items.flatMap((item) => item.meditations ?? []).map(withCoverUrl);
     return {
       ...col,
       item_count: visible.length,
@@ -742,7 +753,7 @@ export async function getCollectionWithItems(id: string) {
 
   return {
     collection: collection as Collection,
-    meditations: await hydrateAudioUrls(meditations),
+    meditations: await hydrate(meditations),
   };
 }
 

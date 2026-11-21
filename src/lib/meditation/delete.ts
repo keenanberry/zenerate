@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { removeMeditationAudio } from "@/lib/audio/storage";
+import { removeMeditationCovers } from "@/lib/cover/remove";
 
 /**
  * Deleting a meditation, shared by DELETE /api/meditations/[id] and the
@@ -12,7 +13,7 @@ import { removeMeditationAudio } from "@/lib/audio/storage";
  * stays, with meditation_id null, so the conversation can make it again; the
  * audio ledger stays too, with meditation_id null, because the monthly caps
  * count it (20261120010000). Storage does not cascade at all, so the audio
- * files are removed here once the row is gone.
+ * files and the generated covers are removed here once the row is gone.
  */
 
 export type DeleteOutcome = { ok: true } | { ok: false; reason: "not_found" | "busy" };
@@ -93,6 +94,14 @@ export async function deleteOwnMeditation(
     // The meditation is deleted either way. A file left behind sits in the
     // owner's folder, where account deletion still finds it.
     console.error(`Removing audio for deleted meditation ${id} failed:`, err);
+  }
+  // Covers sit in the meditation's own folder of a public bucket. One left
+  // behind is unreachable without its random URL, but it should not outlive
+  // the meditation, so a failure is logged for the operator the same way.
+  try {
+    await removeMeditationCovers(id);
+  } catch (err) {
+    console.error(`Removing covers for deleted meditation ${id} failed:`, err);
   }
   return { ok: true };
 }

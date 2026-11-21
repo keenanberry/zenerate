@@ -168,6 +168,7 @@ function toTrack(m: BookmarkedMeditation): TrackRowMeditation {
     audio_url: null,
     is_public: true,
     rating: m.rating ?? undefined,
+    cover_url: m.cover_url,
   };
 }
 

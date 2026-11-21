@@ -1,11 +1,16 @@
 import { BRAND_MARK_GEOMETRY } from "@/components/brand-mark";
+import { CoverImage } from "@/components/cover-image";
 import { isTag, type Tag } from "@/lib/meditation/tags";
 import { cn } from "@/lib/utils";
 
 /**
- * A designed cover for a meditation, until generated artwork ships
- * (tasks/post-ship/generated-cover-art.md). DESIGN.md's Covers section is the
- * rule: flat tone fields in theme tokens, no gradient, no glow. Since task 49
+ * A meditation's cover. With a generated cover (`coverUrl`, from the row's
+ * cover_path; docs/superpowers/specs/2026-11-21-generated-cover-art-design.md)
+ * it draws that photo, and falls back to the designed cover if the photo
+ * cannot load. Without one it draws the designed cover. DESIGN.md's Covers
+ * section is the rule.
+ *
+ * The designed cover: flat tone fields in theme tokens, no gradient, no glow. Since task 49
  * the lead hue fills the frame as a field and the motif draws boldly on it,
  * as album art does, rather than as faint lines on the page's dark.
  *
@@ -226,6 +231,15 @@ type MeditationCoverProps = {
    * collection's artwork). Off, the cover keeps its square.
    */
   crop?: boolean;
+  /**
+   * The generated cover's public URL (`cover_url` on the row). Null, empty or
+   * absent draws the designed cover, as does a photo that fails to load.
+   */
+  coverUrl?: string | null;
+  /** Preload the photo: only for the one above-the-fold cover that is the page's LCP. */
+  preload?: boolean;
+  /** Told when a photo fails and the designed cover takes its place. */
+  onImageError?: () => void;
 };
 
 export function MeditationCover({
@@ -236,7 +250,53 @@ export function MeditationCover({
   className,
   decorative = true,
   crop = false,
+  coverUrl,
+  preload,
+  onImageError,
 }: MeditationCoverProps) {
+  const radius = size < 96 ? "rounded-md" : "rounded-xl";
+  const designed = (
+    <DesignedCover
+      id={id}
+      tags={tags}
+      title={title}
+      size={size}
+      className={className}
+      decorative={decorative}
+      crop={crop}
+      radius={radius}
+    />
+  );
+  if (!coverUrl) return designed;
+  return (
+    <CoverImage
+      src={coverUrl}
+      size={size}
+      alt={decorative ? "" : title}
+      // The same square and radius as the designed cover, and the caller's
+      // classes after them (a cropped cover sizes itself to its box);
+      // object-cover crops the photo to whatever box that is.
+      className={cn("shrink-0 overflow-hidden bg-muted object-cover", radius, className)}
+      fallback={designed}
+      preload={preload}
+      onFailed={onImageError}
+    />
+  );
+}
+
+function DesignedCover({
+  id,
+  tags,
+  title,
+  size,
+  className,
+  decorative,
+  crop,
+  radius,
+}: Required<Omit<MeditationCoverProps, "coverUrl" | "className" | "preload" | "onImageError">> & {
+  className?: string;
+  radius: string;
+}) {
   const { motif, hues, field, mirrored, seed } = coverDesign(id, tags);
   const [lead, second] = hues;
   // Strokes hold a steady, bold weight on screen: 2px in a row, 3px in a
@@ -258,11 +318,7 @@ export function MeditationCover({
       aria-hidden={decorative ? true : undefined}
       aria-label={decorative ? undefined : title}
       data-motif={motif}
-      className={cn(
-        "shrink-0 overflow-hidden",
-        size < 96 ? "rounded-md" : "rounded-xl",
-        className,
-      )}
+      className={cn("shrink-0 overflow-hidden", radius, className)}
     >
       <rect className={field} fill="currentColor" width={100} height={100} />
       <g transform={mirrored ? "matrix(-1 0 0 1 100 0)" : undefined}>

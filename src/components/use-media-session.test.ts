@@ -62,6 +62,16 @@ describe("mediaMetadataInit", () => {
       "/icon-512.png",
     ]);
   });
+
+  it("shows the meditation's generated cover instead, when it has one", () => {
+    const cover = "https://abc.supabase.co/storage/v1/object/public/meditation-covers/m1/a.webp";
+    expect(mediaMetadataInit("Body Scan", cover)).toEqual({
+      title: "Body Scan",
+      artist: "Zenerate",
+      artwork: [{ src: cover, sizes: "1024x1024" }],
+    });
+    expect(mediaMetadataInit("Body Scan", null).artwork).toEqual(MEDIA_ARTWORK);
+  });
 });
 
 /** Just enough of HTMLMediaElement for the session to drive. */

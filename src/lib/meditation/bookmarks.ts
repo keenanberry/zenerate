@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { withCoverUrl } from "@/lib/cover/url";
 import { UUID } from "@/lib/meditation/delete";
 import { getRatingStats, type RatingStats } from "@/lib/meditation/ratings";
 import { getMeditationAuthors, type MeditationAuthor } from "@/lib/profile/authors";
@@ -124,6 +125,10 @@ export interface BookmarkedMeditation {
   settings: { duration?: number } | null;
   status: "completed";
   created_at: string;
+  /** The generated cover's object path, or null for the designed cover. */
+  cover_path: string | null;
+  /** Its public URL, from cover_path (src/lib/cover/url.ts). */
+  cover_url: string | null;
   /** Null unless the author has made their profile public. */
   author: MeditationAuthor | null;
   /** Null until someone has rated it. */
@@ -145,7 +150,7 @@ export interface BookmarkPage {
 export const DEFAULT_BOOKMARK_PAGE = 50;
 export const MAX_BOOKMARK_PAGE = 100;
 
-const MEDITATION_COLUMNS = "id, title, description, tags, settings, status, created_at";
+const MEDITATION_COLUMNS = "id, title, description, tags, settings, status, created_at, cover_path";
 
 /** A Postgres timestamptz as PostgREST writes it, kept as text so no microseconds are lost. */
 const TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}:\d{2})$/;
@@ -224,7 +229,7 @@ export async function listBookmarks(
   const rows = (data ?? []) as unknown as {
     created_at: string;
     meditation_id: string;
-    meditation: Omit<BookmarkedMeditation, "author" | "rating">;
+    meditation: Omit<BookmarkedMeditation, "author" | "rating" | "cover_url">;
   }[];
   const page = rows.slice(0, limit);
   const last = page.at(-1);
@@ -249,7 +254,7 @@ export async function listBookmarks(
     bookmarks: page.map((r) => ({
       bookmarked_at: r.created_at,
       meditation: {
-        ...r.meditation,
+        ...withCoverUrl(r.meditation),
         author: authors.get(r.meditation_id) ?? null,
         rating: stats.get(r.meditation_id) ?? null,
       },
