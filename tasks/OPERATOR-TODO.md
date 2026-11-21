@@ -269,6 +269,26 @@ audio on play, instead of downloading the whole file on page load
       `snap_dJAgDRqRJ9ugYNwe0QWMl7uAUIy4` and `snap_wDa4k6VWCQ7LakGT4mLq9kTAiWp8`, were then
       deleted (`audio-pipeline` skill, step 9).
 
+### Generated covers: storage and display (cover art PR 1)
+
+Merging PR 1 applies `20261121010000_meditation_covers.sql` to production: the public
+`meditation-covers` bucket, `meditations.cover_path` and `cover_generations`, and
+`discover_meditations` / `profile_meditations` recreated with `cover_path`. Nothing
+generates yet, so nothing changes visibly
+(`docs/superpowers/plans/2026-11-21-generated-cover-art.md`).
+
+- [ ] Right after the merge, signed out: `/discover` and the landing page still load with
+      their shelves (the two functions were dropped and recreated). Then in the site's
+      DevTools console with the publishable key against
+      `https://<project>.supabase.co/rest/v1/`: `GET /meditations?select=id,cover_path&limit=1`
+      returns 200, and `GET /meditations?select=cover_generations&limit=1` returns 42501.
+- [ ] Supabase → Storage: `meditation-covers` exists, public, 2 MB limit, WebP, JPEG and
+      PNG, with no policies on it (only the service role writes covers).
+- [ ] Once covers exist (after PR 3's backfill): Vercel → Usage → Image Optimization.
+      Covers are the app's first `next/image` remote images, served at 1x and 2x of each
+      size they are drawn at and cached for a month; check the plan's included
+      transformations still cover it.
+
 ### When a report arrives (53)
 
 A Report link mails `privacy@` with the meditation's title and URL. If it breaks the terms,
