@@ -31,6 +31,14 @@ describe("BottomBar", () => {
     ]);
   });
 
+  it("is as tall as the padding the shell leaves for it, border and inset included", () => {
+    pathname = "/library";
+    // The same value as the shell's pb-[…] in src/app/(app)/layout.tsx.
+    expect(renderToStaticMarkup(<BottomBar />)).toContain(
+      "h-[calc(4rem+env(safe-area-inset-bottom,0px))]",
+    );
+  });
+
   it("marks no tab on Account", () => {
     pathname = "/account";
     expect(links(renderToStaticMarkup(<BottomBar />)).some((l) => l.current)).toBe(false);

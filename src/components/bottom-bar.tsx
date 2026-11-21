@@ -30,9 +30,11 @@ export function BottomBar() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 border-t bg-sidebar/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur md:hidden"
+      // Border-box: the Hairline and the inset are inside this height,
+      // which is exactly the padding the shell leaves for it.
+      className="fixed inset-x-0 bottom-0 z-40 h-[calc(4rem+env(safe-area-inset-bottom,0px))] border-t bg-sidebar/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur md:hidden"
     >
-      <ul className="mx-auto flex h-16 max-w-md items-stretch px-2">
+      <ul className="mx-auto flex h-full max-w-md items-stretch px-2">
         {APP_TABS.map((tab) => {
           const Icon = ICONS[tab.id];
           const current = tab.id === active;
@@ -42,7 +44,7 @@ export function BottomBar() {
                 href={tab.href}
                 aria-current={current ? "page" : undefined}
                 className={cn(
-                  "flex flex-1 flex-col items-center justify-center gap-1 rounded-md text-[11px] font-medium outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-safe:transition-colors",
+                  "flex flex-1 flex-col items-center justify-center gap-1 rounded-md text-xs font-medium outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-safe:transition-colors",
                   current ? "text-foreground" : "text-muted-foreground hover:text-foreground",
                 )}
               >

@@ -355,9 +355,9 @@ avatar to Account on the right (`src/components/account-avatar-link.tsx`). The t
 Sign out live on Account.
 
 Signed in and below `md`, the sections move to a bottom tab bar
-(`src/components/bottom-bar.tsx`): Library, Discover and Create, an icon over an 11px
-label, the current one in Foreground with a Primary icon and `aria-current="page"`, the
-others in Dusk. It is fixed at `z-40` (the session player and sheets sit above it), on the
+(`src/components/bottom-bar.tsx`): Library, Discover and Create, a 20px icon over a label
+in Label size (0.75rem, no tracking), the current one in Foreground with a Primary icon
+and `aria-current="page"`, the others in Dusk. It is fixed at `z-40` (the session player and sheets sit above it), on the
 Sidebar surface at 95% with backdrop blur and a Hairline top border, and no shadow. The
 shell pads its bottom by the bar's height so the last row and the footer scroll clear of
 it. The bar is absent in the studio (`/create/[chatId]`), whose composer owns the bottom
