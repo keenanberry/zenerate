@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/profile/viewer";
 
 /**
  * Gate for routes that only make sense with an account: the library, the
@@ -12,10 +12,9 @@ export default async function AuthedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Shared through React's cache with the (app) layout and the page, so a
+  // render asks Supabase Auth once.
+  const user = await getSessionUser();
 
   if (!user) {
     redirect("/login");
