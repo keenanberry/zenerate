@@ -51,7 +51,9 @@ export default function PrivacyPage() {
           can see your name, photo and bio. The photo is stored at an
           unlisted web address, so someone who already has that address can
           still open it while your profile is private. Replacing or removing
-          your photo deletes the stored copy.
+          your photo deletes the stored file, and it stops being shown;
+          copies already held in browser or network caches may linger
+          briefly.
         </li>
         <li>
           <strong>Your content:</strong> the meditations you make, with their

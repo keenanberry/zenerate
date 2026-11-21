@@ -286,7 +286,11 @@ account (`/terms`, "Be decent") if it comes back.
       shows an `avatars` bucket, public, 1 MB limit, `image/webp` and `image/jpeg` allowed,
       with four policies on `storage.objects` named `avatars: owner …` (read, upload, update,
       delete). After the iPhone check in section 4, the bucket holds one file in your user's
-      folder (the replaced and removed ones are gone).
+      folder (the replaced and removed ones are gone). Signed out, listing the bucket root
+      returns nothing (local Storage did; production's may be a newer version). With the
+      project URL and the anon key from Supabase → Settings → API:
+      `curl -s -X POST "$URL/storage/v1/object/list/avatars" -H "apikey: $ANON" -H "Authorization: Bearer $ANON" -H "Content-Type: application/json" -d '{"prefix":""}'`
+      prints `[]`.
 
 ## 6. Backups
 
