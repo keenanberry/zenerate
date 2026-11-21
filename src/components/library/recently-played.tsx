@@ -65,6 +65,7 @@ function RecentTile({ item }: { item: RecentItem }) {
         tags={item.tags ?? []}
         title={item.title}
         size={240}
+        coverUrl={item.cover_url}
         className="h-auto w-full motion-safe:transition-opacity group-hover:opacity-90"
       />
       <span className="block space-y-1">

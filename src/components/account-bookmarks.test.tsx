@@ -67,6 +67,17 @@ describe("AccountBookmarks", () => {
     expect(html).not.toContain("Load more");
   });
 
+  it("draws a bookmark's generated cover, and the designed one without", () => {
+    const cover = "https://abc.supabase.co/storage/v1/object/public/meditation-covers/a/x.webp";
+    const html = render([
+      bookmark("a", "With a cover", { cover_path: "a/x.webp", cover_url: cover }),
+      bookmark("b", "Without"),
+    ]);
+    expect(html).toContain(encodeURIComponent(cover));
+    expect(html.match(/<img /g)).toHaveLength(1);
+    expect(html.match(/data-motif=/g)).toHaveLength(1);
+  });
+
   it("offers Load more while there is a next page", () => {
     expect(render([bookmark("m1", "Before Sleep")], "cursor")).toContain("Load more");
   });

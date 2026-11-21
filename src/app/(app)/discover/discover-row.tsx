@@ -53,6 +53,7 @@ export function DiscoverRow({
                 tags={m.tags ?? []}
                 title={m.title}
                 size={176}
+                coverUrl={m.cover_url}
                 className="h-auto w-full"
               />
               <div className="space-y-1">

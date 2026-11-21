@@ -41,6 +41,7 @@ export function MeditationCard({
           tags={meditation.tags ?? []}
           title={meditation.title}
           size={240}
+          coverUrl={meditation.cover_url}
           className="h-auto w-full"
         />
       </Link>

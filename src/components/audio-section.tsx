@@ -83,6 +83,7 @@ export function AudioSection({
         meditationId={meditation.id}
         title={meditation.title}
         tags={meditation.tags ?? []}
+        coverUrl={meditation.cover_url}
         meta={meta}
         isSignedIn={isSignedIn}
         hasScript={!!meditation.script}

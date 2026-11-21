@@ -131,6 +131,7 @@ export default async function MeditationDetailPage({
                 tags={meditation.tags ?? []}
                 title={meditation.title}
                 size={320}
+                coverUrl={meditation.cover_url}
                 className="h-auto w-full sm:size-40"
               />
               <div className="min-w-0 flex-1">
@@ -165,6 +166,7 @@ export default async function MeditationDetailPage({
                         : null,
                     isPublic: meditation.is_public,
                     siteUrl: siteUrl.href,
+                    coverUrl: meditation.cover_url,
                   }}
                 >
                   {/* No status badge: a meditation's state is its audio, and

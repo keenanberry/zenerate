@@ -47,6 +47,8 @@ interface SessionPlayerProps {
   meditationId: string;
   title: string;
   tags: string[];
+  /** The generated cover's public URL; null draws the designed cover. */
+  coverUrl?: string | null;
   /** "Sleep · 20 min", under the title. */
   meta: string;
   /** Signed in: downloads, favourites and play counts. */
@@ -71,6 +73,7 @@ export function SessionPlayer({
   meditationId,
   title,
   tags,
+  coverUrl,
   meta,
   isSignedIn,
   hasScript,
@@ -86,6 +89,7 @@ export function SessionPlayer({
     refreshUrl,
     title,
     meditationId,
+    coverUrl,
     trackPlays: isSignedIn,
     shape: {
       height: 28,
@@ -289,18 +293,28 @@ export function SessionPlayer({
           )}
         >
           {/* The cover fills the top of the view and fades to night through
-              an alpha mask, which sets only transparency and adds no hue. */}
+              an alpha mask, which sets only transparency and adds no hue. A
+              generated photo has light and detail a flat designed cover does
+              not, so it is dimmed from the top and night arrives sooner: the
+              round buttons and the transport keep their contrast over a
+              bright sky. */}
           <MeditationCover
             id={meditationId}
             tags={tags}
             title={title}
             size={600}
             crop
+            coverUrl={coverUrl}
             className="absolute inset-x-0 top-0 h-[72%] w-full rounded-none sm:rounded-none"
           />
           <div
             aria-hidden
-            className="absolute inset-0 bg-night [mask-image:linear-gradient(to_bottom,transparent_35%,black_66%)]"
+            className={cn(
+              "absolute inset-0 bg-night",
+              coverUrl
+                ? "[mask-image:linear-gradient(to_bottom,rgb(0_0_0/0.4),rgb(0_0_0/0.25)_20%,rgb(0_0_0/0.6)_42%,black_60%)]"
+                : "[mask-image:linear-gradient(to_bottom,transparent_35%,black_66%)]",
+            )}
           />
 
           <div className="relative flex items-center justify-between px-4 pt-[max(1rem,env(safe-area-inset-top))]">
@@ -313,6 +327,7 @@ export function SessionPlayer({
               meditationId={meditationId}
               title={title}
               tags={tags}
+              coverUrl={coverUrl}
               meta={meta}
               trigger={
                 <RoundButton label="More">
@@ -454,6 +469,7 @@ export function SessionMenu({
   meditationId,
   title,
   tags,
+  coverUrl,
   meta,
   trigger,
   children,
@@ -463,6 +479,7 @@ export function SessionMenu({
   meditationId: string;
   title: string;
   tags: string[];
+  coverUrl?: string | null;
   meta: string;
   trigger: React.ReactNode;
   children: React.ReactNode;
@@ -476,7 +493,7 @@ export function SessionMenu({
         title={`More for ${title}`}
         header={
           <BottomSheetHeader
-            art={<MeditationCover id={meditationId} tags={tags} title={title} size={48} />}
+            art={<MeditationCover id={meditationId} tags={tags} title={title} size={48} coverUrl={coverUrl} />}
             title={title}
             meta={meta}
           />

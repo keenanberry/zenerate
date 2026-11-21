@@ -271,7 +271,9 @@ and `.dark` in `globals.css` and use it.
 Quartz in dark) appears on the play button and the played portion of the waveform. It
 appears nowhere else: not on CTAs, not on card headers, not on the hero. The halo behind
 the player is a radial glow in dark and a flat tint in light (`--player-halo`).
-Meditation covers are not an exception: they are flat tone fields (see Covers).
+Meditation covers are not an exception: designed covers are flat tone fields, and a
+generated cover is a photograph whose only overlay is the session view's alpha-mask
+fade (see Covers).
 A transparency mask is not a gradient in this sense: a `mask-image` ramp from `transparent`
 to `black` sets only alpha, so it shows the surface's own token colours fading out and adds
 no hue. The landing demo's script window fades its scrolled-away lines this way.
@@ -622,11 +624,37 @@ timeline ends where the audio does. Outside the meditation page (the studio canv
 landing demo) there is no player, and the viewer stays evenly lit.
 
 ### Covers
-Every meditation has a designed cover, `MeditationCover` in
-`src/components/meditation-cover.tsx`, until generated artwork ships
-(`tasks/post-ship/generated-cover-art.md`). It takes `{ id, tags, title, size }` and
-is square from 48px (track rows) to 320px; the library card shows it at 64px and the
-meditation page header at 160px.
+Every meditation has a cover, `MeditationCover` in
+`src/components/meditation-cover.tsx`. It takes `{ id, tags, title, size, coverUrl }`
+and is square from 48px (track rows) to 320px; the library card shows it at 64px and
+the meditation page header at 160px. There are two kinds, and one component draws both
+everywhere a cover appears.
+
+**Generated covers (photographic).** A meditation made in the studio gets a picture
+of its own: a realistic, full-colour photograph of one calm subject (water, trees,
+stones, sky, an animal, a fairy glade), generated once and stored in the public
+`meditation-covers` bucket (`docs/superpowers/specs/2026-11-21-generated-cover-art-design.md`).
+A distinct picture is how a listener finds a favourite again, so covers are not graded
+to one house look.
+
+- **Same frame as the designed cover.** The photo fills the same square with
+  `object-cover`, at the same radius (6px under 96px, 12px from 96px), with no border
+  and no overlay. A cropped cover (a collection mosaic's cell, the session view) crops
+  the photo to its box the same way.
+- **The fallback rule.** No `coverUrl`, or a photo that fails to load, draws the
+  designed cover in its place, silently. A broken-image box never shows. While the
+  photo loads its square holds a Hush (`bg-muted`) field.
+- **Served at its drawn size.** `next/image` serves each cover at 1x and 2x of its
+  `size`, so a 56px row never downloads the 1024px original.
+- **Theme-independent.** A photo looks the same in dark and light; it sits on Paper as
+  album art does. Nothing recolours it, and nothing is drawn over it outside the
+  session view.
+- **Not an exception to the One Gradient Rule.** The photo is content, like the
+  script; the interface around it still carries no gradient, and no gradient or glow
+  is laid over a cover.
+
+**Designed covers (the fallback).** Every meditation without a generated cover draws
+one, derived from its tags and id:
 
 - **Derived, never stored.** The first tag in the vocabulary picks a pair of hues, and
   no two tags share a pair (`TAG_HUES`); no tag, or only tags outside the vocabulary,
@@ -666,12 +694,15 @@ meditation page header at 160px.
   edge and faded in through an alpha mask, and the label in Lora on plain field
   (`category-grid.tsx`). No icons.
 - **The session view's ground.** The session player draws the cover at 600 (strokes
-  hold 3px at that scale) cropped across the top of the view, fading to `--night`.
+  hold 3px at that scale) cropped across the top of the view, fading to `--night`. A
+  generated photo fades sooner and darker (see Session Player).
 - **Decorative by default.** A cover sits beside its title, so it is `aria-hidden`;
   `decorative={false}` names it with the title where it stands alone.
-- **Not on the lock screen.** The Media Session artwork stays the brand icon: the OS
-  needs a raster URL, and a per-meditation cover would mean resolving the tokens and
-  rasterizing client-side for a surface only a phone can verify.
+- **The lock screen.** A generated cover is the Media Session artwork
+  (`use-media-session.ts`), since it is already a raster at a public URL. A designed
+  cover is not: the OS needs a raster, and resolving the tokens and rasterizing
+  client-side is not worth it for a surface only a phone can verify, so a meditation
+  without a generated cover shows the brand icon there.
 
 ### Audio Player (signature)
 A card holding the waveform above a row of controls: a 48px round play/pause button, a
@@ -715,7 +746,12 @@ reopens the session.
 - **Layout.** Full screen on a phone; from `sm`, a 28rem panel at 90% of the viewport's
   height (52rem at most) over the page dimmed to 80% `--night` with a backdrop blur. The
   meditation's cover fills the top 72% (`crop`) and fades into `--night` (Deep Night)
-  through an alpha mask. Round 40px buttons at the top: a down chevron that minimizes
+  through an alpha mask. A designed cover shows clear down to 35% and is gone by 66%.
+  A generated photo is brighter and busier than a flat field, so its fade is darker:
+  `--night` sits over it at 40% at the top (for the round buttons), eases to 25% by a
+  fifth of the way down so the picture still reads, climbs to 60% by 42% (behind the
+  transport) and is solid by 60%. The title and controls keep their contrast whatever
+  the photo. Round 40px buttons at the top: a down chevron that minimizes
   and "…" (download, favourite, Show script).
 - **Transport.** The gradient play/pause at 84px with the halo behind it, and 15-second
   skips either side (`SEEK_OFFSET_SECONDS`, the lock screen's interval): a circular arrow
@@ -844,8 +880,8 @@ result; add-to-collection has real rollback.
 - **Do** express elevation as a lighter surface token with a Hairline border.
 - **Do** keep the gradient on the play button and the played waveform, and keep the halo
   behind the player a glow in dark and a flat tint in light.
-- **Do** give a meditation its `MeditationCover` wherever it is listed, and keep covers
-  flat tone fields in token hues.
+- **Do** give a meditation its `MeditationCover` wherever it is listed, passing its
+  `cover_url`, and keep designed covers flat tone fields in token hues.
 - **Do** verify at 390px wide, and wrap any new transition in `motion-safe:` or an
   equivalent `prefers-reduced-motion` guard.
 - **Do** check that any face a token names is loaded in `layout.tsx` and referenced by its

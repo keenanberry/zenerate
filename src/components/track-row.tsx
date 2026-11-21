@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
  */
 export type TrackRowMeditation = Pick<
   MeditationWithMeta,
-  "id" | "title" | "tags" | "settings" | "status" | "audio_url" | "is_public" | "is_favorited" | "rating"
+  "id" | "title" | "tags" | "settings" | "status" | "audio_url" | "is_public" | "is_favorited" | "rating" | "cover_url"
 > &
   Partial<Pick<MeditationWithMeta, "created_at">>;
 
@@ -76,7 +76,7 @@ export function TrackRow({
         />
       )}
 
-      <MeditationCover id={m.id} tags={m.tags ?? []} title={m.title} size={56} />
+      <MeditationCover id={m.id} tags={m.tags ?? []} title={m.title} size={56} coverUrl={m.cover_url} />
 
       <div className="flex min-h-[4.5rem] min-w-0 flex-1 items-center gap-2 self-stretch border-t group-first:border-t-0">
         <Link

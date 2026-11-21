@@ -26,8 +26,16 @@ export const MEDIA_ARTWORK: MediaImage[] = [
   { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
 ];
 
-export function mediaMetadataInit(title: string): MediaMetadataInit {
-  return { title, artist: "Zenerate", artwork: MEDIA_ARTWORK };
+/**
+ * What the lock screen shows. A meditation with a generated cover shows that
+ * photo (a raster at its public URL, generated as a 1024px square); any
+ * other shows the app's icon, since the designed cover is SVG in theme
+ * tokens that the OS cannot draw. The cover is the only entry when present,
+ * so the OS cannot pick the icon over it by size.
+ */
+export function mediaMetadataInit(title: string, coverUrl?: string | null): MediaMetadataInit {
+  const artwork = coverUrl ? [{ src: coverUrl, sizes: "1024x1024" }] : MEDIA_ARTWORK;
+  return { title, artist: "Zenerate", artwork };
 }
 
 /** Clamp a seek target into the playable range. */
@@ -76,9 +84,10 @@ export function bindMediaSession(
   session: MediaSession,
   media: HTMLMediaElement,
   title: string,
+  coverUrl?: string | null,
 ): () => void {
   if (typeof MediaMetadata !== "undefined") {
-    session.metadata = new MediaMetadata(mediaMetadataInit(title));
+    session.metadata = new MediaMetadata(mediaMetadataInit(title, coverUrl));
   }
 
   function seekTo(time: number, fast = false) {
@@ -185,13 +194,13 @@ export function watchMediaElement(
 
 /**
  * Bind the Media Session to `media` for as long as it is mounted, and rebind
- * when the element or the title changes. A no-op where `mediaSession` does
- * not exist.
+ * when the element, the title or the cover changes. A no-op where
+ * `mediaSession` does not exist.
  */
-export function useMediaSession(media: HTMLMediaElement | null, title: string) {
+export function useMediaSession(media: HTMLMediaElement | null, title: string, coverUrl?: string | null) {
   useEffect(() => {
     if (!media || typeof navigator === "undefined") return;
     if (!("mediaSession" in navigator)) return;
-    return bindMediaSession(navigator.mediaSession, media, title);
-  }, [media, title]);
+    return bindMediaSession(navigator.mediaSession, media, title, coverUrl);
+  }, [media, title, coverUrl]);
 }
