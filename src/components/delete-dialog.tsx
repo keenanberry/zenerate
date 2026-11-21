@@ -3,14 +3,7 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 
 export type Deletable = {
   kind: "meditation" | "chat";
@@ -72,32 +65,25 @@ export function DeleteDialog({
   }
 
   return (
-    <Dialog
+    <ResponsiveDialog
       open={item !== null}
       onOpenChange={(open) => {
         if (pending) return;
         if (!open) setError(null);
         onOpenChange(open);
       }}
-    >
-      {/* sm: only, so a phone keeps the primitive's 1rem gutter each side. */}
-      <DialogContent className="sm:max-w-md" showCloseButton={false}>
-        <DialogHeader>
-          <DialogTitle>{copy?.heading}</DialogTitle>
-          <DialogDescription>
-            <span className="font-medium text-foreground">{item?.title}</span>
-            <span className="mt-2 block">{copy?.body}</span>
-          </DialogDescription>
-        </DialogHeader>
-        {error && (
-          <p
-            role="alert"
-            className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm"
-          >
-            {error}
-          </p>
-        )}
-        <DialogFooter>
+      title={copy?.heading}
+      description={
+        <>
+          <span className="font-medium text-foreground">{item?.title}</span>
+          <span className="mt-2 block">{copy?.body}</span>
+        </>
+      }
+      // sm: only, so a phone keeps the primitive's 1rem gutter each side.
+      className="sm:max-w-md"
+      showCloseButton={false}
+      footer={
+        <>
           <Button
             variant="outline"
             onClick={() => {
@@ -112,8 +98,17 @@ export function DeleteDialog({
             {pending && <Loader2 className="motion-safe:animate-spin" aria-hidden />}
             Delete
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </>
+      }
+    >
+      {error && (
+        <p
+          role="alert"
+          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm"
+        >
+          {error}
+        </p>
+      )}
+    </ResponsiveDialog>
   );
 }
