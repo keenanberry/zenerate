@@ -401,6 +401,10 @@ The landing page (task 22) runs every section on the 64rem column with one left 
 section narrows to 48rem and its paragraphs to 60ch, so the column edge stays shared while
 the measure stays readable.
 
+Below `md`, every menu and dialog is a bottom sheet (see Elevation); from `md` they are
+the dropdowns, popovers and centred dialogs described under Menus (`ResponsiveMenu`,
+`ResponsiveDialog` and `useIsDesktop`).
+
 Breakpoints are Tailwind defaults (`sm` 640px, `md` 768px, `lg` 1024px). The phone target
 is 390px wide, because the next step for this product is an installed PWA. Everything must
 work there without horizontal scroll.
@@ -422,6 +426,21 @@ dropdown menus and the select list keep shadcn's `shadow-md`/`shadow-lg`. They f
 arbitrary content, including cards of their own lightness, and in light mode the shadow
 is what separates them; in dark it is all but invisible and the Hairline border does the
 work. New code adds none.
+
+Below `md` every menu and dialog is a bottom sheet (`src/components/ui/bottom-sheet.tsx`),
+a floating layer on the same terms: the `--popover` surface, top corners at 16px
+(`rounded-t-2xl`), a Hairline top border, the sheet's `shadow-lg`, at most 85% of the
+viewport tall with its rows scrolling inside, and its bottom padding clearing the home
+indicator. At its top a 36×4px Hairline-coloured grab handle drags it: past a third of its
+height, or on a quick downward flick, it closes; otherwise it springs back. A menu sheet's
+header names what it acts on (the 48px cover or artwork, the title in Lora, a Dusk meta
+line); a dialog sheet's heading is its title. Rows are at least 52px (`min-h-13`), full
+width, 16px Body type, the icon at 20px in Dusk on the left, a destructive row in Ember,
+and `--menu-hover` under a finger or the keyboard. A dialog's actions become full-width
+48px buttons stacked at the bottom. Sheets sit at `z-50`, above the bottom bar, and the
+session player's carries `dark` so it stays lights-down in the light theme. Under reduced
+motion a sheet still follows the finger, but opens, closes and springs back without
+animating.
 
 The one place depth is lit rather than stepped is the player: a soft radial glow from
 `--gradient-start` fading through `--gradient-end` behind it in dark, larger than the card
@@ -516,7 +535,8 @@ remembers its list or grid choice in localStorage (`ViewProvider`'s `storageKey`
 ### Menus
 Every dropdown, select and picker shares one look (the Discover filters, the collection
 menu, the meditation page's "…" and the session view's, Add to collection, the tag
-picker):
+picker, a draft chat's "…" on Create). That is their look from `md` up; below it each one
+is a bottom sheet (see Elevation):
 
 - **Surface:** `--popover` with a Hairline border, 6px radius and 4px of padding; its
   shadow is the floating-layer exception under Elevation.
@@ -771,7 +791,8 @@ the conversation on the left, the script on the right.
   button then sits at the foot of the canvas until they return to the bottom. A script
   opened on a reload starts at its top.
 - **Phone sheet:** under `md` the canvas opens as a bottom sheet at 88% of the viewport,
-  top corners at 12px, with the close button in the canvas header. When a new draft
+  top corners at 12px, with the close button in the canvas header and the bottom sheets'
+  grab handle above it, which drags it closed. When a new draft
   arrives, a round Secondary pill sits in flow above the composer, "Writing the script"
   with a spinner while it streams and "Script updated" after, and tapping it opens the
   sheet.
