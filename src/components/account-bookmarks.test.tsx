@@ -33,7 +33,7 @@ function render(bookmarks: Bookmark[], next_cursor: string | null = null) {
 }
 
 describe("AccountBookmarks", () => {
-  it("lists them in the order given, each linked to its page, with play and remove", () => {
+  it("lists them as Favorites' track rows, in the order given, each linked to its page, with remove and no play", () => {
     const html = render([
       bookmark("m2", "Rain & Release", {
         author: { id: "u1", display_name: "Alice", avatar_url: null },
@@ -43,10 +43,15 @@ describe("AccountBookmarks", () => {
     ]);
     expect(html.indexOf("Rain &amp; Release")).toBeLessThan(html.indexOf("Before Sleep"));
     expect(html).toContain('href="/meditation/m2"');
-    expect(html).toContain('aria-label="Play Rain &amp; Release"');
+    expect(html).toContain('href="/meditation/m1"');
+    expect(html).not.toMatch(/aria-label="Play /);
+    expect(html).toContain('aria-label="Remove Rain &amp; Release from saved"');
     expect(html).toContain('aria-label="Remove Before Sleep from saved"');
-    expect(html).toContain("10 min");
-    expect(html).toContain("Alice");
+    // No heart: the bookmark read does not say what is favourited.
+    expect(html).not.toMatch(/aria-label="(Add|Remove) [^"]* (to|from) favorites"/);
+    // The author leads the meta line; without one, it starts at the tag.
+    expect(html).toMatch(/>Alice · Sleep · 10 min · /);
+    expect(html).toMatch(/>Sleep · 10 min · /);
     expect(html).toContain(">4.5<");
     expect(html).not.toContain("(2)");
     expect(html).not.toContain("Nothing saved");

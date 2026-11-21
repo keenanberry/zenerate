@@ -13,12 +13,29 @@ import type { MeditationWithMeta } from "@/lib/meditation/types";
 import { Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+/** What a row reads from a meditation; any MeditationWithMeta has it. */
+export type TrackRowMeditation = Pick<
+  MeditationWithMeta,
+  | "id"
+  | "title"
+  | "tags"
+  | "settings"
+  | "created_at"
+  | "status"
+  | "audio_url"
+  | "is_public"
+  | "is_favorited"
+  | "rating"
+>;
+
 interface TrackRowProps {
-  meditation: MeditationWithMeta;
+  meditation: TrackRowMeditation;
   index: number;
   showIndex: boolean;
   showFavorite: boolean;
   showVisibility: boolean;
+  /** Leads the meta line, e.g. the author's name on someone else's meditation. */
+  byline?: string;
   actions?: React.ReactNode;
 }
 
@@ -37,6 +54,7 @@ export function TrackRow({
   showIndex,
   showFavorite,
   showVisibility,
+  byline,
   actions,
 }: TrackRowProps) {
   const [playing, setPlaying] = useState(false);
@@ -45,7 +63,7 @@ export function TrackRow({
     status: m.status,
     onPlayingChange: setPlaying,
   });
-  const meta = metaLine(m);
+  const meta = [byline, metaLine(m)].filter(Boolean).join(" · ");
 
   return (
     <div
