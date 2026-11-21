@@ -1,7 +1,29 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { ModelMessage } from "ai";
 import { z } from "zod";
+// makeCover's collaborators: the image model, the store and the service
+// role's reserve/release. Every other tool touches none of them.
+const cover = vi.hoisted(() => ({
+  reserved: 1 as number | null,
+  reserveError: null as { message: string } | null,
+  rpcs: [] as { name: string; args: Record<string, unknown> }[],
+  generate: vi.fn(),
+  store: vi.fn(),
+}));
+vi.mock("@/lib/cover/generate", () => ({ generateCover: cover.generate }));
+vi.mock("@/lib/cover/store", () => ({ storeCover: cover.store }));
+vi.mock("@/lib/supabase/service-role", () => ({
+  createClient: () => ({
+    rpc: async (name: string, args: Record<string, unknown>) => {
+      cover.rpcs.push({ name, args });
+      if (name === "reserve_cover_generation") return { data: cover.reserved, error: cover.reserveError };
+      return { data: null, error: null };
+    },
+  }),
+}));
+
 import {
+  makeCoverInput,
   offerAudioInput,
   lengthToleranceSeconds,
   MAX_STEPS_PER_TURN,
@@ -24,10 +46,20 @@ type Write = { table: string; op: "insert" | "update" | "upsert"; values: Row };
 function fakeSupabase(tables: { chats: Row; meditations?: Row; meditation_drafts?: Row }) {
   const writes: Write[] = [];
   const from = (table: string) => {
-    const row = () => tables[table as keyof typeof tables];
+    // A filter on a field the row has must match it; others are ignored.
+    const filters: [string, unknown][] = [];
+    const row = () => {
+      const found = tables[table as keyof typeof tables];
+      return found && filters.every(([column, value]) => !(column in found) || found[column] === value)
+        ? found
+        : undefined;
+    };
     const chain = {
       select: () => chain,
-      eq: () => chain,
+      eq: (column: string, value: unknown) => {
+        filters.push([column, value]);
+        return chain;
+      },
       single: async () => ({ data: row() ?? null, error: row() ? null : { message: "none" } }),
       maybeSingle: async () => ({ data: row() ?? null, error: null }),
       upsert: async (values: Row) => {
@@ -55,7 +87,7 @@ function context(supabase: StudioToolContext["supabase"]): StudioToolContext {
 }
 
 async function run<T>(
-  name: "writeScript" | "setDetails",
+  name: "writeScript" | "setDetails" | "makeCover",
   input: T,
   ctx: StudioToolContext,
   messages: ModelMessage[] = [],
@@ -354,6 +386,100 @@ describe("setDetails", () => {
   it("asks for a script first when the chat has none", async () => {
     const db = fakeSupabase({ chats: { meditation_id: null } });
     await expect(run("setDetails", details, context(db.client))).rejects.toThrow(/writeScript first/);
+  });
+});
+
+describe("makeCover", () => {
+  const subject = { subject: "A misty pine forest at dawn, light through the trees." };
+  const owned = () =>
+    fakeSupabase({ chats: { meditation_id: "med-1" }, meditations: { id: "med-1", user_id: "user-1" } });
+
+  beforeEach(() => {
+    cover.reserved = 1;
+    cover.reserveError = null;
+    cover.rpcs = [];
+    cover.generate.mockReset().mockResolvedValue({ bytes: new Uint8Array([1]), mediaType: "image/png" });
+    cover.store.mockReset().mockResolvedValue({ path: "med-1/a.webp", url: "https://x/med-1/a.webp" });
+  });
+
+  it("takes a subject of 3 to 300 characters", () => {
+    expect(studioTools.makeCover.inputSchema).toBe(makeCoverInput);
+    expect(makeCoverInput.safeParse({ subject: "ok" }).success).toBe(false);
+    expect(makeCoverInput.safeParse({ subject: "a".repeat(301) }).success).toBe(false);
+    expect(makeCoverInput.safeParse(subject).success).toBe(true);
+  });
+
+  it("asks for a script first when the chat has none, and reserves nothing", async () => {
+    const db = fakeSupabase({ chats: { meditation_id: null } });
+    await expect(run("makeCover", subject, context(db.client))).rejects.toThrow(/writeScript first/);
+    expect(cover.rpcs).toEqual([]);
+    expect(cover.generate).not.toHaveBeenCalled();
+  });
+
+  it("refuses a meditation the caller does not own", async () => {
+    const db = fakeSupabase({
+      chats: { meditation_id: "med-1" },
+      meditations: { id: "med-1", user_id: "someone-else" },
+    });
+    await expect(run("makeCover", subject, context(db.client))).rejects.toThrow(/could not be found/);
+    expect(cover.rpcs).toEqual([]);
+  });
+
+  it("makes, stores and returns the cover with what is left of the cap", async () => {
+    cover.reserved = 1;
+    const result = await run("makeCover", subject, context(owned().client));
+
+    expect(cover.rpcs).toEqual([{ name: "reserve_cover_generation", args: { p_meditation: "med-1" } }]);
+    expect(cover.generate).toHaveBeenCalledWith(subject.subject);
+    expect(cover.store).toHaveBeenCalledWith("med-1", { bytes: new Uint8Array([1]), mediaType: "image/png" });
+    expect(result).toEqual({ coverUrl: "https://x/med-1/a.webp", remaining: 2 });
+  });
+
+  it("says 0 remaining on the third", async () => {
+    cover.reserved = 3;
+    expect(await run("makeCover", subject, context(owned().client))).toMatchObject({ remaining: 0 });
+  });
+
+  it("refuses past the cap without generating", async () => {
+    cover.reserved = null;
+    await expect(run("makeCover", subject, context(owned().client))).rejects.toThrow(/had its 3 covers/);
+    expect(cover.generate).not.toHaveBeenCalled();
+  });
+
+  it("gives the generation back when the image model fails", async () => {
+    cover.generate.mockRejectedValue(new Error("rate limited"));
+    await expect(run("makeCover", subject, context(owned().client))).rejects.toThrow(
+      /could not be made this time/,
+    );
+    expect(cover.rpcs.map((r) => r.name)).toEqual(["reserve_cover_generation", "release_cover_generation"]);
+    expect(cover.rpcs[1].args).toEqual({ p_meditation: "med-1" });
+    expect(cover.store).not.toHaveBeenCalled();
+  });
+
+  it("gives the generation back when storing fails", async () => {
+    cover.store.mockRejectedValue(new Error("upload failed"));
+    await expect(run("makeCover", subject, context(owned().client))).rejects.toThrow(
+      /could not be made this time/,
+    );
+    expect(cover.rpcs.map((r) => r.name)).toEqual(["reserve_cover_generation", "release_cover_generation"]);
+  });
+
+  it("fails plainly when the reserve itself errors, releasing nothing", async () => {
+    cover.reserveError = { message: "boom" };
+    await expect(run("makeCover", subject, context(owned().client))).rejects.toThrow(/could not be made/);
+    expect(cover.rpcs.map((r) => r.name)).toEqual(["reserve_cover_generation"]);
+    expect(cover.generate).not.toHaveBeenCalled();
+  });
+
+  it("tells the model what is left, not the URL", async () => {
+    const toModelOutput = studioTools.makeCover.toModelOutput!;
+    const output = await toModelOutput({
+      toolCallId: "c1",
+      input: subject,
+      output: { coverUrl: "https://x/med-1/a.webp", remaining: 2 },
+    });
+    expect(JSON.stringify(output)).not.toContain("https://");
+    expect(output).toEqual({ type: "json", value: { made: true, remaining: 2 } });
   });
 });
 

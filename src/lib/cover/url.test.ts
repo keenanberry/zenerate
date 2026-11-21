@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { coverUrl, withCoverUrl } from "./url";
+import { coverThumb, coverUrl, withCoverUrl } from "./url";
 
 const BASE = "https://abc.supabase.co";
 
@@ -48,5 +48,19 @@ describe("withCoverUrl", () => {
     });
     const uncovered: { id: string; cover_path?: string | null } = { id: "m2" };
     expect(withCoverUrl(uncovered)).toEqual({ id: "m2", cover_url: null });
+  });
+});
+
+describe("coverThumb", () => {
+  it("names the thumbnail beside the full image", () => {
+    expect(coverThumb("m1/a.webp")).toBe("m1/a.thumb.webp");
+    expect(coverThumb(`${BASE}/storage/v1/object/public/meditation-covers/m1/a.webp`)).toBe(
+      `${BASE}/storage/v1/object/public/meditation-covers/m1/a.thumb.webp`,
+    );
+  });
+
+  it("touches only the file name, never a dot earlier in the path or host", () => {
+    expect(coverThumb("https://abc.supabase.co/x/m1/abc")).toBe("https://abc.supabase.co/x/m1/abc.thumb");
+    expect(coverThumb("m1/a.b.jpg")).toBe("m1/a.b.thumb.jpg");
   });
 });

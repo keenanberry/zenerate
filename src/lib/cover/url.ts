@@ -26,3 +26,17 @@ export function coverUrl(path: string | null | undefined): string | null {
 export function withCoverUrl<T extends { cover_path?: string | null }>(row: T): T & { cover_url: string | null } {
   return { ...row, cover_url: coverUrl(row.cover_path) };
 }
+
+/**
+ * Where a cover's 256px thumbnail lives, by convention beside the full image:
+ * `<id>/<random>.webp` has `<id>/<random>.thumb.webp`. Takes a path or a URL
+ * and changes only the file name. storeCover writes both; a cover set before
+ * thumbnails existed has none, and MeditationCover falls back to the full
+ * image when the thumbnail fails to load.
+ */
+export function coverThumb(pathOrUrl: string): string {
+  const slash = pathOrUrl.lastIndexOf("/");
+  const dot = pathOrUrl.lastIndexOf(".");
+  if (dot <= slash) return `${pathOrUrl}.thumb`;
+  return `${pathOrUrl.slice(0, dot)}.thumb${pathOrUrl.slice(dot)}`;
+}

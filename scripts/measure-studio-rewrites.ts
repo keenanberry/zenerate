@@ -47,6 +47,17 @@ config({ path: ".env.local", quiet: true });
 
 const generateMessageId = createIdGenerator({ prefix: "msg", size: 16 });
 
+// The route's tools, with makeCover answering as if a cover was made: a run
+// generates no images and writes nothing to Storage, and the model sees the
+// same tool list and the same result shape it sees in production.
+const measuredTools = {
+  ...studioTools,
+  makeCover: {
+    ...studioTools.makeCover,
+    execute: async () => ({ coverUrl: "https://example.invalid/cover.webp", remaining: 2 }),
+  },
+};
+
 function fakeSupabase() {
   const state: Record<string, Record<string, unknown> | undefined> = {
     chats: { meditation_id: null },
@@ -213,8 +224,8 @@ async function runTurn(history: StudioUIMessage[], step: Step, ctx: StudioToolCo
       providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } },
     },
     messages: await convertToModelMessages(messages, { tools: studioTools, ignoreIncompleteToolCalls: true }),
-    tools: studioTools,
-    toolsContext: { writeScript: ctx, setDetails: ctx },
+    tools: measuredTools,
+    toolsContext: { writeScript: ctx, setDetails: ctx, makeCover: ctx },
     stopWhen: isStepCount(MAX_STEPS_PER_TURN),
     prepareStep: (step) => prepareStudioStep(step, { narrowTools: narrowsToolsForAudio(model) }),
     maxOutputTokens: 8000,

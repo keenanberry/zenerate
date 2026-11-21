@@ -6,6 +6,7 @@ import {
   type UIMessage,
 } from "ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 import { findMalformedMarkers, parseMeditationText } from "@/lib/meditation/parser";
 import { estimateDuration } from "@/lib/meditation/duration";
@@ -15,6 +16,11 @@ import { MEDITATION_TYPES, TAGS } from "@/lib/meditation/tags";
 import { AMBIENCE_IDS } from "@/lib/meditation/ambience";
 import type { MeditationSettings } from "@/lib/meditation/types";
 import { checkRenderScript } from "@/lib/audio/render-bounds";
+import { generateCover } from "@/lib/cover/generate";
+import { COVER_CAP } from "@/lib/cover/model";
+import { MAX_SUBJECT_CHARS } from "@/lib/cover/prompt";
+import { storeCover } from "@/lib/cover/store";
+import { createClient as createServiceClient } from "@/lib/supabase/service-role";
 import { MAKE_AUDIO_REPLY } from "./replies";
 
 /**
@@ -104,6 +110,20 @@ export const offerAudioInput = z.object({
       "A background bed that suits this meditation, preselected on the card. Leave it out when none clearly fits, and on a re-render unless the person asked for a different background: the card keeps their last choice. The person picks either way.",
     ),
 });
+
+export const makeCoverInput = z.object({
+  subject: z
+    .string()
+    .trim()
+    .min(3)
+    .max(MAX_SUBJECT_CHARS)
+    .describe(
+      "What the picture shows, in one or two sentences of your own words: one clear subject and its setting and light. Never the person's words verbatim.",
+    ),
+});
+
+const COVER_FAILED =
+  "The cover could not be made this time, and this try does not count against the cap. The meditation keeps the cover it has. Tell the person in one plain sentence.";
 
 async function linkedMeditationId(ctx: StudioToolContext): Promise<string | null> {
   const { data, error } = await ctx.supabase
@@ -320,6 +340,66 @@ export const studioTools = {
 
       return { meditationId, title, tags: uniqueTags };
     },
+  }),
+
+  // The one tool that writes on the service role: only it writes covers and
+  // the cap's counter (docs/superpowers/specs/2026-11-21-generated-cover-art-design.md).
+  // Ownership is proved through the owner's own client first.
+  makeCover: tool({
+    description: `Make a new cover picture for the meditation from a subject you write. Call it once after the first script and its details, and again only when the person asks for a different cover. Each call replaces the cover; at most ${COVER_CAP} per meditation. Returns how many are left.`,
+    inputSchema: makeCoverInput,
+    contextSchema: studioContextSchema,
+    execute: async ({ subject }, { context: ctx }) => {
+      const meditationId = await linkedMeditationId(ctx);
+      if (!meditationId) throw new Error("There is no script yet. Call writeScript first.");
+
+      // Read through RLS and filtered to the caller: a public meditation is
+      // readable by anyone, so readable alone would not prove it is theirs.
+      const { data: owned, error } = await ctx.supabase
+        .from("meditations")
+        .select("id")
+        .eq("id", meditationId)
+        .eq("user_id", ctx.userId)
+        .single();
+      if (error || !owned) throw new Error("The meditation could not be found.");
+
+      const service = createServiceClient();
+      const { data: count, error: reserveError } = await service.rpc("reserve_cover_generation", {
+        p_meditation: meditationId,
+      });
+      if (reserveError) {
+        console.error("[cover] reserve failed", reserveError.message);
+        Sentry.captureException(new Error(`Cover reserve failed: ${reserveError.message}`), {
+          tags: { area: "cover" },
+        });
+        throw new Error(COVER_FAILED);
+      }
+      if (count === null) {
+        throw new Error(
+          `This meditation has had its ${COVER_CAP} covers, the most it can have. Tell the person in a sentence that the current cover stays.`,
+        );
+      }
+
+      try {
+        const image = await generateCover(subject);
+        const { url } = await storeCover(meditationId, image);
+        return { coverUrl: url, remaining: COVER_CAP - (count as number) };
+      } catch (failure) {
+        console.error("[cover] generation failed", failure);
+        Sentry.captureException(failure, { tags: { area: "cover" } });
+        const { error: releaseError } = await service.rpc("release_cover_generation", {
+          p_meditation: meditationId,
+        });
+        if (releaseError) console.error("[cover] release failed", releaseError.message);
+        throw new Error(COVER_FAILED);
+      }
+    },
+    // The canvas reads the URL from the stored part; the model needs only
+    // the count, and never a URL it might paste into the chat.
+    toModelOutput: ({ output }) => ({
+      type: "json" as const,
+      value: { made: true, remaining: output.remaining },
+    }),
   }),
 
   // Reads nothing and writes nothing: the files are static, under public/sounds/.
