@@ -644,12 +644,21 @@ to one house look.
 - **The fallback rule.** No `coverUrl`, or a photo that fails to load, draws the
   designed cover in its place, silently. A broken-image box never shows. While the
   photo loads its square holds a Hush (`bg-muted`) field.
-- **Two stored sizes, served as stored.** Each cover is stored twice as WebP: the
-  full image (1024px) and a 256px thumbnail beside it. A cover drawn at 128px or less
-  loads the thumbnail, so a 56px row never downloads the full image; anything larger
-  loads the full image. Neither goes through Vercel's Image Optimization (its Hobby
-  quota would run out within a few hundred covers). A cover stored without a
-  thumbnail falls back to the full image, then to the designed cover.
+- **Three stored sizes, served as stored.** Each cover is stored three times as WebP:
+  the full image (1024px), a 512px middle size and a 256px thumbnail beside it. A cover
+  loads the smallest size that is sharp at 2x: 128px or less the thumbnail (a 56px row),
+  up to 256px the middle size (the 176px Discover cards, the landing page's 240px ones),
+  anything larger the full image (the Library grids, whose columns reach about 314px
+  just below `lg`, the meditation page, the session view). A cover's `size` is the
+  widest its column gets, not a typical width, so it never loads a size too small. None goes
+  through Vercel's Image Optimization (its Hobby quota would run out within a few
+  hundred covers). A size a cover was stored without (covers made before the
+  thumbnail, or before the middle size) falls back to the next larger, then to the
+  designed cover.
+- **Full bleed.** The photograph fills its square to the edges: no rounded corners of
+  its own, no frame, no white around it. A cover drawn as a tile on white shows white
+  slivers inside the frame's radius, so the style line asks for edge-to-edge, and the
+  backfill's review sheet flags a picture with white corners.
 - **Theme-independent.** A photo looks the same in dark and light; it sits on Paper as
   album art does. Nothing recolours it, and nothing is drawn over it outside the
   session view.

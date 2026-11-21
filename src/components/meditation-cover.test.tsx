@@ -161,6 +161,7 @@ describe("MeditationCover with a generated cover", () => {
   });
 
   const THUMB = URL.replace(/\.webp$/, ".thumb.webp");
+  const MIDDLE = URL.replace(/\.webp$/, ".md.webp");
 
   it("draws the photo, not the designed cover, at the same size and radius", () => {
     const html = renderToStaticMarkup(
@@ -186,8 +187,18 @@ describe("MeditationCover with a generated cover", () => {
     }
   });
 
-  it("draws a larger cover from the full image, as stored", () => {
-    for (const size of [160, 176, 240, 320, 600]) {
+  it("draws a card from 129px to 256px from its 512px middle size, never the thumbnail", () => {
+    for (const size of [129, 160, 176, 240, 256]) {
+      const html = renderToStaticMarkup(
+        <MeditationCover id={ID} tags={[]} title="t" size={size} coverUrl={URL} />,
+      );
+      expect(html, String(size)).toContain(`src="${MIDDLE}"`);
+      expect(html).not.toContain("/_next/image");
+    }
+  });
+
+  it("draws a cover larger than 256px from the full image, as stored", () => {
+    for (const size of [257, 320, 600]) {
       const html = renderToStaticMarkup(
         <MeditationCover id={ID} tags={[]} title="t" size={size} coverUrl={URL} />,
       );
@@ -230,14 +241,26 @@ describe("MeditationCover with a generated cover", () => {
     expect(html).toContain("object-cover");
   });
 
-  it("tries the full image when the thumbnail fails, then the designed cover", () => {
-    // A cover stored before thumbnails existed has none.
+  it("tries each larger size when a smaller one fails, then the designed cover", () => {
+    // A cover stored before thumbnails existed has neither smaller size.
     const designed = <svg data-motif="moon" />;
     const view = (failures: number) =>
       renderToStaticMarkup(
         <CoverImageView src={URL} size={56} alt="" className="" failures={failures} onError={() => {}} fallback={designed} />,
       );
     expect(view(0)).toContain(`src="${THUMB}"`);
+    expect(view(1)).toContain(`src="${MIDDLE}"`);
+    expect(view(2)).toContain(`src="${URL}"`);
+    expect(view(3)).toBe('<svg data-motif="moon"></svg>');
+  });
+
+  it("falls back from the middle size to the full image for a cover stored before it existed", () => {
+    const designed = <svg data-motif="moon" />;
+    const view = (failures: number) =>
+      renderToStaticMarkup(
+        <CoverImageView src={URL} size={240} alt="" className="" failures={failures} onError={() => {}} fallback={designed} />,
+      );
+    expect(view(0)).toContain(`src="${MIDDLE}"`);
     expect(view(1)).toContain(`src="${URL}"`);
     expect(view(2)).toBe('<svg data-motif="moon"></svg>');
   });
@@ -252,8 +275,10 @@ describe("MeditationCover with a generated cover", () => {
     expect(view(1)).toBe('<svg data-motif="moon"></svg>');
   });
 
-  it("lists the thumbnail first only for covers it is sharp enough for", () => {
-    expect(coverSources(URL, 128)).toEqual([THUMB, URL]);
-    expect(coverSources(URL, 129)).toEqual([URL]);
+  it("starts from the smallest size that is sharp at 2x, then each larger one", () => {
+    expect(coverSources(URL, 128)).toEqual([THUMB, MIDDLE, URL]);
+    expect(coverSources(URL, 129)).toEqual([MIDDLE, URL]);
+    expect(coverSources(URL, 256)).toEqual([MIDDLE, URL]);
+    expect(coverSources(URL, 257)).toEqual([URL]);
   });
 });

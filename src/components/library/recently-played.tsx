@@ -59,12 +59,14 @@ function RecentTile({ item }: { item: RecentItem }) {
       href={`/meditation/${item.id}`}
       className="group block space-y-3 rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
-      {/* Drawn at the column's widest and scaled to fit it, as MeditationCard does. */}
+      {/* Drawn at the column's widest and scaled to fit it, as MeditationCard
+          does: about 296px, in the two-column grid just below sm, so a photo
+          there loads the full image rather than the 512px one. */}
       <MeditationCover
         id={item.id}
         tags={item.tags ?? []}
         title={item.title}
-        size={240}
+        size={296}
         coverUrl={item.cover_url}
         className="h-auto w-full motion-safe:transition-opacity group-hover:opacity-90"
       />

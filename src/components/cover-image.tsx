@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState, type ReactNode } from "react";
-import { coverThumb, THUMB_MAX_SIZE } from "@/lib/cover/url";
+import { coverMiddle, coverThumb, MIDDLE_MAX_SIZE, THUMB_MAX_SIZE } from "@/lib/cover/url";
 
 type CoverImageProps = {
   /** The generated cover's public URL (src/lib/cover/url.ts). */
@@ -21,12 +21,17 @@ type CoverImageProps = {
 };
 
 /**
- * The files a cover is drawn from, in the order to try them. Up to
- * THUMB_MAX_SIZE it is the 256px thumbnail, then the full image (a cover
- * stored before thumbnails existed has none); larger, the full image alone.
+ * The files a cover is drawn from, in the order to try them: the smallest
+ * stored size that is sharp at 2x, then each larger one, so a size a cover
+ * was stored without (covers made before thumbnails, or before the middle
+ * size) falls through to the next. Up to THUMB_MAX_SIZE the 256px
+ * thumbnail, up to MIDDLE_MAX_SIZE the 512px middle size, larger the full
+ * image alone.
  */
 export function coverSources(src: string, size: number): string[] {
-  return size <= THUMB_MAX_SIZE ? [coverThumb(src), src] : [src];
+  if (size <= THUMB_MAX_SIZE) return [coverThumb(src), coverMiddle(src), src];
+  if (size <= MIDDLE_MAX_SIZE) return [coverMiddle(src), src];
+  return [src];
 }
 
 /**
@@ -78,8 +83,8 @@ export function CoverImageView({
       preload={preload}
       onError={onError}
       className={className}
-      // Served as stored: the thumbnail and the full image are already the
-      // sizes a cover needs, and Vercel's Image Optimization quota on Hobby
+      // Served as stored: the stored sizes are already the sizes a cover
+      // needs, and Vercel's Image Optimization quota on Hobby
       // (about 5,000 a month) would run out within a few hundred covers.
       unoptimized
     />

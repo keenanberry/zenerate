@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { createClient as createServiceClient } from "@/lib/supabase/service-role";
 import type { GeneratedImage } from "./generate";
 import { UUID } from "./remove";
-import { COVER_BUCKET, coverThumb, coverUrl, THUMB_MAX_SIZE } from "./url";
+import { COVER_BUCKET, coverMiddle, coverThumb, coverUrl, MIDDLE_MAX_SIZE, THUMB_MAX_SIZE } from "./url";
 
 /** The full cover's edge. FLUX returns 1024px; nothing is ever enlarged. */
 const FULL_EDGE = 1024;
@@ -12,6 +12,8 @@ const FULL_EDGE = 1024;
  * image.
  */
 export const THUMB_EDGE = THUMB_MAX_SIZE * 2;
+/** The middle size's edge: 2x of the largest card MeditationCover draws from it. */
+export const MIDDLE_EDGE = MIDDLE_MAX_SIZE * 2;
 
 /** A cover's path is random and never rewritten, so it may be cached for a year. */
 const CACHE_SECONDS = String(365 * 24 * 60 * 60);
@@ -30,12 +32,13 @@ export function isOwnCoverPath(path: string | null | undefined, meditationId: st
 }
 
 /**
- * The provider's image as two square WebPs: the full cover (at most 1024px,
- * cropped to a square if it came back otherwise) and its 256px thumbnail.
+ * The provider's image as three square WebPs: the full cover (at most
+ * 1024px, cropped to a square if it came back otherwise), its 512px middle
+ * size and its 256px thumbnail.
  * Re-encoding also means the bucket only ever holds what this made, whatever
  * format the provider returned.
  */
-async function encode(bytes: Uint8Array): Promise<{ full: Buffer; thumb: Buffer }> {
+async function encode(bytes: Uint8Array): Promise<{ full: Buffer; middle: Buffer; thumb: Buffer }> {
   // Loaded here, not at the top: sharp is a native module, and this file is
   // reached from the chat route. If its binary failed to load, a top-level
   // import would take the whole studio down; here it fails one cover, which
@@ -44,29 +47,50 @@ async function encode(bytes: Uint8Array): Promise<{ full: Buffer; thumb: Buffer 
   const source = sharp(bytes).rotate();
   const { width = FULL_EDGE, height = FULL_EDGE } = await source.metadata();
   const edge = Math.min(width, height, FULL_EDGE);
-  const [full, thumb] = await Promise.all([
+  const [full, middle, thumb] = await Promise.all([
     source.clone().resize(edge, edge, { fit: "cover" }).webp({ quality: 82 }).toBuffer(),
+    source.clone().resize(MIDDLE_EDGE, MIDDLE_EDGE, { fit: "cover" }).webp({ quality: 80 }).toBuffer(),
     source.clone().resize(THUMB_EDGE, THUMB_EDGE, { fit: "cover" }).webp({ quality: 80 }).toBuffer(),
   ]);
-  return { full, thumb };
+  return { full, middle, thumb };
+}
+
+/**
+ * The meditation's cover was no longer what the caller expected when the row
+ * was written (a studio cover appeared meanwhile, or the meditation is gone).
+ * Nothing was changed: the uploads were removed and the row kept its cover.
+ */
+export class CoverChangedError extends Error {
+  constructor() {
+    super("A cover appeared since generation (or the meditation is gone); it was left as it is.");
+    this.name = "CoverChangedError";
+  }
 }
 
 /**
  * Store a generated cover as a meditation's current cover, on the service
  * role (only it writes covers; the caller has already proved ownership
- * through the owner's client). Uploads the full image and its thumbnail to
- * `<meditationId>/<random>.webp` and `.thumb.webp`, points `cover_path` at
- * it, then removes the previous cover pair, but only when it sits in this
- * meditation's own folder. If the row cannot be updated, the new objects are
- * removed and the old cover stays.
+ * through the owner's client, or the operator runs the backfill). Uploads the
+ * full image, its middle size and its thumbnail to
+ * `<meditationId>/<random>.webp`, `.md.webp` and `.thumb.webp`, points
+ * `cover_path` at it, then removes the previous cover's sizes, but only when
+ * it sits in this meditation's own folder. If the row cannot be updated, the
+ * new objects are removed and the old cover stays.
+ *
+ * `ifCoverIs` makes the write conditional, for the backfill: the row is
+ * updated only while its cover_path is still that value (null: no cover), in
+ * the same statement as the update, so a cover the studio made after the
+ * caller looked is never overwritten. Otherwise it throws CoverChangedError
+ * having removed its own uploads.
  */
 export async function storeCover(
   meditationId: string,
   image: GeneratedImage,
+  { ifCoverIs }: { ifCoverIs?: string | null } = {},
 ): Promise<{ path: string; url: string }> {
   if (!UUID.test(meditationId)) throw new Error(`Not a meditation id: "${meditationId}"`);
 
-  const { full, thumb } = await encode(image.bytes);
+  const { full, middle, thumb } = await encode(image.bytes);
   const supabase = createServiceClient();
   const bucket = supabase.storage.from(COVER_BUCKET);
 
@@ -77,30 +101,38 @@ export async function storeCover(
     .single();
   if (readError || !current) throw new Error(`Reading the meditation failed: ${readError?.message}`);
   const previous = current.cover_path as string | null;
+  const conditional = ifCoverIs !== undefined;
+  // Already changed: nothing to upload.
+  if (conditional && previous !== ifCoverIs) throw new CoverChangedError();
 
   const path = `${meditationId}/${randomUUID()}.webp`;
   const thumbPath = coverThumb(path);
   const options = { contentType: "image/webp", cacheControl: CACHE_SECONDS, upsert: false };
 
-  // The thumbnail first: by the time the row points at the full image, both exist.
+  // The smaller sizes first: by the time the row points at the full image, all three exist.
   const uploaded: string[] = [];
   try {
     for (const [objectPath, body] of [
       [thumbPath, thumb],
+      [coverMiddle(path), middle],
       [path, full],
     ] as const) {
       const { error } = await bucket.upload(objectPath, body, options);
       if (error) throw new Error(`Cover upload failed: ${error.message}`);
       uploaded.push(objectPath);
     }
-    const { data: updated, error: updateError } = await supabase
-      .from("meditations")
-      .update({ cover_path: path })
-      .eq("id", meditationId)
-      .select("id");
+    let update = supabase.from("meditations").update({ cover_path: path }).eq("id", meditationId);
+    if (conditional) {
+      update = ifCoverIs === null ? update.is("cover_path", null) : update.eq("cover_path", ifCoverIs);
+    }
+    const { data: updated, error: updateError } = await update.select("id");
     if (updateError) throw new Error(`Saving the cover failed: ${updateError.message}`);
-    // Deleted while the cover was being made: nothing points at the upload.
-    if (!updated?.length) throw new Error("Saving the cover failed: the meditation is gone.");
+    // Nothing points at the upload: deleted while the cover was being made,
+    // or (conditional) its cover changed since the caller looked.
+    if (!updated?.length) {
+      if (conditional) throw new CoverChangedError();
+      throw new Error("Saving the cover failed: the meditation is gone.");
+    }
   } catch (error) {
     if (uploaded.length > 0) {
       const { error: removeError } = await bucket.remove(uploaded);
@@ -111,7 +143,8 @@ export async function storeCover(
 
   if (previous && previous !== path && isOwnCoverPath(previous, meditationId)) {
     // The new cover is already live; a leftover is removed with the meditation.
-    const { error } = await bucket.remove([previous, coverThumb(previous)]);
+    // A cover stored before a size existed lacks it; removing a missing object is not an error.
+    const { error } = await bucket.remove([previous, coverMiddle(previous), coverThumb(previous)]);
     if (error) console.error("[cover] removing the previous cover failed", error.message);
   }
 

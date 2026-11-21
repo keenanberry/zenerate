@@ -8,9 +8,14 @@ backfill). Custom uploads below are still open and wait on
 **Shipped so far:** PR 1 (#151), storage and display: the `meditation-covers` bucket,
 `cover_path`, and `MeditationCover` drawing the photo with the designed cover as fallback.
 PR 2, the studio tool: `makeCover` (3 per meditation, a failure not counted) made after
-each new meditation's first script, the cover in the canvas header, `/privacy`. Covers are
-stored as a 1024px WebP and a 256px thumbnail and served as stored, not through Vercel's
-Image Optimization. Left: PR 3, the reviewed backfill for existing meditations. The
+each new meditation's first script, the cover in the canvas header, `/privacy`. PR 3, the
+reviewed backfill: `scripts/backfill-covers.ts` generates covers for existing meditations
+into a local folder with a contact sheet, and uploads only what the operator kept
+(`--commit`); the operator runs it against production (`tasks/OPERATOR-TODO.md`). Covers
+are stored as a 1024px WebP, a 512px middle size for cards and a 256px thumbnail, served
+as stored, not through Vercel's Image Optimization. PR 3 also changed the style line to
+ask for a full-bleed photograph: the old "cover image for a guided meditation app" drew
+about one cover in three as an app icon on white. Left: custom uploads (below). The
 "Direction" below is the earlier idea; the spec supersedes it for generated art.
 **Priority:** Post-ship
 **Related:** `tasks/ship/35-cover-system.md` (the designed covers this replaces where art exists),
