@@ -325,8 +325,21 @@ The shell (`src/app/(app)/layout.tsx`) centres content at `max-w-5xl` (64rem) wi
 16px gutter (24px from `sm`). That width is the widest column, sized for card grids;
 every other content type narrows itself inside the shell:
 
-- Grids and tabular lists of meditations or collections (`/library`, `/discover`,
-  `/collections/[id]`): the full 64rem.
+- Grids and tabular lists of meditations or collections (`/discover`,
+  `/collections/[id]`, the Library's pages): the full 64rem.
+- The Library (`/library`): the full 64rem. The title in Lora with, on a phone, the avatar
+  to Account at its right; then the Library's places as 52px rows (`min-h-13`) between
+  Hairline dividers, each a Primary icon, the label, its count in Dusk with tabular
+  figures and a chevron, in the order Favorites, Bookmarks, My meditations, Collections;
+  then Recently played, the latest distinct meditations the listener has played as a
+  cover grid (two columns, three from `sm`, four from `lg`), each tile the cover, the
+  title in Lora and a Dusk line of length and "Yours" or "Discover". With nothing played,
+  one empty state offers Create and Discover instead. Stacked below `md`; from `md` the
+  rows take an 18rem column and Recently played the rest
+  (`src/components/library/`). Each place is a page of its own (`/library/favorites`,
+  `/library/bookmarks`, `/library/meditations`, `/library/collections`,
+  `LibrarySubpage`): the eyebrow back to Library, the title with the list/grid toggle at
+  its right where the list has one, and the content 32px below.
 - A meditation (`/meditation/[id]`): 48rem (`max-w-3xl`). On a phone the cover runs the
   full width, then the meta line, the title with the heart and "…", one full-width Play,
   the description, and "Show script" (task 55). From `sm` the cover sits at 160px beside
@@ -371,10 +384,10 @@ Vertical rhythm, as settled in task 21:
 | Nav bar | 64px (`h-16`) |
 | Bottom bar (signed in, below `md`) | 64px + safe-area inset, border included (`h-[calc(4rem+env(safe-area-inset-bottom,0px))]`); the shell's bottom padding and the toasts' lift match it |
 | Shell to content | 40px on a phone, 56px from `sm` (`py-10 sm:py-14`) |
-| Between page sections (header, player, script, tabs) | 40px (`space-y-10`) |
+| Between page sections (header, player, script) | 40px (`space-y-10`) |
 | Title to its description | 8px (`space-y-2`) |
 | Eyebrow link to title block | 12px (`space-y-3`) |
-| Tabs to their content | 32px (`mt-8`) |
+| A Library page's title block to its content | 32px (`mt-8`) |
 | Card padding | 24px on a phone, 32px from `sm` (`py-6 sm:py-8`, `px-6 sm:px-8`) |
 | Inside a card, between blocks | 24px (`gap-6` / `space-y-6`) |
 | Grid gutters | 24px (`gap-6`) |
@@ -468,7 +481,7 @@ texture in the interface and it stays unadorned.
   filled pills per row outweighed the title and read as a to-do app.
 
 ### Track Rows
-A meditation in a list (`TrackRow`, in the Library, Favorites and a collection) is drawn
+A meditation in a list (`TrackRow`, in My meditations, Favorites and a collection) is drawn
 as a music app draws a track (task 48):
 
 - The 56px cover, then the title in Body type (16px, 500, Foreground, one line ending in
@@ -490,11 +503,11 @@ in Lora and a Dusk line of the count and description, with the menu beside the n
 `CollectionArtwork` is built from the first covers so it reads as a set: two side by
 side, three as a half and two quarters, four or more as a 2x2 mosaic, each cropped to its
 cell (`crop` on `MeditationCover`). One shows its cover whole; an empty collection draws a
-quiet cover of its own. The Library grid is
+quiet cover of its own. The grid on `/library/collections` is
 two columns on a phone, three from `sm`, four from `lg`; the collection page header sets
 the artwork at 160px beside the name, as the meditation page does.
 
-The Library's and Discover's grid view draws a meditation the same way: its cover at the
+The Library pages' and Discover's grid view draws a meditation the same way: its cover at the
 column's width, the title in Lora (two lines at most), and one Dusk line of tag and
 length with no date, behind the status icon. Favourite sits beside the title, with play
 from `sm`; on a phone the tile opens the page, where Play is (task 55). Each page
@@ -548,7 +561,7 @@ picker):
   above its title (`src/components/parent-link.tsx`): a Label-type link in Dusk with a
   12px arrow, no box and no "Back", lifting to Foreground on hover. It names a place, not
   a history. On a meditation that place is the list it was opened from in this tab
-  (Discover with its filters, a Library tab, or a collection by name; see
+  (Discover with its filters, one of the Library's places, or a collection by name; see
   `src/components/back-origin.tsx`), returned to through history when that list is the
   previous entry. Without a record (a shared link, a new tab, the installed app) the
   owner's meditation says Library and anyone else's says Discover. It replaced a ghost button that sat in its own 24px band and read as an
@@ -704,7 +717,7 @@ at 85% width on the right, as in the chat; below it the draft as the studio's ch
 in, the agent's one-line reply in plain Body text below a Hairline rule. Under the card
 a row of plain text buttons names the six examples (`src/lib/landing/examples.ts`). They
 switch the example and are not tags, so they are not pills: Dusk Body type, the live one
-in Foreground with a 2px primary underline, as the Library's tabs mark theirs, and a tap
+in Foreground with a 2px primary underline, as a line tab marks its own, and a tap
 streams that example from its first word. The loop walks
 the six in order. The script sits in a window of fixed height (13rem at every width),
 followed to its newest line as it streams, the way the studio canvas is, with lines
