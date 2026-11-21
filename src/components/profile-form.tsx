@@ -57,6 +57,8 @@ export function ProfileForm({ profile, email }: { profile: Profile; email: strin
   const [isPending, startTransition] = useTransition();
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url);
   const [photoWork, setPhotoWork] = useState<"change" | "remove" | null>(null);
+  // Set synchronously, so a second press during the same render is refused.
+  const photoBusy = useRef(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -93,10 +95,13 @@ export function ProfileForm({ profile, email }: { profile: Profile; email: strin
   }
 
   async function onPhoto(work: "change" | "remove", file?: File) {
+    if (photoBusy.current) return;
+    photoBusy.current = true;
     setPhotoWork(work);
     const deps = browserAvatarDeps(profile.id);
     const result =
       work === "change" && file ? await changeAvatar(file, avatarUrl, deps) : await removeAvatar(avatarUrl, deps);
+    photoBusy.current = false;
     setPhotoWork(null);
     // A failure leaves the old photo showing; the toast says why.
     if (!result.ok) {
@@ -115,30 +120,28 @@ export function ProfileForm({ profile, email }: { profile: Profile; email: strin
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-6">
       <div className="flex items-center gap-4">
-        {/* Keyed by the photo: Radix keeps an unmounted image's "loaded" state,
-            so after Remove the initial would not come back without a fresh Avatar. */}
-        <Avatar
-          key={avatarUrl ?? "none"}
-          aria-busy={photoWork !== null}
-          className={cn("size-16 border motion-safe:transition-opacity", photoWork && "opacity-60")}
-        >
-          {avatarUrl && <AvatarImage src={avatarUrl} alt="" className="object-cover" />}
-          <AvatarFallback className="font-serif text-xl">
-            {name.slice(0, 1).toUpperCase() || "?"}
-          </AvatarFallback>
-        </Avatar>
+        <ProfilePhoto url={avatarUrl} initial={name.slice(0, 1).toUpperCase() || "?"} dim={photoWork !== null} />
         <div className="min-w-0 space-y-2">
           <div className="min-w-0">
             <p className="truncate font-medium">{saved.display_name || "No name yet"}</p>
             {email && <p className="truncate text-sm text-muted-foreground">{email}</p>}
           </div>
           <div className="flex flex-wrap gap-2">
+            {/* While a photo saves, both buttons stay at full strength and keep
+                focus (DESIGN.md, Starting a render): aria-busy on the one at work,
+                no pointer events, and `photoBusy` refuses a second press, which a
+                keyboard can still make. `disabled` would also drop focus to the
+                page once the picker closes. */}
             <Button
               type="button"
               variant="outline"
               size="sm"
-              disabled={photoWork !== null}
-              onClick={() => fileInput.current?.click()}
+              aria-busy={photoWork === "change" || undefined}
+              aria-disabled={photoWork !== null || undefined}
+              className={cn(photoWork && "pointer-events-none")}
+              onClick={() => {
+                if (!photoBusy.current) fileInput.current?.click();
+              }}
             >
               {photoWork === "change" ? (
                 <Loader2 className="motion-safe:animate-spin" aria-hidden />
@@ -152,8 +155,11 @@ export function ProfileForm({ profile, email }: { profile: Profile; email: strin
                 type="button"
                 variant="ghost"
                 size="sm"
-                disabled={photoWork !== null}
-                onClick={() => onPhoto("remove")}
+                aria-label={photoWork === "remove" ? "Removing photo" : "Remove photo"}
+                aria-busy={photoWork === "remove" || undefined}
+                aria-disabled={photoWork !== null || undefined}
+                className={cn(photoWork && "pointer-events-none")}
+                onClick={() => void onPhoto("remove")}
               >
                 {photoWork === "remove" && <Loader2 className="motion-safe:animate-spin" aria-hidden />}
                 {photoWork === "remove" ? "Removing…" : "Remove"}
@@ -247,6 +253,21 @@ export function ProfileForm({ profile, email }: { profile: Profile; email: strin
         </Button>
       </div>
     </form>
+  );
+}
+
+/**
+ * The profile photo, or the initial when there is none. Keyed by the photo:
+ * Radix's Avatar keeps an unmounted image's "loaded" state, so after Remove a
+ * reused Avatar would show an empty circle instead of the initial (a11700f).
+ * A new key mounts a fresh Avatar whose fallback shows until a new photo loads.
+ */
+export function ProfilePhoto({ url, initial, dim }: { url: string | null; initial: string; dim: boolean }) {
+  return (
+    <Avatar key={url ?? "none"} className={cn("size-16 border motion-safe:transition-opacity", dim && "opacity-60")}>
+      {url && <AvatarImage src={url} alt="" className="object-cover" />}
+      <AvatarFallback className="font-serif text-xl">{initial}</AvatarFallback>
+    </Avatar>
   );
 }
 
