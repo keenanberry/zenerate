@@ -120,7 +120,9 @@ function BottomSheetContent({
       style={followKeyboard ? KEYBOARD_STYLE : undefined}
       className={cn(
         "max-h-[85dvh] gap-0 rounded-t-2xl bg-popover p-0 text-popover-foreground outline-none",
-        "motion-reduce:animate-none motion-reduce:transition-none",
+        // Important, or the sheet's `data-[state=open]:animate-in` wins on
+        // specificity and it still slides under reduced motion.
+        "motion-reduce:animate-none! motion-reduce:transition-none",
         className
       )}
     >

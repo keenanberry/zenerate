@@ -219,7 +219,7 @@ export function Studio({ chatId, initialMessages, initialMeditationId, title }: 
         <SheetContent
           side="bottom"
           showCloseButton={false}
-          className="h-[88dvh] gap-0 rounded-t-xl border-x-0 bg-background p-0 md:hidden motion-reduce:animate-none motion-reduce:transition-none"
+          className="h-[88dvh] gap-0 rounded-t-xl border-x-0 bg-background p-0 md:hidden motion-reduce:animate-none! motion-reduce:transition-none"
         >
           {/* The same handle as every bottom sheet, and it drags this one closed. */}
           <SheetHandle {...sheetHandleProps} />
