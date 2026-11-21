@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { AVATAR_MAX_INPUT_BYTES, AVATAR_MAX_OUTPUT_BYTES } from "./avatar";
-import { AvatarError, checkAvatarFile, encodeAvatar } from "./resize-avatar";
+import { AVATAR_MAX_INPUT_BYTES, AVATAR_MAX_OUTPUT_BYTES, AVATAR_MAX_PIXELS } from "./avatar";
+import { AvatarError, checkAvatarDimensions, checkAvatarFile, encodeAvatar } from "./resize-avatar";
 
 const blob = (type: string, size: number) => new Blob([new Uint8Array(size)], { type });
 
@@ -21,6 +21,21 @@ describe("checkAvatarFile", () => {
   it("lets a file with no type through to the decoder, which decides", () => {
     // Some browsers report HEIC as "", and the accept filter already chose images.
     expect(checkAvatarFile({ type: "", size: 10 })).toBeNull();
+  });
+});
+
+describe("checkAvatarDimensions", () => {
+  it("accepts a 48 MP iPhone photo", () => {
+    expect(checkAvatarDimensions(8064, 6048)).toBeNull();
+  });
+
+  it("refuses an image over the pixel cap with a clear message", () => {
+    expect(checkAvatarDimensions(10_000, 10_000)).toMatch(/50 megapixels/);
+    expect(AVATAR_MAX_PIXELS).toBe(50_000_000);
+  });
+
+  it("refuses an image with no pixels as unreadable", () => {
+    expect(checkAvatarDimensions(0, 100)).toMatch(/Couldn't read/);
   });
 });
 

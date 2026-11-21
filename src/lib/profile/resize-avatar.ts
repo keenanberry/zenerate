@@ -1,6 +1,7 @@
 import {
   AVATAR_MAX_INPUT_BYTES,
   AVATAR_MAX_OUTPUT_BYTES,
+  AVATAR_MAX_PIXELS,
   AVATAR_SIZE,
   centreSquare,
   type AvatarType,
@@ -27,6 +28,13 @@ export function checkAvatarFile(file: { type: string; size: number }): string | 
   // so); the decoder decides.
   if (file.type && !file.type.startsWith("image/")) return "Choose an image file.";
   if (file.size > AVATAR_MAX_INPUT_BYTES) return "That photo is over 15 MB. Choose a smaller one.";
+  return null;
+}
+
+/** Why a decoded image is unusable (empty, or too many pixels to draw safely), or null. */
+export function checkAvatarDimensions(width: number, height: number): string | null {
+  if (!width || !height) return "Couldn't read that photo. Try a JPEG or PNG.";
+  if (width * height > AVATAR_MAX_PIXELS) return "That photo is too large to use. Choose one under 50 megapixels.";
   return null;
 }
 
@@ -92,7 +100,8 @@ export async function resizeAvatar(file: File): Promise<Blob> {
 
   const source = await decode(file);
   try {
-    if (!source.width || !source.height) throw new AvatarError("Couldn't read that photo. Try a JPEG or PNG.");
+    const tooBig = checkAvatarDimensions(source.width, source.height);
+    if (tooBig) throw new AvatarError(tooBig);
     const { sx, sy, size } = centreSquare(source.width, source.height);
     const canvas = document.createElement("canvas");
     canvas.width = AVATAR_SIZE;

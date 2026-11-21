@@ -16,6 +16,13 @@ export const AVATAR_SIZE = 512;
 /** Refused before decoding: a phone photo is a few MB, not tens. */
 export const AVATAR_MAX_INPUT_BYTES = 15 * 1024 * 1024;
 
+/**
+ * Refused after decoding: the byte cap does not bound pixels (a small PNG can
+ * be enormous), and drawing a huge bitmap can exhaust a phone's memory. Set
+ * above a 48 MP iPhone photo (8064 × 6048), which must still work.
+ */
+export const AVATAR_MAX_PIXELS = 50_000_000;
+
 /** The bucket's own file_size_limit; an encode over it is retried smaller, then refused. */
 export const AVATAR_MAX_OUTPUT_BYTES = 1024 * 1024;
 
