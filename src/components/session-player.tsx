@@ -15,12 +15,13 @@ import {
   ScrollText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BottomSheetHeader } from "@/components/ui/bottom-sheet";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  ResponsiveMenu,
+  ResponsiveMenuContent,
+  ResponsiveMenuItem,
+  ResponsiveMenuTrigger,
+} from "@/components/ui/responsive-menu";
 import { MeditationCover } from "@/components/meditation-cover";
 import { RatingPrompt } from "@/components/rating-prompt";
 import { useMeditationPage } from "@/components/meditation-page";
@@ -300,56 +301,60 @@ export function SessionPlayer({
             <RoundButton ref={closeRef} onClick={closeSession} label="Minimize">
               <ChevronDown className="size-5" />
             </RoundButton>
-            <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
-              <DropdownMenuTrigger asChild>
+            <SessionMenu
+              open={menuOpen}
+              onOpenChange={setMenuOpen}
+              meditationId={meditationId}
+              title={title}
+              tags={tags}
+              meta={meta}
+              trigger={
                 <RoundButton label="More">
                   <MoreHorizontal className="size-5" />
                 </RoundButton>
-              </DropdownMenuTrigger>
-              {/* Portalled out of the view, so it carries `dark` itself. */}
-              <DropdownMenuContent align="end" className="dark min-w-48">
-                <DropdownMenuItem asChild>
-                  {isSignedIn ? (
-                    <a href={downloadHref}>
-                      <Download />
-                      Download
-                    </a>
-                  ) : (
-                    <Link href="/login">
-                      <Download />
-                      Sign in to download
-                    </Link>
-                  )}
-                </DropdownMenuItem>
-                {isSignedIn && page && (
-                  <DropdownMenuItem
-                    disabled={page.favorite.isPending}
-                    onSelect={page.favorite.toggle}
-                  >
-                    <Heart
-                      className={cn(
-                        page.favorite.isFavorited && "fill-current text-primary",
-                      )}
-                    />
-                    {page.favorite.isFavorited
-                      ? "Remove from favorites"
-                      : "Add to favorites"}
-                  </DropdownMenuItem>
+              }
+            >
+              <ResponsiveMenuItem asChild>
+                {isSignedIn ? (
+                  <a href={downloadHref}>
+                    <Download />
+                    Download
+                  </a>
+                ) : (
+                  <Link href="/login">
+                    <Download />
+                    Sign in to download
+                  </Link>
                 )}
-                {hasScript && page && (
-                  <DropdownMenuItem
-                    onSelect={() => {
-                      // The script follows the audio on the page.
-                      closeSession();
-                      page.revealScript();
-                    }}
-                  >
-                    <ScrollText />
-                    Show script
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+              </ResponsiveMenuItem>
+              {isSignedIn && page && (
+                <ResponsiveMenuItem
+                  disabled={page.favorite.isPending}
+                  onSelect={page.favorite.toggle}
+                >
+                  <Heart
+                    className={cn(
+                      page.favorite.isFavorited && "fill-current text-primary",
+                    )}
+                  />
+                  {page.favorite.isFavorited
+                    ? "Remove from favorites"
+                    : "Add to favorites"}
+                </ResponsiveMenuItem>
+              )}
+              {hasScript && page && (
+                <ResponsiveMenuItem
+                  onSelect={() => {
+                    // The script follows the audio on the page.
+                    closeSession();
+                    page.revealScript();
+                  }}
+                >
+                  <ScrollText />
+                  Show script
+                </ResponsiveMenuItem>
+              )}
+            </SessionMenu>
           </div>
 
           <div className="relative flex flex-1 items-center justify-center gap-10">
@@ -429,6 +434,51 @@ export function SessionPlayer({
 
       {prompt === "shown" && !open && promptView("page")}
     </>
+  );
+}
+
+/**
+ * The session view's "…": a dropdown from `md` up, a bottom sheet below.
+ * Either way it is portalled out of the view, so it carries `dark` itself
+ * and stays lights-down in the light theme.
+ */
+export function SessionMenu({
+  open,
+  onOpenChange,
+  meditationId,
+  title,
+  tags,
+  meta,
+  trigger,
+  children,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  meditationId: string;
+  title: string;
+  tags: string[];
+  meta: string;
+  trigger: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <ResponsiveMenu open={open} onOpenChange={onOpenChange}>
+      <ResponsiveMenuTrigger asChild>{trigger}</ResponsiveMenuTrigger>
+      <ResponsiveMenuContent
+        align="end"
+        className="dark min-w-48"
+        title={`More for ${title}`}
+        header={
+          <BottomSheetHeader
+            art={<MeditationCover id={meditationId} tags={tags} title={title} size={48} />}
+            title={title}
+            meta={meta}
+          />
+        }
+      >
+        {children}
+      </ResponsiveMenuContent>
+    </ResponsiveMenu>
   );
 }
 
