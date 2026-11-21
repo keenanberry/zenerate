@@ -41,10 +41,12 @@ export function showBottomBar(pathname: string): boolean {
 export function initials(displayName: string | null, email: string | null): string {
   const words = (displayName ?? "").trim().split(/\s+/).filter(Boolean);
   if (words.length > 0) {
-    const first = words[0][0];
-    const last = words.length > 1 ? words[words.length - 1][0] : "";
+    // Code points, not UTF-16 units, so a name that starts with an emoji or
+    // an astral-plane letter keeps the whole character.
+    const first = Array.from(words[0])[0];
+    const last = words.length > 1 ? Array.from(words[words.length - 1])[0] : "";
     return (first + last).toUpperCase();
   }
-  const letter = (email ?? "").trim()[0];
+  const letter = Array.from((email ?? "").trim())[0];
   return letter ? letter.toUpperCase() : "?";
 }

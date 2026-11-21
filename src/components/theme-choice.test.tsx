@@ -10,8 +10,10 @@ describe("ThemeChoice", () => {
 
   it("is a radio group named by its visible Theme label", () => {
     expect(html).toContain('role="radiogroup"');
-    expect(html).toContain('aria-labelledby="theme-label"');
-    expect(html).toMatch(/id="theme-label"[^>]*>Theme</);
+    const labelledBy = /aria-labelledby="([^"]+)"/.exec(html)?.[1];
+    expect(labelledBy).toBeTruthy();
+    expect(html).toContain(`id="${labelledBy}"`);
+    expect(html).toMatch(new RegExp(`id="${labelledBy}"[^>]*>Theme<`));
   });
 
   it("offers System, Light and Dark", () => {

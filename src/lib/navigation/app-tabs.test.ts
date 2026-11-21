@@ -51,6 +51,11 @@ describe("initials", () => {
     expect(initials("Mary Ann Smith", null)).toBe("MS");
   });
 
+  it("keeps a leading emoji whole rather than half a surrogate pair", () => {
+    expect(initials("🌙 Luna", null)).toBe("🌙L");
+    expect(initials("Ada 🌊", null)).toBe("A🌊");
+  });
+
   it("trims and uses one letter for one word", () => {
     expect(initials("  ada  ", null)).toBe("A");
   });

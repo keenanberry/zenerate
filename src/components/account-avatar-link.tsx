@@ -24,7 +24,7 @@ export function AccountAvatarLink({
       aria-label="Account"
       aria-current={current ? "page" : undefined}
       className={cn(
-        "flex size-9 shrink-0 items-center justify-center rounded-full border bg-card text-xs font-medium tracking-wide text-foreground outline-none hover:bg-card-hover focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-safe:transition-colors",
+        "flex size-10 shrink-0 items-center justify-center rounded-full border bg-card text-xs font-medium tracking-wide text-foreground outline-none hover:bg-card-hover focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-safe:transition-colors md:size-9",
         current && "border-primary",
         className,
       )}

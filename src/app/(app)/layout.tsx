@@ -26,11 +26,12 @@ export default async function AppLayout({
   // rather than failing every page.
   let avatar: { initials: string } | null = null;
   if (user) {
-    const { data: profile } = await supabase
+    const { data: profile, error } = await supabase
       .from("user_profiles")
       .select("display_name")
       .eq("id", user.id)
       .maybeSingle<{ display_name: string | null }>();
+    if (error) console.error("Could not read the display name for the avatar:", error);
     avatar = { initials: initials(profile?.display_name ?? null, user.email ?? null) };
   }
 

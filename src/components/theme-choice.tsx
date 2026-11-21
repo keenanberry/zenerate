@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useId, useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -25,21 +25,22 @@ export function ThemeChoice() {
   const { theme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(noop, () => true, () => false);
   const selected = mounted ? (theme ?? "system") : null;
+  const id = useId();
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
       <div className="space-y-1">
-        <p id="theme-label" className="text-sm font-medium">
+        <p id={`${id}-label`} className="text-sm font-medium">
           Theme
         </p>
-        <p id="theme-description" className="text-sm text-muted-foreground">
+        <p id={`${id}-description`} className="text-sm text-muted-foreground">
           Follow your device, or keep one.
         </p>
       </div>
       <div
         role="radiogroup"
-        aria-labelledby="theme-label"
-        aria-describedby="theme-description"
+        aria-labelledby={`${id}-label`}
+        aria-describedby={`${id}-description`}
         className="inline-flex gap-1 rounded-lg border p-1"
       >
         {CHOICES.map(({ value, label, icon: Icon }) => (
@@ -52,7 +53,7 @@ export function ThemeChoice() {
           >
             <input
               type="radio"
-              name="theme"
+              name={`${id}-theme`}
               value={value}
               checked={selected === value}
               onChange={() => setTheme(value)}

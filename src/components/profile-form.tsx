@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ export function ProfileForm({ profile, email }: { profile: Profile; email: strin
   const [errors, setErrors] = useState<Partial<Record<ProfileField, string>>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const body = changedFields(saved, values);
 
@@ -56,6 +58,8 @@ export function ProfileForm({ profile, email }: { profile: Profile; email: strin
       setSaved(next);
       setValues(next);
       toast.success("Profile saved");
+      // The (app) layout reads the display name for the avatar's initials.
+      router.refresh();
     });
   }
 

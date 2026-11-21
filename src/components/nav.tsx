@@ -9,11 +9,12 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { AccountAvatarLink } from "@/components/account-avatar-link";
 import { SignOutButton } from "@/components/sign-out-button";
 import { cn } from "@/lib/utils";
+import { activeTab, type AppTab } from "@/lib/navigation/app-tabs";
 
-const navItems = [
-  { href: "/library", label: "Library", icon: Library, authed: true },
-  { href: "/create", label: "Create", icon: Plus, authed: true },
-  { href: "/discover", label: "Discover", icon: Compass, authed: false },
+const navItems: { tab: AppTab; href: string; label: string; icon: typeof Library; authed: boolean }[] = [
+  { tab: "library", href: "/library", label: "Library", icon: Library, authed: true },
+  { tab: "create", href: "/create", label: "Create", icon: Plus, authed: true },
+  { tab: "discover", href: "/discover", label: "Discover", icon: Compass, authed: false },
 ];
 
 /**
@@ -55,7 +56,11 @@ export function Nav({
             className={cn("items-center gap-1 sm:gap-2", appShell ? "hidden md:flex" : "flex")}
           >
             {visibleItems.map((item) => {
-              const current = pathname.startsWith(item.href);
+              // In the app, the same rule as the bottom bar: a collection is
+              // part of the Library.
+              const current = appShell
+                ? activeTab(pathname) === item.tab
+                : pathname.startsWith(item.href);
               return (
                 <Button
                   key={item.href}
