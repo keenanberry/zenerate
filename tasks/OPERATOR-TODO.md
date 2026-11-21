@@ -315,6 +315,11 @@ deployment's own OIDC token: no env var to set.
       within about 10 seconds, and after the audio the meditation's page and Library row
       show it. Then ask for a different cover ("make the cover a misty pine forest"): it
       changes. A fourth request is refused in a sentence.
+- [ ] If covers never appear in production (every new meditation keeps its designed cover,
+      and the agent says the cover could not be made): Vercel → Logs, filter `[cover]`. A
+      `GatewayAuthenticationError` means the function gets no Gateway auth: enable OIDC
+      Federation for the project (Settings → Security), or set `AI_GATEWAY_API_KEY` in
+      Production, then redeploy.
 - [ ] Vercel → AI Gateway → Usage: one image request per cover, and a failed one only when
       the agent reported a failure. Note the per-image price there for the paid-credits item.
 - [ ] A week after the merge: Supabase → Usage → Egress and Cached Egress. Covers now load
