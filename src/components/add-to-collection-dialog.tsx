@@ -9,6 +9,12 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import {
+  BottomSheet,
+  BottomSheetContent,
+  BottomSheetTrigger,
+} from "@/components/ui/bottom-sheet";
+import { useIsDesktop } from "@/lib/use-is-desktop";
+import {
   getUserCollections,
   getMeditationCollectionIds,
   addToCollection,
@@ -31,6 +37,11 @@ interface AddToCollectionDialogProps {
   anchor?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /**
+   * Where focus goes when it closes. Opened from a menu item it has no
+   * trigger of its own, so without this focus would fall to <body>.
+   */
+  returnFocus?: React.RefObject<HTMLElement | null>;
 }
 
 export function AddToCollectionDialog({
@@ -39,6 +50,7 @@ export function AddToCollectionDialog({
   anchor,
   open: controlledOpen,
   onOpenChange,
+  returnFocus,
 }: AddToCollectionDialogProps) {
   const [ownOpen, setOwnOpen] = useState(false);
   const open = controlledOpen ?? ownOpen;
@@ -56,6 +68,7 @@ export function AddToCollectionDialog({
   const [newName, setNewName] = useState("");
   const [showNew, setShowNew] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const desktop = useIsDesktop();
 
   useEffect(() => {
     if (!open) return;
@@ -161,97 +174,146 @@ export function AddToCollectionDialog({
     });
   }
 
+  // The rows and the new-collection field, in either layer. A phone's sheet
+  // takes 52px rows and a 16px field, which iOS does not zoom into.
+  const row = desktop
+    ? "gap-2 rounded-sm px-2 py-1.5 text-sm"
+    : "min-h-13 gap-4 rounded-md px-2 text-base";
+  const body = (
+    <>
+      <div className={desktop ? "max-h-56 overflow-y-auto p-1" : undefined}>
+        {loading ? (
+          <div className="flex items-center justify-center py-6">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        ) : collections.length === 0 && !showNew ? (
+          <p className="px-2 py-3 text-center text-sm text-muted-foreground">
+            No collections yet
+          </p>
+        ) : (
+          collections.map((col) => {
+            const checked = selectedIds.has(col.id);
+            return (
+              <button
+                key={col.id}
+                onClick={() => handleToggle(col.id)}
+                disabled={isPending}
+                aria-pressed={checked}
+                className={cn(
+                  "flex w-full items-center outline-none motion-safe:transition-colors hover:bg-menu-hover focus-visible:bg-menu-hover disabled:opacity-50",
+                  row,
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex shrink-0 items-center justify-center rounded-sm border",
+                    desktop ? "h-4 w-4" : "size-5",
+                    checked
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-muted-foreground/30",
+                  )}
+                >
+                  {checked && <Check className={desktop ? "h-3 w-3" : "size-3.5"} />}
+                </span>
+                <span className="truncate">{col.name}</span>
+                <span className="ml-auto text-xs text-muted-foreground tabular-nums">
+                  {col.item_count}
+                </span>
+              </button>
+            );
+          })
+        )}
+      </div>
+
+      <div className={desktop ? "border-t p-1" : "mt-1 border-t pt-2"}>
+        {showNew ? (
+          <div className={cn("flex", desktop ? "gap-1.5" : "gap-2 py-1")}>
+            <Input
+              placeholder="Collection name"
+              aria-label="Collection name"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+              className={desktop ? "h-8 text-sm" : "h-11 text-base"}
+              autoFocus
+            />
+            <Button
+              size={desktop ? "sm" : "default"}
+              className={cn("shrink-0", desktop ? "h-8" : "h-11")}
+              onClick={handleCreate}
+              disabled={!newName.trim() || isPending}
+            >
+              Add
+            </Button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowNew(true)}
+            className={cn(
+              "flex w-full items-center text-muted-foreground outline-none motion-safe:transition-colors hover:bg-menu-hover hover:text-foreground focus-visible:bg-menu-hover",
+              row,
+            )}
+          >
+            <Plus className={desktop ? "h-4 w-4" : "size-5"} />
+            New collection
+          </button>
+        )}
+      </div>
+    </>
+  );
+
+  function focusReturn(e: Event) {
+    if (!returnFocus?.current) return;
+    e.preventDefault();
+    returnFocus.current.focus();
+  }
+
+  const ownTrigger = trigger ?? (
+    <Button variant="ghost" size="sm" className="gap-2">
+      <FolderPlus className="h-4 w-4" />
+      Add to collection
+    </Button>
+  );
+
+  if (!desktop) {
+    // A sheet of its own. Opened from a menu, the anchor is that menu's
+    // trigger and stays outside this sheet, so it still opens the menu.
+    const sheet = (
+      <BottomSheetContent
+        title="Add to collection"
+        followKeyboard
+        onCloseAutoFocus={focusReturn}
+      >
+        {body}
+      </BottomSheetContent>
+    );
+    return anchor ? (
+      <>
+        {anchor}
+        <BottomSheet open={open} onOpenChange={setOpen}>
+          {sheet}
+        </BottomSheet>
+      </>
+    ) : (
+      <BottomSheet open={open} onOpenChange={setOpen}>
+        <BottomSheetTrigger asChild>{ownTrigger}</BottomSheetTrigger>
+        {sheet}
+      </BottomSheet>
+    );
+  }
+
   return (
-    <Popover
-      open={open}
-      onOpenChange={setOpen}
-    >
+    <Popover open={open} onOpenChange={setOpen}>
       {anchor ? (
         <PopoverAnchor asChild>{anchor}</PopoverAnchor>
       ) : (
-        <PopoverTrigger asChild>
-          {trigger ?? (
-            <Button variant="ghost" size="sm" className="gap-2">
-              <FolderPlus className="h-4 w-4" />
-              Add to collection
-            </Button>
-          )}
-        </PopoverTrigger>
+        <PopoverTrigger asChild>{ownTrigger}</PopoverTrigger>
       )}
-      <PopoverContent align="end" className="w-64 p-0">
+      <PopoverContent align="end" className="w-64 p-0" onCloseAutoFocus={focusReturn}>
         <div className="border-b px-3 py-2">
           <p className="text-xs font-medium tracking-[0.06em] text-muted-foreground uppercase">Collections</p>
         </div>
-
-        <div className="max-h-56 overflow-y-auto p-1">
-          {loading ? (
-            <div className="flex items-center justify-center py-6">
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            </div>
-          ) : collections.length === 0 && !showNew ? (
-            <p className="px-2 py-3 text-center text-sm text-muted-foreground">
-              No collections yet
-            </p>
-          ) : (
-            collections.map((col) => {
-              const checked = selectedIds.has(col.id);
-              return (
-                <button
-                  key={col.id}
-                  onClick={() => handleToggle(col.id)}
-                  disabled={isPending}
-                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition-colors outline-none hover:bg-menu-hover focus-visible:bg-menu-hover disabled:opacity-50"
-                >
-                  <span
-                    className={cn(
-                      "flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border",
-                      checked
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-muted-foreground/30",
-                    )}
-                  >
-                    {checked && <Check className="h-3 w-3" />}
-                  </span>
-                  <span className="truncate">{col.name}</span>
-                  <span className="ml-auto text-xs text-muted-foreground">
-                    {col.item_count}
-                  </span>
-                </button>
-              );
-            })
-          )}
-        </div>
-
-        <div className="border-t p-1">
-          {showNew ? (
-            <div className="flex gap-1.5">
-              <Input
-                placeholder="Collection name"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-                className="h-8 text-sm"
-                autoFocus
-              />
-              <Button
-                size="sm"
-                className="h-8 shrink-0"
-                onClick={handleCreate}
-                disabled={!newName.trim() || isPending}
-              >
-                Add
-              </Button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowNew(true)}
-              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-muted-foreground transition-colors outline-none hover:bg-menu-hover hover:text-foreground focus-visible:bg-menu-hover"
-            >
-              <Plus className="h-4 w-4" />
-              New collection
-            </button>
-          )}
-        </div>
+        {body}
       </PopoverContent>
     </Popover>
   );

@@ -2,7 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Search, X } from "lucide-react";
+import { Check, ChevronDown, Search, X } from "lucide-react";
+import {
+  BottomSheet,
+  BottomSheetContent,
+  BottomSheetItem,
+  BottomSheetSeparator,
+  BottomSheetTrigger,
+} from "@/components/ui/bottom-sheet";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -23,6 +30,7 @@ import {
   type SearchField,
 } from "@/lib/meditation/discover";
 import { MEDITATION_TYPES, TAG_GROUPS, TAG_LABELS } from "@/lib/meditation/tags";
+import { useIsDesktop } from "@/lib/use-is-desktop";
 import { cn } from "@/lib/utils";
 
 /** Radix Select has no empty value, so "any" stands for a cleared filter. */
@@ -37,17 +45,37 @@ const GROUP_LABELS: Record<keyof typeof TAG_GROUPS, string> = {
 /** How long typing pauses before the URL, and so the results, follow. */
 const SEARCH_DEBOUNCE_MS = 300;
 
+type FilterOption = { value: string; label: string };
+/** A filter's options, in groups; a group with a label reads as a section. */
+type FilterGroup = { label?: string; options: FilterOption[] };
+
 function FilterSelect({
   label,
   value,
   onChange,
-  children,
+  groups,
 }: {
   label: string;
   value: string | undefined;
   onChange: (value: string | undefined) => void;
-  children: React.ReactNode;
+  groups: FilterGroup[];
 }) {
+  const desktop = useIsDesktop();
+  const any = `Any ${label.toLowerCase()}`;
+
+  if (!desktop) {
+    const current = groups.flatMap((g) => g.options).find((o) => o.value === value);
+    return (
+      <FilterSheet
+        label={label}
+        any={any}
+        current={current}
+        groups={groups}
+        onChange={onChange}
+      />
+    );
+  }
+
   return (
     <Select
       value={value ?? ANY}
@@ -61,10 +89,94 @@ function FilterSelect({
         <SelectValue>{value ? undefined : label}</SelectValue>
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value={ANY}>{`Any ${label.toLowerCase()}`}</SelectItem>
-        {children}
+        <SelectItem value={ANY}>{any}</SelectItem>
+        {groups.map((group, i) =>
+          group.label ? (
+            <SelectGroup key={group.label}>
+              {/* A rule and a Label-type heading, so the groups read as groups. */}
+              <SelectSeparator className="mt-1" />
+              <SelectLabel>{group.label}</SelectLabel>
+              {group.options.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          ) : (
+            group.options.map((o) => (
+              <SelectItem key={`${i}-${o.value}`} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))
+          ),
+        )}
       </SelectContent>
     </Select>
+  );
+}
+
+/**
+ * A filter on a phone: a button like the Select's trigger that opens a
+ * bottom sheet of the options as large rows, a check on the current one.
+ */
+function FilterSheet({
+  label,
+  any,
+  current,
+  groups,
+  onChange,
+}: {
+  label: string;
+  any: string;
+  current: FilterOption | undefined;
+  groups: FilterGroup[];
+  onChange: (value: string | undefined) => void;
+}) {
+  const option = (value: string | undefined, text: string) => {
+    const selected = value === current?.value;
+    return (
+      <BottomSheetItem key={value ?? ANY} aria-pressed={selected} onSelect={() => onChange(value)}>
+        <span className="min-w-0 flex-1 truncate">
+          {text}
+        </span>
+        {selected && <Check className="text-primary" aria-hidden />}
+      </BottomSheetItem>
+    );
+  };
+
+  return (
+    <BottomSheet>
+      <BottomSheetTrigger asChild>
+        <button
+          type="button"
+          aria-label={current ? `${label}: ${current.label}` : label}
+          className={cn(
+            "flex h-11 min-w-0 flex-1 items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30 dark:hover:bg-input/50 motion-safe:transition-[color,box-shadow]",
+            current ? "border-ring" : "text-muted-foreground",
+          )}
+        >
+          {/* Unset, the trigger names the filter, as the Select's does. */}
+          <span className="truncate">{current?.label ?? label}</span>
+          <ChevronDown className="size-4 shrink-0 opacity-50" aria-hidden />
+        </button>
+      </BottomSheetTrigger>
+      <BottomSheetContent title={label}>
+        {option(undefined, any)}
+        {groups.map((group, i) => (
+          <div key={group.label ?? i}>
+            {group.label && (
+              <>
+                <BottomSheetSeparator />
+                <p className="pt-3 pb-1.5 text-xs font-medium tracking-[0.06em] text-muted-foreground uppercase">
+                  {group.label}
+                </p>
+              </>
+            )}
+            {group.options.map((o) => option(o.value, o.label))}
+          </div>
+        ))}
+      </BottomSheetContent>
+    </BottomSheet>
   );
 }
 
@@ -163,38 +275,36 @@ export function DiscoverSearch({ filters }: { filters: DiscoverFilters }) {
       </div>
 
       <div className="flex gap-2">
-        <FilterSelect label="Tag" value={filters.tag} onChange={(tag) => go({ tag })}>
-          {(Object.keys(TAG_GROUPS) as (keyof typeof TAG_GROUPS)[]).map((group) => (
-            <SelectGroup key={group}>
-              {/* A rule and a Label-type heading, so the groups read as groups. */}
-              <SelectSeparator className="mt-1" />
-              <SelectLabel>{GROUP_LABELS[group]}</SelectLabel>
-              {TAG_GROUPS[group].map((tag) => (
-                <SelectItem key={tag} value={tag}>
-                  {TAG_LABELS[tag]}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          ))}
-        </FilterSelect>
-        <FilterSelect label="Type" value={filters.type} onChange={(type) => go({ type })}>
-          {MEDITATION_TYPES.map((type) => (
-            <SelectItem key={type} value={type}>
-              {TYPE_LABELS[type]}
-            </SelectItem>
-          ))}
-        </FilterSelect>
+        <FilterSelect
+          label="Tag"
+          value={filters.tag}
+          onChange={(tag) => go({ tag })}
+          groups={(Object.keys(TAG_GROUPS) as (keyof typeof TAG_GROUPS)[]).map((group) => ({
+            label: GROUP_LABELS[group],
+            options: TAG_GROUPS[group].map((tag) => ({ value: tag, label: TAG_LABELS[tag] })),
+          }))}
+        />
+        <FilterSelect
+          label="Type"
+          value={filters.type}
+          onChange={(type) => go({ type })}
+          groups={[
+            { options: MEDITATION_TYPES.map((type) => ({ value: type, label: TYPE_LABELS[type] })) },
+          ]}
+        />
         <FilterSelect
           label="Length"
           value={filters.duration}
           onChange={(duration) => go({ duration })}
-        >
-          {DURATION_BUCKETS.map((bucket) => (
-            <SelectItem key={bucket.slug} value={bucket.slug}>
-              {bucket.label}
-            </SelectItem>
-          ))}
-        </FilterSelect>
+          groups={[
+            {
+              options: DURATION_BUCKETS.map((bucket) => ({
+                value: bucket.slug,
+                label: bucket.label,
+              })),
+            },
+          ]}
+        />
       </div>
     </form>
   );

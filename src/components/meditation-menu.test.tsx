@@ -4,16 +4,16 @@ import { describe, expect, it, vi } from "vitest";
 
 // Radix renders a closed menu's content nowhere, so render every part inline
 // and read the items and separators in order.
-vi.mock("@/components/ui/dropdown-menu", () => {
+vi.mock("@/components/ui/responsive-menu", () => {
   const Pass = ({ children }: { children?: ReactNode }) => <>{children}</>;
   return {
-    DropdownMenu: Pass,
-    DropdownMenuTrigger: Pass,
-    DropdownMenuContent: ({ children }: { children?: ReactNode }) => <ul>{children}</ul>,
-    DropdownMenuItem: ({ children, asChild }: { children?: ReactNode; asChild?: boolean }) => (
+    ResponsiveMenu: Pass,
+    ResponsiveMenuTrigger: Pass,
+    ResponsiveMenuContent: ({ children }: { children?: ReactNode }) => <ul>{children}</ul>,
+    ResponsiveMenuItem: ({ children, asChild }: { children?: ReactNode; asChild?: boolean }) => (
       <li>{asChild ? children : <span>{children}</span>}</li>
     ),
-    DropdownMenuSeparator: () => <hr />,
+    ResponsiveMenuSeparator: () => <hr />,
   };
 });
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: () => {}, refresh: () => {} }) }));

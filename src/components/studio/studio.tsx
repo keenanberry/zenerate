@@ -6,7 +6,9 @@ import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } fro
 import Link from "next/link";
 import { ChevronLeft, FileText, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SheetHandle } from "@/components/ui/bottom-sheet";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { useSheetDrag } from "@/components/ui/sheet-drag";
 import type { StudioUIMessage } from "@/lib/chat/tools";
 import { Chat } from "./chat";
 import { ChatHeader } from "./chat-header";
@@ -124,6 +126,9 @@ export function Studio({ chatId, initialMessages, initialMeditationId, title }: 
     }
   }, [openSheet]);
 
+  const closeSheet = useCallback(() => openSheet(false), [openSheet]);
+  const { handleProps: sheetHandleProps } = useSheetDrag(closeSheet);
+
   const showPill = !!draft && draft.toolCallId !== seenDraft && !sheetOpen;
   const writing = live && !!draft?.streaming;
 
@@ -214,8 +219,10 @@ export function Studio({ chatId, initialMessages, initialMeditationId, title }: 
         <SheetContent
           side="bottom"
           showCloseButton={false}
-          className="h-[88dvh] gap-0 rounded-t-xl border-x-0 bg-background p-0 md:hidden"
+          className="h-[88dvh] gap-0 rounded-t-xl border-x-0 bg-background p-0 md:hidden motion-reduce:animate-none! motion-reduce:transition-none"
         >
+          {/* The same handle as every bottom sheet, and it drags this one closed. */}
+          <SheetHandle {...sheetHandleProps} />
           <SheetTitle className="sr-only">Script</SheetTitle>
           <SheetDescription className="sr-only">The script the agent is writing.</SheetDescription>
           <ScriptCanvas

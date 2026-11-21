@@ -1,23 +1,17 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { CollectionArtwork } from "@/components/collection-artwork";
+import { BottomSheetHeader } from "@/components/ui/bottom-sheet";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  ResponsiveMenu,
+  ResponsiveMenuContent,
+  ResponsiveMenuItem,
+  ResponsiveMenuSeparator,
+  ResponsiveMenuTrigger,
+} from "@/components/ui/responsive-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,6 +27,11 @@ interface CollectionCardProps {
 export function CollectionCard({ collection }: CollectionCardProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  // Set by "Edit collection", acted on once the menu has closed. Opened while
+  // the menu is still closing, the form's Name field takes focus and the
+  // menu's focus return to "…" then takes it back, which on a phone drops
+  // the keyboard just as it rose (the meditation menu's collectionsNext).
+  const editNext = useRef(false);
   const [name, setName] = useState(collection.name);
   const [description, setDescription] = useState(collection.description ?? "");
   const [isPending, startTransition] = useTransition();
@@ -57,6 +56,8 @@ export function CollectionCard({ collection }: CollectionCardProps) {
       setEditOpen(false);
     });
   }
+
+  const count = `${collection.item_count} ${collection.item_count === 1 ? "meditation" : "meditations"}`;
 
   return (
     <>
@@ -83,17 +84,16 @@ export function CollectionCard({ collection }: CollectionCardProps) {
               {collection.name}
             </p>
             <p className="truncate text-sm text-muted-foreground tabular-nums">
-              {collection.item_count}{" "}
-              {collection.item_count === 1 ? "meditation" : "meditations"}
+              {count}
               {collection.description && ` · ${collection.description}`}
             </p>
           </Link>
-          <DropdownMenu
+          <ResponsiveMenu
             onOpenChange={(open) => {
               if (!open) setConfirmDelete(false);
             }}
           >
-            <DropdownMenuTrigger asChild>
+            <ResponsiveMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
@@ -102,20 +102,43 @@ export function CollectionCard({ collection }: CollectionCardProps) {
               >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
+            </ResponsiveMenuTrigger>
+            <ResponsiveMenuContent
+              align="end"
+              onCloseAutoFocus={(e) => {
+                if (!editNext.current) return;
+                editNext.current = false;
+                // Leave focus to the form, which opens now.
+                e.preventDefault();
+                setEditOpen(true);
+              }}
+              title={`More for ${collection.name}`}
+              header={
+                <BottomSheetHeader
+                  art={
+                    <CollectionArtwork
+                      id={collection.id}
+                      covers={collection.covers ?? []}
+                      size={48}
+                    />
+                  }
+                  title={collection.name}
+                  meta={count}
+                />
+              }
+            >
+              <ResponsiveMenuItem
                 onSelect={() => {
                   setName(collection.name);
                   setDescription(collection.description ?? "");
-                  setEditOpen(true);
+                  editNext.current = true;
                 }}
               >
                 <Pencil className="h-4 w-4" />
                 Edit collection
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
+              </ResponsiveMenuItem>
+              <ResponsiveMenuSeparator />
+              <ResponsiveMenuItem
                 variant="destructive"
                 disabled={isPending}
                 onSelect={(e) => {
@@ -125,42 +148,21 @@ export function CollectionCard({ collection }: CollectionCardProps) {
               >
                 <Trash2 className="h-4 w-4" />
                 {confirmDelete ? "Confirm delete" : "Delete collection"}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </ResponsiveMenuItem>
+            </ResponsiveMenuContent>
+          </ResponsiveMenu>
         </div>
       </div>
 
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Edit collection</DialogTitle>
-            <DialogDescription>
-              Update the name and description for this collection.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor={`name-${collection.id}`}>Name</Label>
-              <Input
-                id={`name-${collection.id}`}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSave()}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={`desc-${collection.id}`}>Description</Label>
-              <Textarea
-                id={`desc-${collection.id}`}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Optional description"
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter>
+      <ResponsiveDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        title="Edit collection"
+        description="Update the name and description for this collection."
+        className="max-w-sm"
+        followKeyboard
+        footer={
+          <>
             <Button
               variant="outline"
               onClick={() => setEditOpen(false)}
@@ -174,9 +176,31 @@ export function CollectionCard({ collection }: CollectionCardProps) {
             >
               Save
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </>
+        }
+      >
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor={`name-${collection.id}`}>Name</Label>
+            <Input
+              id={`name-${collection.id}`}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSave()}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`desc-${collection.id}`}>Description</Label>
+            <Textarea
+              id={`desc-${collection.id}`}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Optional description"
+              rows={3}
+            />
+          </div>
+        </div>
+      </ResponsiveDialog>
     </>
   );
 }
