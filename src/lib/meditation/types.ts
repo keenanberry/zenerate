@@ -60,6 +60,18 @@ export interface Meditation {
   waveform?: Waveform | null;
   /** Storage path within the meditation-audio bucket. This is what the DB holds. */
   audio_path?: string | null;
+  /**
+   * The generated cover's path in the meditation-covers bucket,
+   * `<meditation_id>/<random>.<ext>`; null for the designed cover. Public:
+   * anon may read it. Only the service role writes it.
+   */
+  cover_path?: string | null;
+  /**
+   * The generated cover's public URL, set at read time from cover_path
+   * (`withCoverUrl` in src/lib/cover/url.ts); null draws the designed cover.
+   * Absent on a read that does not feed a cover.
+   */
+  cover_url?: string | null;
   status: MeditationStatus;
   is_public: boolean;
   /** House pick, set by the operator in SQL. */
@@ -125,6 +137,9 @@ export interface CollectionCover {
   id: string;
   title: string;
   tags: string[] | null;
+  /** The generated cover, when there is one (see Meditation.cover_path). */
+  cover_path?: string | null;
+  cover_url?: string | null;
 }
 
 export interface CollectionWithCount extends Collection {

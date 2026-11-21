@@ -1,8 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { withCoverUrl } from "@/lib/cover/url";
 import { toSearchArgs } from "@/lib/meditation/discover";
 import type { Meditation } from "@/lib/meditation/types";
 
-export type LandingMeditation = Pick<Meditation, "id" | "title" | "tags" | "settings">;
+export type LandingMeditation = Pick<Meditation, "id" | "title" | "tags" | "settings" | "cover_url">;
+
+const LANDING_COLUMNS = "id, title, tags, settings, cover_path";
 
 /** How many meditations "Hear one first" shows. */
 export const LANDING_ROW_SIZE = 3;
@@ -42,7 +45,7 @@ export async function getLandingRow(supabase: SupabaseClient): Promise<LandingRo
   const [featured, newest] = await Promise.all([
     supabase
       .from("meditations")
-      .select("id, title, tags, settings")
+      .select(LANDING_COLUMNS)
       .eq("is_public", true)
       .eq("status", "completed")
       .eq("is_featured", true)
@@ -51,7 +54,7 @@ export async function getLandingRow(supabase: SupabaseClient): Promise<LandingRo
     // Discover's own newest-first read, with no filters.
     supabase
       .rpc("discover_meditations", toSearchArgs({}, LANDING_ROW_SIZE))
-      .select("id, title, tags, settings"),
+      .select(LANDING_COLUMNS),
   ]);
 
   if (featured.error) {
@@ -60,8 +63,9 @@ export async function getLandingRow(supabase: SupabaseClient): Promise<LandingRo
   if (newest.error) {
     console.error("Landing: failed to read the newest public meditations", newest.error.message);
   }
-  return pickLandingRow(
-    (featured.data ?? []) as LandingMeditation[],
-    (newest.data ?? []) as LandingMeditation[],
-  );
+  const rows = (data: unknown) =>
+    ((data ?? []) as (Omit<LandingMeditation, "cover_url"> & { cover_path: string | null })[]).map(
+      ({ cover_path, ...m }) => withCoverUrl({ ...m, cover_path }),
+    );
+  return pickLandingRow(rows(featured.data), rows(newest.data));
 }
