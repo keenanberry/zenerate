@@ -18,8 +18,9 @@ import type { MeditationSettings } from "@/lib/meditation/types";
 import { checkRenderScript } from "@/lib/audio/render-bounds";
 import { generateCover } from "@/lib/cover/generate";
 import { COVER_CAP } from "@/lib/cover/model";
-import { MAX_SUBJECT_CHARS } from "@/lib/cover/prompt";
+import { COVER_STYLE_NAMES, MAX_SUBJECT_CHARS } from "@/lib/cover/prompt";
 import { storeCover } from "@/lib/cover/store";
+import { COVER_STYLE_RULES, photographMinorWord } from "@/lib/cover/subject";
 import { createClient as createServiceClient } from "@/lib/supabase/service-role";
 import { MAKE_AUDIO_REPLY } from "./replies";
 
@@ -120,6 +121,10 @@ export const makeCoverInput = z.object({
     .describe(
       "What the picture shows, in one or two sentences of your own words: one clear subject and its setting and light. Never the person's words verbatim.",
     ),
+  style: z
+    .enum(COVER_STYLE_NAMES)
+    .default("photograph")
+    .describe(`How it is drawn. ${COVER_STYLE_RULES}`),
 });
 
 const COVER_FAILED =
@@ -404,7 +409,14 @@ export const studioTools = {
     description: `Make a new cover picture for the meditation from a subject you write. Call it once after the first script and its details, and again only when the person asks for a different cover. Each call replaces the cover; at most ${COVER_CAP} per meditation. Returns how many are left.`,
     inputSchema: makeCoverInput,
     contextSchema: studioContextSchema,
-    execute: async ({ subject }, { context: ctx }) => {
+    execute: async ({ subject, style }, { context: ctx }) => {
+      // Before anything is reserved: a photograph shows only adults.
+      const minorWord = photographMinorWord(subject, style);
+      if (minorWord) {
+        throw new Error(
+          `A photograph cover shows only adults, and this subject says "${minorWord}". Rewrite the subject with an adult named by age range and gender (for example "a woman in her forties"), or use style "illustration" if the meditation is for children. Nothing was used up.`,
+        );
+      }
       const meditationId = await linkedMeditationId(ctx);
       if (!meditationId) throw new Error("There is no script yet. Call writeScript first.");
 
@@ -436,7 +448,7 @@ export const studioTools = {
       }
 
       try {
-        const image = await generateCover(subject);
+        const image = await generateCover(subject, style);
         const { url } = await storeCover(meditationId, image);
         return { coverUrl: url, remaining: COVER_CAP - (count as number) };
       } catch (failure) {

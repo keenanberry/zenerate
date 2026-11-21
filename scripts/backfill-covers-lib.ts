@@ -5,8 +5,10 @@
  * Gateway.
  */
 
+import { createHash } from "node:crypto";
 import { isAbsolute, relative, resolve } from "node:path";
 import { parseEnv } from "node:util";
+import { COVER_STYLE_NAMES, type CoverStyle } from "../src/lib/cover/prompt";
 
 /** Where generated covers wait for review. `.superpowers/` is gitignored. */
 export const DEFAULT_OUT = ".superpowers/cover-backfill";
@@ -30,9 +32,11 @@ export type Options = {
   limit: number | null;
   /** A file of credentials outside the repository, counted as set explicitly. */
   envFile: string | null;
+  /** Every cover in this style, instead of the one Claude picks for each. */
+  style: CoverStyle | null;
 };
 
-export const USAGE = `Usage: npx tsx scripts/backfill-covers.ts [--all | --ids a,b] [--replace] [--limit n] [--out dir] [--env-file path]
+export const USAGE = `Usage: npx tsx scripts/backfill-covers.ts [--all | --ids a,b] [--replace] [--limit n] [--style photograph|illustration] [--out dir] [--env-file path]
        npx tsx scripts/backfill-covers.ts --commit [--ids a,b] [--replace] [--out dir] [--env-file path] [--confirm-target <host>]`;
 
 /** Parses the command line. Throws a message for the operator on anything it cannot act on. */
@@ -46,6 +50,7 @@ export function parseArgs(argv: readonly string[]): Options {
     confirmTarget: null,
     limit: null,
     envFile: null,
+    style: null,
   };
   for (let i = 0; i < argv.length; i++) {
     const [flag, inline] = argv[i].startsWith("--") ? splitOnce(argv[i]) : [argv[i], undefined];
@@ -80,6 +85,14 @@ export function parseArgs(argv: readonly string[]): Options {
       case "--env-file":
         options.envFile = value();
         break;
+      case "--style": {
+        const raw = value();
+        if (!(COVER_STYLE_NAMES as readonly string[]).includes(raw)) {
+          throw new Error(`--style takes ${COVER_STYLE_NAMES.join(" or ")}, not "${raw}".`);
+        }
+        options.style = raw as CoverStyle;
+        break;
+      }
       case "--limit": {
         const raw = value();
         const n = Number(raw);
@@ -93,8 +106,8 @@ export function parseArgs(argv: readonly string[]): Options {
   }
   if (options.all && options.ids) throw new Error("Pass either --all or --ids, not both.");
   if (options.replace && !options.ids) throw new Error("Pass --replace only with --ids, so a replacement is always named.");
-  if (options.commit && (options.all || options.limit !== null)) {
-    throw new Error("Pass --all and --limit only when generating; --commit uploads what is in the review folder.");
+  if (options.commit && (options.all || options.limit !== null || options.style !== null)) {
+    throw new Error("Pass --all, --limit and --style only when generating; --commit uploads what is in the review folder.");
   }
   return options;
 }
@@ -244,6 +257,8 @@ export function whiteCorners(image: { data: Uint8Array; width: number; height: n
 export type ManifestEntry = {
   title: string;
   subject: string;
+  /** The style line it was made with; entries from before styles are photographs. */
+  style?: CoverStyle;
   /** The file in the review folder, `<id>.<ext>`. */
   file: string;
   mediaType: string;
@@ -253,6 +268,8 @@ export type ManifestEntry = {
   whiteCorners?: number;
   /** Set once --commit stored it: the cover_path it got. */
   committedPath?: string;
+  /** The SHA-256 of the file --commit stored, so a file replaced since is committed again. */
+  committedHash?: string;
 };
 
 /** `manifest.json` in the review folder: what was generated, against which project. */
@@ -261,6 +278,47 @@ export type Manifest = {
   target: string;
   entries: Record<string, ManifestEntry>;
 };
+
+/** The SHA-256 of a review file, hex: what --commit records and compares. */
+export function fileHash(bytes: Uint8Array): string {
+  return createHash("sha256").update(bytes).digest("hex");
+}
+
+/**
+ * What --commit does with a kept cover, given the meditation's cover now and
+ * the review file's hash:
+ * - "done": this very file is its cover already, from an earlier commit;
+ * - "replaced-file": an earlier commit stored this entry, but the file has
+ *   changed since; it is stored again only with --replace;
+ * - "has-cover": it has some other cover; stored only with --replace;
+ * - "store": upload it.
+ * An entry committed before hashes were kept has none, so --replace (which
+ * names its ids) stores it again rather than guess it is unchanged.
+ */
+export function commitAction(
+  entry: Pick<ManifestEntry, "committedPath" | "committedHash">,
+  coverPath: string | null,
+  hash: string,
+  replace: boolean,
+): "done" | "replaced-file" | "has-cover" | "store" {
+  if (coverPath && coverPath === entry.committedPath) {
+    if (entry.committedHash === hash || (!entry.committedHash && !replace)) return "done";
+    return replace ? "store" : "replaced-file";
+  }
+  if (coverPath && !replace) return "has-cover";
+  return "store";
+}
+
+/**
+ * The subjects a run has already used, oldest first: every entry in the
+ * manifest (this run's included, as they are added), so the next subject can
+ * be asked to differ from them.
+ */
+export function usedSubjects(manifest: Manifest): string[] {
+  return Object.values(manifest.entries)
+    .sort((a, b) => a.generatedAt.localeCompare(b.generatedAt))
+    .map((entry) => entry.subject);
+}
 
 function html(text: string): string {
   return text
@@ -293,7 +351,7 @@ export function contactSheet(manifest: Manifest, files: ReadonlySet<string>): st
   ${picture}
   <figcaption>
     <strong>${html(entry.title)}</strong>
-    <span class="meta">${status}${entry.isPublic ? "" : " · Private"}</span>
+    <span class="meta">${status} · ${entry.style === "illustration" ? "Illustration" : "Photograph"}${entry.isPublic ? "" : " · Private"}</span>
     ${framed}
     <span>${html(entry.subject)}</span>
     <code>${html(id)}</code>

@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  commitAction,
   contactSheet,
   DEFAULT_OUT,
   envFileProblem,
+  fileHash,
   fillEnv,
   FRAMED_CORNERS,
   whiteCorners,
@@ -11,6 +13,7 @@ import {
   isLocalSupabase,
   parseArgs,
   targetProblem,
+  usedSubjects,
   waitBeforeNext,
   type Manifest,
 } from "./backfill-covers-lib";
@@ -29,6 +32,7 @@ describe("parseArgs", () => {
       confirmTarget: null,
       limit: null,
       envFile: null,
+      style: null,
     });
   });
 
@@ -54,8 +58,11 @@ describe("parseArgs", () => {
       confirmTarget: "abc.supabase.co",
       limit: null,
       envFile: "/Users/me/prod.env",
+      style: null,
     });
     expect(parseArgs(["--all", "--limit=3"])).toMatchObject({ all: true, limit: 3 });
+    expect(parseArgs(["--style", "illustration"]).style).toBe("illustration");
+    expect(parseArgs(["--style=photograph"]).style).toBe("photograph");
   });
 
   it("ignores blank entries and repeats in --ids", () => {
@@ -72,8 +79,11 @@ describe("parseArgs", () => {
     expect(() => parseArgs(["--yes"])).toThrow(/Unknown option "--yes"/);
     expect(() => parseArgs(["extra"])).toThrow(/Unknown option "extra"/);
     // Generate-only flags would be silently ignored by a commit.
-    expect(() => parseArgs(["--commit", "--all"])).toThrow(/--all and --limit only when generating/);
-    expect(() => parseArgs(["--commit", "--limit", "2"])).toThrow(/--all and --limit only when generating/);
+    expect(() => parseArgs(["--commit", "--all"])).toThrow(/--all, --limit and --style only when generating/);
+    expect(() => parseArgs(["--commit", "--limit", "2"])).toThrow(/--all, --limit and --style only when generating/);
+    expect(() => parseArgs(["--commit", "--style", "photograph"])).toThrow(/only when generating/);
+    expect(() => parseArgs(["--style", "watercolour"])).toThrow(/--style takes photograph or illustration/);
+    expect(() => parseArgs(["--style"])).toThrow(/needs a value/);
   });
 });
 
@@ -228,6 +238,7 @@ describe("contactSheet", () => {
         isPublic: true,
         generatedAt: "2026-11-21T10:00:00.000Z",
         whiteCorners: 4,
+        style: "illustration",
       },
       [B]: {
         title: "Private one",
@@ -259,9 +270,66 @@ describe("contactSheet", () => {
     expect(html).toContain("Rejected");
   });
 
+  it("says which style each cover is, a photograph for entries from before styles", () => {
+    const html = contactSheet(manifest, new Set([`${A}.png`, `${B}.jpg`]));
+    expect(html).toMatch(/To commit · Illustration/);
+    expect(html).toMatch(/Committed · Photograph · Private/);
+  });
+
   it("warns about a cover with white corners while it is still to commit", () => {
     expect(contactSheet(manifest, new Set([`${A}.png`]))).toContain("White corners");
     expect(contactSheet(manifest, new Set([`${B}.jpg`]))).not.toContain("White corners");
+  });
+});
+
+describe("usedSubjects", () => {
+  it("lists every subject in the manifest, oldest first", () => {
+    const manifest: Manifest = {
+      target: "x",
+      entries: {
+        [B]: { title: "b", subject: "Second.", file: "b.png", mediaType: "image/png", isPublic: true, generatedAt: "2026-11-21T10:01:00Z" },
+        [A]: { title: "a", subject: "First.", file: "a.png", mediaType: "image/png", isPublic: true, generatedAt: "2026-11-21T10:00:00Z" },
+      },
+    };
+    expect(usedSubjects(manifest)).toEqual(["First.", "Second."]);
+    expect(usedSubjects({ target: "x", entries: {} })).toEqual([]);
+  });
+});
+
+describe("commitAction", () => {
+  const bytes = new Uint8Array([1, 2, 3]);
+  const hash = fileHash(bytes);
+  const replaced = fileHash(new Uint8Array([4, 5, 6]));
+  const committed = { committedPath: `${A}/a.webp`, committedHash: hash };
+
+  it("hashes a file as SHA-256 hex", () => {
+    expect(hash).toBe("039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81");
+  });
+
+  it("stores a cover for a meditation without one", () => {
+    expect(commitAction({}, null, hash, false)).toBe("store");
+  });
+
+  it("leaves a cover an earlier run committed from this same file", () => {
+    expect(commitAction(committed, `${A}/a.webp`, hash, false)).toBe("done");
+    expect(commitAction(committed, `${A}/a.webp`, hash, true)).toBe("done");
+  });
+
+  it("commits a file replaced after its commit again, with --replace", () => {
+    expect(commitAction(committed, `${A}/a.webp`, replaced, true)).toBe("store");
+    expect(commitAction(committed, `${A}/a.webp`, replaced, false)).toBe("replaced-file");
+  });
+
+  it("commits an entry from before hashes were kept again only with --replace", () => {
+    const old = { committedPath: `${A}/a.webp` };
+    expect(commitAction(old, `${A}/a.webp`, hash, false)).toBe("done");
+    expect(commitAction(old, `${A}/a.webp`, hash, true)).toBe("store");
+  });
+
+  it("replaces some other cover only with --replace", () => {
+    expect(commitAction(committed, `${A}/studio.webp`, hash, false)).toBe("has-cover");
+    expect(commitAction(committed, `${A}/studio.webp`, hash, true)).toBe("store");
+    expect(commitAction({}, `${A}/studio.webp`, hash, true)).toBe("store");
   });
 });
 
