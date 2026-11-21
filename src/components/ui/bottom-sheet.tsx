@@ -166,7 +166,8 @@ function BottomSheetItem({
   onSelect,
   className,
   children,
-}: {
+  ...aria
+}: React.AriaAttributes & {
   asChild?: boolean
   variant?: "default" | "destructive"
   disabled?: boolean
@@ -179,6 +180,7 @@ function BottomSheetItem({
 
   return (
     <Comp
+      {...aria}
       data-slot="bottom-sheet-item"
       data-variant={variant}
       {...(asChild ? { "aria-disabled": disabled || undefined } : { type: "button", disabled })}

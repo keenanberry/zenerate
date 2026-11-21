@@ -82,6 +82,11 @@ describe("BottomSheetItem", () => {
     expect(html).toMatch(/<button[^>]*class="[^"]*text-destructive/);
   });
 
+  it("carries a selection state on the row itself", () => {
+    const html = render(<BottomSheetItem aria-pressed>10 min</BottomSheetItem>);
+    expect(html).toMatch(/<button aria-pressed="true"[^>]*>10 min<\/button>/);
+  });
+
   it("puts its look on a link when asChild", () => {
     const html = render(
       <BottomSheetItem asChild>

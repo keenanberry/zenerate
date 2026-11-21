@@ -388,8 +388,8 @@ function AddTagPopover({
               }}
               className={cn(
                 "rounded-full border border-border text-xs leading-none font-medium tracking-[0.06em] outline-none hover:bg-menu-hover focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-safe:transition-colors",
-                // A thumb's target on a phone: 40px tall.
-                desktop ? "px-2.5 py-1" : "h-10 px-4",
+                // A thumb's target on a phone: 44px tall.
+                desktop ? "px-2.5 py-1" : "h-11 px-4",
               )}
             >
               {TAG_LABELS[tag]}

@@ -135,8 +135,8 @@ function FilterSheet({
   const option = (value: string | undefined, text: string) => {
     const selected = value === current?.value;
     return (
-      <BottomSheetItem key={value ?? ANY} onSelect={() => onChange(value)}>
-        <span aria-current={selected || undefined} className="min-w-0 flex-1 truncate">
+      <BottomSheetItem key={value ?? ANY} aria-pressed={selected} onSelect={() => onChange(value)}>
+        <span className="min-w-0 flex-1 truncate">
           {text}
         </span>
         {selected && <Check className="text-primary" aria-hidden />}
@@ -151,7 +151,7 @@ function FilterSheet({
           type="button"
           aria-label={current ? `${label}: ${current.label}` : label}
           className={cn(
-            "flex h-9 min-w-0 flex-1 items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30 dark:hover:bg-input/50 motion-safe:transition-[color,box-shadow]",
+            "flex h-11 min-w-0 flex-1 items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30 dark:hover:bg-input/50 motion-safe:transition-[color,box-shadow]",
             current ? "border-ring" : "text-muted-foreground",
           )}
         >
