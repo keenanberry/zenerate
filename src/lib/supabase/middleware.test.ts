@@ -40,10 +40,10 @@ describe("updateSession", () => {
     expect(response.headers.get("location")).toBeNull();
   });
 
-  it("sends a signed-in visitor from /login to the dashboard", async () => {
+  it("sends a signed-in visitor from /login to the Library", async () => {
     signedIn = true;
     const response = await updateSession(request("/login"));
-    expect(response.headers.get("location")).toBe("http://127.0.0.1:3000/dashboard");
+    expect(response.headers.get("location")).toBe("http://127.0.0.1:3000/library");
   });
 
   it("honours a same-origin next, query included", async () => {
@@ -59,7 +59,7 @@ describe("updateSession", () => {
   it("ignores an off-site next", async () => {
     signedIn = true;
     const response = await updateSession(request("/login?next=//evil.example"));
-    expect(response.headers.get("location")).toBe("http://127.0.0.1:3000/dashboard");
+    expect(response.headers.get("location")).toBe("http://127.0.0.1:3000/library");
   });
 
   it("lets a POST to /login through, so server actions still run", async () => {
@@ -69,7 +69,7 @@ describe("updateSession", () => {
   });
 
   it("gates nothing else", async () => {
-    for (const path of ["/discover", "/meditation/abc", "/dashboard", "/api/voices", "/reset-password"]) {
+    for (const path of ["/discover", "/meditation/abc", "/library", "/api/voices", "/reset-password"]) {
       const response = await updateSession(request(path));
       expect(response.headers.get("location")).toBeNull();
     }
@@ -82,7 +82,7 @@ describe("updateSession", () => {
 
     signedIn = true;
     const redirect = await updateSession(request("/login"));
-    expect(redirect.headers.get("location")).toBe("http://127.0.0.1:3000/dashboard");
+    expect(redirect.headers.get("location")).toBe("http://127.0.0.1:3000/library");
     expect(redirect.cookies.get("sb-test-auth-token")?.value).toBe("fresh");
   });
 });

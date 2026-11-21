@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   url.host = request.headers.get("host") ?? url.host;
   const { searchParams, origin } = url;
   const code = searchParams.get("code");
-  const next = safeNextPath(searchParams.get("next"), "/dashboard");
+  const next = safeNextPath(searchParams.get("next"), "/library");
 
   if (code) {
     const supabase = await createClient();
@@ -30,6 +30,6 @@ export async function GET(request: Request) {
   const login = new URL("/login", origin);
   const kind = callbackErrorKind(searchParams) ?? (code ? "link-failed" : null);
   if (kind) login.searchParams.set("error", kind);
-  if (next !== "/dashboard") login.searchParams.set("next", next);
+  if (next !== "/library") login.searchParams.set("next", next);
   return NextResponse.redirect(login);
 }

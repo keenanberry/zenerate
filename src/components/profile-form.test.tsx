@@ -1,7 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
-import { ProfileForm } from "./profile-form";
+import { describe, expect, it, vi } from "vitest";
 import type { Profile } from "@/lib/profile/profile";
+
+// A save refreshes the route so the (app) layout's avatar picks up the name.
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => {} }) }));
+
+const { ProfileForm } = await import("./profile-form");
 
 const NEW_ACCOUNT: Profile = {
   id: "u1",

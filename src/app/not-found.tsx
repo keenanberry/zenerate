@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
  * this file existed both rendered Next's unstyled default page.
  *
  * The destination depends on auth state: sending a signed-out visitor to
- * /dashboard would only bounce them through (app)/(authed)/layout's redirect to
+ * /library would only bounce them through (app)/(authed)/layout's redirect to
  * /login, which reads as a second failure on top of the first.
  */
 export default async function NotFound() {
@@ -18,7 +18,7 @@ export default async function NotFound() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const href = user ? "/dashboard" : "/";
+  const href = user ? "/library" : "/";
   const label = user ? "Back to your library" : "Back to home";
 
   return (

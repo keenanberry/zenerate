@@ -35,7 +35,7 @@ describe("callbackErrorKind", () => {
   const kind = (query: string) => callbackErrorKind(new URLSearchParams(query));
 
   it("is null for a successful callback", () => {
-    expect(kind("code=abc&next=%2Fdashboard")).toBeNull();
+    expect(kind("code=abc&next=%2Flibrary")).toBeNull();
   });
 
   it("reads a cancelled Google consent", () => {

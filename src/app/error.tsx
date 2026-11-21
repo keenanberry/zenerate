@@ -43,7 +43,7 @@ export default function Error({
           Try again
         </Button>
         <Button asChild variant="outline">
-          <Link href="/dashboard">Back to library</Link>
+          <Link href="/library">Back to library</Link>
         </Button>
       </div>
       {error.digest && (

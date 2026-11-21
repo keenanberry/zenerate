@@ -11,17 +11,17 @@ describe("resetPasswordRedirectUrl", () => {
 
 describe("safeNextPath", () => {
   it("keeps a same-origin path", () => {
-    expect(safeNextPath("/reset-password", "/dashboard")).toBe("/reset-password");
+    expect(safeNextPath("/reset-password", "/library")).toBe("/reset-password");
   });
 
   it("falls back when next is missing", () => {
-    expect(safeNextPath(null, "/dashboard")).toBe("/dashboard");
+    expect(safeNextPath(null, "/library")).toBe("/library");
   });
 
-  it.each(["https://evil.example", "//evil.example", "/\\evil.example", "dashboard"])(
+  it.each(["https://evil.example", "//evil.example", "/\\evil.example", "library"])(
     "rejects %s",
     (next) => {
-      expect(safeNextPath(next, "/dashboard")).toBe("/dashboard");
+      expect(safeNextPath(next, "/library")).toBe("/library");
     }
   );
 });
