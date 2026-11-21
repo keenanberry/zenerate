@@ -3,17 +3,16 @@ import sharp from "sharp";
 import { createClient as createServiceClient } from "@/lib/supabase/service-role";
 import type { GeneratedImage } from "./generate";
 import { UUID } from "./remove";
-import { COVER_BUCKET, coverThumb, coverUrl } from "./url";
+import { COVER_BUCKET, coverThumb, coverUrl, THUMB_MAX_SIZE } from "./url";
 
 /** The full cover's edge. FLUX returns 1024px; nothing is ever enlarged. */
 const FULL_EDGE = 1024;
 /**
  * The thumbnail's edge: 2x of the largest cover MeditationCover draws from
- * it (128px). Covers are served unoptimized, so small ones must not load the
- * full image; Vercel's Image Optimization quota would run out within a few
- * hundred covers.
+ * it. Covers are served unoptimized, so small ones must not load the full
+ * image.
  */
-export const THUMB_EDGE = 256;
+export const THUMB_EDGE = THUMB_MAX_SIZE * 2;
 
 /** A cover's path is random and never rewritten, so it may be cached for a year. */
 const CACHE_SECONDS = String(365 * 24 * 60 * 60);
