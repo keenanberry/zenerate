@@ -1,21 +1,22 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import Link from "next/link";
+import { useEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import { useRouter } from "next/navigation";
-import { Bookmark, Play } from "lucide-react";
+import { Bookmark } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { MeditationCover } from "@/components/meditation-cover";
-import { RatingSummary } from "@/components/rating-summary";
-import { metaLine } from "@/lib/meditation/meta";
+import { TrackRow, type TrackRowMeditation } from "@/components/track-row";
 import {
   ACCOUNT_BOOKMARK_PAGE,
   setBookmark,
   setBookmarkOverride,
 } from "@/lib/meditation/bookmark-state";
-import type { Bookmark as SavedBookmark, BookmarkPage } from "@/lib/meditation/bookmarks";
+import type {
+  Bookmark as SavedBookmark,
+  BookmarkedMeditation,
+  BookmarkPage,
+} from "@/lib/meditation/bookmarks";
 
 /**
  * The listener's bookmarks on /library/bookmarks (card ZEN-8), newest first: the first
@@ -35,6 +36,21 @@ export function AccountBookmarks({
   const [bookmarks, setBookmarks] = useState<SavedBookmark[]>(initial.bookmarks);
   const [cursor, setCursor] = useState(initial.next_cursor);
   const [loading, setLoading] = useState(false);
+  // Where focus goes once a removed row has left the DOM: the id of the row
+  // whose remove button takes it, null for "no row left", false for nothing
+  // pending. Without this, focus falls to <body> with the button it was on.
+  const focusAfterRemove = useRef<string | null | false>(false);
+  const removeButtons = useRef(new Map<string, HTMLButtonElement>());
+  const loadMoreButton = useRef<HTMLButtonElement>(null);
+  const emptyState = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const target = focusAfterRemove.current;
+    if (target === false) return;
+    focusAfterRemove.current = false;
+    const row = target === null ? undefined : removeButtons.current.get(target);
+    (row ?? loadMoreButton.current ?? emptyState.current)?.focus();
+  }, [bookmarks]);
 
   async function loadMore() {
     if (!cursor) return;
@@ -60,6 +76,8 @@ export function AccountBookmarks({
   async function remove(bookmark: SavedBookmark) {
     const id = bookmark.meditation.id;
     const index = bookmarks.findIndex((b) => b.meditation.id === id);
+    const neighbour = bookmarks[index + 1] ?? bookmarks[index - 1];
+    focusAfterRemove.current = neighbour?.meditation.id ?? null;
     setBookmarks((prev) => prev.filter((b) => b.meditation.id !== id));
     setBookmarkOverride(id, false);
 
@@ -79,20 +97,53 @@ export function AccountBookmarks({
     toast.error("Couldn't remove from saved");
   }
 
-  if (bookmarks.length === 0 && !cursor) return <>{empty}</>;
+  if (bookmarks.length === 0 && !cursor) {
+    return (
+      // Focusable from script only, to take focus when the last row goes.
+      <div ref={emptyState} tabIndex={-1} className="outline-none">
+        {empty}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
       {bookmarks.length > 0 && (
-        <ul className="divide-y border-y">
-          {bookmarks.map((b) => (
-            <BookmarkRow key={b.meditation.id} bookmark={b} onRemove={() => void remove(b)} />
+        // The rows Favorites draws (task 48), less the index column, which
+        // plays in place and needs an audio URL this read does not have.
+        <div className="w-full">
+          {bookmarks.map((b, i) => (
+            <TrackRow
+              key={b.meditation.id}
+              meditation={toTrack(b.meditation)}
+              index={i + 1}
+              showIndex={false}
+              showFavorite={false}
+              showVisibility={false}
+              byline={b.meditation.author?.display_name ?? undefined}
+              actions={
+                <RemoveBookmarkButton
+                  title={b.meditation.title}
+                  onRemove={() => void remove(b)}
+                  buttonRef={(el) => {
+                    if (el) removeButtons.current.set(b.meditation.id, el);
+                    else removeButtons.current.delete(b.meditation.id);
+                  }}
+                />
+              }
+            />
           ))}
-        </ul>
+        </div>
       )}
       {cursor && (
         <div className="flex justify-center">
-          <Button variant="outline" size="sm" onClick={() => void loadMore()} disabled={loading}>
+          <Button
+            ref={loadMoreButton}
+            variant="outline"
+            size="sm"
+            onClick={() => void loadMore()}
+            disabled={loading}
+          >
             {loading ? "Loading…" : "Load more"}
           </Button>
         </div>
@@ -101,58 +152,51 @@ export function AccountBookmarks({
   );
 }
 
-function BookmarkRow({ bookmark, onRemove }: { bookmark: SavedBookmark; onRemove: () => void }) {
-  const m = bookmark.meditation;
-  const href = `/meditation/${m.id}`;
-  const meta = metaLine({ tags: m.tags, settings: m.settings });
+/**
+ * The bookmark's meditation as a track row reads it. A bookmark is always
+ * public and completed. No created_at: the row has never shown a date, and
+ * with the author leading the line a date would not fit a phone.
+ */
+function toTrack(m: BookmarkedMeditation): TrackRowMeditation {
+  return {
+    id: m.id,
+    title: m.title,
+    tags: m.tags ?? [],
+    settings: m.settings ?? {},
+    status: m.status,
+    // The bookmark read mints no signed URLs, so rows open the page to play.
+    audio_url: null,
+    is_public: true,
+    rating: m.rating ?? undefined,
+  };
+}
 
+function RemoveBookmarkButton({
+  title,
+  onRemove,
+  buttonRef,
+}: {
+  title: string;
+  onRemove: () => void;
+  buttonRef: Ref<HTMLButtonElement>;
+}) {
   return (
-    <li className="flex items-center gap-3">
-      <Link
-        href={href}
-        className="group flex min-w-0 flex-1 items-center gap-4 rounded-md py-3 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-      >
-        <MeditationCover id={m.id} tags={m.tags ?? []} title={m.title} size={56} />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate font-serif text-base group-hover:text-accent-foreground">
-            {m.title}
-          </span>
-          <span className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground tabular-nums">
-            {m.author?.display_name && (
-              <span className="min-w-0 truncate">{m.author.display_name}</span>
-            )}
-            {m.author?.display_name && meta && <span aria-hidden>·</span>}
-            {meta && <span className="shrink-0">{meta}</span>}
-            <RatingSummary stats={m.rating} className="shrink-0" />
-          </span>
-        </span>
-      </Link>
-      <Button
-        asChild
-        variant="ghost"
-        size="icon"
-        className="h-10 w-10 shrink-0 sm:h-8 sm:w-8"
-      >
-        <Link href={href} aria-label={`Play ${m.title}`}>
-          <Play aria-hidden className="size-4" />
-        </Link>
-      </Button>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onRemove}
-            aria-label={`Remove ${m.title} from saved`}
-            className="h-10 w-10 shrink-0 sm:h-8 sm:w-8"
-          >
-            <Bookmark aria-hidden className="size-4 fill-current text-primary" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="top">
-          <p>Remove from saved</p>
-        </TooltipContent>
-      </Tooltip>
-    </li>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          ref={buttonRef}
+          variant="ghost"
+          size="icon"
+          onClick={onRemove}
+          aria-label={`Remove ${title} from saved`}
+          className="h-10 w-10 shrink-0 sm:h-8 sm:w-8"
+        >
+          <Bookmark aria-hidden className="size-4 fill-current text-primary" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="top">
+        <p>Remove from saved</p>
+      </TooltipContent>
+    </Tooltip>
   );
 }
