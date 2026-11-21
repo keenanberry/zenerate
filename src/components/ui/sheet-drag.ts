@@ -81,6 +81,23 @@ export function useSheetDrag(onClose: () => void): {
     sheet.style.transform = offset > 0 ? `translate3d(0, ${offset}px, 0)` : "";
   }
 
+  function restore(sheet: HTMLElement, offset: number) {
+    if (offset <= 0 || reducedMotion()) {
+      sheet.style.transition = "";
+      sheet.style.transform = "";
+      return;
+    }
+    sheet.style.transition = RESTORE_TRANSITION;
+    sheet.style.transform = "";
+    sheet.addEventListener(
+      "transitionend",
+      () => {
+        sheet.style.transition = "";
+      },
+      { once: true },
+    );
+  }
+
   function end(e: React.PointerEvent<HTMLElement>, cancelled: boolean) {
     const current = drag.current;
     if (!current || current.pointerId !== e.pointerId) return;
@@ -98,22 +115,13 @@ export function useSheetDrag(onClose: () => void): {
       // Leave the sheet where the finger left it: its exit animation starts
       // from the inline transform, so it carries on down from there.
       onClose();
+      // A sheet may refuse (a delete in flight): then it springs back.
+      requestAnimationFrame(() => {
+        if (sheet.isConnected && sheet.dataset.state === "open") restore(sheet, offset);
+      });
       return;
     }
-    if (offset <= 0 || reducedMotion()) {
-      sheet.style.transition = "";
-      sheet.style.transform = "";
-      return;
-    }
-    sheet.style.transition = RESTORE_TRANSITION;
-    sheet.style.transform = "";
-    sheet.addEventListener(
-      "transitionend",
-      () => {
-        sheet.style.transition = "";
-      },
-      { once: true },
-    );
+    restore(sheet, offset);
   }
 
   return {
