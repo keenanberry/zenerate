@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
@@ -31,24 +31,33 @@ function session(): Storage | undefined {
  */
 export function AccountBackLink({ className }: { className?: string }) {
   const router = useRouter();
+  // Whether this mount knows the entry before it is a page of this site. The
+  // history tag alone is not enough: Next rewrites history.state without
+  // custom keys on router.refresh() and server actions, which the profile form
+  // and the bookmarks list both trigger.
+  const backable = useRef(false);
 
-  // The first mount after an avatar click: tag this history entry, so the
-  // link knows the entry before it is a page of this site.
+  // The first mount after an avatar click: tag this history entry, so a later
+  // return to it (forward, or a reload) still knows it can go back.
   useEffect(() => {
     const storage = session();
     const record = readAccountReturn(storage);
-    if (!isAccountPending(record, Date.now())) return;
-    try {
-      window.history.replaceState({ ...window.history.state, [ACCOUNT_STATE_KEY]: record.token }, "");
-    } catch {}
-    writeAccountReturn(storage, { token: record.token });
+    if (isAccountPending(record, Date.now())) {
+      try {
+        window.history.replaceState({ ...window.history.state, [ACCOUNT_STATE_KEY]: record.token }, "");
+      } catch {}
+      writeAccountReturn(storage, { token: record.token });
+      backable.current = true;
+      return;
+    }
+    if (canGoBack(record, window.history.state)) backable.current = true;
   }, []);
 
   function onClick(event: React.MouseEvent<HTMLAnchorElement>) {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
       return;
     }
-    if (canGoBack(readAccountReturn(session()), window.history.state)) {
+    if (backable.current || canGoBack(readAccountReturn(session()), window.history.state)) {
       event.preventDefault();
       router.back();
     }
