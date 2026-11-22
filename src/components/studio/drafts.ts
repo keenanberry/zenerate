@@ -146,6 +146,7 @@ export function currentCover(
   messages: StudioUIMessage[],
   initialMessages: StudioUIMessage[],
   loadedUrl: string | null,
+  initialMeditationId: string | null,
   live: boolean,
 ): CoverState {
   const loaded = new Set(
@@ -170,27 +171,40 @@ export function currentCover(
   url ??= loadedUrl;
   const making = live && newest !== null && running(newest);
   if (url) return { url, status: "photo", making };
-  if (making || (live && turnAwaitsCover(messages))) return { url: null, status: "expected", making };
+  if (making || (live && turnAwaitsCover(messages, initialMessages, initialMeditationId))) {
+    return { url: null, status: "expected", making };
+  }
   return { url: null, status: "fallback", making: false };
 }
 
 /**
- * Whether the live turn (everything after the newest request) wrote a
- * script or its details and has not called makeCover yet: the agent makes
- * the cover after them. A makeCover in the turn that has ended (made or
- * failed) means no other is coming.
+ * Whether the live turn (everything after the newest request) will call
+ * makeCover and has not yet. Only two turns do: the one whose writeScript
+ * makes the meditation (there was none before the turn; from its first
+ * streamed line), and one whose saved writeScript carries the server's
+ * `cover` request (a revision of a meditation whose cover never landed,
+ * which the server bounds). A rename, or any other revision, makes no
+ * cover. A makeCover in the turn that has ended (made or failed) means no
+ * other is coming.
  */
-function turnAwaitsCover(messages: StudioUIMessage[]): boolean {
+function turnAwaitsCover(
+  messages: StudioUIMessage[],
+  initialMessages: StudioUIMessage[],
+  initialMeditationId: string | null,
+): boolean {
   const start = messages.findLastIndex((m) => m.role === "user") + 1;
-  let wrote = false;
+  const creates =
+    currentMeditationId(messages.slice(0, start), initialMessages, initialMeditationId) === null;
+  let awaits = false;
   for (const message of messages.slice(start)) {
     for (const part of message.parts) {
       if (part.type === "tool-makeCover") return false;
-      if (part.type !== "tool-writeScript" && part.type !== "tool-setDetails") continue;
-      if (part.state !== "output-error" && part.state !== "output-denied") wrote = true;
+      if (!isWriteScript(part)) continue;
+      if (part.state === "output-available") awaits ||= creates || part.output.cover !== undefined;
+      else if (part.state === "input-streaming" || part.state === "input-available") awaits ||= creates;
     }
   }
-  return wrote;
+  return awaits;
 }
 
 /**

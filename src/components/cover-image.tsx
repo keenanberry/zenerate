@@ -20,6 +20,8 @@ type CoverImageProps = {
   preload?: boolean;
   /** Told once the photo has failed and the fallback shows. */
   onFailed?: () => void;
+  /** Told when a file of the photo has loaded. */
+  onLoaded?: () => void;
 };
 
 /**
@@ -53,14 +55,21 @@ export function CoverImage(props: CoverImageProps) {
   const sources = coverSources(props.src, props.size);
   const current = sources[failures];
   // Keyed by the file, so a source that falls through starts on the tile.
-  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  // The one shown before it stays underneath, so a cover replaced by a new
+  // one (a remake in the studio) keeps its photo until the new one is in.
+  const [shown, setShown] = useState<ShownCover>({ loaded: null, previous: null });
+  const view = coverLoadView(shown, current);
   return (
     <CoverImageView
       {...props}
       failures={failures}
       // The page's LCP cover is not held back for hydration.
-      loaded={props.preload === true || loadedSrc === current}
-      onLoad={() => setLoadedSrc(current)}
+      loaded={props.preload === true || view.loaded}
+      underlay={view.underlay}
+      onLoad={() => {
+        setShown((s) => coverLoaded(s, current));
+        props.onLoaded?.();
+      }}
       onError={() => {
         setFailed({ src: props.src, count: failures + 1 });
         if (failures + 1 >= sources.length) props.onFailed?.();
@@ -69,12 +78,26 @@ export function CoverImage(props: CoverImageProps) {
   );
 }
 
+/** The newest file that loaded, and the one that loaded before it. */
+export type ShownCover = { loaded: string | null; previous: string | null };
+
+/** After `source` fires its load. */
+export function coverLoaded(shown: ShownCover, source: string): ShownCover {
+  return shown.loaded === source ? shown : { loaded: source, previous: shown.loaded };
+}
+
+/** Whether `current` is in, and which earlier photo sits under it while it loads and fades in. */
+export function coverLoadView(shown: ShownCover, current: string | undefined) {
+  const loaded = shown.loaded !== null && shown.loaded === current;
+  return { loaded, underlay: loaded ? shown.previous : shown.loaded };
+}
+
 /**
  * CoverImage's markup after `failures` sources have failed, before and
- * after the current one has `loaded`; exported for its tests. The caller's
- * classes go on the frame, which reserves the square (`--cover-size`, or
- * the caller's own width and height), so nothing shifts when the photo
- * arrives.
+ * after the current one has `loaded`, over the `underlay` photo shown
+ * before it (if any); exported for its tests. The caller's classes go on
+ * the frame, which reserves the square (`--cover-size`, or the caller's
+ * own width and height), so nothing shifts when the photo arrives.
  */
 export function CoverImageView({
   src,
@@ -85,11 +108,21 @@ export function CoverImageView({
   preload,
   failures,
   loaded,
+  underlay = null,
   onLoad,
   onError,
-}: CoverImageProps & { failures: number; loaded: boolean; onLoad: () => void; onError: () => void }) {
+}: CoverImageProps & {
+  failures: number;
+  loaded: boolean;
+  underlay?: string | null;
+  onLoad: () => void;
+  onError: () => void;
+}) {
   const current = coverSources(src, size)[failures];
   if (!current) return fallback;
+  // Served as stored: the stored sizes are already the sizes a cover
+  // needs, and Vercel's Image Optimization quota on Hobby (about 5,000 a
+  // month) would run out within a few hundred covers.
   return (
     <span
       data-loaded={loaded || undefined}
@@ -99,6 +132,19 @@ export function CoverImageView({
         className,
       )}
     >
+      {underlay && underlay !== current && (
+        <Image
+          key={underlay}
+          src={underlay}
+          width={size}
+          height={size}
+          alt=""
+          aria-hidden
+          data-underlay
+          className="absolute inset-0 size-full object-cover"
+          unoptimized
+        />
+      )}
       <Image
         // A new source is a new element, so its load and error are its own.
         key={current}
@@ -113,9 +159,6 @@ export function CoverImageView({
           "absolute inset-0 size-full object-cover motion-safe:transition-opacity motion-safe:duration-500",
           loaded ? "opacity-100" : "opacity-0",
         )}
-        // Served as stored: the stored sizes are already the sizes a cover
-        // needs, and Vercel's Image Optimization quota on Hobby
-        // (about 5,000 a month) would run out within a few hundred covers.
         unoptimized
       />
     </span>

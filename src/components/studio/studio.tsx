@@ -89,8 +89,8 @@ export function Studio({
   );
 
   const cover = useMemo(
-    () => currentCover(messages, initialMessages, initialCoverUrl, live),
-    [messages, initialMessages, initialCoverUrl, live],
+    () => currentCover(messages, initialMessages, initialCoverUrl, initialMeditationId, live),
+    [messages, initialMessages, initialCoverUrl, initialMeditationId, live],
   );
 
   // The heading: the saved title, or what the route will save once this

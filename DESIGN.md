@@ -659,12 +659,16 @@ to one house look.
   once). The page's preloaded LCP cover shows as it loads, unfaded.
 - **Expected, not faked, in the studio.** The designed cover is what a meditation
   with no photo coming looks like, so the studio never shows it as a stand-in for a
-  photo on its way. While a cover is expected (makeCover is running, or the live turn
-  wrote the script or its details and makeCover follows), the canvas and the chat's
-  draft chip hold a plain Hush tile at the cover's size and radius, with a spinner and
-  no motif. Only when none is coming (makeCover failed, or the turn ended without one)
-  does the designed cover take the square (`currentCover` in
-  `src/components/studio/drafts.ts`).
+  photo on its way. A cover is expected only while makeCover is running, in the turn
+  whose script creates the meditation (from its first streamed line), and in a turn
+  whose saved script carries the server's request for a missing cover. Then the
+  canvas and the chat's draft chip hold a plain Hush tile at the cover's size and
+  radius, with a spinner and no motif. A rename or any other revision expects
+  nothing, and once makeCover fails or the turn ends without one the designed cover
+  takes the square (`currentCover` in `src/components/studio/drafts.ts`).
+- **A remade cover replaces the old one in place.** The old photo stays, under the
+  canvas's Hush scrim and spinner, until the new one has loaded and faded in over it;
+  the square never drops to the empty tile in between.
 - **Three stored sizes, served as stored.** Each cover is stored three times as WebP:
   the full image (1024px), a 512px middle size and a 256px thumbnail beside it. A cover
   loads the smallest size that is sharp at 2x: 128px or less the thumbnail (a 56px row),

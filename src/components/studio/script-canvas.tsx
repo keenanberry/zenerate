@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode, type Ref } from "react";
+import { useEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import { ArrowDown, Loader2, TriangleAlert } from "lucide-react";
 import { MeditationCover } from "@/components/meditation-cover";
 import { ScriptViewer } from "@/components/script-viewer";
@@ -80,7 +80,7 @@ export function CoverPlaceholder({ size }: { size: number }) {
  * The meditation's cover beside its title (DESIGN.md, Covers): the photo;
  * a quiet placeholder while a photo is on its way; the designed cover when
  * none is coming. While a new photo is made over an existing one, a Hush
- * scrim and a spinner sit over it until the new one replaces it.
+ * scrim and a spinner sit over the old photo until the new one has loaded.
  */
 export function CanvasCover({
   meditationId,
@@ -91,6 +91,11 @@ export function CanvasCover({
   details: Details | null;
   cover: CoverState;
 }) {
+  // The URL whose photo last loaded (or failed). A new URL arriving after
+  // one was shown is a remake still loading: the scrim stays up until it is in.
+  const [settled, setSettled] = useState<string | null>(null);
+  const url = cover.url;
+  const remaking = cover.status === "photo" && (cover.making || (settled !== null && settled !== url));
   return (
     <span className="relative shrink-0">
       {cover.status === "expected" ? (
@@ -101,10 +106,12 @@ export function CanvasCover({
           tags={details?.tags ?? []}
           title={details?.title ?? ""}
           size={56}
-          coverUrl={cover.url}
+          coverUrl={url}
+          onImageLoad={() => setSettled(url)}
+          onImageError={() => setSettled(url)}
         />
       )}
-      {cover.status === "photo" && cover.making && (
+      {remaking && (
         <span className="absolute inset-0 flex items-center justify-center rounded-md bg-muted/70">
           <Loader2 className="size-4 text-foreground motion-safe:animate-spin" aria-hidden />
         </span>

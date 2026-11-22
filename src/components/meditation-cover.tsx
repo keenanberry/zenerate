@@ -240,6 +240,8 @@ type MeditationCoverProps = {
   preload?: boolean;
   /** Told when a photo fails and the designed cover takes its place. */
   onImageError?: () => void;
+  /** Told when the photo has loaded. */
+  onImageLoad?: () => void;
 };
 
 export function MeditationCover({
@@ -253,6 +255,7 @@ export function MeditationCover({
   coverUrl,
   preload,
   onImageError,
+  onImageLoad,
 }: MeditationCoverProps) {
   const radius = size < 96 ? "rounded-md" : "rounded-xl";
   const designed = (
@@ -280,6 +283,7 @@ export function MeditationCover({
       fallback={designed}
       preload={preload}
       onFailed={onImageError}
+      onLoaded={onImageLoad}
     />
   );
 }
@@ -293,7 +297,7 @@ function DesignedCover({
   decorative,
   crop,
   radius,
-}: Required<Omit<MeditationCoverProps, "coverUrl" | "className" | "preload" | "onImageError">> & {
+}: Required<Omit<MeditationCoverProps, "coverUrl" | "className" | "preload" | "onImageError" | "onImageLoad">> & {
   className?: string;
   radius: string;
 }) {
