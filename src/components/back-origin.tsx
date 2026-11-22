@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { ParentLink } from "@/components/parent-link";
 import {
@@ -99,16 +99,27 @@ export function MeditationParentLink({
   );
   const origin = useMemo(() => parseBackOrigin(raw, meditationId), [raw, meditationId]);
   const target = backTarget(origin, isOwner);
+  // The token of the record whose page is the entry before this one, as this
+  // mount knows it. The history tag alone is not enough: Next rewrites
+  // history.state without custom keys on router.refresh() and server actions,
+  // which favouriting and rating both trigger.
+  const tagged = useRef<string | null>(null);
 
-  // The first mount after a recorded click: tag this history entry, so the
-  // link knows the entry before it is the recorded page.
+  // The first mount after a recorded click: tag this history entry, so a later
+  // return to it (forward, or a reload) still knows the entry before it is the
+  // recorded page.
   useEffect(() => {
-    if (!origin || !isPending(origin, Date.now())) return;
-    try {
-      window.history.replaceState({ ...window.history.state, [STATE_KEY]: origin.token }, "");
-    } catch {}
-    writeOrigin(session(), { ...origin, pendingAt: undefined });
-    window.dispatchEvent(new Event(CHANGE));
+    if (!origin) return;
+    if (isPending(origin, Date.now())) {
+      try {
+        window.history.replaceState({ ...window.history.state, [STATE_KEY]: origin.token }, "");
+      } catch {}
+      tagged.current = origin.token;
+      writeOrigin(session(), { ...origin, pendingAt: undefined });
+      window.dispatchEvent(new Event(CHANGE));
+      return;
+    }
+    if (window.history.state?.[STATE_KEY] === origin.token) tagged.current = origin.token;
   }, [origin]);
 
   function onClick(event: React.MouseEvent<HTMLAnchorElement>) {
@@ -117,7 +128,10 @@ export function MeditationParentLink({
     }
     // Going back, rather than forward to the same URL, restores the list's
     // scroll position.
-    if (origin && window.history.state?.[STATE_KEY] === origin.token) {
+    if (
+      origin &&
+      (tagged.current === origin.token || window.history.state?.[STATE_KEY] === origin.token)
+    ) {
       event.preventDefault();
       router.back();
     }

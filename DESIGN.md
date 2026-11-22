@@ -352,8 +352,8 @@ every other content type narrows itself inside the shell:
   is 20rem (24rem from `lg`) and the canvas takes the rest. Inside the 64rem shell that
   sets the script at about 45ch (502px at `lg`), under its 65ch cap but still a
   comfortable measure; letting the studio run wider than the shell is the lever if it
-  reads cramped. Both panes fill the viewport under the nav, less
-  the shell's padding, and scroll on their own, with the composer at the bottom of the
+  reads cramped. Both panes fill the viewport under the nav (the whole
+  viewport on a phone, which has no top bar signed in), less the shell's padding, and scroll on their own, with the composer at the bottom of the
   chat. Under `md` the chat fills the column and the canvas is a bottom sheet.
 - Login and dialogs: a single 28rem card (`max-w-md`).
 - Legal pages: the 48rem `(legal)` column with the article itself at 60ch in Body type.
@@ -364,10 +364,11 @@ component (`src/components/nav.tsx`) renders it in two variants. The landing pag
 legal layout use `"site"` (task 22) at every width, signed in or out: section links beside
 the wordmark (icons only below `sm`), and theme toggle plus account and sign-in/out on the
 right. The in-app shell (`src/app/(app)/layout.tsx`) uses `"app"`, which is the same bar
-for a signed-out visitor; signed in, it is the wordmark alone below `md`, and from `md`
-the wordmark with labelled Library, Create and Discover on the left and a round initials
-avatar to Account on the right (`src/components/account-avatar-link.tsx`). The theme and
-Sign out live on Account.
+for a signed-out visitor; signed in, there is no top bar below `md` (as in Apple Music),
+and from `md` the bar is the wordmark with labelled Library, Create and Discover on the
+left and a round avatar to Account on the right (`src/components/account-avatar-link.tsx`),
+the profile photo when there is one, else the initials. The theme and Sign out live on
+Account.
 
 Signed in and below `md`, the sections move to a bottom tab bar
 (`src/components/bottom-bar.tsx`): Library, Discover and Create, a 20px icon over a label
@@ -376,8 +377,16 @@ and `aria-current="page"`, the others in Dusk. It is fixed at `z-40` (the sessio
 Sidebar surface at 95% with backdrop blur and a Hairline top border, and no shadow. The
 shell pads its bottom by the bar's height so the last row and the footer scroll clear of
 it. The bar is absent in the studio (`/create/[chatId]`), whose composer owns the bottom
-of the screen; the studio header carries a back link to Create there instead. On a phone
-the avatar to Account sits in the Library's header, as in Apple Music.
+of the screen; the studio header carries a back link to Create there instead.
+
+On a phone, signed in, each tab's header carries the avatar to Account at its top right
+(`md:hidden`): beside the "Library" and "Discover" titles, and beside Create's question,
+which stays its title (there is no "Create" heading). Every page that is not a tab has a
+way back at its top, since the installed app has no browser back button: the eyebrow
+parent link on the Library's places, a collection and a meditation, the studio's chevron
+to Create, and on Account the same 40px ghost chevron (`src/components/account-back-link.tsx`,
+labelled "Back"), above the title, which returns through history to the page the avatar
+was tapped on, else to the Library.
 
 Vertical rhythm, as settled in task 21:
 
@@ -385,7 +394,7 @@ Vertical rhythm, as settled in task 21:
 |---|---|
 | Nav bar | 64px (`h-16`) |
 | Bottom bar (signed in, below `md`) | 64px + safe-area inset, border included (`h-[calc(4rem+env(safe-area-inset-bottom,0px))]`); the shell's bottom padding and the toasts' lift match it |
-| Shell to content | 40px on a phone, 56px from `sm` (`py-10 sm:py-14`) |
+| Shell to content | 40px on a phone, 56px from `sm` (`py-10 sm:py-14`), below the top bar. Signed in in the app shell there is no bar below `md`, so the top is 24px under the status bar (`pt-6`, the card-padding step) and 56px from `md`; the bottom stays `pb-10 sm:pb-14` |
 | Between page sections (header, player, script) | 40px (`space-y-10`) |
 | Title to its description | 8px (`space-y-2`) |
 | Eyebrow link to title block | 12px (`space-y-3`) |
@@ -572,9 +581,10 @@ is a bottom sheet (see Elevation):
   tracking-tight at 1.125rem. Items are ghost buttons (`asChild` links) with a 16px icon
   and a label that is `sr-only` below `sm`, never `hidden`, so the icon-only items keep an
   accessible name; the active item is `secondary` with `aria-current="page"`. In the
-  signed-in app shell the items show from `md` only, always labelled, and the right side
-  is the account avatar: a 36px round `bg-card` chip with a Hairline border and the
-  initials in UI type, its border Primary while on Account. On the landing and legal bars
+  signed-in app shell the whole bar shows from `md` only, the items always labelled, and
+  the right side is the account avatar: a 36px round `bg-card` chip (40px in a phone's tab
+  header) with a Hairline border holding the profile photo, or the initials in UI type,
+  its border Primary while on Account. On the landing and legal bars
   the theme toggle is an icon button whose sun and moon cross-fade with a rotate; in the
   app the theme is a System/Light/Dark radio group on Account
   (`src/components/theme-choice.tsx`).

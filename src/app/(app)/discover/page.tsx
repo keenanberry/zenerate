@@ -18,6 +18,9 @@ import {
 import { TAG_LABELS } from "@/lib/meditation/tags";
 import { withRatingStats } from "@/lib/meditation/ratings";
 import { pageMetadata } from "@/lib/seo/metadata";
+import { getViewer } from "@/lib/profile/viewer";
+import { initials } from "@/lib/navigation/app-tabs";
+import { AccountAvatarLink } from "@/components/account-avatar-link";
 import { MeditationListView } from "@/components/meditation-list-view";
 import { DiscoverViewWrapper } from "./view-wrapper";
 import { DiscoverSearch } from "./search";
@@ -198,7 +201,9 @@ export default async function DiscoverPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const filters = parseDiscoverFilters(await searchParams);
+  // getViewer is the (app) layout's own read, shared through React's cache.
+  const [params, { user, displayName, avatarUrl }] = await Promise.all([searchParams, getViewer()]);
+  const filters = parseDiscoverFilters(params);
   const active = hasActiveFilters(filters);
 
   return (
@@ -207,7 +212,18 @@ export default async function DiscoverPage({
     <div data-back-label="Discover" className="space-y-10">
       <div className="space-y-6">
         <div className="space-y-2">
-          <h1 className="font-serif text-2xl font-medium tracking-tight">Discover</h1>
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="font-serif text-2xl font-medium tracking-tight">Discover</h1>
+            {/* Signed in, the phone's way to Account; from md it is in the top
+                bar, and signed out the top bar is there at every width. */}
+            {user && (
+              <AccountAvatarLink
+                initials={initials(displayName, user.email ?? null)}
+                avatarUrl={avatarUrl}
+                className="md:hidden"
+              />
+            )}
+          </div>
           <p className="text-muted-foreground">
             Meditations people made here and chose to share.
           </p>

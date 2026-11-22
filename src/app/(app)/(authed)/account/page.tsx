@@ -4,6 +4,7 @@ import { PROFILE_COLUMNS, type Profile } from "@/lib/profile/profile";
 import { ProfileForm } from "@/components/profile-form";
 import { ThemeChoice } from "@/components/theme-choice";
 import { SignOutButton } from "@/components/sign-out-button";
+import { AccountBackLink } from "@/components/account-back-link";
 
 export const metadata = {
   title: "Account | Zenerate",
@@ -36,9 +37,14 @@ export default async function AccountPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-10">
-      <div className="space-y-2">
-        <h1 className="font-serif text-2xl font-medium tracking-tight">Account</h1>
-        <p className="text-muted-foreground">Your profile and settings.</p>
+      <div className="space-y-3">
+        {/* A phone has no top bar and, installed, no browser back button;
+            from md the top bar is the way out. */}
+        <AccountBackLink className="md:hidden" />
+        <div className="space-y-2">
+          <h1 className="font-serif text-2xl font-medium tracking-tight">Account</h1>
+          <p className="text-muted-foreground">Your profile and settings.</p>
+        </div>
       </div>
 
       <AccountSection

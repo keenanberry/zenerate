@@ -21,9 +21,10 @@ const navItems: { tab: AppTab; href: string; label: string; icon: typeof Library
  * The top bar. `"site"` (the landing page and the legal layout) is the full
  * bar at every width: section links, theme toggle, account and sign in/out.
  * `"app"` (the in-app shell) is that bar for a signed-out visitor; signed in,
- * it is the wordmark alone below `md`, where the bottom bar carries the
- * sections, and from `md` the labelled sections with an avatar to Account,
- * which now holds the theme and Sign out.
+ * it is absent below `md`, where the bottom bar carries the sections and each
+ * tab's header the avatar to Account, as in Apple Music, and from `md` the
+ * labelled sections with an avatar to Account, which holds the theme and
+ * Sign out.
  */
 export function Nav({
   isSignedIn,
@@ -39,7 +40,12 @@ export function Nav({
   const visibleItems = navItems.filter((item) => isSignedIn || !item.authed);
 
   return (
-    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header
+      className={cn(
+        "border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+        appShell && "hidden md:block",
+      )}
+    >
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
         <div className="flex items-center gap-3 sm:gap-8">
           <Link
@@ -53,7 +59,7 @@ export function Nav({
           </Link>
           <nav
             aria-label="Primary"
-            className={cn("items-center gap-1 sm:gap-2", appShell ? "hidden md:flex" : "flex")}
+            className="flex items-center gap-1 sm:gap-2"
           >
             {visibleItems.map((item) => {
               // In the app, the same rule as the bottom bar: a collection is
@@ -72,7 +78,7 @@ export function Nav({
                   <Link href={item.href} aria-current={current ? "page" : undefined}>
                     <item.icon className="h-4 w-4" aria-hidden />
                     {/* Icons only below sm; the label stays for screen readers.
-                        The app shell shows this row from md only, labelled. */}
+                        The app shell's bar shows from md only, labelled. */}
                     <span className={appShell ? undefined : "sr-only sm:not-sr-only"}>
                       {item.label}
                     </span>
@@ -84,11 +90,7 @@ export function Nav({
         </div>
         {appShell ? (
           avatar && (
-            <AccountAvatarLink
-              initials={avatar.initials}
-              avatarUrl={avatar.avatarUrl}
-              className="hidden md:flex"
-            />
+            <AccountAvatarLink initials={avatar.initials} avatarUrl={avatar.avatarUrl} />
           )
         ) : (
           <div className="flex items-center gap-1 sm:gap-2">
