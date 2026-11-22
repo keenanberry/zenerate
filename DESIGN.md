@@ -273,7 +273,8 @@ appears nowhere else: not on CTAs, not on card headers, not on the hero. The hal
 the player is a radial glow in dark and a flat tint in light (`--player-halo`).
 Meditation covers are not an exception: designed covers are flat tone fields, and a
 generated cover is a photograph whose only overlay is the session view's alpha-mask
-fade (see Covers).
+fade (see Covers). Discover's photographic category tiles take the same kind of
+alpha-mask scrim behind their label.
 A transparency mask is not a gradient in this sense: a `mask-image` ramp from `transparent`
 to `black` sets only alpha, so it shows the surface's own token colours fading out and adds
 no hue. The landing demo's script window fades its scrolled-away lines this way.
@@ -712,10 +713,10 @@ one, derived from its tags and id:
   Strokes hold a bold, steady on-screen weight (2px in rows, 2.5px up to 160px, 3px
   above), and covers under 96px drop their finest detail: fewer rings, stars, drops,
   leaves and layers, drawn larger.
-- **Discover's category tiles are covers too.** Each tile is its category's field, with
-  a cover for the category (id `category:<slug>`, its first tag) cropped into the right
-  edge and faded in through an alpha mask, and the label in Lora on plain field
-  (`category-grid.tsx`). No icons.
+- **Discover's category tiles without a photo.** A category with no image yet (see
+  Category tiles below) draws its first tag's field, with a cover for the category (id
+  `category:<slug>`) cropped into the right edge and faded in through an alpha mask,
+  and the label in Lora on plain field (`category-grid.tsx`). No icons.
 - **The session view's ground.** The session player draws the cover at 600 (strokes
   hold 3px at that scale) cropped across the top of the view, fading to `--night`. A
   generated photo fades sooner and darker (see Session Player).
@@ -726,6 +727,43 @@ one, derived from its tags and id:
   cover is not: the OS needs a raster, and resolving the tokens and rasterizing
   client-side is not worth it for a surface only a phone can verify, so a meditation
   without a generated cover shows the brand icon there.
+
+**Category tiles (photographic).** Discover's "Browse by feeling" tiles are fixed
+photographs, one per category, filling the tile the way a music app's category tiles do:
+`public/discover/categories/<slug>.webp`, 640px square WebP, listed with its crop in
+`CATEGORY_IMAGES` in `src/app/(app)/discover/category-grid.tsx`. They are not
+meditation covers and are not generated at runtime: they are static assets served as
+stored from the CDN (`next/image` with `unoptimized`), so they cost no storage egress
+and no Image Optimization quota.
+
+- **Fill and crop.** The photo fills the tile (`object-cover`) at the tile's 12px radius.
+  Tiles are about twice as wide as tall, so each photo carries an `objectPosition`
+  chosen by eye so its subject survives the crop (the morning cup sits low, so
+  `50% 75%`).
+- **The label scrim.** The label sits top-left in Lora over a Deep Night (`bg-night`)
+  layer whose alpha mask is a radial ramp from that corner, sized in rem
+  (`ellipse 15rem 5.5rem at 0 0`: 80%, 70% at 75%, then clear). It is sized in rem
+  because the label is: an ellipse in percent of the tile pulls the fade in under the
+  label as the tile narrows (at 320px and between `sm` and about 740px, "Stress
+  relief" fell to about 3.6:1 that way). Past the label it clears toward the lower
+  right, where the subjects are. Like the session view's fade it sets only alpha, so it
+  adds no hue and is not a gradient under the One Gradient Rule.
+- **The label keeps to one line** (`whitespace-nowrap`; 16px until `md`, 18px from
+  `md`, where four columns first have room for "Breath & body" at 18px). On one line
+  the whole label block lies on the scrim's plateau: measured with the real face at
+  viewports of 320, 390, 640, 700, 768, 1024 and 1280px, the lowest alpha behind any
+  label pixel is 70% ("Breath & body" from `md`).
+- **Light in both themes.** The label is on a photo, so it carries `dark` and reads in
+  Moonlit in either theme. Moonlit must hold 4.5:1 over every pixel of the label's line
+  box. The white sky of `stress-relief` is the worst case, 5.56:1 at 768px and 5.58 to
+  5.69:1 at the other widths; every other tile holds 5.89:1 or more.
+- **Adding a category's photo.** Make a 640px square WebP of one calm subject in the
+  style of the others, put it at `public/discover/categories/<slug>.webp`, add the slug
+  and its `objectPosition` to `CATEGORY_IMAGES`, and check by eye that the subject
+  survives the crop at 390px and at four columns. Then measure the label at the widths
+  above: it must fit on one line and hold 4.5:1 over every pixel of its line box. A
+  longer label than "Breath & body" may need the scrim widened. A category not listed
+  draws the designed tile until then.
 
 ### Audio Player (signature)
 A card holding the waveform above a row of controls: a 48px round play/pause button, a
