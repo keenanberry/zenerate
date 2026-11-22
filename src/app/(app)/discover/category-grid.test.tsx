@@ -18,15 +18,15 @@ describe("CategoryGrid", () => {
     }
   });
 
-  it("has a photo for each of the six categories the images were made for", () => {
-    for (const slug of ["sleep", "stress-relief", "focus", "morning", "kindness", "breath-and-body"]) {
+  it("has a photo for every category", () => {
+    for (const { slug } of DISCOVER_CATEGORIES) {
       expect(html).toContain(`src="/discover/categories/${slug}.webp"`);
     }
   });
 
   it("loads only the first two photos eagerly", () => {
     const loading = [...html.matchAll(/<img [^>]*loading="(\w+)"/g)].map((m) => m[1]);
-    expect(loading).toEqual(["eager", "eager", "lazy", "lazy", "lazy", "lazy"]);
+    expect(loading).toEqual(["eager", "eager", ...Array(DISCOVER_CATEGORIES.length - 2).fill("lazy")]);
   });
 
   it("names each tile by its label alone", () => {

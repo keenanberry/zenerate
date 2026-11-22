@@ -32,6 +32,8 @@ export const CATEGORY_IMAGES: Record<string, { objectPosition: string }> = {
   morning: { objectPosition: "50% 75%" },
   kindness: { objectPosition: "50% 50%" },
   "breath-and-body": { objectPosition: "50% 60%" },
+  confidence: { objectPosition: "50% 55%" },
+  "letting-go": { objectPosition: "50% 40%" },
 };
 
 /** The public path of a category's photo, or null when it has none yet. */
