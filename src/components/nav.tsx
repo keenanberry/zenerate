@@ -21,9 +21,10 @@ const navItems: { tab: AppTab; href: string; label: string; icon: typeof Library
  * The top bar. `"site"` (the landing page and the legal layout) is the full
  * bar at every width: section links, theme toggle, account and sign in/out.
  * `"app"` (the in-app shell) is that bar for a signed-out visitor; signed in,
- * it is the wordmark alone below `md`, where the bottom bar carries the
- * sections, and from `md` the labelled sections with an avatar to Account,
- * which now holds the theme and Sign out.
+ * it is absent below `md`, where the bottom bar carries the sections and each
+ * tab's header the avatar to Account, as in Apple Music, and from `md` the
+ * labelled sections with an avatar to Account, which holds the theme and
+ * Sign out.
  */
 export function Nav({
   isSignedIn,
@@ -39,7 +40,12 @@ export function Nav({
   const visibleItems = navItems.filter((item) => isSignedIn || !item.authed);
 
   return (
-    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header
+      className={cn(
+        "border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+        appShell && "hidden md:block",
+      )}
+    >
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
         <div className="flex items-center gap-3 sm:gap-8">
           <Link

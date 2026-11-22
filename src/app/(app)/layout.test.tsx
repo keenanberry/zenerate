@@ -47,6 +47,11 @@ function shellClasses(html: string): string[] {
   return (/^<div class="([^"]*)"/.exec(html)?.[1] ?? "").split(/\s+/);
 }
 
+/** The class list of the shell's <main>. */
+function mainClasses(html: string): string[] {
+  return (/<main class="([^"]*)"/.exec(html)?.[1] ?? "").split(/\s+/);
+}
+
 const BAR_PADDING = "pb-[calc(4rem+env(safe-area-inset-bottom,0px))]";
 
 describe("AppLayout", () => {
@@ -68,6 +73,9 @@ describe("AppLayout", () => {
     // Not from md, where the bar is hidden, nor in the studio, where it is gone.
     expect(classes).toContain("md:pb-0");
     expect(classes).toContain("has-[[data-studio]]:pb-0");
+    // No top bar below md, so the page starts 24px down; 56px under the bar from md.
+    expect(mainClasses(html)).toEqual(expect.arrayContaining(["pt-6", "md:pt-14"]));
+    expect(mainClasses(html)).not.toContain("py-10");
   });
 
   it("signed in with a photo: the top bar's avatar gets it", async () => {
@@ -86,5 +94,7 @@ describe("AppLayout", () => {
     expect(html).toContain('data-signed-in="false"');
     expect(html).not.toContain("data-bottom-bar");
     expect(shellClasses(html)).not.toContain(BAR_PADDING);
+    // The bar is there at every width, so the usual start below it.
+    expect(mainClasses(html)).toEqual(expect.arrayContaining(["py-10", "sm:py-14"]));
   });
 });
