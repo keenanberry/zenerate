@@ -731,18 +731,29 @@ and no Image Optimization quota.
   chosen by eye so its subject survives the crop (the morning cup sits low, so
   `50% 75%`).
 - **The label scrim.** The label sits top-left in Lora over a Deep Night (`bg-night`)
-  layer whose alpha mask is a radial ramp from that corner (`ellipse 130% 90% at 0 0`:
-  85%, 75% at 60%, then clear). It holds at 75% or more behind the label and clears
-  toward the lower right, where the subjects are. Like the session view's fade it sets
-  only alpha, so it adds no hue and is not a gradient under the One Gradient Rule.
+  layer whose alpha mask is a radial ramp from that corner, sized in rem
+  (`ellipse 15rem 5.5rem at 0 0`: 80%, 70% at 75%, then clear). It is sized in rem
+  because the label is: an ellipse in percent of the tile pulls the fade in under the
+  label as the tile narrows (at 320px and between `sm` and about 740px, "Stress
+  relief" fell to about 3.6:1 that way). Past the label it clears toward the lower
+  right, where the subjects are. Like the session view's fade it sets only alpha, so it
+  adds no hue and is not a gradient under the One Gradient Rule.
+- **The label keeps to one line** (`whitespace-nowrap`; 16px until `md`, 18px from
+  `md`, where four columns first have room for "Breath & body" at 18px). On one line
+  the whole label block lies on the scrim's plateau: measured with the real face at
+  viewports of 320, 390, 640, 700, 768, 1024 and 1280px, the lowest alpha behind any
+  label pixel is 70% ("Breath & body" from `md`).
 - **Light in both themes.** The label is on a photo, so it carries `dark` and reads in
-  Moonlit in either theme. Moonlit must hold 4.5:1 over the brightest pixel behind it;
-  the white sky of `stress-relief` is the worst case (5.3:1 at 390px).
+  Moonlit in either theme. Moonlit must hold 4.5:1 over every pixel of the label's line
+  box. The white sky of `stress-relief` is the worst case, 5.56:1 at 768px and 5.58 to
+  5.69:1 at the other widths; every other tile holds 5.89:1 or more.
 - **Adding a category's photo.** Make a 640px square WebP of one calm subject in the
   style of the others, put it at `public/discover/categories/<slug>.webp`, add the slug
   and its `objectPosition` to `CATEGORY_IMAGES`, and check by eye that the subject
-  survives the crop at 390px and at four columns, and that the label holds 4.5:1 over
-  its brightest pixels. A category not listed draws the designed tile until then.
+  survives the crop at 390px and at four columns. Then measure the label at the widths
+  above: it must fit on one line and hold 4.5:1 over every pixel of its line box. A
+  longer label than "Breath & body" may need the scrim widened. A category not listed
+  draws the designed tile until then.
 
 ### Audio Player (signature)
 A card holding the waveform above a row of controls: a 48px round play/pause button, a

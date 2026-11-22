@@ -9,10 +9,17 @@ import { discoverHref } from "@/lib/meditation/discover";
  * (640px square WebP), filling its tile like a category on a music app. The
  * label sits top-left over a Deep Night scrim that fades out from that
  * corner through an alpha mask, the session player's precedent: it sets only
- * alpha, so it adds no hue and is not a gradient (DESIGN.md, Covers). It
- * holds at 75% or more behind the label, which keeps Moonlit at 4.5:1 over
- * the white sky of `stress-relief`, and clears toward the lower right, where
- * the subjects are. The label stays light in both themes: it is on a photo.
+ * alpha, so it adds no hue and is not a gradient (DESIGN.md, Covers).
+ *
+ * The scrim is sized in rem, like the label, not in percent of the tile, so
+ * a narrow tile cannot pull the fade in under a label that stays the same
+ * size. The label keeps to one line (16px until md, where four columns are
+ * wide enough for 18px), so its whole block lies on the scrim's plateau: 70%
+ * alpha or more behind every label pixel, which holds Moonlit at 4.5:1 over
+ * the white sky of `stress-relief` at every width. DESIGN.md has the measured
+ * numbers; a longer label needs them rechecked. Past the label it clears toward
+ * the lower right, where the subjects are. The label stays light in both
+ * themes: it is on a photo.
  *
  * `objectPosition` is the crop of the square photo into the wide tile, set
  * per image by eye so its subject survives. A category not listed here draws
@@ -29,7 +36,7 @@ export const CATEGORY_IMAGES: Record<string, { objectPosition: string }> = {
 
 /** The public path of a category's photo, or null when it has none yet. */
 export function categoryImagePath(slug: string): string | null {
-  return slug in CATEGORY_IMAGES ? `/discover/categories/${slug}.webp` : null;
+  return Object.hasOwn(CATEGORY_IMAGES, slug) ? `/discover/categories/${slug}.webp` : null;
 }
 
 const TILE =
@@ -40,7 +47,7 @@ export function CategoryTile({
   eager = false,
 }: {
   category: DiscoverCategory;
-  /** Load the photo eagerly: only the first row, which is above the fold. */
+  /** Load the photo eagerly: only the first two, the first row on a phone. */
   eager?: boolean;
 }) {
   const href = discoverHref({}, { category: category.slug });
@@ -64,10 +71,11 @@ export function CategoryTile({
       />
       <div
         aria-hidden
-        className="absolute inset-0 bg-night [mask-image:radial-gradient(ellipse_130%_90%_at_0_0,rgb(0_0_0/0.85),rgb(0_0_0/0.75)_60%,transparent)]"
+        data-scrim
+        className="absolute inset-0 bg-night [mask-image:radial-gradient(ellipse_15rem_5.5rem_at_0_0,rgb(0_0_0/0.8),rgb(0_0_0/0.7)_75%,transparent)]"
       />
       {/* `dark` gives the label Moonlit in either theme: it sits on a photo. */}
-      <span className="dark relative max-w-[85%] font-serif text-base font-medium leading-snug text-foreground sm:text-lg">
+      <span className="dark relative font-serif text-base font-medium leading-snug whitespace-nowrap text-foreground md:text-lg">
         {category.label}
       </span>
     </Link>
@@ -89,7 +97,7 @@ function DesignedTile({ category, href }: { category: DiscoverCategory; href: st
       style={{ backgroundColor: `var(--cover-field-${fieldKey})` }}
       className={TILE}
     >
-      <span className="relative z-10 max-w-[60%] font-serif text-base font-medium leading-snug sm:text-lg">
+      <span className="relative z-10 max-w-[60%] font-serif text-base font-medium leading-snug md:text-lg">
         {category.label}
       </span>
       <MeditationCover
@@ -112,9 +120,9 @@ export function CategoryGrid() {
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         {DISCOVER_CATEGORIES.map((category, i) => (
           <li key={category.slug}>
-            {/* Four columns from sm, two below: the first four cover the
-                first row at either width. */}
-            <CategoryTile category={category} eager={i < 4} />
+            {/* Two columns on a phone, four from sm. Eager for the first two,
+                the first row at either width; the rest load lazily. */}
+            <CategoryTile category={category} eager={i < 2} />
           </li>
         ))}
       </ul>

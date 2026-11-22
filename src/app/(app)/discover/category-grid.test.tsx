@@ -24,9 +24,9 @@ describe("CategoryGrid", () => {
     }
   });
 
-  it("loads only the first row eagerly", () => {
+  it("loads only the first two photos eagerly", () => {
     const loading = [...html.matchAll(/<img [^>]*loading="(\w+)"/g)].map((m) => m[1]);
-    expect(loading).toEqual(["eager", "eager", "eager", "eager", "lazy", "lazy"]);
+    expect(loading).toEqual(["eager", "eager", "lazy", "lazy", "lazy", "lazy"]);
   });
 
   it("names each tile by its label alone", () => {
@@ -58,7 +58,22 @@ describe("CategoryTile", () => {
     expect(tile).toContain('width="640"');
     expect(tile).toContain('height="640"');
     expect(tile).toMatch(/class="dark [^"]*text-foreground/);
-    expect(tile).toContain("bg-night");
+  });
+
+  it("lays the night scrim, sized in rem, between the photo and the label", () => {
+    const tile = renderToStaticMarkup(
+      <CategoryTile category={{ slug: "stress-relief", label: "Stress relief", tags: ["stress-relief"] }} />,
+    );
+    const scrim = tile.match(/<div aria-hidden="true" data-scrim="true" class="([^"]*)"/);
+    expect(scrim).not.toBeNull();
+    expect(scrim![1]).toContain("bg-night");
+    // Sized in rem so the alpha behind the label does not change with the
+    // tile's width (DESIGN.md, Category tiles).
+    expect(scrim![1]).toContain(
+      "[mask-image:radial-gradient(ellipse_15rem_5.5rem_at_0_0,rgb(0_0_0/0.8),rgb(0_0_0/0.7)_75%,transparent)]",
+    );
+    expect(tile.indexOf("<img")).toBeLessThan(tile.indexOf("data-scrim"));
+    expect(tile.indexOf("data-scrim")).toBeLessThan(tile.indexOf(">Stress relief</span>"));
   });
 
   it("falls back to the designed tile for a category without a photo", () => {
@@ -66,9 +81,11 @@ describe("CategoryTile", () => {
       <CategoryTile category={{ slug: "patience", label: "Patience", tags: ["grounding"] }} />,
     );
     expect(categoryImagePath("patience")).toBeNull();
+    expect(categoryImagePath("constructor")).toBeNull();
     expect(tile).toContain('href="/discover?category=patience"');
     expect(tile).toContain(">Patience</span>");
     expect(tile).not.toContain("<img");
+    expect(tile).not.toContain("data-scrim");
     expect(tile).toContain("var(--cover-field-");
     expect(tile).toContain("<svg");
   });
