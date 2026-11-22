@@ -113,21 +113,40 @@ function writtenIds(messages: StudioUIMessage[]): string[] {
   );
 }
 
-/** The cover the canvas shows, and whether a new one is being made. */
-export type CoverState = { url: string | null; pending: boolean };
+/**
+ * What the canvas and the draft chips draw for the cover:
+ * - `photo`: there is a cover photo (made this session, or the row's).
+ * - `expected`: no photo yet, but one is on its way: a makeCover call is
+ *   running, or the live turn wrote the script or its details and the agent
+ *   calls makeCover after them. A quiet tile with a spinner holds its place.
+ * - `fallback`: no photo, and none is coming (makeCover failed, the turn
+ *   ended without one, or the meditation loaded without one and nothing
+ *   runs). The designed cover shows.
+ */
+export type CoverStatus = "photo" | "expected" | "fallback";
+
+/** The cover the canvas shows; `making` while a makeCover call runs (a new photo can replace one). */
+export type CoverState = { url: string | null; status: CoverStatus; making: boolean };
+
+type MakeCoverPart = Extract<StudioPart, { type: "tool-makeCover" }>;
+
+function running(part: MakeCoverPart): boolean {
+  return part.state === "input-streaming" || part.state === "input-available";
+}
 
 /**
  * The meditation's current cover: the newest one makeCover made in this
  * session, else the one the page loaded with (`loadedUrl`, from the row).
  * Covers in the loaded history are never used: the row already reflects the
  * newest, or something later (a backfill), or the meditation is gone.
- * `pending` while the newest makeCover call has no result yet; the caller
- * checks the turn is still live.
+ * `live` is whether a turn is in flight: a makeCover left without a result
+ * by a turn that ended is not running, and no cover is expected after it.
  */
 export function currentCover(
   messages: StudioUIMessage[],
   initialMessages: StudioUIMessage[],
   loadedUrl: string | null,
+  live: boolean,
 ): CoverState {
   const loaded = new Set(
     initialMessages.flatMap((m) =>
@@ -135,22 +154,43 @@ export function currentCover(
     ),
   );
   let url: string | null = null;
-  let pending = false;
-  let newest = true;
+  let newest: MakeCoverPart | null = null;
   for (let m = messages.length - 1; m >= 0 && url === null; m--) {
     const parts = messages[m].parts;
     for (let p = parts.length - 1; p >= 0; p--) {
       const part = parts[p];
       if (part.type !== "tool-makeCover" || loaded.has(part.toolCallId)) continue;
-      if (newest) pending = part.state === "input-streaming" || part.state === "input-available";
-      newest = false;
+      newest ??= part;
       if (part.state === "output-available") {
         url = part.output.coverUrl;
         break;
       }
     }
   }
-  return { url: url ?? loadedUrl, pending };
+  url ??= loadedUrl;
+  const making = live && newest !== null && running(newest);
+  if (url) return { url, status: "photo", making };
+  if (making || (live && turnAwaitsCover(messages))) return { url: null, status: "expected", making };
+  return { url: null, status: "fallback", making: false };
+}
+
+/**
+ * Whether the live turn (everything after the newest request) wrote a
+ * script or its details and has not called makeCover yet: the agent makes
+ * the cover after them. A makeCover in the turn that has ended (made or
+ * failed) means no other is coming.
+ */
+function turnAwaitsCover(messages: StudioUIMessage[]): boolean {
+  const start = messages.findLastIndex((m) => m.role === "user") + 1;
+  let wrote = false;
+  for (const message of messages.slice(start)) {
+    for (const part of message.parts) {
+      if (part.type === "tool-makeCover") return false;
+      if (part.type !== "tool-writeScript" && part.type !== "tool-setDetails") continue;
+      if (part.state !== "output-error" && part.state !== "output-denied") wrote = true;
+    }
+  }
+  return wrote;
 }
 
 /**

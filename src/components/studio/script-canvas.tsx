@@ -15,7 +15,7 @@ interface ScriptCanvasProps {
   details: Details | null;
   /** The meditation the script saved to; null until the first script saves. */
   meditationId: string | null;
-  /** Its cover, and whether a new one is being made right now. */
+  /** Its cover, and whether one is on its way. */
   cover: CoverState;
   /** A turn is in flight, so an unsaved draft is still on its way. */
   live: boolean;
@@ -60,11 +60,29 @@ function DraftStatus({ draft, live }: { draft: Draft; live: boolean }) {
 }
 
 /**
- * The meditation's cover beside its title: the generated photo, else the
- * designed cover. While makeCover runs, a Hush scrim and a spinner sit over
- * whatever is there, and the new cover replaces it when the tool returns.
+ * The square a cover will fill, while one is on its way: a plain Hush tile
+ * at the cover's size and radius with a spinner, and no designed cover
+ * behind it, so nothing reads as a cover that is then replaced.
  */
-function CanvasCover({
+export function CoverPlaceholder({ size }: { size: number }) {
+  return (
+    <span
+      data-cover="expected"
+      style={{ width: size, height: size }}
+      className="flex shrink-0 items-center justify-center rounded-md bg-muted"
+    >
+      <Loader2 className="size-4 text-foreground motion-safe:animate-spin" aria-hidden />
+    </span>
+  );
+}
+
+/**
+ * The meditation's cover beside its title (DESIGN.md, Covers): the photo;
+ * a quiet placeholder while a photo is on its way; the designed cover when
+ * none is coming. While a new photo is made over an existing one, a Hush
+ * scrim and a spinner sit over it until the new one replaces it.
+ */
+export function CanvasCover({
   meditationId,
   details,
   cover,
@@ -75,20 +93,24 @@ function CanvasCover({
 }) {
   return (
     <span className="relative shrink-0">
-      <MeditationCover
-        id={meditationId}
-        tags={details?.tags ?? []}
-        title={details?.title ?? ""}
-        size={56}
-        coverUrl={cover.url}
-      />
-      {cover.pending && (
+      {cover.status === "expected" ? (
+        <CoverPlaceholder size={56} />
+      ) : (
+        <MeditationCover
+          id={meditationId}
+          tags={details?.tags ?? []}
+          title={details?.title ?? ""}
+          size={56}
+          coverUrl={cover.url}
+        />
+      )}
+      {cover.status === "photo" && cover.making && (
         <span className="absolute inset-0 flex items-center justify-center rounded-md bg-muted/70">
           <Loader2 className="size-4 text-foreground motion-safe:animate-spin" aria-hidden />
         </span>
       )}
       <span className="sr-only" aria-live="polite">
-        {cover.pending ? "Making a cover" : ""}
+        {cover.status === "expected" || cover.making ? "Making a cover" : ""}
       </span>
     </span>
   );
@@ -150,7 +172,7 @@ export function ScriptCanvas({
             {action}
           </div>
         </div>
-        {(details || (meditationId && (cover.pending || cover.url))) && (
+        {(details || (meditationId && cover.status !== "fallback")) && (
           <div className="flex items-center gap-4">
             {meditationId && <CanvasCover meditationId={meditationId} details={details} cover={cover} />}
             {details && (

@@ -213,55 +213,112 @@ describe("currentCover", () => {
     output: { coverUrl: url, remaining: 2 },
   });
 
-  it("is the loaded cover, not pending, when this session made none", () => {
-    expect(currentCover([], [], "https://x/loaded.webp")).toEqual({ url: "https://x/loaded.webp", pending: false });
-    expect(currentCover([], [], null)).toEqual({ url: null, pending: false });
+  const request = (text: string): StudioUIMessage => ({
+    id: "u",
+    role: "user",
+    parts: [{ type: "text", text }],
+  });
+  const wrote: StudioUIMessage["parts"][number] = {
+    type: "tool-writeScript",
+    toolCallId: "w1",
+    state: "output-available",
+    input: { script: "Breathe in.", durationMinutes: 10 },
+    output,
+  };
+  const failed: StudioUIMessage["parts"][number] = {
+    type: "tool-makeCover",
+    toolCallId: "c9",
+    state: "output-error",
+    input: subject,
+    errorText: "The cover could not be made this time.",
+  };
+
+  it("is the loaded photo when this session made none", () => {
+    expect(currentCover([], [], "https://x/loaded.webp", false)).toEqual({
+      url: "https://x/loaded.webp",
+      status: "photo",
+      making: false,
+    });
+  });
+
+  it("falls back when the meditation loaded without a cover and nothing runs", () => {
+    expect(currentCover([], [], null, false)).toEqual({ url: null, status: "fallback", making: false });
+    // A live turn that only talks expects no cover either.
+    const talk = [request("hi"), assistant([{ type: "text", text: "Hello." }])];
+    expect(currentCover(talk, [], null, true).status).toBe("fallback");
   });
 
   it("trusts the loaded cover over the history it was loaded with", () => {
     // The row is the truth on load: a backfill may have set a newer cover,
     // or the meditation may be gone (null) and its history covers with it.
     const history = [assistant([made("c1", "https://x/old.webp")])];
-    expect(currentCover(history, history, "https://x/row.webp").url).toBe("https://x/row.webp");
-    expect(currentCover(history, history, null).url).toBeNull();
+    expect(currentCover(history, history, "https://x/row.webp", false).url).toBe("https://x/row.webp");
+    expect(currentCover(history, history, null, false)).toEqual({ url: null, status: "fallback", making: false });
   });
 
   it("takes the newest cover made in this session", () => {
     const history = [assistant([made("c1", "https://x/old.webp")])];
     const messages = [
       ...history,
-      { id: "u", role: "user" as const, parts: [{ type: "text" as const, text: "a forest instead" }] },
+      request("a forest instead"),
       { ...assistant([made("c2", "https://x/a.webp"), made("c3", "https://x/b.webp")]), id: "a2" },
     ];
-    expect(currentCover(messages, history, "https://x/old.webp")).toEqual({ url: "https://x/b.webp", pending: false });
+    expect(currentCover(messages, history, "https://x/old.webp", true)).toEqual({
+      url: "https://x/b.webp",
+      status: "photo",
+      making: false,
+    });
   });
 
-  it("is pending while the newest makeCover has no result, keeping the cover it has", () => {
+  it("is expected while makeCover runs with no photo yet", () => {
+    const streaming = [
+      assistant([{ type: "tool-makeCover", toolCallId: "c1", state: "input-streaming", input: undefined }]),
+    ];
+    expect(currentCover(streaming, [], null, true)).toEqual({ url: null, status: "expected", making: true });
+  });
+
+  it("keeps the photo it has while a new one is made", () => {
     const messages = [
       assistant([
         made("c1", "https://x/a.webp"),
         { type: "tool-makeCover", toolCallId: "c2", state: "input-available", input: subject },
       ]),
     ];
-    expect(currentCover(messages, [], null)).toEqual({ url: "https://x/a.webp", pending: true });
-    const streaming = [
-      assistant([{ type: "tool-makeCover", toolCallId: "c1", state: "input-streaming", input: undefined }]),
-    ];
-    expect(currentCover(streaming, [], null)).toEqual({ url: null, pending: true });
+    expect(currentCover(messages, [], null, true)).toEqual({ url: "https://x/a.webp", status: "photo", making: true });
+    // A turn that ended leaves the call without a result: nothing is running.
+    expect(currentCover(messages, [], null, false).making).toBe(false);
   });
 
-  it("is not pending once a makeCover has failed", () => {
+  it("is expected in the live turn that wrote the script, before makeCover is called", () => {
+    const messages = [request("a sleep meditation"), assistant([wrote])];
+    expect(currentCover(messages, [], null, true)).toEqual({ url: null, status: "expected", making: false });
+    // From the first streamed line, so the chip never flashes the designed cover first.
+    const streaming = [request("a sleep meditation"), assistant([{ ...wrote, state: "input-streaming" } as never])];
+    expect(currentCover(streaming, [], null, true).status).toBe("expected");
+  });
+
+  it("falls back once the turn ends without a cover", () => {
+    const messages = [request("a sleep meditation"), assistant([wrote, { type: "text", text: "Here it is." }])];
+    expect(currentCover(messages, [], null, false)).toEqual({ url: null, status: "fallback", making: false });
+  });
+
+  it("falls back once makeCover has failed, even while the turn runs", () => {
+    const messages = [request("a sleep meditation"), assistant([wrote, failed])];
+    expect(currentCover(messages, [], null, true)).toEqual({ url: null, status: "fallback", making: false });
+    expect(currentCover([assistant([failed])], [], "https://x/row.webp", false)).toEqual({
+      url: "https://x/row.webp",
+      status: "photo",
+      making: false,
+    });
+  });
+
+  it("expects a cover again in a later turn that writes, after an earlier failure", () => {
     const messages = [
-      assistant([
-        {
-          type: "tool-makeCover",
-          toolCallId: "c1",
-          state: "output-error",
-          input: subject,
-          errorText: "The cover could not be made this time.",
-        },
-      ]),
+      request("a sleep meditation"),
+      assistant([wrote, failed]),
+      request("make it shorter"),
+      { ...assistant([{ ...wrote, toolCallId: "w2" }]), id: "a2" },
     ];
-    expect(currentCover(messages, [], "https://x/row.webp")).toEqual({ url: "https://x/row.webp", pending: false });
+    expect(currentCover(messages, [], null, true).status).toBe("expected");
   });
 });

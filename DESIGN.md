@@ -654,7 +654,17 @@ to one house look.
   the photo to its box the same way.
 - **The fallback rule.** No `coverUrl`, or a photo that fails to load, draws the
   designed cover in its place, silently. A broken-image box never shows. While the
-  photo loads its square holds a Hush (`bg-muted`) field.
+  photo loads its square holds a Hush (`bg-muted`) field, and the photo fades in over
+  it once its bytes arrive (`motion-safe:` only; under reduced motion it appears at
+  once). The page's preloaded LCP cover shows as it loads, unfaded.
+- **Expected, not faked, in the studio.** The designed cover is what a meditation
+  with no photo coming looks like, so the studio never shows it as a stand-in for a
+  photo on its way. While a cover is expected (makeCover is running, or the live turn
+  wrote the script or its details and makeCover follows), the canvas and the chat's
+  draft chip hold a plain Hush tile at the cover's size and radius, with a spinner and
+  no motif. Only when none is coming (makeCover failed, or the turn ended without one)
+  does the designed cover take the square (`currentCover` in
+  `src/components/studio/drafts.ts`).
 - **Three stored sizes, served as stored.** Each cover is stored three times as WebP:
   the full image (1024px), a 512px middle size and a 256px thumbnail beside it. A cover
   loads the smallest size that is sharp at 2x: 128px or less the thumbnail (a 56px row),
