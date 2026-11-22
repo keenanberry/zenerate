@@ -167,12 +167,53 @@ describe("MeditationCover with a generated cover", () => {
     const html = renderToStaticMarkup(
       <MeditationCover id={ID} tags={["sleep"]} title="Evening wind-down" size={56} coverUrl={URL} />,
     );
-    expect(html).toMatch(/^<img /);
+    expect(html).toMatch(/^<span [^>]*><img /);
     expect(html).not.toContain("data-motif");
     expect(html).toContain('width="56"');
     expect(html).toContain('height="56"');
-    expect(html).toContain("rounded-md");
+    // The frame reserves the 56px square and carries the radius.
+    expect(html).toContain("--cover-size:56px");
+    expect(html).toMatch(/^<span [^>]*rounded-md/);
     expect(html).toContain("object-cover");
+  });
+
+  it("holds a quiet tile until the photo loads, then fades it in", () => {
+    const designed = <svg data-motif="moon" />;
+    const view = (loaded: boolean) =>
+      renderToStaticMarkup(
+        <CoverImageView
+          src={URL}
+          size={56}
+          alt=""
+          className="rounded-md"
+          failures={0}
+          loaded={loaded}
+          onLoad={() => {}}
+          onError={() => {}}
+          fallback={designed}
+        />,
+      );
+    const before = view(false);
+    expect(before).toMatch(/^<span [^>]*bg-muted/);
+    expect(before).toContain("opacity-0");
+    expect(before).not.toContain("data-loaded");
+    expect(before).not.toContain("data-motif");
+    const after = view(true);
+    expect(after).toContain('data-loaded="true"');
+    expect(after).toContain("opacity-100");
+    expect(after).not.toContain("opacity-0");
+    // The fade is motion-safe only: reduced motion shows the photo at once.
+    expect(after).toContain("motion-safe:transition-opacity");
+    expect(after).not.toMatch(/(?<!motion-safe:)transition-opacity/);
+  });
+
+  it("does not hold the page's preloaded LCP cover back for hydration", () => {
+    const html = renderToStaticMarkup(
+      <MeditationCover id={ID} tags={[]} title="t" size={320} preload coverUrl={URL} />,
+    );
+    expect(html).toContain("opacity-100");
+    const lazy = renderToStaticMarkup(<MeditationCover id={ID} tags={[]} title="t" size={320} coverUrl={URL} />);
+    expect(lazy).toContain("opacity-0");
   });
 
   it("draws a cover up to 128px from its 256px thumbnail, as stored", () => {
@@ -246,7 +287,7 @@ describe("MeditationCover with a generated cover", () => {
     const designed = <svg data-motif="moon" />;
     const view = (failures: number) =>
       renderToStaticMarkup(
-        <CoverImageView src={URL} size={56} alt="" className="" failures={failures} onError={() => {}} fallback={designed} />,
+        <CoverImageView src={URL} size={56} alt="" className="" failures={failures} loaded onLoad={() => {}} onError={() => {}} fallback={designed} />,
       );
     expect(view(0)).toContain(`src="${THUMB}"`);
     expect(view(1)).toContain(`src="${MIDDLE}"`);
@@ -258,7 +299,7 @@ describe("MeditationCover with a generated cover", () => {
     const designed = <svg data-motif="moon" />;
     const view = (failures: number) =>
       renderToStaticMarkup(
-        <CoverImageView src={URL} size={240} alt="" className="" failures={failures} onError={() => {}} fallback={designed} />,
+        <CoverImageView src={URL} size={240} alt="" className="" failures={failures} loaded onLoad={() => {}} onError={() => {}} fallback={designed} />,
       );
     expect(view(0)).toContain(`src="${MIDDLE}"`);
     expect(view(1)).toContain(`src="${URL}"`);
@@ -269,9 +310,9 @@ describe("MeditationCover with a generated cover", () => {
     const designed = <svg data-motif="moon" />;
     const view = (failures: number) =>
       renderToStaticMarkup(
-        <CoverImageView src={URL} size={320} alt="" className="" failures={failures} onError={() => {}} fallback={designed} />,
+        <CoverImageView src={URL} size={320} alt="" className="" failures={failures} loaded onLoad={() => {}} onError={() => {}} fallback={designed} />,
       );
-    expect(view(0)).toMatch(/^<img /);
+    expect(view(0)).toMatch(/^<span [^>]*><img /);
     expect(view(1)).toBe('<svg data-motif="moon"></svg>');
   });
 

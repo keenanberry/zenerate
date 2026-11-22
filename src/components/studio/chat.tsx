@@ -13,14 +13,55 @@ import {
   latestDetails,
   minutesLabel,
   showsQuickReplies,
+  type CoverState,
   type Details,
   type Draft,
   type StudioPart,
 } from "./drafts";
 import { renderStudioPart } from "./parts";
+import { CoverPlaceholder } from "./script-canvas";
 import { QuickReplies } from "./quick-replies";
 import { useStudio } from "./studio-context";
 import { useFollowScroll } from "./use-follow-scroll";
+
+/**
+ * The chip's cover: the photo, the quiet placeholder while one is on its
+ * way, else the designed cover. A spinner sits over it while the draft is
+ * written. The canvas carries the "Making a cover" announcement.
+ */
+export function DraftChipCover({
+  id,
+  details,
+  title,
+  cover,
+  hasMeditation,
+  writing,
+}: {
+  id: string;
+  details: Details | null;
+  title: string;
+  cover: CoverState;
+  hasMeditation: boolean;
+  writing: boolean;
+}) {
+  if (cover.status === "expected") return <CoverPlaceholder size={40} />;
+  return (
+    <span className="relative shrink-0">
+      <MeditationCover
+        id={id}
+        tags={details?.tags ?? []}
+        title={details?.title ?? title}
+        size={40}
+        coverUrl={hasMeditation ? cover.url : null}
+      />
+      {writing && (
+        <span className="absolute inset-0 flex items-center justify-center">
+          <Loader2 className="size-4 text-foreground motion-safe:animate-spin" aria-hidden />
+        </span>
+      )}
+    </span>
+  );
+}
 
 /**
  * Compact stand-in for a script in the chat; the script itself lives in the
@@ -66,22 +107,16 @@ function DraftChip({
         "motion-safe:transition-colors",
       )}
     >
-      <span className="relative shrink-0">
-        <MeditationCover
-          id={meditationId ?? draft.toolCallId}
-          tags={details?.tags ?? []}
-          title={details?.title ?? label}
-          size={40}
-          // The meditation's current cover, as on the canvas: on a phone,
-          // where the canvas is a closed sheet, this is where it shows.
-          coverUrl={meditationId ? cover.url : null}
-        />
-        {writing && (
-          <span className="absolute inset-0 flex items-center justify-center">
-            <Loader2 className="size-4 text-foreground motion-safe:animate-spin" aria-hidden />
-          </span>
-        )}
-      </span>
+      <DraftChipCover
+        id={meditationId ?? draft.toolCallId}
+        details={details}
+        title={label}
+        // The meditation's current cover, as on the canvas: on a phone,
+        // where the canvas is a closed sheet, this is where it shows.
+        cover={cover}
+        hasMeditation={!!meditationId}
+        writing={writing}
+      />
       <span className="min-w-0">
         {details && (
           <span className="block truncate font-serif text-base leading-snug font-medium">

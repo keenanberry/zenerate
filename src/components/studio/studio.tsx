@@ -88,11 +88,10 @@ export function Studio({
     [messages, initialMessages, initialMeditationId],
   );
 
-  // A makeCover left without a result by a turn that ended is not pending.
-  const cover = useMemo(() => {
-    const state = currentCover(messages, initialMessages, initialCoverUrl);
-    return { url: state.url, pending: state.pending && live };
-  }, [messages, initialMessages, initialCoverUrl, live]);
+  const cover = useMemo(
+    () => currentCover(messages, initialMessages, initialCoverUrl, initialMeditationId, live),
+    [messages, initialMessages, initialCoverUrl, initialMeditationId, live],
+  );
 
   // The heading: the saved title, or what the route will save once this
   // session's first turn lands (setDetails' title, else the first request).
