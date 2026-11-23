@@ -93,26 +93,28 @@ describe("request stitching", () => {
     expect(chain.previous()).toEqual(["r1", "r2", "r3"]);
   });
 
-  it("retries once without ids when the ids are refused, and keeps chaining", async () => {
+  it("retries once without ids when the ids are refused, then stops stitching", async () => {
     const chain = new RequestChain();
     chain.record("r1");
     const sent: string[][] = [];
     const logged: string[] = [];
+    let n = 1;
+    const refusesIds = async (ids: string[]) => {
+      sent.push(ids);
+      if (ids.length > 0) throw tooManyIds;
+      n++;
+      return { result: null, requestId: `r${n}` };
+    };
 
-    await stitchedSpeech(
-      chain,
-      async (ids) => {
-        sent.push(ids);
-        if (ids.length > 0) throw tooManyIds;
-        return { result: null, requestId: "r2" };
-      },
-      (m) => logged.push(m),
-    );
+    await stitchedSpeech(chain, refusesIds, (m) => logged.push(m));
+    await stitchedSpeech(chain, refusesIds, (m) => logged.push(m));
+    await stitchedSpeech(chain, refusesIds, (m) => logged.push(m));
 
-    expect(sent).toEqual([["r1"], []]);
+    // One refused call in the whole render, not one per later line.
+    expect(sent).toEqual([["r1"], [], [], []]);
     expect(logged).toHaveLength(1);
     expect(logged[0]).toMatch(/without them/);
-    expect(chain.previous()).toEqual(["r1", "r2"]);
+    expect(chain.previous()).toEqual([]);
   });
 
   it("does not retry without ids when they were not the problem", async () => {
@@ -164,10 +166,52 @@ describe("isRejectedForRequestIds", () => {
     ).toBe(true);
   });
 
+  it("ignores a 422 about another field that echoes the ids in its input", () => {
+    const otherField = Object.assign(new Error('Status code: 422\nBody: {"previous_request_ids": ["r1"]}'), {
+      statusCode: 422,
+      body: {
+        detail: [
+          {
+            loc: ["body", "voice_settings", "speed"],
+            msg: "Input should be less than or equal to 1.2",
+            input: { text: "Hello.", previous_request_ids: ["r1"] },
+          },
+        ],
+      },
+    });
+    expect(isRejectedForRequestIds(otherField)).toBe(false);
+  });
+
+  it("does not retry without ids for a 422 about another field", async () => {
+    const chain = new RequestChain();
+    chain.record("r1");
+    const sent: string[][] = [];
+    const otherField = {
+      statusCode: 422,
+      body: { detail: [{ loc: ["body", "text"], msg: "too long", input: { previous_request_ids: ["r1"] } }] },
+    };
+    await expect(
+      stitchedSpeech(chain, async (ids) => {
+        sent.push(ids);
+        throw otherField;
+      }),
+    ).rejects.toBe(otherField);
+    expect(sent).toEqual([["r1"]]);
+    expect(chain.previous()).toEqual(["r1"]);
+  });
+
   it("ignores other failures", () => {
     expect(isRejectedForRequestIds(new Error("network down"))).toBe(false);
     expect(isRejectedForRequestIds({ statusCode: 400, body: { detail: { message: "text too long" } } })).toBe(false);
     expect(isRejectedForRequestIds({ statusCode: 500, body: "previous_request_ids" })).toBe(false);
     expect(isRejectedForRequestIds(null)).toBe(false);
+    // The SDK's message carries the whole body; only the detail counts.
+    expect(
+      isRejectedForRequestIds({
+        statusCode: 400,
+        message: "Body: previous_request_ids",
+        body: { detail: { param: "text", message: "text too long" } },
+      }),
+    ).toBe(false);
   });
 });

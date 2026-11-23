@@ -17,6 +17,13 @@ esbuild, so every file it imports goes with it (today `loudness.ts`, `mix.ts`, `
 downloads every sound in `scripts/sound-effects.ts` into `/sounds`. A new import in
 `generate-audio.ts` is a new baked-in file: add it to the list in `CLAUDE.md`.
 
+The sandbox installs `@elevenlabs/elevenlabs-js` at the exact version in
+`package-lock.json`, so the snapshot runs the SDK the tests were written against. Bumping
+the SDK in the app changes the snapshot's SDK too, but only once a new snapshot is built.
+The SDK's serializer drops fields it does not know, without an error, so check after a bump
+that `previousRequestIds` still reaches the API: `test-audio-generation.ts` checks the
+stitching log line.
+
 ## The loop
 
 1. Edit. Unit-test the pure part without ffmpeg; `loudness.test.ts` is the pattern.

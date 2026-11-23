@@ -23,10 +23,19 @@ export const MAX_PREVIOUS_REQUEST_IDS = 3;
  */
 export class RequestChain {
   private readonly ids: string[] = [];
+  private disabled = false;
 
   /** The ids to send with the next speech request, oldest first. */
   previous(): string[] {
-    return this.ids.slice(-MAX_PREVIOUS_REQUEST_IDS);
+    return this.disabled ? [] : this.ids.slice(-MAX_PREVIOUS_REQUEST_IDS);
+  }
+
+  /**
+   * Stops stitching for the rest of the render. A refusal is most likely
+   * account- or API-wide, and every later line would otherwise be sent twice.
+   */
+  disable(): void {
+    this.disabled = true;
   }
 
   /** A response without a `request-id` header leaves the chain as it was. */
@@ -35,28 +44,38 @@ export class RequestChain {
   }
 }
 
+const REQUEST_IDS_FIELD = /previous_(request|history_item)_ids/;
+
 /**
  * Whether a failed call was refused because of the ids it carried: a 4xx whose
- * message or body names them. The API calls them `previous_history_item_ids`
- * in its errors and `previous_request_ids` in the request.
+ * error detail names them. The API calls them `previous_history_item_ids` in
+ * its errors and `previous_request_ids` in the request.
+ *
+ * Only the detail's `param`, `status` and `message` (a 400) or each entry's
+ * `loc` (a 422) are read. The error's own message is not: the SDK writes the
+ * whole body into it, and a 422 about another field can echo the request,
+ * ids and all, in its `input`.
  */
 export function isRejectedForRequestIds(err: unknown): boolean {
   if (typeof err !== "object" || err === null) return false;
-  const { statusCode, body, message } = err as {
-    statusCode?: unknown;
-    body?: unknown;
-    message?: unknown;
-  };
+  const { statusCode, body } = err as { statusCode?: unknown; body?: unknown };
   if (typeof statusCode !== "number" || statusCode < 400 || statusCode >= 500) {
     return false;
   }
-  let text = typeof message === "string" ? message : "";
-  try {
-    text += ` ${typeof body === "string" ? body : JSON.stringify(body)}`;
-  } catch {
-    // An unserializable body leaves only the message to go on.
+  const detail = (body as { detail?: unknown } | null | undefined)?.detail;
+  const names: unknown[] = [];
+  if (typeof detail === "string") {
+    names.push(detail);
+  } else if (Array.isArray(detail)) {
+    for (const entry of detail) {
+      const loc = (entry as { loc?: unknown } | null)?.loc;
+      if (Array.isArray(loc)) names.push(...loc);
+    }
+  } else if (typeof detail === "object" && detail !== null) {
+    const { param, status, message } = detail as Record<string, unknown>;
+    names.push(param, status, message);
   }
-  return /previous_(request|history_item)_ids|previousRequestIds/.test(text);
+  return names.some((name) => typeof name === "string" && REQUEST_IDS_FIELD.test(name));
 }
 
 export interface SpeechResponse<T> {
@@ -66,9 +85,10 @@ export interface SpeechResponse<T> {
 
 /**
  * Makes one speech call stitched to the chain and records its id. If the call
- * is refused because of the ids, it is made once more without them, so a
- * change on ElevenLabs' side costs continuity for that line rather than the
- * whole render.
+ * is refused because of the ids, it is made once more without them and the
+ * chain is disabled, so a change on ElevenLabs' side costs continuity for the
+ * rest of the render rather than the render itself, and later lines are not
+ * each sent twice.
  */
 export async function stitchedSpeech<T>(
   chain: RequestChain,
@@ -81,8 +101,12 @@ export async function stitchedSpeech<T>(
     response = await call(previous);
   } catch (err) {
     if (previous.length === 0 || !isRejectedForRequestIds(err)) throw err;
+    chain.disable();
     const reason = err instanceof Error ? err.message : String(err);
-    log(`  → previous request ids refused (${reason}); retrying this line without them`);
+    log(
+      `  → previous request ids refused (${reason}); retrying this line without them ` +
+        "and no longer stitching this render",
+    );
     response = await call([]);
   }
   chain.record(response.requestId);

@@ -1,7 +1,8 @@
 /**
  * Creates a Vercel Sandbox snapshot pre-loaded with:
  *   - FFmpeg (via ffmpeg-static npm package)
- *   - Node.js dependencies (fluent-ffmpeg, @elevenlabs/elevenlabs-js)
+ *   - Node.js dependencies (fluent-ffmpeg, and @elevenlabs/elevenlabs-js at
+ *     the version in package-lock.json)
  *   - The compiled generate-audio.js script
  *   - The sound effects in scripts/sound-effects.ts, in /sounds: synthesized
  *     ones rendered here by the sandbox's FFmpeg, recorded ones downloaded
@@ -61,6 +62,20 @@ function logStream(): Writable {
       callback();
     },
   });
+}
+
+/**
+ * The SDK version the app is locked to, pinned exactly in the sandbox. With
+ * "latest", a new SDK could drop or rename a request field (previousRequestIds
+ * in stitching.ts) and the serializer would leave it out without an error.
+ */
+function elevenLabsVersion(): string {
+  const lock = JSON.parse(readFileSync(resolve(ROOT, "package-lock.json"), "utf-8"));
+  const version = lock.packages?.["node_modules/@elevenlabs/elevenlabs-js"]?.version;
+  if (typeof version !== "string") {
+    throw new Error("@elevenlabs/elevenlabs-js is not in package-lock.json");
+  }
+  return version;
 }
 
 async function compileGenerateAudio(): Promise<Buffer> {
@@ -140,7 +155,7 @@ async function main() {
     type: "module",
     dependencies: {
       "fluent-ffmpeg": "^2.1.2",
-      "@elevenlabs/elevenlabs-js": "latest",
+      "@elevenlabs/elevenlabs-js": elevenLabsVersion(),
       "ffmpeg-static": "latest",
     },
   });
