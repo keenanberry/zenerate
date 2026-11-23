@@ -20,10 +20,12 @@ import { Readable } from "node:stream";
 import { narrationGainDb, parseIntegratedLoudness } from "./loudness";
 import { bedMixFilter, parseMediaSeconds } from "./mix";
 import { PEAKS_DECODE_ARGS, PeakReader, type Peaks } from "./peaks";
+import { RequestChain, stitchedSpeech, type SpeechResponse } from "./stitching";
 
 // ---------------------------------------------------------------------------
-// Types (self-contained — the only project imports are ./loudness, ./mix and
-// ./peaks, which have no dependencies and are bundled in by esbuild)
+// Types (self-contained — the only project imports are ./loudness, ./mix,
+// ./peaks and ./stitching, which have no dependencies and are bundled in by
+// esbuild)
 // ---------------------------------------------------------------------------
 
 interface Segment {
@@ -77,16 +79,23 @@ async function fileExists(path: string): Promise<boolean> {
 // TTS via ElevenLabs
 // ---------------------------------------------------------------------------
 
+/**
+ * One line of narration. `previousRequestIds` stitches it to the lines before
+ * it (see ./stitching); empty for the first line. Returns the characters billed
+ * and the response's request id, for the next line to stitch to.
+ */
 async function generateSpeech(
   client: ElevenLabsClient,
   text: string,
   voiceId: string,
   outputPath: string,
+  previousRequestIds: string[],
   voiceSettings?: Config["voiceSettings"],
-): Promise<number> {
+): Promise<SpeechResponse<number>> {
   const { data, rawResponse } = await client.textToSpeech
     .convert(voiceId, {
       text,
+      ...(previousRequestIds.length > 0 ? { previousRequestIds } : {}),
       modelId: "eleven_multilingual_v2",
       outputFormat: "mp3_44100_128",
       voiceSettings: voiceSettings
@@ -112,7 +121,7 @@ async function generateSpeech(
   const writable = createWriteStream(outputPath);
   await pipeline(readable, writable);
 
-  return characterCount;
+  return { result: characterCount, requestId: rawResponse.headers.get("request-id") };
 }
 
 // ---------------------------------------------------------------------------
@@ -317,6 +326,8 @@ async function processSegments(
   const speechIndices = new Set<number>();
   let ttsCharacters = 0;
   let ttsRequests = 0;
+  // Spans the whole render, across pauses, silences and sounds.
+  const chain = new RequestChain();
 
   for (let i = 0; i < segments.length; i++) {
     const segment = segments[i];
@@ -324,8 +335,14 @@ async function processSegments(
 
     switch (segment.type) {
       case "speech": {
-        console.log(`[${i + 1}/${segments.length}] Generating speech (${segment.content!.length} chars)...`);
-        const chars = await generateSpeech(client, segment.content!, voiceId, outPath, voiceSettings);
+        const stitchedTo = chain.previous().length;
+        console.log(
+          `[${i + 1}/${segments.length}] Generating speech (${segment.content!.length} chars, ` +
+            `stitched to ${stitchedTo} previous request${stitchedTo === 1 ? "" : "s"})...`,
+        );
+        const chars = await stitchedSpeech(chain, (previousRequestIds) =>
+          generateSpeech(client, segment.content!, voiceId, outPath, previousRequestIds, voiceSettings),
+        );
         ttsCharacters += chars;
         ttsRequests++;
         speechIndices.add(i);
@@ -376,7 +393,8 @@ async function main(): Promise<void> {
     apiKey: config.elevenLabsApiKey,
   });
 
-  // Process all segments sequentially to stay within API rate limits
+  // Process all segments sequentially: it stays within API rate limits, and
+  // each line is stitched to the request ids of the lines before it.
   const { audioFiles, speechIndices, ttsCharacters, ttsRequests } =
     await processSegments(
       config.segments,

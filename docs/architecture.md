@@ -39,7 +39,8 @@ Vercel Workflow (orchestrator)
        ├── 2. Upload script + config to sandbox filesystem
        │
        ├── 3. Run audio generation script inside sandbox
-       │       ├── Call ElevenLabs TTS for speech segments
+       │       ├── Call ElevenLabs TTS for speech segments, in order, each
+       │       │   stitched to the last three requests (stitching.ts)
        │       ├── Generate silence with FFmpeg
        │       ├── Copy sound effect files
        │       ├── Concatenate all segments

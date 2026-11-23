@@ -4,8 +4,8 @@
  * Spins up a Vercel Sandbox from the snapshot, runs generate-audio.js with a
  * minimal meditation script (~80 characters of speech, two sound effects),
  * and validates the output MP3, result.json (with the waveform peaks the
- * player draws, task 60), that every sound was found and that narration
- * loudness was measured.
+ * player draws, task 60), that every sound was found, that narration
+ * loudness was measured and that each line was stitched to the ones before it.
  *
  * Prerequisites:
  *   - AUDIO_SANDBOX_SNAPSHOT_ID set in .env.local
@@ -126,6 +126,15 @@ async function main() {
       throw new Error("Narration loudness was not measured");
     }
     log("All sound effects found; narration loudness normalized");
+    // Each line after the first is stitched to the ones before it, across the
+    // pause, silence and gong between them (stitching.ts).
+    if (!stdout.includes("stitched to 2 previous requests")) {
+      throw new Error("Narration was not stitched across segments");
+    }
+    if (stdout.includes("previous request ids refused")) {
+      throw new Error("ElevenLabs refused the previous request ids");
+    }
+    log("Narration stitched across segments");
     if (bed) {
       if (!stdout.includes("Mixing background music")) {
         throw new Error(`The snapshot has no ${bed.snapshotPath}`);

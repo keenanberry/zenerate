@@ -13,7 +13,7 @@ the PR merges, production keeps running the old code, and the symptom reads as a
 ## What the snapshot bakes in
 
 `scripts/create-sandbox-snapshot.ts` bundles `src/lib/audio/generate-audio.ts` with
-esbuild, so every file it imports goes with it (today `loudness.ts`, `mix.ts` and `peaks.ts`), and it renders or
+esbuild, so every file it imports goes with it (today `loudness.ts`, `mix.ts`, `peaks.ts` and `stitching.ts`), and it renders or
 downloads every sound in `scripts/sound-effects.ts` into `/sounds`. A new import in
 `generate-audio.ts` is a new baked-in file: add it to the list in `CLAUDE.md`.
 
