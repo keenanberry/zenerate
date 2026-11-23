@@ -22,7 +22,7 @@ import type { MeditationSegment } from "@/lib/meditation/types";
  */
 export const MAX_SCRIPT_CHARACTERS = 30000;
 export const MAX_SPEECH_CHARACTERS = 6000;
-/** The prompt asks for 3-15 second pauses. */
+/** The prompt asks for 3-15 second pauses, 1-3 between the beats of a count. */
 export const MAX_PAUSE_SECONDS = 60;
 /** The prompt asks for 1-30 minute silences, in blocks of 5-10. */
 export const MAX_SILENCE_MINUTES = 30;

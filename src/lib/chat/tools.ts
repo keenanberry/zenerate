@@ -10,6 +10,7 @@ import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 import { findMalformedMarkers, parseMeditationText } from "@/lib/meditation/parser";
 import { estimateDuration } from "@/lib/meditation/duration";
+import { findPacingIssues, pacingNote } from "@/lib/meditation/pacing";
 import { SOUND_EFFECTS } from "@/lib/meditation/sounds";
 import { SOUND_NAMES, soundPreview } from "@/lib/meditation/sound-previews";
 import { MEDITATION_TYPES, TAGS } from "@/lib/meditation/tags";
@@ -140,24 +141,29 @@ async function linkedMeditationId(ctx: StudioToolContext): Promise<string | null
   return data.meditation_id as string | null;
 }
 
+type WriteScriptReview = { withinTarget?: unknown; pacing?: unknown };
+
 /**
- * Whether an earlier writeScript in this turn was already sent back for its
- * length. `messages` holds this turn's earlier steps, so everything after the
- * last user message is this turn (a continuation adds no user message).
+ * Which rewrites an earlier writeScript in this turn already asked for: for
+ * its length, for its pacing. `messages` holds this turn's earlier steps, so
+ * everything after the last user message is this turn (a continuation adds
+ * no user message).
  */
-function lengthRewriteAsked(messages: ModelMessage[]): boolean {
+function rewritesAsked(messages: ModelMessage[]): { length: boolean; pacing: boolean } {
   const lastUser = messages.findLastIndex((m) => m.role === "user");
-  return messages.slice(lastUser + 1).some(
-    (m) =>
-      m.role === "tool" &&
-      m.content.some(
-        (part) =>
-          part.type === "tool-result" &&
-          part.toolName === "writeScript" &&
-          part.output.type === "json" &&
-          (part.output.value as { withinTarget?: unknown } | null)?.withinTarget === false,
-      ),
+  const reviews = messages.slice(lastUser + 1).flatMap((m) =>
+    m.role === "tool"
+      ? m.content.flatMap((part) =>
+          part.type === "tool-result" && part.toolName === "writeScript" && part.output.type === "json"
+            ? [(part.output.value ?? {}) as WriteScriptReview]
+            : [],
+        )
+      : [],
   );
+  return {
+    length: reviews.some((r) => r.withinTarget === false),
+    pacing: reviews.some((r) => Array.isArray(r.pacing) && r.pacing.length > 0),
+  };
 }
 
 /**
@@ -202,7 +208,7 @@ export function asksForCover(
   return true;
 }
 
-function reviewScript(script: string, durationMinutes: number, rewriteAsked: boolean) {
+function reviewScript(script: string, durationMinutes: number, asked: { length: boolean; pacing: boolean }) {
   const parsed = parseMeditationText(script);
   const segments = { speech: 0, pause: 0, silence: 0, sound: 0 };
   for (const segment of parsed) segments[segment.type] += 1;
@@ -233,10 +239,20 @@ function reviewScript(script: string, durationMinutes: number, rewriteAsked: boo
   if (!renderable.ok) {
     issues.push(`The audio cannot be made from this script: ${renderable.error} Write it again within that.`);
   }
+  // The narrator does not pause for "..." or commas, so a count written as
+  // punctuation is rattled off. Like length, one pacing rewrite per turn: a
+  // check that cannot be satisfied must not loop the agent.
+  const pacing = findPacingIssues(script).slice(0, 6).map(pacingNote);
+  if (pacing.length > 0 && !asked.pacing) {
+    issues.push(
+      "Counts will be rattled off: the narrator does not pause for \"...\" or commas, only a PAUSE line makes silence. " +
+        `Fix these and write it again, once: ${pacing.join(" ")}`,
+    );
+  }
   // One length rewrite per turn. A second miss is kept as written, and the
   // person hears its real length instead of waiting through another rewrite.
   let note: string | undefined;
-  if (lengthOff && !rewriteAsked) {
+  if (lengthOff && !asked.length) {
     issues.push(
       `Runs ${estimatedMinutes} min, ${offBy < 0 ? "well short of" : "well over"} the ` +
         `${durationMinutes} min target. Adjust the SILENCE blocks and write it again, once.`,
@@ -254,8 +270,11 @@ function reviewScript(script: string, durationMinutes: number, rewriteAsked: boo
     unknownSounds,
     estimatedSeconds,
     targetSeconds,
-    withinTarget: !lengthOff || rewriteAsked,
+    withinTarget: !lengthOff || asked.length,
     issues,
+    // Only while it asks for a rewrite: its presence is how the next write
+    // in this turn knows the pacing rewrite was asked for.
+    ...(pacing.length > 0 && !asked.pacing && { pacing }),
     ...(note && { note }),
   };
 }
@@ -263,11 +282,11 @@ function reviewScript(script: string, durationMinutes: number, rewriteAsked: boo
 export const studioTools = {
   writeScript: tool({
     description:
-      "Write the whole meditation script into the canvas. Use it for the first draft and for every revision; a revision is a full rewrite. Returns the parsed segment counts, malformed markers and the estimated length against the target.",
+      "Write the whole meditation script into the canvas. Use it for the first draft and for every revision; a revision is a full rewrite. Returns the parsed segment counts, malformed markers, pacing notes on counts and the estimated length against the target.",
     inputSchema: writeScriptInput,
     contextSchema: studioContextSchema,
     execute: async ({ durationMinutes, script }, { context: ctx, messages }) => {
-      const review = reviewScript(script, durationMinutes, lengthRewriteAsked(messages));
+      const review = reviewScript(script, durationMinutes, rewritesAsked(messages));
       let meditationId = await linkedMeditationId(ctx);
       let savedAs: "script" | "draft_script" = "script";
       // A revision of a meditation whose cover never landed (a failed

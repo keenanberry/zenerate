@@ -324,6 +324,30 @@ describe("writeScript", () => {
     expect(result.issues).toEqual(expect.arrayContaining([expect.stringMatching(/silence can be at most/i)]));
   });
 
+  it("asks once per turn for counts written as punctuation to get their own pauses", async () => {
+    const script = GOOD_SCRIPT.replace(
+      "*[SILENCE: 9 minutes]*",
+      "Let's count down together.\n\nten... nine... eight.\n\n*[PAUSE: 5 seconds]*\n\nBreathe in for a count of four.\n\nAnd out.\n\n*[SILENCE: 9 minutes]*",
+    );
+    const first = await run("writeScript", { durationMinutes: 10, script }, context(db.client));
+    expect(first.withinTarget).toBe(true);
+    expect(first.pacing).toEqual([
+      expect.stringMatching(/^line 9 "ten\.\.\. nine\.\.\. eight\.": .*own line with its own \*\[PAUSE: 2 seconds\]\*/),
+      expect.stringMatching(/^line 13 "Breathe in for a count of four\.": .*Follow it with \*\[PAUSE: 4 seconds\]\*/),
+    ]);
+    expect(first.issues).toEqual([expect.stringMatching(/^Counts will be rattled off: .*write it again, once: line 9/)]);
+
+    // A rewrite that misses one is accepted rather than sent back again.
+    const second = await run("writeScript", { durationMinutes: 10, script }, context(db.client), turn(first));
+    expect(second.issues).toEqual([]);
+    expect(second).not.toHaveProperty("pacing");
+  });
+
+  it("has no pacing notes for a script without counts", async () => {
+    const result = await run("writeScript", { durationMinutes: 10, script: GOOD_SCRIPT }, context(db.client));
+    expect(result).not.toHaveProperty("pacing");
+  });
+
   it("flags sounds outside the catalog", async () => {
     const script = GOOD_SCRIPT.replace("bell-tibetan.mp3", "rain.mp3");
     const result = await run("writeScript", { durationMinutes: 10, script }, context(db.client));
