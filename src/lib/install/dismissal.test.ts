@@ -21,10 +21,15 @@ describe("isDismissed", () => {
     expect(isDismissed(dismissalValue(now), now + DISMISS_DAYS * DAY)).toBe(false);
   });
 
-  it("shows it for a value that is not a time, or one in the future", () => {
+  it("shows it for a value that is not a time", () => {
     expect(isDismissed("yes", now)).toBe(false);
     expect(isDismissed("-5", now)).toBe(false);
-    expect(isDismissed(dismissalValue(now + DAY), now)).toBe(false);
+  });
+
+  it("allows a phone clock up to a day ahead of the server's, and no further", () => {
+    expect(isDismissed(dismissalValue(now + 5 * 60 * 1000), now)).toBe(true);
+    expect(isDismissed(dismissalValue(now + DAY), now)).toBe(true);
+    expect(isDismissed(dismissalValue(now + DAY + 1), now)).toBe(false);
   });
 });
 

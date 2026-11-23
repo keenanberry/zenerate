@@ -35,6 +35,10 @@ describe("InstallCard on the server", () => {
   it("does not fade in, so nothing about it changes after paint", () => {
     expect(serverRender("desktop")).not.toMatch(/animate-in|fade-in/);
   });
+
+  it("is hidden by the installed-app variant, which keys on the head script's marker", () => {
+    expect(serverRender("ios-safari")).toContain("standalone:hidden");
+  });
 });
 
 describe("InstallCardView", () => {
@@ -66,10 +70,16 @@ describe("InstallCardView", () => {
     expect(sizes(install)).toEqual(sizes(steps));
   });
 
-  it("points a computer at the phone", () => {
-    const html = render({ platform: "desktop" });
-    expect(html).toContain("Zenerate is best on your phone");
-    expect(html).toContain("Open on your phone");
+  it("reads the same on every platform, so the client's refinement cannot resize it", () => {
+    // An iPad sends a Mac user agent: the server says desktop, the client iOS.
+    const strip = (html: string) => html.replace(/data-[a-z-]+="[^"]*"/g, "");
+    expect(strip(render({ platform: "desktop" }))).toBe(strip(render({ platform: "ios-safari" })));
+    expect(strip(render({ platform: "in-app" }))).toBe(strip(render({ platform: "android" })));
+  });
+
+  it("gives the action slot a minimum width, so Install does not rewrap the text", () => {
+    expect(render({ platform: "android", canPrompt: true })).toMatch(/sm:min-w-32[^>]*>.*Install/);
+    expect(render({ platform: "android" })).toMatch(/sm:min-w-32[^>]*>Show me how/);
   });
 
   it("shows in an in-app browser too, whose sheet sends people to a real browser", () => {

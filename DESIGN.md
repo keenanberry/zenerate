@@ -335,7 +335,8 @@ every other content type narrows itself inside the shell:
   Hairline card with the app icon, a title, one Dusk line, a Primary action and a ghost "Not
   now" that hides it on that device for 30 days; `src/components/install/`), rendered on the
   server so nothing below it moves, and hidden in the installed app by the `standalone:`
-  variant (`@media (display-mode: standalone)`); its sheet
+  variant (the head script's `html[data-standalone]` marker, or `@media (display-mode:
+  standalone)`); its sheet
   is also what Account's permanent "Install the app" row opens; then the Library's places as 52px rows (`min-h-13`) between
   Hairline dividers, each a Primary icon, the label, its count in Dusk with tabular
   figures and a chevron, in the order Favorites, Bookmarks, My meditations, Collections;

@@ -61,7 +61,9 @@ export function InstallCardView({
 }) {
   if (platform === null || platform === "installed" || dismissed) return null;
 
-  const desktop = platform === "desktop";
+  // The card reads the same on every platform, so it is the same height
+  // whatever the client decides after the server's guess (an iPad sends a Mac
+  // user agent); only the sheet it opens differs.
   const prompting = platform === "android" && canPrompt;
 
   return (
@@ -82,26 +84,25 @@ export function InstallCardView({
         />
         <div className="min-w-0 space-y-1">
           <h2 id="install-card-title" className="text-base font-medium">
-            {desktop ? "Zenerate is best on your phone" : "Get the Zenerate app"}
+            Get the Zenerate app
           </h2>
           <p className="text-sm text-muted-foreground">
-            {desktop
-              ? "Add it to your home screen there for lock-screen controls and full-screen sessions."
-              : "Lock-screen controls and full-screen sessions, one tap from your home screen."}
+            Lock-screen controls and full-screen sessions, from your phone&apos;s home screen.
           </p>
         </div>
       </div>
-      {/* Install replaces Show me how in the same 36px slot when Chrome offers
-          its prompt, so the card's height does not change. */}
+      {/* Install replaces Show me how in the same slot when Chrome offers its
+          prompt; the slot's minimum width keeps the text beside it from
+          rewrapping, so the card's height does not change. */}
       <div className="flex shrink-0 items-center gap-2 sm:flex-row-reverse">
         {prompting ? (
-          <Button onClick={onInstall} className="flex-1 sm:flex-none">
+          <Button onClick={onInstall} className="flex-1 sm:min-w-32 sm:flex-none">
             <Download aria-hidden />
             Install
           </Button>
         ) : (
-          <Button onClick={onShow} className="flex-1 sm:flex-none">
-            {desktop ? "Open on your phone" : "Show me how"}
+          <Button onClick={onShow} className="flex-1 sm:min-w-32 sm:flex-none">
+            Show me how
           </Button>
         )}
         <Button variant="ghost" onClick={onDismiss} className="flex-1 sm:flex-none">

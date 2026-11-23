@@ -111,27 +111,62 @@ function Steps({ steps }: { steps: Step[] }) {
  * modules Midnight.
  */
 export function SiteQrCode({ url, className }: { url: string; className?: string }) {
-  const code = useMemo(() => {
-    try {
-      const matrix = encodeQr(url);
-      return { path: qrPath(matrix, 4), size: matrix.length + 8 };
-    } catch {
-      // Too long to encode: the written-out link beside it is enough.
-      return null;
-    }
-  }, [url]);
-  if (!code) return null;
-  const { path, size } = code;
+  const code = useMemo(() => siteQr(url), [url]);
+  return code ? <QrSvg code={code} url={url} className={className} /> : null;
+}
+
+type QrCode = { path: string; size: number };
+
+/** The QR code's path and size, or null if `url` is too long to encode. */
+export function siteQr(url: string): QrCode | null {
+  try {
+    const matrix = encodeQr(url);
+    return { path: qrPath(matrix, 4), size: matrix.length + 8 };
+  } catch {
+    return null;
+  }
+}
+
+function QrSvg({ code, url, className }: { code: QrCode; url: string; className?: string }) {
   return (
     <svg
       role="img"
       aria-label={`QR code for ${url}`}
-      viewBox={`0 0 ${size} ${size}`}
+      viewBox={`0 0 ${code.size} ${code.size}`}
       shapeRendering="crispEdges"
       className={`rounded-xl border bg-card text-card-foreground dark:bg-foreground dark:text-background ${className ?? ""}`}
     >
-      <path d={path} fill="currentColor" />
+      <path d={code.path} fill="currentColor" />
     </svg>
+  );
+}
+
+/** A computer: the QR code and the address, or the address alone if it cannot be encoded. */
+function DesktopInstructions({ siteUrl }: { siteUrl: string }) {
+  const code = useMemo(() => siteQr(siteUrl), [siteUrl]);
+  const link = (
+    <a href={siteUrl} className="font-medium text-primary underline-offset-4 hover:underline">
+      {displayUrl(siteUrl)}
+    </a>
+  );
+  if (!code) {
+    return (
+      <p className="text-base">
+        On your phone, open {link} in its browser, then add it to your home screen.
+      </p>
+    );
+  }
+  return (
+    <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
+      <QrSvg code={code} url={siteUrl} className="size-40 shrink-0" />
+      <div className="space-y-3 text-center sm:text-left">
+        <p className="text-base">
+          Scan this with your phone&apos;s camera to open Zenerate there, then add it to your
+          home screen.
+        </p>
+        <p className="text-sm text-muted-foreground">Or type {link} into your phone&apos;s browser.</p>
+      </div>
+    </div>
   );
 }
 
@@ -150,7 +185,7 @@ function inAppSteps(os: "ios" | "android"): Step[] {
           Open this page in <b className="font-medium">{browser}</b>
         </>
       ),
-      detail: `This app's own browser can't add Zenerate to your home screen. In its ⋯ or share menu, choose Open in ${browser} (or Open in browser).`,
+      detail: `This app's own browser can't add Zenerate to your home screen. Tap ⋯ or the app's menu and choose Open in ${browser} (or Open in browser).`,
     },
     {
       icon: os === "ios" ? SquarePlus : Smartphone,
@@ -178,15 +213,14 @@ export function InstallInstructions({
   switch (platform) {
     case "in-app": {
       const library = new URL("/library", siteUrl).href;
+      const systemBrowser = os === "ios" ? "Safari" : "Chrome";
       return (
         <div className="space-y-6">
           <Steps steps={inAppSteps(os)} />
+          {/* Plain text: a link would open in this same in-app browser. */}
           <p className="text-sm text-muted-foreground">
-            Or type{" "}
-            <a href={library} className="font-medium text-primary underline-offset-4 hover:underline">
-              {displayUrl(library)}
-            </a>{" "}
-            into {os === "ios" ? "Safari" : "Chrome"}.
+            If the app has no such option, open {systemBrowser} yourself and go to{" "}
+            <span className="font-medium text-foreground select-all">{displayUrl(library)}</span>.
           </p>
         </div>
       );
@@ -212,27 +246,7 @@ export function InstallInstructions({
         <Steps steps={ANDROID_STEPS} />
       );
     case "desktop":
-      return (
-        <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
-          <SiteQrCode url={siteUrl} className="size-40 shrink-0" />
-          <div className="space-y-3 text-center sm:text-left">
-            <p className="text-base">
-              Scan this with your phone&apos;s camera to open Zenerate there, then add it to
-              your home screen.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Or type{" "}
-              <a
-                href={siteUrl}
-                className="font-medium text-primary underline-offset-4 hover:underline"
-              >
-                {displayUrl(siteUrl)}
-              </a>{" "}
-              into your phone&apos;s browser.
-            </p>
-          </div>
-        </div>
-      );
+      return <DesktopInstructions siteUrl={siteUrl} />;
     default:
       return (
         <p className="text-base text-muted-foreground">

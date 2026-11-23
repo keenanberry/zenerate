@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { BackOriginRecorder } from "@/components/back-origin";
 import { GROUND_DARK, GROUND_LIGHT } from "@/lib/brand/ground";
 import { defaultMetadata } from "@/lib/seo/metadata";
-import { CAPTURE_SCRIPT } from "@/lib/install/capture-script";
+import { INSTALL_HEAD_SCRIPT } from "@/lib/install/capture-script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -70,9 +70,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${lora.variable}`}
     >
       <head>
-        {/* Catches Chrome's install prompt before hydration, for the Library's
-            install card (src/lib/install/capture-script.ts). */}
-        <script dangerouslySetInnerHTML={{ __html: CAPTURE_SCRIPT }} />
+        {/* Before first paint: marks the installed app on <html> and catches
+            Chrome's install prompt (src/lib/install/capture-script.ts). */}
+        <script dangerouslySetInnerHTML={{ __html: INSTALL_HEAD_SCRIPT }} />
       </head>
       <body className="antialiased">
         <ThemeProvider

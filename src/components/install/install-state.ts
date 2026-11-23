@@ -1,7 +1,12 @@
 "use client";
 
 import { useCallback, useSyncExternalStore } from "react";
-import { INSTALL_CHANGE, INSTALLED_KEY, PROMPT_KEY } from "@/lib/install/capture-script";
+import {
+  INSTALL_CHANGE,
+  INSTALLED_KEY,
+  PROMPT_KEY,
+  STANDALONE_ATTR,
+} from "@/lib/install/capture-script";
 import { DISMISS_COOKIE, dismissalCookie, isDismissed, readCookie } from "@/lib/install/dismissal";
 import { detectInstallPlatform, type InstallPlatform } from "@/lib/install/platform";
 
@@ -14,8 +19,8 @@ import { detectInstallPlatform, type InstallPlatform } from "@/lib/install/platf
  * the card is in the first paint; those values are the server snapshots here,
  * and the hydrating render matches them. After hydration the client refines
  * them: an iPad that reported a Mac becomes iOS, and the installed app becomes
- * "installed" (the card is already hidden there by `standalone:hidden`, so
- * removing it moves nothing).
+ * "installed" (the card is already hidden there by `standalone:hidden`, keyed
+ * on the head script's `data-standalone` marker, so removing it moves nothing).
  */
 
 /** Chromium's `beforeinstallprompt` event; not in TypeScript's DOM types. */
@@ -57,7 +62,11 @@ function readPlatform(): InstallPlatform {
   const nav = navigator as Navigator & { standalone?: boolean };
   return detectInstallPlatform({
     userAgent: nav.userAgent,
-    displayModeStandalone: window.matchMedia(STANDALONE_QUERY).matches,
+    // The head script's marker covers iOS home-screen apps that report no
+    // display mode, or fullscreen.
+    displayModeStandalone:
+      document.documentElement.hasAttribute(STANDALONE_ATTR) ||
+      window.matchMedia(STANDALONE_QUERY).matches,
     navigatorStandalone: nav.standalone === true,
     maxTouchPoints: nav.maxTouchPoints,
   });

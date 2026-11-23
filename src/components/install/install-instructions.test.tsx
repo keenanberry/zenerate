@@ -37,19 +37,20 @@ describe("InstallInstructions", () => {
     expect(t).toContain("Add to Home screen");
   });
 
-  it("sends an iOS in-app browser to Safari, with the address written out", () => {
+  it("sends an iOS in-app browser to Safari through the app's menu, with the address as text", () => {
     const html = render({ platform: "in-app", os: "ios" });
     const t = text(html);
     expect(t).toContain("Open this page in Safari");
-    expect(t).toContain("Open in Safari");
-    expect(html).toContain('href="https://www.zeneratestudio.com/library"');
-    expect(t).toContain("www.zeneratestudio.com/library into Safari");
+    expect(t).toContain("Tap ⋯ or the app's menu and choose Open in Safari");
+    expect(t).toContain("open Safari yourself and go to www.zeneratestudio.com/library");
+    // A link would only open in the same in-app browser.
+    expect(html).not.toContain("<a ");
   });
 
   it("sends an Android in-app browser to Chrome", () => {
     const t = text(render({ platform: "in-app", os: "android" }));
     expect(t).toContain("Open this page in Chrome");
-    expect(t).toContain("into Chrome");
+    expect(t).toContain("open Chrome yourself and go to www.zeneratestudio.com/library");
   });
 
   it("keeps only the written link when the address is too long for a QR code", () => {
@@ -57,6 +58,8 @@ describe("InstallInstructions", () => {
     const html = render({ platform: "desktop", siteUrl: long });
     expect(html).not.toContain("<svg");
     expect(html).toContain(`href="${long}"`);
+    expect(text(html)).not.toMatch(/scan/i);
+    expect(text(html)).toContain("On your phone, open");
   });
 
   it("uses the type scale's weights only", () => {

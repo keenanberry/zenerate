@@ -190,11 +190,15 @@ After the bottom sheets merge (app shell PR 3, same plan):
 - [ ] iPhone, after the install-prompt PR merges, in **Safari** (not the installed app): the
       Library opens with a "Get the Zenerate app" card above the rows. Show me how → a sheet
       with three steps (Share, Add to Home Screen, Add); follow them and the icon lands on the
-      home screen. Open the installed app: no card on the Library, **not even for a moment as
-      it loads** (the server cannot tell the installed app apart, so CSS hides the card under
-      `display-mode: standalone`; if it flashes, iOS is not matching that query), and Account →
-      App → "Install the app" says "Installed on this device". Back in Safari, Not now hides the
-      card; Account → Install the app still opens the steps.
+      home screen. In the installed app, Account → App → "Install the app" says "Installed on
+      this device". Back in Safari, Not now hides the card; Account → Install the app still
+      opens the steps.
+- [ ] Installed app on the iPhone, after the install-prompt PR merges: swipe the app away in
+      the app switcher, then open it cold from the home screen onto the Library. The install
+      card never appears, **not even for a frame**, and the rows don't move as it loads. (The
+      server cannot tell the installed app apart; a script in the page's head marks it from
+      `navigator.standalone` before the first paint. If the card flashes, that marker is not
+      landing in time.)
 - [ ] iPhone: send yourself the Library link in Instagram (or Messages → open in a Facebook
       or LinkedIn message) and open it there. Show me how says to open the page in Safari
       first, with the address written out.
