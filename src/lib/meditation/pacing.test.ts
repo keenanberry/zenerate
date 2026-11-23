@@ -75,6 +75,43 @@ describe("findPacingIssues: real failures", () => {
     expect(pacingNote(issues[0])).toMatch(/pauses 2 seconds\. Make it \*\[PAUSE: 7 seconds\]\*/);
   });
 
+  it("flags several timed phases on one line, asking for a split rather than a summed pause", () => {
+    const script = lines("Let's breathe in for four, hold for seven, and out for eight.", "*[PAUSE: 3 seconds]*");
+    const issues = findPacingIssues(script);
+    expect(issues).toEqual([expect.objectContaining({ line: 1, kind: "phases-on-one-line", phases: [4, 7, 8] })]);
+    expect(pacingNote(issues[0])).toBe(
+      'line 1 "Let\'s breathe in for four, hold for seven, and out for eight.": 3 timed phases on one line. ' +
+        "Split each phase onto its own line with its own PAUSE (*[PAUSE: 4 seconds]*, *[PAUSE: 7 seconds]*, " +
+        "*[PAUSE: 8 seconds]* in turn), never one pause for the whole cycle.",
+    );
+    expect(pacingNote(issues[0])).not.toMatch(/19/);
+    // A pause the length of the whole cycle is still one pause for three phases.
+    expect(findPacingIssues(lines("In for 4, hold for 7, out for 8.", "*[PAUSE: 19 seconds]*"))).toEqual([
+      expect.objectContaining({ kind: "phases-on-one-line" }),
+    ]);
+  });
+
+  it("flags a multi-phase line whose phases are walked through without their pauses", () => {
+    const script = lines(
+      "The rhythm is simple: in for four, out for six.",
+      "*[PAUSE: 3 seconds]*",
+      "Breathe in for four.",
+      "*[PAUSE: 4 seconds]*",
+      "And out for six.",
+      "Again.",
+    );
+    expect(findPacingIssues(script).map((i) => [i.line, i.kind])).toEqual([
+      [1, "phases-on-one-line"],
+      [9, "count-without-pause"],
+    ]);
+  });
+
+  it("words the chain note for both kinds of count", () => {
+    expect(pacingNote(findPacingIssues("one, two, three")[0])).toMatch(
+      /own line with its own PAUSE after it: about 1 second in a spoken breath count, about 2 seconds in a countdown\.$/,
+    );
+  });
+
   it("flags a pause far longer than the count", () => {
     const script = lines("Breathe in for four.", "*[PAUSE: 15 seconds]*");
     expect(findPacingIssues(script)).toEqual([
@@ -103,8 +140,6 @@ describe("findPacingIssues: clean controls", () => {
       "*[PAUSE: 4 seconds]*",
       "And out, slowly, for a count of six.",
       "*[PAUSE: 6 seconds]*",
-      "In for 4, hold for 7, out for 8.",
-      "*[PAUSE: 19 seconds]*",
       "Breathe in, counting to five.",
       "*[PAUSE: 6 seconds]*",
     );
@@ -137,6 +172,71 @@ describe("findPacingIssues: clean controls", () => {
       "One by one, let each thought go. Twenty-one breaths, or nine, or none.",
       "Feel your two feet and your ten toes.",
       "Every breath counts.",
+      "*[PAUSE: 5 seconds]*",
+    );
+    expect(findPacingIssues(script)).toEqual([]);
+  });
+
+  it("passes a multi-phase line when each phase then gets its own line and pause", () => {
+    const phases = (...first: string[]) =>
+      lines(
+        ...first,
+        "*[PAUSE: 3 seconds]*",
+        "Breathe in through your nose for four.",
+        "*[PAUSE: 4 seconds]*",
+        "Hold for seven.",
+        "*[PAUSE: 7 seconds]*",
+        "Let it out slowly through your mouth for eight.",
+        "*[PAUSE: 8 seconds]*",
+      );
+    expect(findPacingIssues(phases("Let's breathe in for four, hold for seven, and out for eight."))).toEqual([]);
+    expect(
+      findPacingIssues(
+        lines(
+          "The rhythm is simple: in for four, out for six.",
+          "*[PAUSE: 3 seconds]*",
+          "Settle your shoulders first.",
+          "*[PAUSE: 3 seconds]*",
+          "Breathe in for four.",
+          "*[PAUSE: 4 seconds]*",
+          "And out for six.",
+          "*[PAUSE: 6 seconds]*",
+        ),
+      ),
+    ).toEqual([]);
+    expect(
+      findPacingIssues(
+        lines(
+          "Here's how it works: in for four, hold for four.",
+          "*[PAUSE: 3 seconds]*",
+          "In for four.",
+          "*[PAUSE: 4 seconds]*",
+          "Hold for four.",
+          "*[PAUSE: 4 seconds]*",
+        ),
+      ),
+    ).toEqual([]);
+  });
+
+  it("passes a pattern handed to the listener for a silent practice", () => {
+    const script = lines(
+      "Now continue on your own, in for four, out for six. I will be quiet.",
+      "*[PAUSE: 3 seconds]*",
+      "*[SILENCE: 2 minutes]*",
+      "Keep breathing in for four on your own.",
+      "*[SILENCE: 1 minute]*",
+    );
+    expect(findPacingIssues(script)).toEqual([]);
+  });
+
+  it("passes number pairs followed by a word, lengths of time and cues", () => {
+    const script = lines(
+      "Take two, three deep breaths.",
+      "Take one, two steps forward.",
+      "Lines seven, eight and nine.",
+      "Rest here for two and a half minutes.",
+      "Stay with this for five, maybe ten minutes.",
+      "On the count of three, let everything go.",
       "*[PAUSE: 5 seconds]*",
     );
     expect(findPacingIssues(script)).toEqual([]);

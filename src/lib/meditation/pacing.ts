@@ -24,8 +24,12 @@ const COUNT_TOKEN = new RegExp(`(?<!\\w)(?<!\\d\\.)${COUNT}(?!\\w)(?!\\.\\d)`, "
 const BEAT_SEPARATOR = /^[\s.,…;:!\-–—]+$/;
 /** A bare dash between two numbers is a range or a name ("2-3", "4-7-8"), not a count. */
 const DASH_ONLY = /^\s*[-–—]\s*$/;
-/** "two, three minutes" is a quantity, not a count. */
-const UNIT_AFTER = /^\s*(?:seconds?|minutes?|hours?|days?|weeks?|months?|years?|times|breaths?|more|of)\b/i;
+/**
+ * A pair of numbers is a count only when punctuation or the end of the
+ * speech follows it: "one, two." is, "Take two, three deep breaths" and
+ * "seven, eight and nine" are not.
+ */
+const ENDS_BEAT = /^\s*(?:[.,;:!?…\-–—]|$)/;
 
 /** A line that is only a beat of a spoken count: "Ten.", "And one…". */
 const BEAT_LINE = new RegExp(`^(?:and\\s+)?${COUNT}[\\s.,…!]*$`, "i");
@@ -45,6 +49,12 @@ const INSTRUCTION = new RegExp(
   ].join("|"),
   "gi",
 );
+/** "two and a half minutes", "five, maybe ten minutes": a length of time, not a count. */
+const HALF_AFTER = /^\s*and\s+a\s+half\b/i;
+const QUANTITY_IN_CLAUSE = /^[^.;:!?\n]{0,30}?\b(?:minutes?|hours?|days?|weeks?|months?|years?|breaths?|times|rounds?)\b/i;
+/** "On the count of three, let go": a cue for one action, not a timed breath. */
+const CUE_BEFORE = /\bon\s+the\s+$/i;
+const CUE_AFTER = /^\s*,/;
 
 /**
  * A line that explains the pattern before it starts ("We will breathe in for
@@ -55,10 +65,25 @@ const DESCRIBES = /\b(?:we will|we'll|you will|you'll|we are going to|we're goin
 
 const PAUSE_LINE = /^\*\[PAUSE:\s*(\d+)\s*seconds?\]\*$/i;
 const MARKER_LINE = /^\*\[/;
+/** How far ahead a multi-phase line's phases may be walked through, in lines. */
+const PHASE_WINDOW = 16;
 
 function countValue(token: string): number {
   const word = NUMBER_WORDS.indexOf(token.toLowerCase());
   return word >= 0 ? word + 1 : Number(token);
+}
+
+/** The timed instructions in one line, in order, as their counts. */
+function timedCounts(text: string): number[] {
+  const counts: number[] = [];
+  for (const m of text.matchAll(INSTRUCTION)) {
+    const before = text.slice(0, m.index);
+    const after = text.slice(m.index + m[0].length);
+    if (HALF_AFTER.test(after) || QUANTITY_IN_CLAUSE.test(after)) continue;
+    if (/^count/i.test(m[0]) && CUE_BEFORE.test(before) && CUE_AFTER.test(after)) continue;
+    counts.push(countValue(m.slice(1).find(Boolean)!));
+  }
+  return counts;
 }
 
 export type PacingIssue = {
@@ -66,10 +91,12 @@ export type PacingIssue = {
   line: number;
   /** The line as written, trimmed and cut to a readable length. */
   quote: string;
-  kind: "count-chain" | "count-without-pause";
+  kind: "count-chain" | "count-without-pause" | "phases-on-one-line";
   /** For count-without-pause: the seconds the count asks for, and the PAUSE found (null for speech). */
   countSeconds?: number;
   pauseSeconds?: number | null;
+  /** For phases-on-one-line: each phase's count, in order. */
+  phases?: number[];
 };
 
 function quote(text: string): string {
@@ -80,10 +107,10 @@ function quote(text: string): string {
 type Spoken = { text: string; line: number; start: number };
 
 /**
- * Runs of two or more consecutive counts (each one more or one less than the
- * last) with only punctuation or spaces between them, inside one stretch of
- * speech. Consecutive spoken lines are read as one TTS call, so "Ten." and
- * "Nine." on adjacent lines with no PAUSE between are a chain too.
+ * Runs of consecutive counts (each one more or one less than the last) with
+ * only punctuation or spaces between them, inside one stretch of speech.
+ * Consecutive spoken lines are read as one TTS call, so "Ten." and "Nine."
+ * on adjacent lines with no PAUSE between are a chain too.
  */
 function findChains(stretch: Spoken[]): PacingIssue[] {
   const text = stretch.map((s) => s.text).join(" ");
@@ -111,7 +138,7 @@ function findChains(stretch: Spoken[]): PacingIssue[] {
     const length = j - i + 1;
     const isCount =
       length >= 3 ||
-      (length === 2 && !DASH_ONLY.test(gaps[0]) && !UNIT_AFTER.test(text.slice(tokens[j].end)));
+      (length === 2 && !DASH_ONLY.test(gaps[0]) && ENDS_BEAT.test(text.slice(tokens[j].end)));
     if (isCount) {
       const at = lineAt(tokens[i].start);
       issues.push({ line: at.line, quote: quote(at.text), kind: "count-chain" });
@@ -119,6 +146,11 @@ function findChains(stretch: Spoken[]): PacingIssue[] {
     i = j + 1;
   }
   return issues;
+}
+
+/** Whether a PAUSE of `pause` seconds suits a count of `count`: within half of it either way. */
+function fits(pause: number, count: number): boolean {
+  return pause >= count * 0.5 && pause <= Math.ceil(count * 1.5);
 }
 
 /**
@@ -145,25 +177,73 @@ export function findPacingIssues(script: string): PacingIssue[] {
   });
   flush();
 
+  /** The next non-empty line after `index`, as its index, or -1. */
+  const nextLine = (index: number) => lines.findIndex((l, i) => i > index && l !== "");
+  /** The PAUSE right after a line: its seconds, null for speech, undefined for room (SILENCE, SOUND, the end, a spoken count). */
+  const pauseAfter = (index: number): number | null | undefined => {
+    const next = lines[nextLine(index)];
+    if (next === undefined || (MARKER_LINE.test(next) && !PAUSE_LINE.test(next)) || BEAT_LINE.test(next)) {
+      return undefined;
+    }
+    const pause = next.match(PAUSE_LINE);
+    return pause ? Number(pause[1]) : null;
+  };
+  /**
+   * Whether a SILENCE comes before the next speech: the line hands the
+   * pattern to the listener for a practice of their own ("Now continue on
+   * your own, in for four, out for six."), which needs no PAUSE per phase.
+   */
+  const handsOff = (index: number) => {
+    for (let i = index + 1; i < lines.length; i++) {
+      if (!lines[i]) continue;
+      if (!MARKER_LINE.test(lines[i])) return false;
+      if (/^\*\[SILENCE:/i.test(lines[i])) return true;
+    }
+    return false;
+  };
+  const counted = (index: number) => {
+    const text = lines[index];
+    return text && !MARKER_LINE.test(text) && !DESCRIBES.test(text) ? timedCounts(text) : [];
+  };
+
+  /**
+   * Whether the phases of a multi-phase line are then walked through, each
+   * on its own line with a PAUSE that suits it: the line only explained the
+   * pattern ("The rhythm is simple: in for four, out for six.").
+   */
+  const walkedThrough = (index: number, phases: number[]) => {
+    let want = 0;
+    for (let i = index + 1; i < lines.length && i <= index + PHASE_WINDOW && want < phases.length; i++) {
+      if (!lines[i] || MARKER_LINE.test(lines[i])) continue;
+      const counts = counted(i);
+      if (counts.length === 0) continue;
+      if (counts.length > 1 || counts[0] !== phases[want]) return false;
+      const pause = pauseAfter(i);
+      if (pause === null || (pause !== undefined && !fits(pause, counts[0]))) return false;
+      want += 1;
+    }
+    return want === phases.length;
+  };
+
   const chainLines = new Set(issues.map((issue) => issue.line));
   lines.forEach((text, index) => {
-    if (!text || MARKER_LINE.test(text) || chainLines.has(index + 1) || DESCRIBES.test(text)) return;
-    const counts = [...text.matchAll(INSTRUCTION)].map((m) => countValue(m.slice(1).find(Boolean)!));
-    if (counts.length === 0) return;
-    const seconds = counts.reduce((sum, n) => sum + n, 0);
+    if (chainLines.has(index + 1)) return;
+    const counts = counted(index);
+    if (counts.length === 0 || handsOff(index)) return;
 
-    const next = lines.slice(index + 1).find(Boolean);
-    // The end of the script, a SILENCE or a SOUND leaves room; a spoken
-    // count ("One." on the next line) is checked as a chain instead.
-    if (next === undefined || (MARKER_LINE.test(next) && !PAUSE_LINE.test(next)) || BEAT_LINE.test(next)) return;
-    const pause = next.match(PAUSE_LINE);
-    const pauseSeconds = pause ? Number(pause[1]) : null;
-    if (pauseSeconds !== null && pauseSeconds >= seconds * 0.5 && pauseSeconds <= Math.ceil(seconds * 1.5)) return;
+    if (counts.length > 1) {
+      if (!walkedThrough(index, counts)) {
+        issues.push({ line: index + 1, quote: quote(text), kind: "phases-on-one-line", phases: counts });
+      }
+      return;
+    }
+    const pauseSeconds = pauseAfter(index);
+    if (pauseSeconds === undefined || (pauseSeconds !== null && fits(pauseSeconds, counts[0]))) return;
     issues.push({
       line: index + 1,
       quote: quote(text),
       kind: "count-without-pause",
-      countSeconds: seconds,
+      countSeconds: counts[0],
       pauseSeconds,
     });
   });
@@ -173,11 +253,16 @@ export function findPacingIssues(script: string): PacingIssue[] {
 
 /** One fix-it note per issue, for the agent. */
 export function pacingNote(issue: PacingIssue): string {
+  const at = `line ${issue.line} "${issue.quote}"`;
   if (issue.kind === "count-chain") {
-    return `line ${issue.line} "${issue.quote}": several counted beats in one breath. Put each number on its own line with its own *[PAUSE: 2 seconds]* after it.`;
+    return `${at}: several counted beats in one breath. Put each number on its own line with its own PAUSE after it: about 1 second in a spoken breath count, about 2 seconds in a countdown.`;
+  }
+  if (issue.kind === "phases-on-one-line") {
+    const pauses = issue.phases!.map((n) => `*[PAUSE: ${n} seconds]*`).join(", ");
+    return `${at}: ${issue.phases!.length} timed phases on one line. Split each phase onto its own line with its own PAUSE (${pauses} in turn), never one pause for the whole cycle.`;
   }
   const wanted = `*[PAUSE: ${issue.countSeconds} seconds]*`;
   return issue.pauseSeconds === null
-    ? `line ${issue.line} "${issue.quote}": asks for a ${issue.countSeconds}-second count but goes straight on to speech. Follow it with ${wanted}.`
-    : `line ${issue.line} "${issue.quote}": asks for a ${issue.countSeconds}-second count but pauses ${issue.pauseSeconds} seconds. Make it ${wanted}.`;
+    ? `${at}: asks for a ${issue.countSeconds}-second count but goes straight on to speech. Follow it with ${wanted}.`
+    : `${at}: asks for a ${issue.countSeconds}-second count but pauses ${issue.pauseSeconds} seconds. Make it ${wanted}.`;
 }
