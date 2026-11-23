@@ -119,6 +119,8 @@ describe("AccountBookmarks", () => {
     expect(html.match(/font-serif/g)).toHaveLength(2);
     expect(html).not.toMatch(/>1</);
     expect(html).toContain(">Alice · Sleep · 10 min<");
+    // Play in place from sm, named for the meditation.
+    expect(html).toContain('aria-label="Play Rain &amp; Release"');
     expect(html).toContain('aria-label="Remove Rain &amp; Release from saved"');
     expect(html).toContain('aria-label="Remove Before Sleep from saved"');
     expect(html).not.toMatch(/aria-label="(Add|Remove) [^"]* (to|from) favorites"/);

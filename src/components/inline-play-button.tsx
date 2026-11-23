@@ -18,6 +18,8 @@ interface InlinePlayButtonProps {
   status: string;
   size?: "sm" | "md";
   className?: string;
+  /** The meditation's title, for the button's accessible name. */
+  title?: string;
 }
 
 export function InlinePlayButton({
@@ -25,6 +27,7 @@ export function InlinePlayButton({
   status,
   size = "sm",
   className,
+  title,
 }: InlinePlayButtonProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -97,6 +100,8 @@ export function InlinePlayButton({
           <span
             role="button"
             tabIndex={0}
+            aria-disabled
+            aria-label={title ? `${title}: ${tooltipMessage}` : tooltipMessage}
             className={cn(
               "inline-flex items-center justify-center rounded-md cursor-not-allowed text-muted-foreground/40",
               btnSize,
@@ -128,6 +133,7 @@ export function InlinePlayButton({
         className,
       )}
       onClick={handleClick}
+      aria-label={title ? `${playing ? "Pause" : "Play"} ${title}` : playing ? "Pause" : "Play"}
     >
       {playing ? (
         <Pause className={cn(iconSize, "fill-current")} />

@@ -85,6 +85,7 @@ export function MeditationCard({
           <InlinePlayButton
             audioUrl={meditation.audio_url}
             status={meditation.status}
+            title={meditation.title}
             size="sm"
             className="hidden sm:inline-flex"
           />
