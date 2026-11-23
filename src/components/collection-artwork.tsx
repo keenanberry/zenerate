@@ -52,7 +52,10 @@ export function CollectionArtwork({
     <div
       aria-hidden
       className={cn(
-        "grid aspect-square grid-cols-2 overflow-hidden rounded-xl",
+        // MeditationCover's radius rule, so a small mosaic sits in a track
+        // row's cover column as a single cover would.
+        "grid aspect-square grid-cols-2 overflow-hidden",
+        size < 96 ? "rounded-md" : "rounded-xl",
         covers.length >= 3 && "grid-rows-2",
         className,
       )}

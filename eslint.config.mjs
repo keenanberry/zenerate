@@ -3,7 +3,7 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 
 const SIGNED_URL_RESTRICTION =
-  "@/lib/audio/signed-url signs with a service-role client and performs no authorization of its own. Only src/lib/meditation/actions.ts may import it, because every call site there fetches the row through an RLS-bound client first. Add your fetch there and call hydrateAudioUrl/hydrateAudioUrls (or export a new authorized helper), rather than importing this module directly.";
+  "@/lib/audio/signed-url signs with a service-role client and performs no authorization of its own. Only src/lib/meditation/actions.ts (every call site fetches the row through an RLS-bound client first) and src/lib/meditation/bookmark-audio.ts (signs public meditations by id only) may import it. Add your fetch there and call hydrateAudioUrl/hydrateAudioUrls (or export a new authorized helper), rather than importing this module directly.";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -35,13 +35,18 @@ const eslintConfig = defineConfig([
     // arbitrarily deep -- resolves to the same restriction, with an
     // optional extension because `./signed-url.js` is a legal specifier.
     files: ["**/*.{ts,tsx}"],
-    // `actions.ts` is the one production caller (see above). The co-located
+    // `actions.ts` is the main production caller (see above).
+    // `bookmark-audio.ts` is the other: it hands the signer meditation ids
+    // only, so the service role signs a meditation only if it finds it
+    // public, and it is not a "use server" module, so no browser can call it
+    // with ids of its choosing. The co-located
     // unit test is exempt because a module's own test must be able to import
     // it; it mocks the service-role client and never ships. Exempted by exact
     // path rather than a `*.test.ts` glob, so that a test anywhere else
     // reaching for this module still has to justify itself.
     ignores: [
       "src/lib/meditation/actions.ts",
+      "src/lib/meditation/bookmark-audio.ts",
       "src/lib/audio/signed-url.test.ts",
     ],
     rules: {
