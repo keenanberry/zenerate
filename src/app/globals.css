@@ -3,6 +3,19 @@
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
+/* Running as the installed app. The server cannot know this, so what must not
+   show there is hidden before first paint: the root layout's head script marks
+   <html data-standalone> (navigator.standalone, or display-mode standalone or
+   fullscreen; iOS does not reliably match the media query alone), and the
+   media query stays as a second route. */
+@custom-variant standalone {
+  &:where([data-standalone] *) {
+    @slot;
+  }
+  @media (display-mode: standalone) {
+    @slot;
+  }
+}
 
 @theme inline {
   --color-background: var(--background);

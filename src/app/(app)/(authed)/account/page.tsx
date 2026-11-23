@@ -5,6 +5,8 @@ import { ProfileForm } from "@/components/profile-form";
 import { ThemeChoice } from "@/components/theme-choice";
 import { SignOutButton } from "@/components/sign-out-button";
 import { AccountBackLink } from "@/components/account-back-link";
+import { InstallRow } from "@/components/install/install-row";
+import { siteUrl } from "@/lib/seo/metadata";
 
 export const metadata = {
   title: "Account | Zenerate",
@@ -12,7 +14,7 @@ export const metadata = {
 
 /**
  * The signed-in user's account: their profile (edited through
- * PATCH /api/profile), the theme, and Sign out, which left the top bar for
+ * PATCH /api/profile), the theme, installing the app, and Sign out, which left the top bar for
  * here. Their meditations, favourites, bookmarks and collections are in the
  * Library; their draft chats are on Create.
  * The (authed) layout has already sent signed-out visitors to /login.
@@ -65,6 +67,15 @@ export default async function AccountPage() {
         <div className="rounded-xl border bg-card px-6 py-6 sm:px-8 sm:py-8">
           <ThemeChoice />
         </div>
+      </AccountSection>
+
+      <AccountSection
+        id="app"
+        title="App"
+        description="Lock-screen controls and full-screen sessions, from your home screen."
+      >
+        {/* Always here, so dismissing the Library's install card is never a dead end. */}
+        <InstallRow siteUrl={siteUrl.href} />
       </AccountSection>
 
       <div className="border-t pt-10">

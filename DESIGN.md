@@ -331,7 +331,13 @@ every other content type narrows itself inside the shell:
 - Grids and tabular lists of meditations or collections (`/discover`,
   `/collections/[id]`, the Library's pages): the full 64rem.
 - The Library (`/library`): the full 64rem. The title in Lora with, on a phone, the avatar
-  to Account at its right; then the Library's places as 52px rows (`min-h-13`) between
+  to Account at its right; outside the installed app, a quiet install card (a `bg-card`
+  Hairline card with the app icon, a title, one Dusk line, a Primary action and a ghost "Not
+  now" that hides it on that device for 30 days; `src/components/install/`), rendered on the
+  server so nothing below it moves, and hidden in the installed app by the `standalone:`
+  variant (the head script's `html[data-standalone]` marker, or `@media (display-mode:
+  standalone)`); its sheet
+  is also what Account's permanent "Install the app" row opens; then the Library's places as 52px rows (`min-h-13`) between
   Hairline dividers, each a Primary icon, the label, its count in Dusk with tabular
   figures and a chevron, in the order Favorites, Bookmarks, My meditations, Collections;
   then Recently played, the latest distinct meditations the listener has played as a

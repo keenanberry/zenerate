@@ -30,4 +30,14 @@ describe("AccountPage", () => {
     // Before the title.
     expect(html.indexOf('aria-label="Back"')).toBeLessThan(html.indexOf(">Account</h1>"));
   });
+
+  it("always offers Install the app, so dismissing the Library card is never a dead end", async () => {
+    const html = renderToStaticMarkup(await AccountPage());
+    expect(html).toContain("Install the app");
+    expect(html).toMatch(/<button[^>]*type="button"[^>]*>.*Install the app/);
+    // Both lines are in the server's markup and CSS picks one, so hydrating
+    // in the installed app changes nothing.
+    expect(html).toMatch(/class="[^"]*block standalone:hidden[^"]*">Add Zenerate to your home screen/);
+    expect(html).toMatch(/class="[^"]*hidden standalone:block[^"]*">Installed on this device/);
+  });
 });
