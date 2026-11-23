@@ -1,6 +1,7 @@
 import { getViewer } from "@/lib/profile/viewer";
 import { Nav } from "@/components/nav";
 import { BottomBar } from "@/components/bottom-bar";
+import { InstallPromptListener } from "@/components/install/install-state";
 import { SiteFooter } from "@/components/site-footer";
 import { initials } from "@/lib/navigation/app-tabs";
 import { cn } from "@/lib/utils";
@@ -55,6 +56,8 @@ export default async function AppLayout({
         <SiteFooter />
       </div>
       {user && <BottomBar />}
+      {/* Keeps Chrome's install prompt for the Library card's Install button. */}
+      {user && <InstallPromptListener />}
     </div>
   );
 }

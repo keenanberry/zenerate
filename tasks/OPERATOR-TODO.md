@@ -4,7 +4,7 @@ Everything left before signups open that only the operator can do: a phone, a da
 account, or a judgment call. Agents keep this file current. When you finish an item, tick it
 and add the date, or tell an agent and it will. Each item names the task file with the detail.
 
-Last updated: 2026-11-21. Sections are in the order to do them. Live sandbox snapshot: `snap_sXOy59qkIhIo95G7Y9N33oAaAPMY` (2026-11-16, task 60: peaks, 128 kbps), the only one; the two before it were deleted once it had rendered in production.
+Last updated: 2026-11-23. Sections are in the order to do them. Live sandbox snapshot: `snap_sXOy59qkIhIo95G7Y9N33oAaAPMY` (2026-11-16, task 60: peaks, 128 kbps), the only one; the two before it were deleted once it had rendered in production.
 
 ## 1. Protect the spend (do first)
 
@@ -187,6 +187,16 @@ After the bottom sheets merge (app shell PR 3, same plan):
       Library header's avatar shows it too. Change photo to a different one, then Remove; each
       time the avatar updates without a reload of your own. Safari cannot encode WebP, so the
       stored file is a JPEG there (`docs/superpowers/specs/2026-11-21-avatar-upload-design.md`).
+- [ ] iPhone, after the install-prompt PR merges, in **Safari** (not the installed app): the
+      Library opens with a "Get the Zenerate app" card above the rows. Show me how → a sheet
+      with three steps (Share, Add to Home Screen, Add); follow them and the icon lands on the
+      home screen. Open the installed app: no card on the Library, and Account → App →
+      "Install the app" says "Installed on this device". Back in Safari, Not now hides the card;
+      Account → Install the app still opens the steps.
+- [ ] Android phone, if one is to hand, in Chrome: the card's button reads **Install** (Chrome
+      offers its own prompt once it decides the site is installable, which can take a visit or
+      two; until then it reads Show me how and gives the ⋮ menu steps). Install → Chrome's
+      dialog → the app installs and the card goes.
 
 ## 5. Production checks (after seeding)
 
