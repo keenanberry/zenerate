@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { signBookmarkAudio } from "@/lib/meditation/actions";
+import { withBookmarkAudio } from "@/lib/meditation/bookmark-audio";
 import { listBookmarks, parseBookmarkPage } from "@/lib/meditation/bookmarks";
 
 /**
@@ -12,7 +12,7 @@ import { listBookmarks, parseBookmarkPage } from "@/lib/meditation/bookmarks";
  * meditation is { id, title, description, tags, settings, status, created_at,
  * author: { id, display_name, avatar_url } | null, rating: { average, count } | null,
  * audio_url: string | null }: what a Discover card shows, without the script,
- * and with the audio signed so a row plays in place (signBookmarkAudio). Only
+ * and with the audio signed so a row plays in place (withBookmarkAudio, src/lib/meditation/bookmark-audio.ts). Only
  * public, completed meditations are listed; one that went private since is
  * left out.
  *
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
 
   try {
     const bookmarks = await listBookmarks(supabase, user.id, { limit: page.limit, cursor: page.cursor });
-    return json(await signBookmarkAudio(bookmarks));
+    return json(await withBookmarkAudio(user.id, bookmarks));
   } catch (err) {
     console.error("Could not list bookmarks:", err);
     return json({ error: "Could not load your saved meditations" }, 500);

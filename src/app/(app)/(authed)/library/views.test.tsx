@@ -21,8 +21,8 @@ vi.mock("@/lib/meditation/bookmarks", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/meditation/bookmarks")>()),
   listBookmarks: mockList,
 }));
+vi.mock("@/lib/meditation/bookmark-audio", () => ({ withBookmarkAudio: mockSign }));
 vi.mock("@/lib/meditation/actions", () => ({
-  signBookmarkAudio: mockSign,
   getUserCollections: mockCollections,
   deleteCollection: vi.fn(),
   updateCollection: vi.fn(),
@@ -60,7 +60,7 @@ const page: BookmarkPage = {
 
 beforeEach(() => {
   mockList.mockReset().mockResolvedValue(page);
-  mockSign.mockReset().mockImplementation(async (p: BookmarkPage) => ({
+  mockSign.mockReset().mockImplementation(async (_userId: string, p: BookmarkPage) => ({
     ...p,
     bookmarks: p.bookmarks.map((b) => ({ ...b, meditation: { ...b.meditation, audio_url: "signed:m1" } })),
   }));
@@ -83,7 +83,7 @@ describe("/library/bookmarks", () => {
     const html = await render(BookmarksPage());
     expect(html).toContain(TOGGLE);
     expect(html).toContain('aria-label="List view" aria-pressed="true"');
-    expect(mockSign).toHaveBeenCalledWith(page);
+    expect(mockSign).toHaveBeenCalledWith("u1", page);
     expect(html).toContain('aria-label="Play Before Sleep"');
   });
 

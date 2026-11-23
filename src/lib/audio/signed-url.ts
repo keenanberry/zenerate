@@ -184,8 +184,9 @@ function withoutPeaks<T extends AudioRow>(row: T): T {
  *
  * This is why signAudioUrl/signAudioUrls above are not exported, and why
  * `@/lib/audio/signed-url` is restricted (see eslint.config.mjs) to
- * `src/lib/meditation/actions.ts`, the one module whose every call site
- * fetches the row through an RLS-bound client first.
+ * `src/lib/meditation/actions.ts`, whose every call site fetches the row
+ * through an RLS-bound client first, and `src/lib/meditation/bookmark-audio.ts`,
+ * which passes ids only and so signs public meditations only.
  *
  * With `{ waveform: true }` it also sets `waveform` (task 60), from the row's
  * own generation_meta when the read selected it, or from the same public

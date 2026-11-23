@@ -192,7 +192,7 @@ function toTrack(m: BookmarkedMeditation): TrackRowMeditation {
     tags: m.tags ?? [],
     settings: m.settings ?? {},
     status: m.status,
-    // Signed by signBookmarkAudio (actions.ts); null if signing failed, and
+    // Signed by withBookmarkAudio (bookmark-audio.ts); null if signing failed, and
     // the row then opens the page to play.
     audio_url: m.audio_url ?? null,
     is_public: true,

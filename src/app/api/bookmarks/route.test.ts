@@ -18,11 +18,7 @@ vi.mock("@/lib/meditation/bookmarks", async (importOriginal) => ({
 }));
 
 // The signer: each row comes back with a URL named for its id.
-vi.mock("@/lib/audio/signed-url", () => ({
-  hydrateAudioUrl: vi.fn(),
-  hydrateAudioUrls: mockHydrate,
-}));
-vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
+vi.mock("@/lib/audio/signed-url", () => ({ hydrateAudioUrls: mockHydrate }));
 
 import { GET } from "./route";
 import { encodeCursor } from "@/lib/meditation/bookmarks";
@@ -71,6 +67,19 @@ describe("GET /api/bookmarks", () => {
       `signed:${other}`,
     ]);
     expect(mockHydrate).toHaveBeenCalledWith([{ id: ID }, { id: other }]);
+  });
+
+  it("still lists the page, without audio, when signing fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mockHydrate.mockRejectedValue(new Error("no service-role key"));
+    mockList.mockResolvedValue({
+      bookmarks: [{ bookmarked_at: AT, meditation: { id: ID, title: "Rest", author: null, rating: null } }],
+      next_cursor: null,
+    });
+
+    const res = await get();
+    expect(res.status).toBe(200);
+    expect((await res.json()).bookmarks[0].meditation.audio_url).toBeNull();
   });
 
   it("passes a limit and cursor through", async () => {

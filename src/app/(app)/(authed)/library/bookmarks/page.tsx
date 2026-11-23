@@ -6,7 +6,7 @@ import { LibraryEmptyState, LibrarySubpage } from "@/components/library/library-
 import { LibraryViewToggle } from "@/components/library/library-view-toggle";
 import { ViewProvider } from "@/components/view-context";
 import { ACCOUNT_BOOKMARK_PAGE } from "@/lib/meditation/bookmark-state";
-import { signBookmarkAudio } from "@/lib/meditation/actions";
+import { withBookmarkAudio } from "@/lib/meditation/bookmark-audio";
 import { listBookmarks, type BookmarkPage } from "@/lib/meditation/bookmarks";
 import { getSessionUser } from "@/lib/profile/viewer";
 import { createClient } from "@/lib/supabase/server";
@@ -28,7 +28,7 @@ export default async function BookmarksPage() {
   const supabase = await createClient();
 
   const bookmarks = await listBookmarks(supabase, user.id, { limit: ACCOUNT_BOOKMARK_PAGE })
-    .then(signBookmarkAudio)
+    .then((page) => withBookmarkAudio(user.id, page))
     .catch((err): BookmarkPage | null => {
       console.error("Could not load bookmarks:", err);
       return null;
