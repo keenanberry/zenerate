@@ -6,7 +6,9 @@ import { Bookmark } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { MeditationCard } from "@/components/meditation-card";
 import { TrackRow, type TrackRowMeditation } from "@/components/track-row";
+import { useView } from "@/components/view-context";
 import {
   ACCOUNT_BOOKMARK_PAGE,
   setBookmark,
@@ -19,10 +21,12 @@ import type {
 } from "@/lib/meditation/bookmarks";
 
 /**
- * The listener's bookmarks on /library/bookmarks (card ZEN-8), newest first: the first
- * page arrives with the page, and "Load more" reads the next from
- * GET /api/bookmarks. Removing one takes it off the list at once and puts it
- * back, with a toast, if the DELETE fails.
+ * The listener's bookmarks on /library/bookmarks (card ZEN-8), newest first,
+ * as a track list or a grid of tiles (the nearest ViewProvider's choice), as
+ * Favorites draws them: the first page arrives with the page, and "Load more"
+ * reads the next from GET /api/bookmarks, both with their audio signed.
+ * Removing one takes it off the list at once and puts it back, with a toast,
+ * if the DELETE fails.
  */
 export function AccountBookmarks({
   initial,
@@ -33,6 +37,7 @@ export function AccountBookmarks({
   empty: ReactNode;
 }) {
   const router = useRouter();
+  const { view } = useView();
   const [bookmarks, setBookmarks] = useState<SavedBookmark[]>(initial.bookmarks);
   const [cursor, setCursor] = useState(initial.next_cursor);
   const [loading, setLoading] = useState(false);
@@ -61,10 +66,7 @@ export function AccountBookmarks({
       );
       if (!res.ok) throw new Error(`GET /api/bookmarks ${res.status}`);
       const page = (await res.json()) as BookmarkPage;
-      setBookmarks((prev) => {
-        const seen = new Set(prev.map((b) => b.meditation.id));
-        return [...prev, ...page.bookmarks.filter((b) => !seen.has(b.meditation.id))];
-      });
+      setBookmarks((prev) => appendBookmarks(prev, page.bookmarks));
       setCursor(page.next_cursor);
     } catch {
       toast.error("Couldn't load more bookmarks");
@@ -106,35 +108,52 @@ export function AccountBookmarks({
     );
   }
 
+  const removeButton = (b: SavedBookmark) => (
+    <RemoveBookmarkButton
+      title={b.meditation.title}
+      onRemove={() => void remove(b)}
+      buttonRef={(el) => {
+        if (el) removeButtons.current.set(b.meditation.id, el);
+        else removeButtons.current.delete(b.meditation.id);
+      }}
+    />
+  );
+
   return (
     <div className="space-y-4">
-      {bookmarks.length > 0 && (
-        // The rows Favorites draws (task 48), less the index column, which
-        // plays in place and needs an audio URL this read does not have.
-        <div className="w-full">
-          {bookmarks.map((b, i) => (
-            <TrackRow
-              key={b.meditation.id}
-              meditation={toTrack(b.meditation)}
-              index={i + 1}
-              showIndex={false}
-              showFavorite={false}
-              showVisibility={false}
-              byline={b.meditation.author?.display_name ?? undefined}
-              actions={
-                <RemoveBookmarkButton
-                  title={b.meditation.title}
-                  onRemove={() => void remove(b)}
-                  buttonRef={(el) => {
-                    if (el) removeButtons.current.set(b.meditation.id, el);
-                    else removeButtons.current.delete(b.meditation.id);
-                  }}
-                />
-              }
-            />
-          ))}
-        </div>
-      )}
+      {bookmarks.length > 0 &&
+        (view === "grid" ? (
+          // MeditationListView's grid: the remove control where a tile's
+          // heart sits, and no heart, as in the rows.
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
+            {bookmarks.map((b) => (
+              <MeditationCard
+                key={b.meditation.id}
+                meditation={toTrack(b.meditation)}
+                showFavorite={false}
+                byline={b.meditation.author?.display_name ?? undefined}
+                actions={removeButton(b)}
+              />
+            ))}
+          </div>
+        ) : (
+          // The rows Favorites draws (task 48): the index column plays in
+          // place from sm, and the remove control takes the heart's place.
+          <div className="w-full">
+            {bookmarks.map((b, i) => (
+              <TrackRow
+                key={b.meditation.id}
+                meditation={toTrack(b.meditation)}
+                index={i + 1}
+                showIndex
+                showFavorite={false}
+                showVisibility={false}
+                byline={b.meditation.author?.display_name ?? undefined}
+                actions={removeButton(b)}
+              />
+            ))}
+          </div>
+        ))}
       {cursor && (
         <div className="flex justify-center">
           <Button
@@ -153,7 +172,16 @@ export function AccountBookmarks({
 }
 
 /**
- * The bookmark's meditation as a track row reads it. A bookmark is always
+ * The next page after the list so far, less any already in it. Both views
+ * draw from this one list, so a page appends to whichever is showing.
+ */
+export function appendBookmarks(prev: SavedBookmark[], next: SavedBookmark[]): SavedBookmark[] {
+  const seen = new Set(prev.map((b) => b.meditation.id));
+  return [...prev, ...next.filter((b) => !seen.has(b.meditation.id))];
+}
+
+/**
+ * The bookmark's meditation as a track row or tile reads it. A bookmark is always
  * public and completed. No created_at: the row has never shown a date, and
  * with the author leading the line a date would not fit a phone.
  */
@@ -164,8 +192,9 @@ function toTrack(m: BookmarkedMeditation): TrackRowMeditation {
     tags: m.tags ?? [],
     settings: m.settings ?? {},
     status: m.status,
-    // The bookmark read mints no signed URLs, so rows open the page to play.
-    audio_url: null,
+    // Signed by signBookmarkAudio (actions.ts); null if signing failed, and
+    // the row then opens the page to play.
+    audio_url: m.audio_url ?? null,
     is_public: true,
     rating: m.rating ?? undefined,
     cover_url: m.cover_url,

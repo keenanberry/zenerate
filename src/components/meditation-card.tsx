@@ -8,10 +8,20 @@ import { metaLine } from "@/lib/meditation/meta";
 import type { MeditationWithMeta } from "@/lib/meditation/types";
 import { Globe } from "lucide-react";
 
+/** What a tile reads from a meditation; any MeditationWithMeta has it. */
+export type CardMeditation = Pick<
+  MeditationWithMeta,
+  "id" | "title" | "tags" | "settings" | "status" | "audio_url" | "is_public" | "is_favorited" | "rating" | "cover_url"
+>;
+
 interface MeditationCardProps {
-  meditation: MeditationWithMeta;
+  meditation: CardMeditation;
   showFavorite?: boolean;
   showVisibility?: boolean;
+  /** Leads the meta line, e.g. the author's name on someone else's meditation. */
+  byline?: string;
+  /** Beside the heart, e.g. a bookmark's remove control, as a track row's actions. */
+  actions?: React.ReactNode;
 }
 
 /**
@@ -24,8 +34,13 @@ export function MeditationCard({
   meditation,
   showFavorite = true,
   showVisibility = false,
+  byline,
+  actions,
 }: MeditationCardProps) {
   const href = `/meditation/${meditation.id}`;
+  const meta = [byline, metaLine({ tags: meditation.tags, settings: meditation.settings })]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div className="group relative space-y-3">
@@ -62,7 +77,7 @@ export function MeditationCard({
             {showVisibility && meditation.is_public && (
               <Globe aria-label="Public" className="h-3 w-3 shrink-0" />
             )}
-            <span className="min-w-0 truncate">{metaLine({ tags: meditation.tags, settings: meditation.settings })}</span>
+            <span className="min-w-0 truncate">{meta}</span>
             <RatingSummary stats={meditation.rating} className="shrink-0" />
           </span>
         </Link>
@@ -80,6 +95,7 @@ export function MeditationCard({
               title={meditation.title}
             />
           )}
+          {actions}
         </div>
       </div>
     </div>

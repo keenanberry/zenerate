@@ -342,7 +342,8 @@ every other content type narrows itself inside the shell:
   (`src/components/library/`). Each place is a page of its own (`/library/favorites`,
   `/library/bookmarks`, `/library/meditations`, `/library/collections`,
   `LibrarySubpage`): the eyebrow back to Library, the title with the list/grid toggle at
-  its right where the list has one, and the content 32px below.
+  its right, and the content 32px below. All four offer list and grid: Favorites, Bookmarks
+  and My meditations open as a list, Collections as a grid.
 - A meditation (`/meditation/[id]`): 48rem (`max-w-3xl`). On a phone the cover runs the
   full width, then the meta line, the title with the heart and "…", one full-width Play,
   the description, and "Show script" (task 55). From `sm` the cover sits at 160px beside
@@ -512,8 +513,10 @@ texture in the interface and it stays unadorned.
   filled pills per row outweighed the title and read as a to-do app.
 
 ### Track Rows
-A meditation in a list (`TrackRow`, in My meditations, Favorites and a collection) is drawn
-as a music app draws a track (task 48):
+A meditation in a list (`TrackRow`, in My meditations, Favorites, Bookmarks and a
+collection) is drawn as a music app draws a track (task 48). A bookmark's row is a
+Favorites row with the author leading its meta line and, where the heart would be, the
+filled bookmark that removes it:
 
 - The 56px cover, then the title in Body type (16px, 500, Foreground, one line ending in
   "…"), and under it one meta line in Dusk at 14px (`text-sm`) with tabular figures: first tag ·
@@ -538,11 +541,19 @@ quiet cover of its own. The grid on `/library/collections` is
 two columns on a phone, three from `sm`, four from `lg`; the collection page header sets
 the artwork at 160px beside the name, as the meditation page does.
 
+Its list view draws a collection in a track row's rhythm (`CollectionRow`): the artwork at
+56px, the name in Body type, one Dusk line of the count ("3 meditations"; the description
+stays on the tile), the same inset Hairline and hover, and the whole row opening the
+collection. The collection's "…" menu (`CollectionMenu`, shared with the tile) sits where
+a track row's actions do, shown from `sm` on the row's hover or focus. There is no index
+column: a collection does not play in place.
+
 The Library pages' and Discover's grid view draws a meditation the same way: its cover at the
 column's width, the title in Lora (two lines at most), and one Dusk line of tag and
 length with no date, behind the status icon. Favourite sits beside the title, with play
-from `sm`; on a phone the tile opens the page, where Play is (task 55). Each page
-remembers its list or grid choice in localStorage (`ViewProvider`'s `storageKey`).
+from `sm`; on a phone the tile opens the page, where Play is (task 55). A bookmark's tile
+puts its author first in that line and its remove control where the heart would be. Each
+page remembers its list or grid choice in localStorage (`ViewProvider`'s `storageKey`).
 
 ### Menus
 Every dropdown, select and picker shares one look (the Discover filters, the collection

@@ -17,7 +17,7 @@ import {
 import { removeAudio } from "@/lib/audio/storage";
 import { withCoverUrl } from "@/lib/cover/url";
 import { deleteOwnMeditation } from "./delete";
-import { getBookmarkedIds } from "./bookmarks";
+import { getBookmarkedIds, type BookmarkPage } from "./bookmarks";
 import { canBookmark } from "./bookmark-state";
 import type {
   Meditation,
@@ -643,6 +643,31 @@ export async function getFavoriteMeditations() {
   meditations.sort((a, b) => (idOrder.get(a.id) ?? 0) - (idOrder.get(b.id) ?? 0));
 
   return hydrate(meditations);
+}
+
+// ── Bookmarks ──
+
+/**
+ * A page of the caller's bookmarks (listBookmarks, src/lib/meditation/bookmarks.ts)
+ * with each meditation's audio signed, so a bookmark row plays in place as a
+ * Favorites row does. For /library/bookmarks and GET /api/bookmarks.
+ *
+ * A bookmark lists only public, completed meditations, so each is signed by
+ * its id alone, on hydrateAudioUrls' public-row path: the service role signs
+ * a meditation only if it finds it public, and the path never joins the row.
+ * Whatever ids a caller passes, it hands out no more than getMeditation does
+ * for a public meditation. Signing downloads nothing: the audio is fetched
+ * only when a row is played.
+ */
+export async function signBookmarkAudio(page: BookmarkPage): Promise<BookmarkPage> {
+  const signed = await hydrateAudioUrls(page.bookmarks.map((b) => ({ id: b.meditation.id })));
+  return {
+    ...page,
+    bookmarks: page.bookmarks.map((b, i) => ({
+      ...b,
+      meditation: { ...b.meditation, audio_url: signed[i]?.audio_url ?? null },
+    })),
+  };
 }
 
 // ── Collections ──

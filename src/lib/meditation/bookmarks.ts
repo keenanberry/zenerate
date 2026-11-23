@@ -115,7 +115,11 @@ export async function getBookmarkedIds(
 
 // ── The list ────────────────────────────────────────────────────────────────
 
-/** What a Discover card needs. No script and no audio: signed URLs are minted only in actions.ts. */
+/**
+ * What a Discover card needs. No script, and no audio from this read: signed
+ * URLs are minted only in actions.ts, whose signBookmarkAudio adds audio_url
+ * to a page before it reaches a list.
+ */
 export interface BookmarkedMeditation {
   id: string;
   title: string;
@@ -133,6 +137,8 @@ export interface BookmarkedMeditation {
   author: MeditationAuthor | null;
   /** Null until someone has rated it. */
   rating: RatingStats | null;
+  /** The signed audio, set by signBookmarkAudio; listBookmarks leaves it out. */
+  audio_url?: string | null;
 }
 
 export interface Bookmark {
