@@ -1,15 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useSyncExternalStore } from "react";
-import { DISMISS_KEY, dismissalValue, isDismissed } from "@/lib/install/dismissal";
+import { useCallback, useSyncExternalStore } from "react";
+import { INSTALL_CHANGE, INSTALLED_KEY, PROMPT_KEY } from "@/lib/install/capture-script";
+import { DISMISS_COOKIE, dismissalCookie, isDismissed, readCookie } from "@/lib/install/dismissal";
 import { detectInstallPlatform, type InstallPlatform } from "@/lib/install/platform";
 
 /**
  * The browser's side of the install prompt: which platform this is, whether
  * Chrome on Android has offered its own Install prompt, and whether the
- * Library card was dismissed on this device. Every value is `null` on the
- * server and on the hydrating render, so the card and the row decide what to
- * show only after mount, without a hydration mismatch or a flash.
+ * Library card was dismissed on this device.
+ *
+ * The server decides first, from the user agent and the dismissal cookie, so
+ * the card is in the first paint; those values are the server snapshots here,
+ * and the hydrating render matches them. After hydration the client refines
+ * them: an iPad that reported a Mac becomes iOS, and the installed app becomes
+ * "installed" (the card is already hidden there by `standalone:hidden`, so
+ * removing it moves nothing).
  */
 
 /** Chromium's `beforeinstallprompt` event; not in TypeScript's DOM types. */
@@ -18,64 +24,36 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
-const CHANGE = "zenerate:install-change";
+type InstallWindow = Window & {
+  [PROMPT_KEY]?: BeforeInstallPromptEvent | null;
+  [INSTALLED_KEY]?: boolean;
+};
+
 const STANDALONE_QUERY = "(display-mode: standalone)";
 
-let deferredPrompt: BeforeInstallPromptEvent | null = null;
-let installedThisVisit = false;
-/** "Not now" for this visit, for when localStorage refuses the write. */
-let dismissedThisVisit: string | null = null;
-let listening = false;
+/** "Not now" for this visit, for when the cookie cannot be written. */
+let dismissedThisVisit = false;
+
+function win(): InstallWindow {
+  return window as InstallWindow;
+}
 
 function notify() {
-  window.dispatchEvent(new Event(CHANGE));
-}
-
-/**
- * Starts listening for the browser's install events. Chrome fires
- * `beforeinstallprompt` once per page load, often before the Library is open,
- * so the (app) shell calls this for a signed-in visitor on every page.
- */
-function listen() {
-  if (listening || typeof window === "undefined") return;
-  listening = true;
-  window.addEventListener("beforeinstallprompt", (event) => {
-    // Keep it for the card's Install button instead of Chrome's own banner.
-    event.preventDefault();
-    deferredPrompt = event as BeforeInstallPromptEvent;
-    notify();
-  });
-  window.addEventListener("appinstalled", () => {
-    deferredPrompt = null;
-    installedThisVisit = true;
-    notify();
-  });
-}
-
-// As early as the module loads in a browser, ahead of hydration.
-listen();
-
-/** Mounted once in the signed-in (app) shell; renders nothing. */
-export function InstallPromptListener() {
-  useEffect(listen, []);
-  return null;
+  window.dispatchEvent(new Event(INSTALL_CHANGE));
 }
 
 function subscribe(onChange: () => void) {
-  listen();
   const standalone = window.matchMedia(STANDALONE_QUERY);
-  window.addEventListener(CHANGE, onChange);
-  window.addEventListener("storage", onChange);
+  window.addEventListener(INSTALL_CHANGE, onChange);
   standalone.addEventListener("change", onChange);
   return () => {
-    window.removeEventListener(CHANGE, onChange);
-    window.removeEventListener("storage", onChange);
+    window.removeEventListener(INSTALL_CHANGE, onChange);
     standalone.removeEventListener("change", onChange);
   };
 }
 
 function readPlatform(): InstallPlatform {
-  if (installedThisVisit) return "installed";
+  if (win()[INSTALLED_KEY]) return "installed";
   const nav = navigator as Navigator & { standalone?: boolean };
   return detectInstallPlatform({
     userAgent: nav.userAgent,
@@ -85,69 +63,72 @@ function readPlatform(): InstallPlatform {
   });
 }
 
-/** localStorage, or nothing where it throws (private modes, blocked storage). */
-function storage(): Storage | undefined {
-  try {
-    return window.localStorage;
-  } catch {
-    return undefined;
-  }
-}
-
 function readDismissed(): boolean {
-  let stored: string | null = null;
+  if (dismissedThisVisit) return true;
   try {
-    stored = storage()?.getItem(DISMISS_KEY) ?? null;
+    return isDismissed(readCookie(document.cookie, DISMISS_COOKIE), Date.now());
   } catch {
-    // Unreadable storage: only this visit's choice counts.
+    return false;
   }
-  return isDismissed(stored ?? dismissedThisVisit, Date.now());
 }
 
-const serverNull = () => null;
+function readCanPrompt(): boolean {
+  return Boolean(win()[PROMPT_KEY]);
+}
 
 export type InstallState = {
-  /** `null` until mounted. */
+  /** `null` only where the server did not decide (the Account row). */
   platform: InstallPlatform | null;
   /** Whether the browser's own Install prompt is ready to show. */
   canPrompt: boolean;
-  /** Whether the Library card was dismissed in the last 30 days; `null` until mounted. */
-  dismissed: boolean | null;
+  /** Whether the Library card was dismissed in the last 30 days. */
+  dismissed: boolean;
   dismiss: () => void;
   /** Shows the browser's Install prompt; resolves once the visitor has chosen. */
   promptInstall: () => Promise<void>;
 };
 
-export function useInstallState(): InstallState {
-  const platform = useSyncExternalStore<InstallPlatform | null>(subscribe, readPlatform, serverNull);
-  const canPrompt = useSyncExternalStore(subscribe, () => deferredPrompt !== null, () => false);
-  const dismissed = useSyncExternalStore<boolean | null>(subscribe, readDismissed, serverNull);
+export function useInstallState({
+  initialPlatform = null,
+  initialDismissed = false,
+}: {
+  /** The server's reading of the user agent. */
+  initialPlatform?: InstallPlatform | null;
+  /** The server's reading of the dismissal cookie. */
+  initialDismissed?: boolean;
+} = {}): InstallState {
+  const platform = useSyncExternalStore<InstallPlatform | null>(
+    subscribe,
+    readPlatform,
+    () => initialPlatform,
+  );
+  const canPrompt = useSyncExternalStore(subscribe, readCanPrompt, () => false);
+  const dismissed = useSyncExternalStore(subscribe, readDismissed, () => initialDismissed);
 
   const dismiss = useCallback(() => {
-    dismissedThisVisit = dismissalValue(Date.now());
+    dismissedThisVisit = true;
     try {
-      storage()?.setItem(DISMISS_KEY, dismissedThisVisit);
+      document.cookie = dismissalCookie(Date.now(), location.protocol === "https:");
     } catch {
-      // Private mode: the card simply shows again next time.
+      // Cookies blocked: the card shows again next visit.
     }
     notify();
   }, []);
 
   const promptInstall = useCallback(async () => {
-    const event = deferredPrompt;
+    const event = win()[PROMPT_KEY];
     if (!event) return;
     // An event prompts once; Chrome fires a fresh one if it can ask again.
-    deferredPrompt = null;
+    win()[PROMPT_KEY] = null;
     notify();
-    await event.prompt();
-    await event.userChoice;
+    try {
+      await event.prompt();
+      await event.userChoice;
+    } catch {
+      // Already used, or the browser refused (InvalidStateError): the card
+      // falls back to the menu steps, which still work.
+    }
   }, []);
 
-  return {
-    platform,
-    canPrompt,
-    dismissed,
-    dismiss,
-    promptInstall,
-  };
+  return { platform, canPrompt, dismissed, dismiss, promptInstall };
 }

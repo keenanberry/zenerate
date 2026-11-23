@@ -6,10 +6,32 @@ import { initials } from "@/lib/navigation/app-tabs";
 import { getLibraryCounts, getRecentlyPlayed } from "@/lib/meditation/library";
 import { getViewer } from "@/lib/profile/viewer";
 import { siteUrl } from "@/lib/seo/metadata";
+import { cookies, headers } from "next/headers";
+import { DISMISS_COOKIE, isDismissed } from "@/lib/install/dismissal";
+import { detectInstallPlatform } from "@/lib/install/platform";
 
 export const metadata = {
   title: "Library | Zenerate",
 };
+
+/**
+ * The install card is decided on the server so it is in the first paint and
+ * nothing below it moves: the platform from the user agent, the dismissal
+ * from its cookie. The server cannot see the installed app; the card hides
+ * itself there with CSS.
+ */
+function installCardFor(
+  requestHeaders: Awaited<ReturnType<typeof headers>>,
+  cookieStore: Awaited<ReturnType<typeof cookies>>,
+) {
+  return {
+    platform: detectInstallPlatform({
+      userAgent: requestHeaders.get("user-agent") ?? "",
+      displayModeStandalone: false,
+    }),
+    dismissed: isDismissed(cookieStore.get(DISMISS_COOKIE)?.value, Date.now()),
+  };
+}
 
 /**
  * The Library (app shell design, section 2): a list of places (Favorites,
@@ -21,11 +43,10 @@ export const metadata = {
  */
 export default async function LibraryPage() {
   // getViewer is the (app) layout's own read, shared through React's cache.
-  const [{ user, displayName, avatarUrl }, counts, recent] = await Promise.all([
-    getViewer(),
-    getLibraryCounts(),
-    getRecentlyPlayed(),
-  ]);
+  const [{ user, displayName, avatarUrl }, counts, recent, requestHeaders, cookieStore] =
+    await Promise.all([getViewer(), getLibraryCounts(), getRecentlyPlayed(), headers(), cookies()]);
+
+  const install = installCardFor(requestHeaders, cookieStore);
 
   return (
     // `data-back-label`: a meditation opened from Recently played links back
@@ -41,8 +62,11 @@ export default async function LibraryPage() {
         />
       </div>
 
-      {/* Renders nothing until the client knows it is not the installed app. */}
-      <InstallCard siteUrl={siteUrl.href} />
+      <InstallCard
+        siteUrl={siteUrl.href}
+        initialPlatform={install.platform}
+        initialDismissed={install.dismissed}
+      />
 
       <div className="grid gap-10 md:grid-cols-[18rem_minmax(0,1fr)] md:items-start">
         <LibraryRows counts={counts} />

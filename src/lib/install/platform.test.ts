@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectInstallPlatform, iosBrowserName } from "./platform";
+import { detectInstallPlatform, inAppOs, iosBrowserName } from "./platform";
 
 const UA = {
   iphoneSafari:
@@ -61,6 +61,50 @@ describe("detectInstallPlatform", () => {
     expect(detect("")).toBe("other");
     expect(detect(UA.kaios)).toBe("android");
     expect(detect("Mozilla/5.0 (Mobile; rv:48.0) Gecko/48.0 Firefox/48.0 KAIOS/2.5")).toBe("other");
+  });
+});
+
+/** In-app browsers, as the apps send them. */
+const IN_APP = {
+  instagramIos:
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 357.0.0.25.101 (iPhone15,2; iOS 18_1; en_US; en; scale=3.00; 1179x2556; 652066939)",
+  instagramAndroid:
+    "Mozilla/5.0 (Linux; Android 14; Pixel 8 Build/AP2A.240805.005; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/131.0.6778.39 Mobile Safari/537.36 Instagram 357.0.0.25.101 Android (34/14; 420dpi; 1080x2400; Google; Pixel 8; shiba; shiba; en_US; 652066939)",
+  facebookIos:
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [FBAN/FBIOS;FBAV/490.0.0.40.107;FBBV/662374410;FBDV/iPhone15,2;FBMD/iPhone;FBSN/iOS;FBSV/18.1;FBSS/3;FBID/phone;FBLC/en_US;FBOP/5]",
+  facebookAndroid:
+    "Mozilla/5.0 (Linux; Android 14; Pixel 8 Build/AP2A.240805.005; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/131.0.6778.39 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/490.0.0.48.106;]",
+  messengerIos:
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 LightSpeed [FBAN/MessengerLiteForiOS;FBAV/490.0.0.28.107;FBBV/662030451;FBDV/iPhone15,2;FBMD/iPhone;FBSN/iOS;FBSV/18.1;FBSS/3;FBCR/;FBID/phone;FBLC/en_US;FBOP/0]",
+  linkedinIos:
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [LinkedInApp]/9.30.2142",
+  tiktokIos:
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 musical_ly_37.5.0 JsSdk/2.0 NetType/WIFI Channel/App Store ByteLocale/en Region/US",
+  tiktokAndroid:
+    "Mozilla/5.0 (Linux; Android 14; Pixel 8; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/131.0.6778.39 Mobile Safari/537.36 trill_370504 BytedanceWebview/d8a21c6",
+  lineIos:
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Safari Line/14.19.0",
+  wechatIos:
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.53(0x18003531) NetType/WIFI Language/en",
+  androidWebView:
+    "Mozilla/5.0 (Linux; Android 14; Pixel 8; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/131.0.6778.39 Mobile Safari/537.36",
+  iosWebView:
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
+};
+
+describe("detectInstallPlatform, in-app browsers", () => {
+  it.each(Object.entries(IN_APP))("sends %s to a real browser first", (_name, ua) => {
+    expect(detect(ua)).toBe("in-app");
+  });
+
+  it("still says installed for the installed app, whose iOS user agent has no Safari token", () => {
+    expect(detect(IN_APP.iosWebView, { navigatorStandalone: true })).toBe("installed");
+  });
+
+  it("knows which system's browser to send people to", () => {
+    expect(inAppOs(IN_APP.instagramIos)).toBe("ios");
+    expect(inAppOs(IN_APP.facebookAndroid)).toBe("android");
+    expect(inAppOs(UA.ipadDesktopSafari, 5)).toBe("ios");
   });
 });
 

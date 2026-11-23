@@ -3,6 +3,9 @@
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
+/* Running as the installed app (the manifest's display). The server cannot
+   know this, so what must not show there is hidden here before first paint. */
+@custom-variant standalone (@media (display-mode: standalone));
 
 @theme inline {
   --color-background: var(--background);

@@ -1,23 +1,43 @@
 /**
  * "Not now" on the Library's install card hides it on this device for 30
- * days. What is stored is the time of the dismissal, in epoch milliseconds,
- * under one localStorage key; these functions are the pure part.
+ * days. It is a cookie, not localStorage, so the server can leave the card
+ * out of the page instead of the client removing it after paint. The value
+ * is the time of the dismissal in epoch milliseconds; these functions are the
+ * pure part.
  */
-export const DISMISS_KEY = "zenerate:install-card-dismissed-at";
+export const DISMISS_COOKIE = "zenerate-install-dismissed";
 export const DISMISS_DAYS = 30;
-const DISMISS_MS = DISMISS_DAYS * 24 * 60 * 60 * 1000;
+const DISMISS_SECONDS = DISMISS_DAYS * 24 * 60 * 60;
+const DISMISS_MS = DISMISS_SECONDS * 1000;
 
 /** The value to store when the card is dismissed at `now`. */
 export function dismissalValue(now: number): string {
   return String(Math.floor(now));
 }
 
+/** The `document.cookie` assignment that records a dismissal at `now`. */
+export function dismissalCookie(now: number, secure: boolean): string {
+  return `${DISMISS_COOKIE}=${dismissalValue(now)}; Max-Age=${DISMISS_SECONDS}; Path=/; SameSite=Lax${
+    secure ? "; Secure" : ""
+  }`;
+}
+
+/** One cookie's value from a `document.cookie` string, or null. */
+export function readCookie(cookies: string, name: string): string | null {
+  for (const part of cookies.split(";")) {
+    const eq = part.indexOf("=");
+    if (eq !== -1 && part.slice(0, eq).trim() === name) return part.slice(eq + 1).trim();
+  }
+  return null;
+}
+
 /**
  * Whether a stored value still hides the card at `now`. Nothing stored, a
  * value that is not a time, a dismissal 30 days old or a time in the future
- * (a clock set back, or a bad write) all show it again.
+ * (a clock set back, or a bad write) all show it again. The cookie expires on
+ * its own as well; this is the check both sides can make.
  */
-export function isDismissed(stored: string | null, now: number): boolean {
+export function isDismissed(stored: string | null | undefined, now: number): boolean {
   if (!stored || !/^\d+$/.test(stored)) return false;
   const elapsed = now - Number(stored);
   return elapsed >= 0 && elapsed < DISMISS_MS;

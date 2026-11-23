@@ -348,6 +348,9 @@ class Grid {
  * the eight masks; by default the one with the lowest penalty is chosen.
  */
 export function encodeQr(text: string, { mask }: { mask?: number } = {}): QrMatrix {
+  if (mask !== undefined && !(Number.isInteger(mask) && mask >= 0 && mask <= 7)) {
+    throw new RangeError(`A QR mask is 0 to 7, not ${mask}`);
+  }
   const bytes = new TextEncoder().encode(text);
   const version = versionFor(bytes.length);
   const grid = new Grid(version);

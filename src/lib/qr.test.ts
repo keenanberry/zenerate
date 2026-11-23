@@ -104,3 +104,56 @@ describe("qrPath", () => {
     expect(qrPath([[true, false], [false, true]], 4)).toBe("M4 4h1v1h-1zM5 5h1v1h-1z");
   });
 });
+
+/**
+ * One whole symbol, pinned: the site origin at version 3-M with mask 2. The
+ * same matrix comes out of node-qrcode 1.5.4 given the same text, level,
+ * version and mask, and jsQR 1.4.0 decodes it, so a placement or
+ * interleaving regression shows here even when the component vectors pass.
+ */
+const ORIGIN_V3_M_MASK2 = [
+  "11111110001100011001101111111",
+  "10000010010110000000001000001",
+  "10111010111000101000101011101",
+  "10111010100010001100101011101",
+  "10111010100001110011101011101",
+  "10000010110101111000101000001",
+  "11111110101010101010101111111",
+  "00000000111011010011000000000",
+  "10111110011110110100101111100",
+  "00100001000100011111101110001",
+  "11100110100000000010111000000",
+  "10110100110110101000111101010",
+  "00001111101010001100000001100",
+  "01111100110111110111111010001",
+  "11101110010011111100000101100",
+  "11101100000101010000100110010",
+  "00001111101110110110100101100",
+  "10100001110000011111111110101",
+  "10000011110010000100101100100",
+  "10000101110000101010011110010",
+  "10001110110000000100111110111",
+  "00000000101101110010100011111",
+  "11111110001111111111101011100",
+  "10000010111001001001100010001",
+  "10111010100010100100111110101",
+  "10111010101001000110100101100",
+  "10111010110100011100011111110",
+  "10000010001010011001100101010",
+  "11111110101110000101000111100",
+];
+
+describe("encodeQr, whole symbol", () => {
+  it("matches a reference encoder for the site origin", () => {
+    const matrix = encodeQr("https://www.zeneratestudio.com/", { mask: 2 });
+    expect(matrix.map((row) => row.map((dark) => (dark ? "1" : "0")).join(""))).toEqual(
+      ORIGIN_V3_M_MASK2,
+    );
+  });
+
+  it("rejects a mask outside 0 to 7", () => {
+    expect(() => encodeQr("x", { mask: 8 })).toThrow(RangeError);
+    expect(() => encodeQr("x", { mask: -1 })).toThrow(RangeError);
+    expect(() => encodeQr("x", { mask: 1.5 })).toThrow(RangeError);
+  });
+});

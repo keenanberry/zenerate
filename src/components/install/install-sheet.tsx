@@ -3,7 +3,7 @@
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
-import { iosBrowserName } from "@/lib/install/platform";
+import { inAppOs, iosBrowserName } from "@/lib/install/platform";
 import { InstallInstructions, installTitle } from "./install-instructions";
 import type { InstallState } from "./install-state";
 
@@ -24,8 +24,10 @@ export function InstallSheet({
 }) {
   const { platform, canPrompt, promptInstall } = state;
   const prompting = platform === "android" && canPrompt;
-  // The platform is null on the server, so navigator is only read in a browser.
-  const browser = platform === "ios-other" ? iosBrowserName(navigator.userAgent) : null;
+  // The content mounts only when open, which is never on the server.
+  const nav = open && typeof navigator !== "undefined" ? navigator : null;
+  const browser = nav && platform === "ios-other" ? iosBrowserName(nav.userAgent) : null;
+  const os = nav && platform === "in-app" ? inAppOs(nav.userAgent, nav.maxTouchPoints) : "ios";
 
   return (
     <ResponsiveDialog
@@ -51,6 +53,7 @@ export function InstallSheet({
         <InstallInstructions
           platform={platform}
           browser={browser}
+          os={os}
           canPrompt={canPrompt}
           siteUrl={siteUrl}
         />

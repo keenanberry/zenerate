@@ -1,5 +1,12 @@
 import { useMemo } from "react";
-import { EllipsisVertical, Share, Smartphone, SquarePlus, type LucideIcon } from "lucide-react";
+import {
+  EllipsisVertical,
+  ExternalLink,
+  Share,
+  Smartphone,
+  SquarePlus,
+  type LucideIcon,
+} from "lucide-react";
 import { encodeQr, qrPath } from "@/lib/qr";
 import type { InstallPlatform } from "@/lib/install/platform";
 
@@ -13,6 +20,7 @@ export function installTitle(platform: InstallPlatform | null, canPrompt: boolea
   if (platform === "installed") return "You have the app";
   if (platform === "desktop") return "Zenerate is best on your phone";
   if (platform === "android" && canPrompt) return "Install Zenerate";
+  if (platform === "in-app") return "Open Zenerate in your browser first";
   return "Add Zenerate to your home screen";
 }
 
@@ -49,8 +57,8 @@ function iosSteps(browser: string | null, safari: boolean): Step[] {
 const ANDROID_STEPS: Step[] = [
   {
     icon: EllipsisVertical,
-    title: <>Open the menu</>,
-    detail: "The three dots at the top right, beside the address bar.",
+    title: <>Open the ⋮ menu</>,
+    detail: "Your browser's main menu. In Samsung Internet it is ≡.",
   },
   {
     icon: Smartphone,
@@ -78,7 +86,7 @@ function Steps({ steps }: { steps: Step[] }) {
             className="flex size-12 shrink-0 items-center justify-center rounded-xl border bg-card text-primary"
           >
             {typeof Icon === "string" ? (
-              <span className="text-sm font-semibold">{Icon}</span>
+              <span className="text-sm font-medium">{Icon}</span>
             ) : (
               <Icon className="size-6" strokeWidth={1.75} />
             )}
@@ -103,10 +111,17 @@ function Steps({ steps }: { steps: Step[] }) {
  * modules Midnight.
  */
 export function SiteQrCode({ url, className }: { url: string; className?: string }) {
-  const { path, size } = useMemo(() => {
-    const matrix = encodeQr(url);
-    return { path: qrPath(matrix, 4), size: matrix.length + 8 };
+  const code = useMemo(() => {
+    try {
+      const matrix = encodeQr(url);
+      return { path: qrPath(matrix, 4), size: matrix.length + 8 };
+    } catch {
+      // Too long to encode: the written-out link beside it is enough.
+      return null;
+    }
   }, [url]);
+  if (!code) return null;
+  const { path, size } = code;
   return (
     <svg
       role="img"
@@ -125,19 +140,57 @@ export function displayUrl(url: string): string {
   return url.replace(/^https?:\/\//, "").replace(/\/$/, "");
 }
 
+function inAppSteps(os: "ios" | "android"): Step[] {
+  const browser = os === "ios" ? "Safari" : "Chrome";
+  return [
+    {
+      icon: ExternalLink,
+      title: (
+        <>
+          Open this page in <b className="font-medium">{browser}</b>
+        </>
+      ),
+      detail: `This app's own browser can't add Zenerate to your home screen. In its ⋯ or share menu, choose Open in ${browser} (or Open in browser).`,
+    },
+    {
+      icon: os === "ios" ? SquarePlus : Smartphone,
+      title: <>Then add it to your home screen</>,
+      detail: `In ${browser}, the Library's Show me how gives the steps.`,
+    },
+  ];
+}
+
 export function InstallInstructions({
   platform,
   browser = null,
+  os = "ios",
   canPrompt = false,
   siteUrl,
 }: {
   platform: InstallPlatform | null;
   /** The iOS browser's name, for "ios-other". */
   browser?: string | null;
+  /** Which system an in-app browser runs on, for "in-app". */
+  os?: "ios" | "android";
   canPrompt?: boolean;
   siteUrl: string;
 }) {
   switch (platform) {
+    case "in-app": {
+      const library = new URL("/library", siteUrl).href;
+      return (
+        <div className="space-y-6">
+          <Steps steps={inAppSteps(os)} />
+          <p className="text-sm text-muted-foreground">
+            Or type{" "}
+            <a href={library} className="font-medium text-primary underline-offset-4 hover:underline">
+              {displayUrl(library)}
+            </a>{" "}
+            into {os === "ios" ? "Safari" : "Chrome"}.
+          </p>
+        </div>
+      );
+    }
     case "installed":
       return (
         <p className="text-base text-muted-foreground">

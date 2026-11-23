@@ -10,13 +10,23 @@ import { useInstallState } from "./install-state";
 
 /**
  * The quiet card at the top of the Library that tells people the installed
- * app is the better way in. Nothing renders on the server or until the client
- * knows the platform; never in the installed app, and not for 30 days after
- * "Not now" on this device. Account's "Install the app" opens the same sheet,
- * so dismissing this is never a dead end.
+ * app is the better way in. The server renders it, from the user agent and
+ * the dismissal cookie, so it is in the first paint and nothing below it
+ * moves. It is hidden in the installed app by CSS (`standalone:hidden`)
+ * before paint, and removed there once the client knows; and it is left out
+ * for 30 days after "Not now" on this device. Account's "Install the app"
+ * opens the same sheet, so dismissing this is never a dead end.
  */
-export function InstallCard({ siteUrl }: { siteUrl: string }) {
-  const state = useInstallState();
+export function InstallCard({
+  siteUrl,
+  initialPlatform,
+  initialDismissed,
+}: {
+  siteUrl: string;
+  initialPlatform: InstallPlatform;
+  initialDismissed: boolean;
+}) {
+  const state = useInstallState({ initialPlatform, initialDismissed });
   const [open, setOpen] = useState(false);
 
   return (
@@ -43,13 +53,13 @@ export function InstallCardView({
   onDismiss,
 }: {
   platform: InstallPlatform | null;
-  dismissed: boolean | null;
+  dismissed: boolean;
   canPrompt: boolean;
   onShow?: () => void;
   onInstall?: () => void;
   onDismiss?: () => void;
 }) {
-  if (platform === null || platform === "installed" || dismissed !== false) return null;
+  if (platform === null || platform === "installed" || dismissed) return null;
 
   const desktop = platform === "desktop";
   const prompting = platform === "android" && canPrompt;
@@ -57,7 +67,7 @@ export function InstallCardView({
   return (
     <section
       aria-labelledby="install-card-title"
-      className="flex flex-col gap-5 rounded-xl border bg-card px-6 py-6 sm:flex-row sm:items-center sm:gap-6 sm:px-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500"
+      className="flex flex-col gap-5 rounded-xl border bg-card px-6 py-6 sm:flex-row sm:items-center sm:gap-6 sm:px-8 standalone:hidden"
     >
       <div className="flex min-w-0 flex-1 items-start gap-4">
         {/* The icon people will find on their home screen. */}
@@ -81,6 +91,8 @@ export function InstallCardView({
           </p>
         </div>
       </div>
+      {/* Install replaces Show me how in the same 36px slot when Chrome offers
+          its prompt, so the card's height does not change. */}
       <div className="flex shrink-0 items-center gap-2 sm:flex-row-reverse">
         {prompting ? (
           <Button onClick={onInstall} className="flex-1 sm:flex-none">

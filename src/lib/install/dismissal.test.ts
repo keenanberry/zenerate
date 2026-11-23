@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DISMISS_DAYS, dismissalValue, isDismissed } from "./dismissal";
+import { DISMISS_DAYS, dismissalCookie, dismissalValue, isDismissed, readCookie } from "./dismissal";
 
 const DAY = 24 * 60 * 60 * 1000;
 const now = Date.UTC(2026, 10, 23, 12);
@@ -25,5 +25,24 @@ describe("isDismissed", () => {
     expect(isDismissed("yes", now)).toBe(false);
     expect(isDismissed("-5", now)).toBe(false);
     expect(isDismissed(dismissalValue(now + DAY), now)).toBe(false);
+  });
+});
+
+describe("dismissalCookie", () => {
+  it("lasts 30 days on every path, Secure over https", () => {
+    expect(dismissalCookie(now, true)).toBe(
+      `zenerate-install-dismissed=${now}; Max-Age=2592000; Path=/; SameSite=Lax; Secure`,
+    );
+    expect(dismissalCookie(now, false)).not.toContain("Secure");
+  });
+});
+
+describe("readCookie", () => {
+  it("finds one cookie among several, or null", () => {
+    const jar = `a=1; zenerate-install-dismissed=${now}; b=2`;
+    expect(readCookie(jar, "zenerate-install-dismissed")).toBe(String(now));
+    expect(readCookie(jar, "c")).toBeNull();
+    expect(readCookie("", "a")).toBeNull();
+    expect(isDismissed(readCookie(jar, "zenerate-install-dismissed"), now + DAY)).toBe(true);
   });
 });
