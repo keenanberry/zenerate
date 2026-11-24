@@ -106,9 +106,10 @@ describe("request stitching", () => {
       return { result: null, requestId: `r${n}` };
     };
 
-    await stitchedSpeech(chain, refusesIds, (m) => logged.push(m));
-    await stitchedSpeech(chain, refusesIds, (m) => logged.push(m));
-    await stitchedSpeech(chain, refusesIds, (m) => logged.push(m));
+    const log = (m: string) => logged.push(m);
+    await stitchedSpeech(chain, refusesIds, { log });
+    await stitchedSpeech(chain, refusesIds, { log });
+    await stitchedSpeech(chain, refusesIds, { log });
 
     // One refused call in the whole render, not one per later line.
     expect(sent).toEqual([["r1"], [], [], []]);
@@ -152,6 +153,67 @@ describe("request stitching", () => {
     chain.record(null);
     chain.record(undefined);
     expect(chain.previous()).toEqual(["r1"]);
+  });
+});
+
+describe("near-silent clips", () => {
+  /** A speech call whose clips have these peaks, in order. */
+  function clips(peaks: number[]) {
+    const sent: string[][] = [];
+    let n = 0;
+    const call = async (ids: string[]) => {
+      sent.push(ids);
+      const peak = peaks[n++];
+      return { result: peak, requestId: `q${n}` };
+    };
+    return { sent, call };
+  }
+  const audible = async (peak: number) => peak >= -40;
+
+  it("keeps an audible clip without asking again", async () => {
+    const chain = new RequestChain();
+    chain.record("r1");
+    const { sent, call } = clips([-15]);
+    expect(await stitchedSpeech(chain, call, { accept: audible })).toBe(-15);
+    expect(sent).toEqual([["r1"]]);
+    expect(chain.previous()).toEqual(["r1", "q1"]);
+  });
+
+  it("requests a silent clip once more with the same ids, and chains only the one kept", async () => {
+    const chain = new RequestChain();
+    chain.record("r1");
+    const logged: string[] = [];
+    const { sent, call } = clips([-52, -16]);
+
+    expect(await stitchedSpeech(chain, call, { accept: audible, log: (m) => logged.push(m) })).toBe(-16);
+
+    expect(sent).toEqual([["r1"], ["r1"]]);
+    expect(chain.previous()).toEqual(["r1", "q2"]);
+    expect(logged).toEqual([expect.stringMatching(/near-silent/)]);
+  });
+
+  it("fails the line when the clip is silent twice", async () => {
+    const chain = new RequestChain();
+    const { sent, call } = clips([-52, -60]);
+    await expect(
+      stitchedSpeech(chain, call, { accept: audible, label: '[12/34] "One."', log: () => {} }),
+    ).rejects.toThrow(/\[12\/34\] "One\." came back near-silent twice/);
+    expect(sent).toHaveLength(2);
+    expect(chain.previous()).toEqual([]);
+  });
+
+  it("re-requests without ids when the ids were refused first", async () => {
+    const chain = new RequestChain();
+    chain.record("r1");
+    const sent: string[][] = [];
+    const peaks = [-52, -15];
+    const call = async (ids: string[]) => {
+      sent.push(ids);
+      if (ids.length > 0) throw tooManyIds;
+      return { result: peaks.shift()!, requestId: "q" };
+    };
+    await stitchedSpeech(chain, call, { accept: audible, log: () => {} });
+    expect(sent).toEqual([["r1"], [], []]);
   });
 });
 

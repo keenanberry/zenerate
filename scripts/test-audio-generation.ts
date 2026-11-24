@@ -5,7 +5,8 @@
  * minimal meditation script (~80 characters of speech, two sound effects),
  * and validates the output MP3, result.json (with the waveform peaks the
  * player draws, task 60), that every sound was found, that narration
- * loudness was measured and that each line was stitched to the ones before it.
+ * loudness was measured, that each line was stitched to the ones before it
+ * and that every speech clip was checked for silence.
  *
  * Prerequisites:
  *   - AUDIO_SANDBOX_SNAPSHOT_ID set in .env.local
@@ -135,6 +136,11 @@ async function main() {
       throw new Error("ElevenLabs refused the previous request ids");
     }
     log("Narration stitched across segments");
+    // Every speech clip's peak is checked for silence (clip-check.ts).
+    if ((stdout.match(/→ peak -?\d/g) ?? []).length < 3) {
+      throw new Error("Speech clips were not checked for silence");
+    }
+    log("Every speech clip checked for silence");
     if (bed) {
       if (!stdout.includes("Mixing background music")) {
         throw new Error(`The snapshot has no ${bed.snapshotPath}`);

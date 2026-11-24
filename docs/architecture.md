@@ -36,11 +36,16 @@ Vercel Workflow (orchestrator)
        │
        ├── 1. Create Sandbox (from snapshot with FFmpeg + Node.js deps)
        │
-       ├── 2. Upload script + config to sandbox filesystem
+       ├── 2. Upload script + config to sandbox filesystem. A spoken count
+       │       (one number a line, short PAUSEs) goes in config as one
+       │       speech segment with break tags (count-runs.ts); the stored
+       │       script is unchanged
        │
        ├── 3. Run audio generation script inside sandbox
        │       ├── Call ElevenLabs TTS for speech segments, in order, each
-       │       │   stitched to the last three requests (stitching.ts)
+       │       │   stitched to the last three requests (stitching.ts); a
+       │       │   near-silent clip is requested once more, then fails the
+       │       │   render (clip-check.ts)
        │       ├── Generate silence with FFmpeg
        │       ├── Copy sound effect files
        │       ├── Concatenate all segments

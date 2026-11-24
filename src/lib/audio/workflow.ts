@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 
 import { Sandbox } from "@vercel/sandbox";
 import { createClient } from "@supabase/supabase-js";
+import { mergeCountRuns } from "./count-runs";
 import { checkRenderScript, checkRenderSettings } from "./render-bounds";
 import { uploadAudio, updateMeditationStatus } from "./storage";
 import { waveformOf } from "./waveform";
@@ -130,7 +131,10 @@ async function generateAndUpload(
 
   try {
     const config = JSON.stringify({
-      segments: data.segments,
+      // Only the text sent to text-to-speech changes: a spoken count goes as
+      // one request with break tags (count-runs.ts). The stored script, and
+      // everything computed from it, stays as written.
+      segments: mergeCountRuns(data.segments),
       voiceId: data.voiceId,
       elevenLabsApiKey: process.env.ELEVENLABS_API_KEY,
       // A path generate-audio.ts skips when the file is missing, so a bed

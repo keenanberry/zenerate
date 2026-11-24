@@ -17,15 +17,16 @@ import { readFile, writeFile, mkdir, copyFile, access } from "node:fs/promises";
 import { join } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
+import { isNearSilent, parseMaxVolume } from "./clip-check";
 import { narrationGainDb, parseIntegratedLoudness } from "./loudness";
 import { bedMixFilter, parseMediaSeconds } from "./mix";
 import { PEAKS_DECODE_ARGS, PeakReader, type Peaks } from "./peaks";
 import { RequestChain, stitchedSpeech, type SpeechResponse } from "./stitching";
 
 // ---------------------------------------------------------------------------
-// Types (self-contained — the only project imports are ./loudness, ./mix,
-// ./peaks and ./stitching, which have no dependencies and are bundled in by
-// esbuild)
+// Types (self-contained — the only project imports are ./clip-check,
+// ./loudness, ./mix, ./peaks and ./stitching, which have no dependencies and
+// are bundled in by esbuild)
 // ---------------------------------------------------------------------------
 
 interface Segment {
@@ -158,6 +159,22 @@ function generateSilence(
  */
 function narrationFilter(gainDb: number): string {
   return `volume=${gainDb.toFixed(2)}dB,alimiter=limit=0.891:level=false`;
+}
+
+/** A clip's loudest sample in dBFS; null when it cannot be measured. */
+function peakDb(path: string): Promise<number | null> {
+  return new Promise((resolve) => {
+    ffmpeg()
+      .input(path)
+      .audioFilters("volumedetect")
+      .format("null")
+      .output("-")
+      .on("end", (_stdout: string | null, stderr: string | null) =>
+        resolve(parseMaxVolume(stderr ?? "")),
+      )
+      .on("error", () => resolve(null))
+      .run();
+  });
 }
 
 /** Integrated loudness of all the narration, measured as one stream. */
@@ -340,13 +357,30 @@ async function processSegments(
           `[${i + 1}/${segments.length}] Generating speech (${segment.content!.length} chars, ` +
             `stitched to ${stitchedTo} previous request${stitchedTo === 1 ? "" : "s"})...`,
         );
-        const chars = await stitchedSpeech(chain, (previousRequestIds) =>
-          generateSpeech(client, segment.content!, voiceId, outPath, previousRequestIds, voiceSettings),
+        await stitchedSpeech(
+          chain,
+          async (previousRequestIds) => {
+            const response = await generateSpeech(
+              client, segment.content!, voiceId, outPath, previousRequestIds, voiceSettings,
+            );
+            // Every billed call counts, a re-requested clip included.
+            ttsCharacters += response.result;
+            ttsRequests++;
+            console.log(`  → ${response.result} characters billed`);
+            return response;
+          },
+          {
+            // A near-silent clip is requested once more, then fails the
+            // render: the workflow retries it, then marks it failed.
+            accept: async () => {
+              const peak = await peakDb(outPath);
+              console.log(`  → peak ${peak === null ? "not measured" : `${peak.toFixed(1)} dB`}`);
+              return !isNearSilent(peak);
+            },
+            label: `[${i + 1}/${segments.length}] "${segment.content!.slice(0, 40)}"`,
+          },
         );
-        ttsCharacters += chars;
-        ttsRequests++;
         speechIndices.add(i);
-        console.log(`  → ${chars} characters billed`);
         break;
       }
       case "pause":

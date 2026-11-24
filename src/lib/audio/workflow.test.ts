@@ -399,6 +399,32 @@ describe("processAudioWorkflow", () => {
       expect(sandboxConfig().segments).toEqual([{ type: "speech", content: CURRENT }]);
     });
 
+    it("sends a spoken count as one request, and keeps the script as written", async () => {
+      const script = [
+        "Let's count down.",
+        "*[PAUSE: 2 seconds]*",
+        "Three.",
+        "*[PAUSE: 2 seconds]*",
+        "Two.",
+        "*[PAUSE: 1 second]*",
+        "One.",
+        "*[PAUSE: 3 seconds]*",
+        "Rest here.",
+      ].join("\n");
+      seed({ script, audio_path: null, status: "processing_audio" });
+
+      await processAudioWorkflow("med-1", "voice-a", "evt-1");
+
+      expect(sandboxConfig().segments).toEqual([
+        { type: "speech", content: "Let's count down." },
+        { type: "pause", duration: 2 },
+        { type: "speech", content: 'Three. <break time="2s" /> Two. <break time="1s" /> One.' },
+        { type: "pause", duration: 3 },
+        { type: "speech", content: "Rest here." },
+      ]);
+      expect(meditation().script).toBe(script);
+    });
+
     it("clamps a saved volume into [0, 1]", async () => {
       seed({
         script: CURRENT,

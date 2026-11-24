@@ -83,31 +83,57 @@ export interface SpeechResponse<T> {
   requestId: string | null;
 }
 
+export interface StitchedSpeechOptions<T> {
+  log?: (message: string) => void;
+  /**
+   * Checks what a call produced (generate-audio.ts: that the clip is not
+   * near-silent). A clip it rejects is requested once more with the same
+   * ids; rejected twice, the line fails.
+   */
+  accept?: (result: T) => Promise<boolean>;
+  /** Names the line in a failure, for the render's log and Sentry. */
+  label?: string;
+}
+
 /**
- * Makes one speech call stitched to the chain and records its id. If the call
- * is refused because of the ids, it is made once more without them and the
- * chain is disabled, so a change on ElevenLabs' side costs continuity for the
- * rest of the render rather than the render itself, and later lines are not
- * each sent twice.
+ * Makes one speech call stitched to the chain and records the id of the
+ * response it keeps.
+ *
+ * - Refused because of the ids: made once more without them, and the chain is
+ *   disabled, so a change on ElevenLabs' side costs continuity for the rest of
+ *   the render rather than the render itself, and later lines are not each
+ *   sent twice.
+ * - Rejected by `accept`: made once more with the same ids. A second rejection
+ *   throws rather than let the render ship it.
  */
 export async function stitchedSpeech<T>(
   chain: RequestChain,
   call: (previousRequestIds: string[]) => Promise<SpeechResponse<T>>,
-  log: (message: string) => void = console.log,
+  { log = console.log, accept, label = "a line" }: StitchedSpeechOptions<T> = {},
 ): Promise<T> {
-  const previous = chain.previous();
+  let ids = chain.previous();
   let response: SpeechResponse<T>;
   try {
-    response = await call(previous);
+    response = await call(ids);
   } catch (err) {
-    if (previous.length === 0 || !isRejectedForRequestIds(err)) throw err;
+    if (ids.length === 0 || !isRejectedForRequestIds(err)) throw err;
     chain.disable();
     const reason = err instanceof Error ? err.message : String(err);
     log(
       `  → previous request ids refused (${reason}); retrying this line without them ` +
         "and no longer stitching this render",
     );
-    response = await call([]);
+    ids = [];
+    response = await call(ids);
+  }
+  if (accept && !(await accept(response.result))) {
+    log("  → came back near-silent; requesting it once more");
+    response = await call(ids);
+    if (!(await accept(response.result))) {
+      throw new Error(
+        `Speech for ${label} came back near-silent twice; failing the render rather than shipping silence`,
+      );
+    }
   }
   chain.record(response.requestId);
   return response.result;
