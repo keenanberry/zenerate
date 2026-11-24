@@ -202,6 +202,13 @@ describe("near-silent clips", () => {
     expect(chain.previous()).toEqual([]);
   });
 
+  it("keeps a silent clip without asking again when the line is not checked", async () => {
+    const chain = new RequestChain();
+    const { sent, call } = clips([-70]);
+    expect(await stitchedSpeech(chain, call, { log: () => {} })).toBe(-70);
+    expect(sent).toHaveLength(1);
+  });
+
   it("re-requests without ids when the ids were refused first", async () => {
     const chain = new RequestChain();
     chain.record("r1");

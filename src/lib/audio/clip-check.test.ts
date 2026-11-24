@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { NEAR_SILENT_PEAK_DB, isNearSilent, parseMaxVolume } from "./clip-check";
+import { NEAR_SILENT_PEAK_DB, hasSpeakableText, isNearSilent, parseMaxVolume } from "./clip-check";
 
 // Trimmed stderr from `ffmpeg -i clip.mp3 -af volumedetect -f null -` on the
 // silent "One." ElevenLabs returned on 2026-11-23.
@@ -28,6 +28,23 @@ describe("parseMaxVolume", () => {
   it("is null when ffmpeg printed no peak", () => {
     expect(parseMaxVolume("")).toBeNull();
     expect(parseMaxVolume("mean_volume: -20.0 dB")).toBeNull();
+  });
+});
+
+describe("hasSpeakableText", () => {
+  it("checks a line with a word or a number", () => {
+    expect(hasSpeakableText("One.")).toBe(true);
+    expect(hasSpeakableText("4.")).toBe(true);
+    expect(hasSpeakableText("Breathe.")).toBe(true);
+    expect(hasSpeakableText("Ça va… respire.")).toBe(true);
+    expect(hasSpeakableText('Ten. <break time="2s" /> Nine.')).toBe(true);
+  });
+
+  it("skips a line that is only punctuation, which may rightly be silent", () => {
+    expect(hasSpeakableText("...")).toBe(false);
+    expect(hasSpeakableText("—")).toBe(false);
+    expect(hasSpeakableText(" … – ")).toBe(false);
+    expect(hasSpeakableText("")).toBe(false);
   });
 });
 

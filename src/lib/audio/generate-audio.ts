@@ -17,7 +17,7 @@ import { readFile, writeFile, mkdir, copyFile, access } from "node:fs/promises";
 import { join } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
-import { isNearSilent, parseMaxVolume } from "./clip-check";
+import { hasSpeakableText, isNearSilent, parseMaxVolume } from "./clip-check";
 import { narrationGainDb, parseIntegratedLoudness } from "./loudness";
 import { bedMixFilter, parseMediaSeconds } from "./mix";
 import { PEAKS_DECODE_ARGS, PeakReader, type Peaks } from "./peaks";
@@ -371,12 +371,15 @@ async function processSegments(
           },
           {
             // A near-silent clip is requested once more, then fails the
-            // render: the workflow retries it, then marks it failed.
-            accept: async () => {
-              const peak = await peakDb(outPath);
-              console.log(`  → peak ${peak === null ? "not measured" : `${peak.toFixed(1)} dB`}`);
-              return !isNearSilent(peak);
-            },
+            // render: the workflow retries it, then marks it failed. A line
+            // with nothing to say ("...") may rightly be silent.
+            accept: hasSpeakableText(segment.content!)
+              ? async () => {
+                  const peak = await peakDb(outPath);
+                  console.log(`  → peak ${peak === null ? "not measured" : `${peak.toFixed(1)} dB`}`);
+                  return !isNearSilent(peak);
+                }
+              : undefined,
             label: `[${i + 1}/${segments.length}] "${segment.content!.slice(0, 40)}"`,
           },
         );

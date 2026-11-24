@@ -21,6 +21,15 @@ export function parseMaxVolume(stderr: string): number | null {
 }
 
 /**
+ * Whether a line has anything to say: a letter or a digit. A line that is only
+ * punctuation ("...", "—") can rightly come back silent, so it is not
+ * checked; failing it would fail the render on every attempt.
+ */
+export function hasSpeakableText(text: string): boolean {
+  return /[\p{L}\p{N}]/u.test(text);
+}
+
+/**
  * Whether a speech clip came back without an audible word. A clip whose peak
  * could not be measured is given the benefit of the doubt: a failed
  * measurement should not fail a render.
