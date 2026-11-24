@@ -40,6 +40,7 @@ caps and no billing yet; the task file holds the cost model and what to measure.
 | [Meditation ratings](./meditation-ratings.md) | Five stars at the end of a session on a public meditation, from signed-in listeners who are not the owner; shown on Discover cards and folded into Popular once a meditation has enough of them (2026-10-31) |
 | [Audio egress](../ship/60-audio-egress.md) | **Moved to ship 60** (2026-11-16). Every meditation page view downloaded the whole audio file before play (22 MB for 15 minutes), and Supabase Free allows 5 GB a month. Precomputed waveform peaks so the player streams, then a lower bitrate |
 | [Your own voice](./own-voice.md) | Record two minutes in the app and narrate your own meditations in your voice (ElevenLabs instant clone); the reason for a higher paid tier. Live recording with a spoken consent line, own meditations only at first; the ElevenLabs plan's voice slots are the constraint (2026-11-02) |
+| [Narration on ElevenLabs v3](./elevenlabs-v3.md) | Try the more expressive `eleven_v3` model. It drops the break tags count runs rely on (#162), so it needs its own listening round against today's v2 narration before any switch (2026-11-23) |
 
 ## Promoted or dropped (2026-10-20)
 
